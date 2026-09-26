@@ -401,7 +401,11 @@ def generate_android_build(n: Writer, sln: Any) -> None:
         game_cflags = " ".join([
             guest_abi, guest_code, " ".join(game_flags),
             f"-include {prefix_header}", f"-include {semantics_header}", defines,
-            f"-I{LINUX_DIR}/include", includes, *libc_includes, f"-idirafter {sdk_overlay}",
+            f"-I{LINUX_DIR}/include",
+            # the headers of the port's own game units, for the game sources
+            # that call them under HALO_LINUX
+            f"-iquote {config['game_sources']}",
+            includes, *libc_includes, f"-idirafter {sdk_overlay}",
         ])
         for obj in proj.objects:
             name = str(obj.file_path).replace(os.sep, "/")
