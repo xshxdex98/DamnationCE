@@ -218,14 +218,15 @@ structure visibility (whole areas of a level vanished depending on the view).
 The header copy now agrees with the real function; the matching report is
 unchanged.
 
-Three more changes exist only under `#ifdef HALO_LINUX` (defined by the
-Linux prefix header, never by the matching build):
+Some changes exist only under `#ifdef HALO_LINUX` (defined by the Linux
+prefix header, never by the matching build):
 
 | File | Change |
 | --- | --- |
 | `scenario/scenario.c` | the structure BSP connection tables are named directly instead of being addressed at MSVC's offsets from `global_structure_bsp_index` |
 | `rasterizer/xbox/rasterizer_xbox_environment_fog.c` | a local pointer initialized from the file-scope array of the same name; MSVC resolved the name in the initializer to the array, standard C to the new local |
 | `game/player_control.c` | adds direct mouse aim (`halo_linux_mouse_look`) to the facing change of the player on controller 1 |
+| `bitmaps/bitmap_utilities.c`, `math/periodic_functions.c`, `rasterizer/xbox/rasterizer_xbox_transparent_geometry.c` | colour blends and periodic function values are pinned to [0, 1] before the game asserts that they are valid colours: the x87 code can carry them at more than single precision, a hair past 1 (starting a game on Blood Gulch stopped on these asserts) |
 
 ## The matching build on a Linux host
 

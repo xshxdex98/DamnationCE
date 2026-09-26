@@ -2743,6 +2743,15 @@ union real_rgb_color *rgb_colors_interpolate(
 			interpolation_factor * rgb_upper_bound->blue;
 	}
 
+#ifdef HALO_LINUX
+	/* the native builds' rounding can put an interpolation of two valid
+	colours a hair past 1 (a structure decal's random tint did, starting a
+	system link game on Blood Gulch); keep the result a valid colour */
+	rgb_result->red = PIN(rgb_result->red, 0.f, 1.f);
+	rgb_result->green = PIN(rgb_result->green, 0.f, 1.f);
+	rgb_result->blue = PIN(rgb_result->blue, 0.f, 1.f);
+#endif
+
 	match_assert_valid_real_rgb_color("c:\\halo\\SOURCE\\bitmaps\\bitmap_utilities.c", 0x95D, rgb_result);
 
 	return rgb_result;
