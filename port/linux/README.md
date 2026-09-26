@@ -36,7 +36,10 @@ The game data (the directory holding `maps/`) is found automatically:
 `HALO_DATA_ROOT` if set, else the current directory when it has `maps/`,
 else `assets/`, looked up in the current directory and in the repository
 that holds the executable. It must be the PAL data of this build
-(01.01.14.2342); the game rejects cache files from any other build.
+(01.01.14.2342); the game rejects cache files from any other build. Halo
+Custom Edition and OpenSauce caches are named and refused; they can be
+checked and loaded outside the game with `port/tools/cache_file_report.c`
+([docs/custom_edition_caches.md](../../docs/custom_edition_caches.md)).
 
 `d:\` is the data root. Every other Xbox drive `X:\` is the directory `X/`
 below the save root, which is `HALO_SAVE_ROOT`, else
@@ -287,6 +290,7 @@ prefix header, never by the matching build):
 | `bitmaps/bitmap_utilities.c`, `math/periodic_functions.c`, `rasterizer/xbox/rasterizer_xbox_transparent_geometry.c` | colour blends and periodic function values are pinned to [0, 1] before the game asserts that they are valid colours: the x87 code can carry them at more than single precision, a hair past 1 (starting a game on Blood Gulch stopped on these asserts) |
 | `networking/`, `game/` (players, player queues, game engine and its game types), `interface/` (lobby, HUD, motion sensor), `bungie_net/network/`, and the pools in `objects/`, `effects/`, `render/`, `sound/`, `hs/`, `structures/`, `cache/physical_memory_map.c` and `saved games/` | the system link limits and the memory they need (see System link); sizes and offsets that followed from the Xbox limits come from `include/halo_port_limits.h` and `include/halo_port_capacity.h` |
 | `cseries/errors.c` | `debug.txt` stays open between lines (opening and closing it for each line took milliseconds on Windows, and a large session logs thousands of lines at once) |
+| `cache/cache_files.c`, `cache/cache_files_windows.c` | a Halo Custom Edition cache is named and refused instead of being called an old version of this build's caches, and an OpenSauce `.yelo` cache is found when there is no `.map` of that name (`game/custom_edition_cache.c`); see [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md), which also covers the loader for these caches, `game/cache_file_formats.c`, and its report tool |
 
 ## The matching build on a Linux host
 
