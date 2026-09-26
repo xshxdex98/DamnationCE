@@ -39,6 +39,10 @@ The native builds draw a frame at every refresh of the display (60, 90, 120, 240
 
 `ninja android_apk` builds an arm64 Android app (`port/android/app/build/outputs/apk/debug/app-debug.apk`) that runs the game natively on 64-bit ARM phones, with OpenGL ES 3 rendering at the device's aspect ratio, SDL3 audio and game controller support (including a PS5 DualSense over Bluetooth). It needs the Android NDK and a clang with the `arm64_32` target in addition to the Linux build's requirements. The game data goes in the app's storage (the app offers to import it). See [port/android/README.md](port/android/README.md).
 
+### Halo Custom Edition and OpenSauce maps
+
+The native builds recognize Halo Custom Edition caches and OpenSauce `.yelo` caches but cannot run them: their tags are laid out for Halo PC. They can be checked and loaded outside the game with `port/tools/cache_file_report.c`. See [docs/custom_edition_caches.md](docs/custom_edition_caches.md) for what is supported, how it was tested, and what running them would take.
+
 ### Matching build
 
 The byte-matching build also needs `cachebeta.exe` from the Halo 1 PAL debug build in the repository root. Run `ninja` to compile the game and report progress statistics. On Linux it runs the XDK compiler through [wibo](https://github.com/decompals/wibo) (downloaded automatically), assembles the CRT `.asm` units with UASM when no MASM is available, and builds csplit from source; see [port/linux/README.md](port/linux/README.md#the-matching-build-on-a-linux-host).
