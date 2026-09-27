@@ -42,7 +42,10 @@ data of this build (01.01.14.2342). Saves go to `%APPDATA%\halo`
 (`HALO_SAVE_ROOT` overrides it). Controls and the `HALO_*` settings are
 those of the Linux build (`port/linux/README.md`); like it, the game draws
 a frame at every refresh of the display, between its 30 Hz ticks ("Frame
-rate" there).
+rate" there). `HALO_STACK_REPORT=<n>`, Windows only, logs where the game's
+main thread is every n seconds, which finds a hang without a debugger (the
+addresses, less the logged image address plus `0x400000`, go to
+`llvm-symbolizer --obj=build\windows\halo.exe`).
 
 ## How it works
 
@@ -85,7 +88,8 @@ The files named `src/win32_*.c` are compiled against the Windows SDK only:
   performance counter, and sets binary file mode and a 1 ms timer period at
   start-up;
 - `win32_memory_watch.c` replaces `memory_watch.c` (texture write tracking
-  with a vectored exception handler) and reports crashes.
+  with a vectored exception handler), reports crashes, and makes the
+  `HALO_STACK_REPORT` reports.
 
 `port.json` lists the Linux platform files these replace, and the Windows
 libraries linked.

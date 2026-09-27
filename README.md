@@ -41,7 +41,7 @@ The native builds draw a frame at every refresh of the display (60, 90, 120, 240
 
 ### Halo Custom Edition and OpenSauce maps
 
-The native builds recognize Halo Custom Edition caches and OpenSauce `.yelo` caches but cannot run them: their tags are laid out for Halo PC. They can be checked and loaded outside the game with `port/tools/cache_file_report.c`. See [docs/custom_edition_caches.md](docs/custom_edition_caches.md) for what is supported, how it was tested, and what running them would take.
+The native builds recognize Halo Custom Edition caches and OpenSauce `.yelo` caches, and refuse them by default. With `HALO_CUSTOM_EDITION` set they load them, convert the tags that Halo PC lays out differently (models, structure BSP geometry, textures, shader types, sounds), and run them; this is experimental, and so far two maps have been seen running (the stock `bloodgulch.map` and `beavercreek_halo3.yelo`). Ogg Vorbis sounds do not play. The maps can also be checked outside the game with `port/tools/cache_file_report.c`. See [docs/custom_edition_caches.md](docs/custom_edition_caches.md) for what is supported, how it was tested, and what does not work yet.
 
 ### Matching build
 
