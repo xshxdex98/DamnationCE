@@ -262,15 +262,7 @@ real periodic_function_evaluate(
 			return result;
 		}
 
-#ifdef HALO_LINUX
-		/* the native builds' x87 code can carry 255*(1.0f/255.0f) at more
-		than single precision, a hair past 1, and the game asserts that colours
-		driven by these functions stay within [0, 1] */
-		result = (1.0f-fraction)*first_value + second_value*fraction;
-		return PIN(result, 0.0f, 1.0f);
-#else
 		return (1.0f-fraction)*first_value + second_value*fraction;
-#endif
 	}
 
 	return 0.0f;
@@ -329,7 +321,7 @@ static void __fastcall periodic_function_build_variable_period_x_table(
 	for (index = 0; index < PERIODIC_FUNCTION_TABLE_SIZE; index++)
 	{
 		x_table[index] = sum;
-		sum += (real_random()+1.0f)*0.25f +
+		sum += real_random()*0.25f + 0.25f +
 			((real)cos(8.2f*_pi*index/PERIODIC_FUNCTION_TABLE_SIZE)+1.0f)*real_random() +
 			((real)cos(10.2f*_pi*index/PERIODIC_FUNCTION_TABLE_SIZE)+1.0f)*real_random() +
 			((real)cos(14.6f*_pi*index/PERIODIC_FUNCTION_TABLE_SIZE)+1.0f)*real_random();

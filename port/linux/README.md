@@ -85,6 +85,8 @@ further gamepads become controllers 2-4.
 | `HALO_LANGUAGE` | dashboard language: `en`, `ja`, `de`, `fr`, `es`, `it` |
 | `HALO_INTERPOLATION=0` | the original 30 frames per second (see Frame rate) |
 | `HALO_NO_VSYNC` | do not wait for the display between frames |
+| `HALO_EXIT_AFTER=<seconds>` | quit that long after the window opens (profile training, benchmarks) |
+| `mesa_glthread=false` | with Mesa drivers, make the GL calls on the game's own thread (the game turns Mesa's GL thread on otherwise) |
 | `HALO_NET_ADDRESS=<IPv4>` | this machine's system link address: sockets bind to it instead of to every address, other machines see games at it, and traffic to 127.0.0.1 goes to it. Lets several copies of the game play together on one computer, each on its own loopback address (see System link) |
 | `HALO_NET_BROADCAST=<IPv4>,...` | send the game search broadcast to these addresses instead of 255.255.255.255, for example to the loopback address of a host on the same computer |
 | `HALO_SCREENSHOT_DIR`, `HALO_SCREENSHOT_EVERY` | write every Nth presented frame as a BMP |
@@ -175,7 +177,7 @@ without `HALO_NET_ADDRESS` is found at the default `--host 127.0.0.1`.
 | Area | Status |
 | --- | --- |
 | Game code | All 466 C translation units of the game project, unmodified apart from the edits listed below. |
-| Graphics | Direct3D 8 on OpenGL 4.5 core through SDL3 (`src/d3d8_gl.c`): NV2A vertex shader microcode and register combiner pixel shaders are translated to GLSL, Xbox textures (swizzled, linear, DXT, palettized, cube and volume) are decoded and cached with page-protection write tracking, render targets are framebuffer objects, and the picture is presented letterboxed in a resizable window. |
+| Graphics | Direct3D 8 on OpenGL 4.5 core through SDL3 (`src/d3d8_gl.c`): NV2A vertex shader microcode and register combiner pixel shaders are translated to GLSL, Xbox textures (swizzled, linear, DXT, palettized, cube and volume) are decoded and cached with page-protection write tracking, vertex and index buffers are drawn from a copy of the Xbox's contiguous memory in GL buffers kept current the same way, GL state is set only when it changes, render targets are framebuffer objects, and the picture is presented letterboxed in a resizable window. |
 | Sound | Xbox DirectSound over SDL3 audio (`src/dsound_sdl.c`): PCM and Xbox ADPCM streams mixed at 48 kHz with volume, pitch, mix bins, distance rolloff, stereo panning and I3DL2 occlusion/obstruction levels. Doppler, cones and reverb are not modelled. |
 | Input | XInput over SDL3 (`src/xinput_sdl.c`): keyboard and mouse as controller 1, SDL gamepads with rumble, and the debug keyboard for the console. |
 | Files | Win32 file API over POSIX (`CreateFile`, overlapped/`ReadFileEx` with completion APCs, find, attributes, times, free space), MSVC `fopen`/`open`/`_stat` families with Xbox path translation. |
@@ -196,10 +198,11 @@ error (`addr2line -e build/linux/halo <address>` symbolises it).
 ### Compiling MSVC-era code with clang
 
 `tools/linux_build.py` compiles the game with
-`--target=i686-linux-gnu -fms-extensions -fasm-blocks -fshort-wchar
--malign-double -fcommon` and the other flags listed there, which reproduce
-the ABI the source was written for: MSVC inline assembly, 16-bit `wchar_t`,
-8-byte alignment of 64-bit struct members, and C89 tentative definitions.
+`--target=i686-linux-gnu -fms-extensions -fshort-wchar -malign-double
+-fcommon` and the other flags listed there, which reproduce the ABI the
+source was written for: MSVC extensions, 16-bit `wchar_t`, 8-byte alignment
+of 64-bit struct members, and C89 tentative definitions. The game's inline
+assembly is not compiled (see [Game source edits](#game-source-edits)).
 glibc is restricted to ISO C (`__STRICT_ANSI__`) so POSIX names such as
 `random` and `strnlen` cannot collide with the game's own.
 
@@ -212,9 +215,10 @@ editing the game:
 - `include/` shims extend or replace C runtime headers: MSVC names in
   `stdio.h`/`stdlib.h`/`string.h`/`math.h`/`float.h`, a complete 16-bit
   `wchar.h`, `io.h`, `direct.h`, `sys/stat.h` with the MSVC `struct _stat`.
-- The XDK's own headers are used unmodified through a case-insensitive
-  symlink overlay (`tools/linux_sdk_overlay.py`), which leaves out the XDK's
-  C runtime headers in favour of glibc.
+- The XDK's own headers are used through a case-insensitive symlink overlay
+  (`tools/linux_sdk_overlay.py`), which leaves out the XDK's C runtime
+  headers in favour of glibc. `winnt.h` is a copy whose three 64-bit shift
+  helpers are C instead of x86 assembly; the SDK itself is not modified.
 - `tools/linux_msvc_semantics.py` generates a header that forward-declares
   every struct/union tag at file scope (MSVC gives a tag first seen in a
   prototype file scope; C gives it prototype scope) and marks header inline
@@ -235,7 +239,9 @@ definition, since the linker would otherwise resolve it to address 0.
 
 Files named `posix_*.c` talk to glibc and are compiled with the host ABI:
 glibc structures with 64-bit members (`struct stat`, `struct dirent`) have a
-different layout under `-malign-double`. Everything else includes the XDK
+different layout under `-malign-double`. With link-time optimisation they
+stay native objects, as LLVM will not optimise code with glibc's 32-bit
+`wchar_t` together with the game's 16-bit one. Everything else includes the XDK
 headers through `platform.h`, so each definition is type-checked against the
 SDK prototype it implements, calling convention included.
 `src/halo_linker_common.c` holds weak, zero-filled storage for globals that
@@ -284,9 +290,29 @@ prefix header, never by the matching build):
 | `scenario/scenario.c` | the structure BSP connection tables are named directly instead of being addressed at MSVC's offsets from `global_structure_bsp_index` |
 | `rasterizer/xbox/rasterizer_xbox_environment_fog.c` | a local pointer initialized from the file-scope array of the same name; MSVC resolved the name in the initializer to the array, standard C to the new local |
 | `game/player_control.c` | adds direct mouse aim (`halo_linux_mouse_look`) to the facing change of the player on controller 1 |
-| `bitmaps/bitmap_utilities.c`, `math/periodic_functions.c`, `rasterizer/xbox/rasterizer_xbox_transparent_geometry.c` | colour blends and periodic function values are pinned to [0, 1] before the game asserts that they are valid colours: the x87 code can carry them at more than single precision, a hair past 1 (starting a game on Blood Gulch stopped on these asserts) |
+| `sound/game_sound.c` | `compute_sound_obstruction` (a collision test from the camera to each audible sound) runs once per game tick and its result is reused by the tick's other frames: the sound manager refreshes sounds every frame, which on the Xbox was once per tick |
 | `networking/`, `game/` (players, player queues, game engine and its game types), `interface/` (lobby, HUD, motion sensor), `bungie_net/network/`, and the pools in `objects/`, `effects/`, `render/`, `sound/`, `hs/`, `structures/`, `cache/physical_memory_map.c` and `saved games/` | the system link limits and the memory they need (see System link); sizes and offsets that followed from the Xbox limits come from `include/halo_port_limits.h` and `include/halo_port_capacity.h` |
 | `cseries/errors.c` | `debug.txt` stays open between lines (opening and closing it for each line took milliseconds on Windows, and a large session logs thousands of lines at once) |
+
+The game's x86 inline assembly is also replaced under `#ifdef HALO_LINUX`,
+which every native port (Linux, Windows, Android) defines, so the compiler
+optimizes and vectorizes that code for each target like any other C:
+
+| File | Assembly | Replacement |
+| --- | --- | --- |
+| `cseries/cseries.h` | x87 `fistp` float to integer conversion (`fast_ftol`) | `__builtin_rint` |
+| `bitmaps/bitmaps_inlines.h` | x87 float to integer conversions | C conversions |
+| `math/matrix_math.c` | SSE `matrix4x3_multiply` | the C loop |
+| `effects/decals.c` | x87 float to integer conversion | C conversion |
+| `cseries/profile.c` | `rdtsc` | `QueryPerformanceCounter`, at its own frequency |
+| `cseries/cseries.c` | naked `stristr` | a C `stristr` |
+| `cseries/stack_walk_windows.c` | reads EBP | `__builtin_frame_address` |
+| `interface/hud_draw.c` | reads the caller's return address from `[ebp+4]` | `__builtin_return_address(1)` |
+| `bink/bink_playback.c` | `int 3` | `__builtin_trap` |
+
+The C runtime's x87 control and status words (`_control87`, `_statusfp`,
+`_clearfp`, `src/msvc_crt.c`) go through `fenv.h`, or the FPCR and FPSR
+builtins on Android.
 
 ## The matching build on a Linux host
 

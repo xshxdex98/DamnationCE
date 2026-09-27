@@ -29,6 +29,16 @@ ninja windows
 
 `configure.py` generates the Windows build only when it runs on Windows.
 
+The executable is optimised for the processor of the computer that builds
+it (`-march=native`) and may not start on another; `python configure.py
+--portable` builds one that runs on any x86-64 processor, for sharing. Full
+link-time optimisation makes the final link take a while; see
+[Optimisation](../../README.md#optimisation) for this and for the
+profile-guided optimisation with `pgo/halo_windows.profdata`, which
+`--pgo=train` records again (the instrumented build uses LLVM's profile
+runtime, compiled for 32-bit x86 from its sources, since LLVM for Windows
+ships it for x86-64 only: `pgo/halo_profile_runtime.c`).
+
 ## Running
 
 ```bat
@@ -49,7 +59,7 @@ rate" there).
 The game is 32-bit code for the same reason as on Linux: its data formats
 embed 32-bit pointers. Clang's `i686-pc-windows-msvc` target gives it the
 ABI it was written against natively (MSVC structure layout, 16-bit
-`wchar_t`, `__asm` blocks, calling conventions), so much less adaptation is
+`wchar_t`, calling conventions), so much less adaptation is
 needed than on Linux. The executable is large-address-aware: the Xbox memory
 window the platform layer reserves is at 0x80000000.
 

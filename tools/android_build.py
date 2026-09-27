@@ -27,6 +27,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .linux_build import LINUX_PROFILE, pgo_mode, pgo_profile, profile_use_flags
 from .ninja_syntax import Writer
 
 PORT_DIR = Path("port/android")
@@ -112,16 +113,9 @@ MUSL_THREAD_PREFIXES = (
 MUSL_EXCLUDE = {
     "env/__stack_chk.c", "env/__init_tls.c", "env/__libc_start_main.c",
     "env/__reset_tls.c", "malloc/oldmalloc", "thread/pthread_create.c",
+    # unused, and its compiler barrier is an inline assembly statement
+    "string/explicit_bzero.c",
 }
-# math functions taken from musl's aarch64 directory (FP register inline
-# assembly only); the ones returning long are left generic, as long is
-# 32-bit here
-MUSL_AARCH64_MATH = [
-    "ceil", "ceilf", "fabs", "fabsf", "floor", "floorf", "fma", "fmaf",
-    "fmax", "fmaxf", "fmin", "fminf", "nearbyint", "nearbyintf", "rint",
-    "rintf", "round", "roundf", "sqrt", "sqrtf", "trunc", "truncf",
-]
-
 # game files that call variadic functions without a prototype in scope, which
 # only works under x86's calling convention (tools/android_abi_check.py)
 VARIADIC_PROTOTYPE_FILES = {
@@ -190,8 +184,6 @@ def _musl_sources() -> List[Path]:
         relative = path.relative_to(src).as_posix()
         if relative in MUSL_EXCLUDE or any(relative.startswith(e + "/") for e in MUSL_EXCLUDE):
             continue
-        if relative.startswith("math/") and path.stem in MUSL_AARCH64_MATH:
-            path = src / "math" / "aarch64" / path.name
         sources.append(path)
     return sources
 
@@ -251,11 +243,11 @@ def generate_android_build(n: Writer, sln: Any) -> None:
 
     n.rule(
         name="android_sdk_overlay",
-        command=f"{python} tools/android_sdk_overlay.py --output {sdk_overlay} --stamp $out",
+        command=f"{python} tools/linux_sdk_overlay.py --output {sdk_overlay} --stamp $out",
         description="ANDROID SDK HEADERS",
     )
     n.build(outputs=sdk_stamp, rule="android_sdk_overlay",
-            implicit=[Path("tools/android_sdk_overlay.py"), Path("tools/linux_sdk_overlay.py")])
+            implicit=[Path("tools/linux_sdk_overlay.py")])
 
     alltypes = libc_include / "bits" / "alltypes.h"
     syscall_h = libc_include / "bits" / "syscall.h"
@@ -351,6 +343,13 @@ def generate_android_build(n: Writer, sln: Any) -> None:
     guest_abi = " ".join(GUEST_ABI_FLAGS + (["-DHALO_RELEASE"] if getattr(sln, "port_release", False) else []))
     guest_code = " ".join(GUEST_CODE_FLAGS)
     tool_implicit = [Path("tools/android_asm_convert.py"), *generated_headers]
+    # profile-guided optimisation with the Linux build's profile (committed,
+    # or trained by the Linux build with --pgo=train): the game and platform
+    # code are the same, and functions that differ simply go without
+    profile = pgo_profile(sln, LINUX_PROFILE if pgo_mode(sln) == "train" else None, [LINUX_PROFILE], guest_cc)
+    profile_flags = " ".join(profile_use_flags(profile))
+    if profile:
+        tool_implicit.append(profile)
 
     def guest_object(source: Path, cflags: str, prefix: str = "") -> Path:
         obj = obj_dir / prefix / Path(str(source).lstrip("/")).with_suffix(".o")
@@ -399,7 +398,7 @@ def generate_android_build(n: Writer, sln: Any) -> None:
             f"-I{_quote(d)}" for d in options.get("include_dirs") or [] if Path(d) != Path("xbox/include")
         )
         game_cflags = " ".join([
-            guest_abi, guest_code, " ".join(game_flags),
+            guest_abi, guest_code, " ".join(game_flags), profile_flags,
             f"-include {prefix_header}", f"-include {semantics_header}", defines,
             f"-I{LINUX_DIR}/include", includes, *libc_includes, f"-idirafter {sdk_overlay}",
         ])
@@ -416,7 +415,7 @@ def generate_android_build(n: Writer, sln: Any) -> None:
 
     # the platform layer shared with Linux, and the guest runtime
     platform_cflags = " ".join([
-        guest_abi, guest_code, "-std=gnu11", "-D_GNU_SOURCE", "-DHALO_LINUX_PLATFORM_LAYER", "-w",
+        guest_abi, guest_code, "-std=gnu11", "-D_GNU_SOURCE", "-DHALO_LINUX_PLATFORM_LAYER", "-w", profile_flags,
         f"-include {prefix_header}", f"-include {platform_semantics_header}",
         f"-I{LINUX_DIR}/src", f"-I{LINUX_DIR}/include", f"-I{PORT_DIR}/guest/runtime",
         f"-I{PORT_DIR}/include", "-Isource -Isource/cseries",
@@ -496,7 +495,7 @@ def generate_android_build(n: Writer, sln: Any) -> None:
         "-O2", "-g", "-fPIC", "-Wall", "-Wno-unused-function", "-D_GNU_SOURCE",
         f"-I{PORT_DIR}/include", f"-I{PORT_DIR}/host", f"-I{SDL_DIR}/include", f"-I{LINUX_DIR}/src",
     ])
-    host_sources = sorted((PORT_DIR / "host").glob("*.c")) + sorted((PORT_DIR / "host").glob("*.S")) + [
+    host_sources = sorted((PORT_DIR / "host").glob("*.c")) + [
         LINUX_DIR / "src" / "posix_files.c", LINUX_DIR / "src" / "posix_net.c",
     ]
     for source in host_sources:
