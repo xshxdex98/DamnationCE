@@ -63,13 +63,25 @@ echo Halo is starting.
 goto bots
 
 :running
-rem the bots need the running game to tell them where players are: built
-rem with the position dump (a Halo update takes it out again) and started
-rem with HALO_POSITIONS, which the launcher's settings hold after a rally
+rem the bots need the running game to tell them where players are
+set "RALLY_POSITIONS=%RALLY_ROOT%\data\positions.txt"
+rem it does (the positions were written in the last few seconds): go ahead
+powershell -NoProfile -Command "exit [int](((Get-Date) - (Get-Item -LiteralPath $env:RALLY_POSITIONS).LastWriteTime).TotalSeconds -gt 5)" >nul 2>&1
+if not errorlevel 1 goto running_confirmed
+rem a Halo update took the position dump out: they would stand still
 findstr /c:"demo_dump_player_positions" "%RALLY_PLAYERS%" >nul 2>&1 || goto restart
 powershell -NoProfile -Command "exit [int]((Get-Item -LiteralPath $env:RALLY_EXE).LastWriteTime -lt (Get-Item -LiteralPath $env:RALLY_PLAYERS).LastWriteTime)"
 if errorlevel 1 goto restart
-findstr /b /c:"env.HALO_POSITIONS=1" "%RALLY_ROOT%\launcher.ini" >nul 2>&1 || goto restart
+rem built with it; whether this Halo was started with HALO_POSITIONS shows
+rem once the game is under way (the launcher's settings get it for next time)
+findstr /b /c:"env.HALO_POSITIONS=1" "%RALLY_ROOT%\launcher.ini" >nul 2>&1 || >>"%RALLY_ROOT%\launcher.ini" echo env.HALO_POSITIONS=1
+echo.
+echo Halo is running: bringing in another round of bots. If they stand still,
+echo close Halo and run this command again.
+goto bots
+
+:running_confirmed
+findstr /b /c:"env.HALO_POSITIONS=1" "%RALLY_ROOT%\launcher.ini" >nul 2>&1 || >>"%RALLY_ROOT%\launcher.ini" echo env.HALO_POSITIONS=1
 echo.
 echo Halo is running: bringing in another round of bots.
 
@@ -85,9 +97,9 @@ exit /b 0
 
 :restart
 echo.
-echo The Halo that's running can't tell the bots where to go, so they would
-echo stand still: it was started before the rally set it up, or Halo was
-echo updated since. Close Halo, then run this command again.
+echo Halo was updated since the rally set it up, so it can't tell the bots
+echo where to go and they would stand still. Close Halo, then run this
+echo command again: it sets the rally up again.
 goto failed
 
 :offline

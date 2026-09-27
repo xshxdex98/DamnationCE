@@ -16,13 +16,15 @@ the lobby, then press a key in the rally window: the bots join, the game
 starts, and about 3 seconds in they run to where you are standing. Ctrl+C in
 the rally window takes them out. Give it another number for fewer bots.
 
-For another round, run the same command again while that Halo is running:
-it sees Halo and only brings in the bots. It first checks that the running
-game can tell the bots where players are (built with the position dump,
-which a Halo update takes out, and started with `HALO_POSITIONS`, which the
-rally also saves in the launcher's settings, so that Halo started from the
-launcher or its shortcut has it too); if not, it asks you to close Halo and
-run it again rather than bring in bots that would stand still.
+For another round, run the same command again while Halo is running, in a
+lobby or in a game: it sees Halo and only brings in the bots. The bots need
+the game to write their positions: a game built with the position dump
+(which a Halo update takes out again) and started with `HALO_POSITIONS`,
+which the rally also saves in the launcher's settings, so that Halo started
+from the launcher or its shortcut has it too. With Halo running, the rally
+goes ahead when the game has written positions in the last few seconds or
+was built with the dump, and asks you to close Halo and run it again only
+when an update took the dump out.
 
 The first time (and after every update of the game), `rally.cmd` adds a
 position dump to the installed game's `source/game/players.c`
