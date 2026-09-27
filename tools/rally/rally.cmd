@@ -52,6 +52,9 @@ start "" /wait "%RALLY_ROOT%\HaloLauncher.exe" --install --no-shortcuts
 if errorlevel 1 goto failed
 
 :play
+rem HALO_POSITIONS in the launcher's settings too (Settings, other variables),
+rem so that Halo tells the bots where players are however it is started
+findstr /b /c:"env.HALO_POSITIONS=1" "%RALLY_ROOT%\launcher.ini" >nul 2>&1 || >>"%RALLY_ROOT%\launcher.ini" echo env.HALO_POSITIONS=1
 del "%RALLY_ROOT%\data\positions.txt" >nul 2>&1
 set "HALO_POSITIONS=1"
 start "" "%RALLY_ROOT%\HaloLauncher.exe" --play
@@ -60,9 +63,15 @@ echo Halo is starting.
 goto bots
 
 :running
+rem the bots need the running game to tell them where players are: built
+rem with the position dump (a Halo update takes it out again) and started
+rem with HALO_POSITIONS, which the launcher's settings hold after a rally
+findstr /c:"demo_dump_player_positions" "%RALLY_PLAYERS%" >nul 2>&1 || goto restart
+powershell -NoProfile -Command "exit [int]((Get-Item -LiteralPath $env:RALLY_EXE).LastWriteTime -lt (Get-Item -LiteralPath $env:RALLY_PLAYERS).LastWriteTime)"
+if errorlevel 1 goto restart
+findstr /b /c:"env.HALO_POSITIONS=1" "%RALLY_ROOT%\launcher.ini" >nul 2>&1 || goto restart
 echo.
-echo Halo is running: bringing in another round of bots. (They know where to
-echo run only if rally.cmd started this Halo; if not, close it and run this.)
+echo Halo is running: bringing in another round of bots.
 
 :bots
 echo In Halo: Multiplayer, create a system link game, and wait in the lobby.
@@ -73,6 +82,13 @@ pause >nul
 "%RALLY_PYTHON%" "%RALLY_HERE%system_link_bots_rally.py" --machines %RALLY_BOTS% --start --positions "%RALLY_ROOT%\data\positions.txt" --gather machine:0
 pause
 exit /b 0
+
+:restart
+echo.
+echo The Halo that's running can't tell the bots where to go, so they would
+echo stand still: it was started before the rally set it up, or Halo was
+echo updated since. Close Halo, then run this command again.
+goto failed
 
 :offline
 echo Couldn't download the rally's helpers from %RALLY_REPO%.
