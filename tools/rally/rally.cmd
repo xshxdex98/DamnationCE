@@ -9,6 +9,7 @@ rem It downloads its two helpers from this repository next to itself, adds
 rem the position dump the bots steer by to the installed game's source
 rem (rally_patch.py) and rebuilds the game when that is new, then starts
 rem Halo. Create a system link game, press a key here, and the bots join.
+rem Run it again while that Halo is running for another round of bots.
 setlocal
 set "RALLY_REPO=https://raw.githubusercontent.com/bnunu/halo-ce-universal/main/tools/rally"
 set "RALLY_BOTS=%~1"
@@ -32,14 +33,13 @@ findstr /c:"HALO_PORT_MAXIMUM_NETWORK_PLAYERS" "%RALLY_PLAYERS%" >nul 2>&1 || (
 	echo Open Halo CE Universal, click Update now, then run this again.
 	goto failed
 )
-tasklist /fi "imagename eq halo.exe" 2>nul | find /i "halo.exe" >nul && (
-	echo Close Halo first, then run this again.
-	goto failed
-)
 
 echo Getting the rally's helpers...
 curl.exe -fsSL -o "%RALLY_HERE%rally_patch.py" "%RALLY_REPO%/rally_patch.py" || goto offline
 curl.exe -fsSL -o "%RALLY_HERE%system_link_bots_rally.py" "%RALLY_REPO%/system_link_bots_rally.py" || goto offline
+
+rem Halo running already (another round): only the bots
+tasklist /fi "imagename eq halo.exe" 2>nul | "%SystemRoot%\System32\find.exe" /i "halo.exe" >nul && goto running
 
 rem the position dump, once (and again after each Halo update, which
 rem brings back the original players.c); the game is rebuilt when its
@@ -56,10 +56,19 @@ del "%RALLY_ROOT%\data\positions.txt" >nul 2>&1
 set "HALO_POSITIONS=1"
 start "" "%RALLY_ROOT%\HaloLauncher.exe" --play
 echo.
-echo Halo is starting. In Halo: Multiplayer, create a system link game, and
-echo wait in the lobby. Then come back here and press a key: %RALLY_BOTS% bots
-echo join, the game starts, and about 3 seconds in they run to where you are
-echo standing. Ctrl+C here takes them out again.
+echo Halo is starting.
+goto bots
+
+:running
+echo.
+echo Halo is running: bringing in another round of bots. (They know where to
+echo run only if rally.cmd started this Halo; if not, close it and run this.)
+
+:bots
+echo In Halo: Multiplayer, create a system link game, and wait in the lobby.
+echo Then come back here and press a key: %RALLY_BOTS% bots join, the game
+echo starts, and about 3 seconds in they run to where you are standing.
+echo Ctrl+C here takes them out again.
 pause >nul
 "%RALLY_PYTHON%" "%RALLY_HERE%system_link_bots_rally.py" --machines %RALLY_BOTS% --start --positions "%RALLY_ROOT%\data\positions.txt" --gather machine:0
 pause

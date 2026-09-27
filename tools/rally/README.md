@@ -16,6 +16,9 @@ the lobby, then press a key in the rally window: the bots join, the game
 starts, and about 3 seconds in they run to where you are standing. Ctrl+C in
 the rally window takes them out. Give it another number for fewer bots.
 
+For another round, run the same command again while that Halo is running:
+it sees Halo and only brings in the bots.
+
 The first time (and after every update of the game), `rally.cmd` adds a
 position dump to the installed game's `source/game/players.c`
 (`rally_patch.py`) and rebuilds it, which takes a minute or two. With
