@@ -578,6 +578,14 @@ symbols in this file:
 #include "units/bipeds.h"
 #include "units/units.h"
 
+#ifdef HALO_LINUX
+/* network_game_globals.c's */
+boolean network_game_distributed_client(void);
+/* port/linux/game/network_distributed.c's */
+void network_distributed_player_killed(long *killing_player_index, long *killing_object_index,
+	long dead_player_index, boolean *friendly_fire);
+#endif
+
 /* ---------- constants */
 
 enum
@@ -2937,7 +2945,13 @@ static void game_engine_update_purge(
 	long cutoff_time = game_time_get() - 900;
 
 	object_iterator_new(&iterator, _object_mask_item, 0);
-	while (object_iterator_next(&iterator))
+	/* (a client of the distributed netcode removes items when the host does,
+	port/linux/game/network_distributed.c) */
+	while (
+#ifdef HALO_LINUX
+		!network_game_distributed_client() &&
+#endif
+		object_iterator_next(&iterator))
 	{
 		struct item_datum *item = item_get(iterator.index);
 
@@ -3876,7 +3890,13 @@ void game_engine_update(
 
 			game_engine_update_teleporter(iterator.data.datum_index);
 
-			if (game_engine->player_update_each_tick)
+			/* (a client of the distributed netcode has the host's scores,
+			flags, balls and hills: game_engine_read_network_state) */
+			if (game_engine->player_update_each_tick
+#ifdef HALO_LINUX
+				&& !network_game_distributed_client()
+#endif
+				)
 			{
 				void (*player_update)(long) =
 					game_engine->player_update_each_tick;
@@ -3886,14 +3906,28 @@ void game_engine_update(
 
 	}
 
-	if (game_engine->unknown44)
+	if (game_engine->unknown44
+#ifdef HALO_LINUX
+		&& !network_game_distributed_client()
+#endif
+		)
+	{
 		game_engine->unknown44();
+	}
 
 	switch (game_engine_globals.postgame_state)
 	{
 	case 0:
-		if (game_engine_should_end_game())
+		/* (a client of the distributed netcode ends the game when the host
+		has) */
+		if (
+#ifdef HALO_LINUX
+			!network_game_distributed_client() &&
+#endif
+			game_engine_should_end_game())
+		{
 			game_engine_end_game();
+		}
 		break;
 
 	case 1:
@@ -4031,6 +4065,12 @@ void game_engine_player_killed(
 	if (!game_engine)
 		return;
 
+#ifdef HALO_LINUX
+	/* the distributed netcode: a client's copy of a death has the host's
+	killer (port/linux/game/network_distributed.c) */
+	network_distributed_player_killed(&killing_player_index, &killing_object_index, dead_player_index,
+		&friendly_fire);
+#endif
 	dead_player->death_time = game_time_get();
 	if (game_engine->player_killed_player)
 	{
@@ -4656,6 +4696,12 @@ void game_engine_player_damaged_player(
 {
 	match_assert("c:\\halo\\SOURCE\\game\\game_engine.c", 0xA20, dead_player_index != NONE);
 
+#ifdef HALO_LINUX
+	/* (a client of the distributed netcode replaying the host's damage has
+	the host's game type state, game_engine_read_network_state) */
+	if (network_game_distributed_client())
+		return;
+#endif
 	if (game_engine && game_engine->player_damaged_player)
 		game_engine->player_damaged_player(damaging_player_index, dead_player_index, damage_type);
 
@@ -7500,6 +7546,13 @@ static void game_engine_update_item_spawn(
 	struct scenario *scenario = global_scenario_get();
 	short equipment_index;
 
+#ifdef HALO_LINUX
+	/* a client of the distributed netcode has the host's items
+	(port/linux/game/network_distributed.c) */
+	if (network_game_distributed_client())
+		return;
+#endif
+
 	for (equipment_index = 0;
 		equipment_index < scenario->netgame_equipment.count;
 		equipment_index++)
@@ -8082,3 +8135,71 @@ static void netgame_verify_spawn_points(
 
 	return;
 }
+
+#ifdef HALO_LINUX
+long game_engine_slayer_write_network_state(byte *buffer, long size);
+void game_engine_slayer_read_network_state(byte const *buffer, long size);
+long game_engine_ctf_write_network_state(byte *buffer, long size);
+void game_engine_ctf_read_network_state(byte const *buffer, long size);
+long game_engine_oddball_write_network_state(byte *buffer, long size);
+void game_engine_oddball_read_network_state(byte const *buffer, long size);
+long game_engine_king_write_network_state(byte *buffer, long size);
+void game_engine_king_read_network_state(byte const *buffer, long size);
+long game_engine_race_write_network_state(byte *buffer, long size);
+void game_engine_race_read_network_state(byte const *buffer, long size);
+
+/* the distributed netcode (port/linux/game/network_distributed.c): the
+current game type's state (scores, and what else every machine must agree
+on), which the host sends its clients; the size written, 0 for none */
+long game_engine_write_network_state(
+	byte *buffer,
+	long size)
+{
+	long postgame_state;
+	long written;
+
+	if (!game_engine || size < (long)sizeof(postgame_state))
+		return 0;
+	/* whether the game is over, then the game type's */
+	postgame_state = game_engine_globals.postgame_state;
+	csmemcpy(buffer, &postgame_state, sizeof(postgame_state));
+	buffer += sizeof(postgame_state);
+	size -= sizeof(postgame_state);
+	switch (game_engine_get_type())
+	{
+	case game_engine_ctf: written = game_engine_ctf_write_network_state(buffer, size); break;
+	case game_engine_slayer: written = game_engine_slayer_write_network_state(buffer, size); break;
+	case game_engine_oddball: written = game_engine_oddball_write_network_state(buffer, size); break;
+	case game_engine_king: written = game_engine_king_write_network_state(buffer, size); break;
+	case game_engine_race: written = game_engine_race_write_network_state(buffer, size); break;
+	default: written = 0; break;
+	}
+	return sizeof(postgame_state) + written;
+}
+
+/* a client: the host's */
+void game_engine_read_network_state(
+	byte const *buffer,
+	long size)
+{
+	long postgame_state;
+
+	if (!game_engine || size < (long)sizeof(postgame_state))
+		return;
+	csmemcpy(&postgame_state, buffer, sizeof(postgame_state));
+	buffer += sizeof(postgame_state);
+	size -= sizeof(postgame_state);
+	/* the game ended on the host */
+	if (postgame_state != 0 && game_engine_globals.postgame_state == 0)
+		game_engine_end_game();
+	switch (game_engine_get_type())
+	{
+	case game_engine_ctf: game_engine_ctf_read_network_state(buffer, size); break;
+	case game_engine_slayer: game_engine_slayer_read_network_state(buffer, size); break;
+	case game_engine_oddball: game_engine_oddball_read_network_state(buffer, size); break;
+	case game_engine_king: game_engine_king_read_network_state(buffer, size); break;
+	case game_engine_race: game_engine_race_read_network_state(buffer, size); break;
+	default: break;
+	}
+}
+#endif

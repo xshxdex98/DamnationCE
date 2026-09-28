@@ -20,7 +20,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .linux_build import (LINUX_PROFILE, OPTIMISATION, WINDOWS_PROFILE, XDK_INCLUDE, lto_mode, march_flag, pgo_mode,
-                          compile_launcher, pgo_profile, profile_use_flags, xdk_headers)
+                          compile_launcher, musl_math_cflags, musl_math_sources, pgo_profile, profile_use_flags,
+                          xdk_headers)
 from .ninja_syntax import Writer
 
 LINUX_DIR = Path("port/linux")
@@ -47,6 +48,18 @@ SDL_DIR = THIRD_PARTY / f"SDL3-{SDL_VERSION}"
 #    frame chain.
 # the TOML parser the platform layer reads config.toml with (port_config.c)
 TOML_DIR = Path("port/third_party/tomlc17")
+KCP_DIR = Path("port/third_party/kcp")
+
+
+def updater_defines(release: bool) -> str:
+    """the self-updater's build (port/linux/src/updater.c): its number, from
+    HALO_BUILD_NUMBER (tools/ci_build.py gives it for builds of main; none
+    elsewhere, which never look for updates), and its configuration"""
+    number = os.environ.get("HALO_BUILD_NUMBER", "0")
+    if not number.isdigit():
+        number = "0"
+    flavor = "release" if release else "debug"
+    return f'-DHALO_BUILD_NUMBER={number} -DHALO_BUILD_FLAVOR=\\"{flavor}\\"'
 
 WINDOWS_ABI_FLAGS = [
     "--target=i686-pc-windows-msvc",
@@ -56,6 +69,10 @@ WINDOWS_ABI_FLAGS = [
     "-fwrapv",
     "-fno-delete-null-pointer-checks",
     "-fno-omit-frame-pointer",
+    # the same floating point results on every port (system link games run
+    # in lockstep, and a machine whose results differ goes out of sync): no
+    # fused multiply-adds (port/include/halo_math.h)
+    "-ffp-contract=off",
     OPTIMISATION,
     "-g",
     "-gcodeview",
@@ -352,6 +369,7 @@ def generate_windows_build(n: Writer, sln: Any) -> None:
             f"-I{linux_platform}",
             f"-I{PORT_DIR / 'include'}",
             f"-I{TOML_DIR}",
+            f"-I{KCP_DIR}",
             # halo_linux_winsock_names.h, but not the Linux build's C runtime
             # wrappers next to it
             f"-iquote {LINUX_DIR / 'include'}",
@@ -370,12 +388,21 @@ def generate_windows_build(n: Writer, sln: Any) -> None:
         for source in sorted(linux_platform.glob("*.c")):
             if source.name in replaced:
                 continue
-            add_object(source, platform_cflags)
+            if source.name == "updater.c":
+                add_object(source, f"{platform_cflags} {updater_defines(getattr(sln, 'port_release', False))}")
+            else:
+                add_object(source, platform_cflags)
         for source in sorted((PORT_DIR / "src").glob("*.c")):
             add_object(source, win32_cflags if source.name.startswith("win32_") else platform_cflags)
         # the settings file's parser (port/third_party/tomlc17), with the
         # platform layer's ABI and nothing else
         add_object(TOML_DIR / "tomlc17.c", " ".join([abi, "-std=gnu11", "-w"]))
+        # internet play's reliable streams (port/third_party/kcp; p2p.c)
+        add_object(KCP_DIR / "ikcp.c", " ".join([abi, "-std=gnu11", "-w"]))
+        # the game's sin, pow and the rest, the same on every port
+        # (port/include/halo_math.h)
+        for source in musl_math_sources():
+            add_object(source, musl_math_cflags(abi))
 
         n.build(
             outputs=output,

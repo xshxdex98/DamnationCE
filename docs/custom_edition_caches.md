@@ -1,8 +1,9 @@
 # Halo Custom Edition and OpenSauce caches in the native builds
 
 Experimental work on branch `experimental/custom-edition-yelo-loading`,
-begun on `bnunu/halo-ce-universal` `main` at `f2fa457f` and merged with
-`main` at `223fa93f` since. It teaches the native builds (Windows, Linux,
+begun on `bnunu/halo-ce-universal` `main` at `f2fa457f`, and merged since
+with that `main` at `223fa93f` and with `cybersecurity/halo-ce-universal`
+`main` at `cd47170f`. It teaches the native builds (Windows, Linux,
 Android) to recognize, load and, with the `game.custom_edition` setting
 on, run Halo Custom Edition caches (`.map`, cache
 version 609), OpenSauce caches (`.yelo`, and `.map` files with an OpenSauce
@@ -483,6 +484,18 @@ upstream's workflow builds it, with link-time and profile-guided
 optimisation) was built too, and ran `hugeass.map` in slayer for 30 seconds
 with the same log and the day structure BSP kept.
 
+Upstream `main` at `cd47170f` then brought internet play, a distributed
+netcode (the default), an updater, extraction of the game data from a disc
+image, deterministic floating-point maths, and native builds that accept
+Xbox cache files of any build. The debug build was built again and run,
+windowed, with the updater, internet play, joining from the clipboard and
+Discord turned off: `bloodgulch.map` in slayer (`custom_edition = true` in
+`config.toml`) and `beavercreek_halo3.yelo` in capture the flag for 30
+seconds, `hugeass.map` in slayer for 40. The logs report the conversions of
+the tables above, the level and HUD were drawn as before, and `hugeass.map`
+kept its day structure BSP. Every run was one machine's local game: no
+network game, with either netcode, was played on a Custom Edition map.
+
 ### Not tested or not observed
 
 - **Playing.** Nobody played: the runs were given no input on purpose, and
@@ -710,27 +723,28 @@ python tools/custom_edition_tag_footprints.py --blocks assets/custom_edition "<X
 
 - **The byte-matched build is unchanged.** All 621 matching objects
   (`ninja all_source`, XDK `CL.exe`) were built from the January sources as
-  they are on this branch and as they are at `f2fa457f`, and again after the
-  merge, as they are on the branch and at `223fa93f`: both times every
-  section and symbol table is identical, and the files differ only in their
-  COFF time stamp, in the 59 objects the changed files made the second
-  build recompile. Upstream's `configure.py` no longer writes the matching
-  graph (the Xbox SDK it needs cannot be redistributed); for this check it
+  they are on this branch and as they are at `f2fa457f`, and again after
+  each merge, as they are on the branch and at `223fa93f`, then at
+  `cd47170f`: each time every section and symbol table is identical, and
+  the files differ only in their COFF time stamp, in the 59 objects the
+  changed files made the second build recompile. Upstream's
+  `configure.py` no longer writes the matching graph (the Xbox SDK it
+  needs cannot be redistributed); for this check it
   was turned on in `tools/project_x86.py` (`SolutionConfig.matching`), in a
   checkout with the SDK's compiler, and turned off again. The game-source
-  changes are all under
-  `#ifdef HALO_LINUX`: `cache/cache_files.c`, `cache/cache_files_windows.c`,
-  `rasterizer/rasterizer_geometry.h` (declarations of the buffer functions),
+  changes are all under `#ifdef HALO_LINUX`: `cache/cache_files.c`,
+  `cache/cache_files_windows.c`, `rasterizer/rasterizer_geometry.h`
+  (declarations of the buffer functions),
   `rasterizer/xbox/rasterizer_xbox_transparent_geometry.c` (the chicago
   extra layers), `cache/physical_memory_map.c` and
   `cache/xbox_texture_cache.c` (the texture cache's size) and
   `game/game_engine.c` (the multiplayer vehicles and their placement) and
-  `objects/object_types.c` (their placement). No matching tool,
-  reference binary or scoring rule was touched.
+  `objects/object_types.c` (their placement). No matching tool, reference
+  binary or scoring rule was touched.
 - The new game units (`custom_edition_*.c`) compile without warnings under
   `-Wall -Wextra` as well as the game's usual flags, which silence warnings.
 - `tools/test_linux_port.py` fails 3 tests on this Windows host, on the
-  merged branch and on upstream's `223fa93f` alike: two from the
-  case-insensitive file system (`<StdDef.h>` and `POPPACK.H` spelt in
+  merged branch and on upstream's `223fa93f` and `cd47170f` alike: two from
+  the case-insensitive file system (`<StdDef.h>` and `POPPACK.H` spelt in
   another case), and a Linux-only UASM rule. Upstream's workflow runs it on
   Linux.
