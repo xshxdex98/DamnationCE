@@ -11,8 +11,7 @@ takes the same keyboard, mouse and gamepad input as the Linux build.
 
 ## Building
 
-Requirements, on Windows, in addition to the XDK headers already needed by
-the matching build (`xbox/include`):
+Requirements, on Windows (no part of the Xbox SDK):
 
 - Visual Studio (or the Build Tools) with the C++ workload: the 32-bit
   (x86) MSVC libraries and a Windows 10/11 SDK. Only the libraries and
@@ -29,22 +28,34 @@ ninja windows
 
 `configure.py` generates the Windows build only when it runs on Windows.
 
+The executable is optimised for the processor of the computer that builds
+it (`-march=native`) and may not start on another; `python configure.py
+--portable` builds one that runs on any x86-64 processor, for sharing. Full
+link-time optimisation makes the final link take a while; see
+[Optimisation](../../README.md#optimisation) for this and for the
+profile-guided optimisation with `pgo/halo_windows.profdata`, which
+`--pgo=train` records again (the instrumented build uses LLVM's profile
+runtime, compiled for 32-bit x86 from its sources, since LLVM for Windows
+ships it for x86-64 only: `pgo/halo_profile_runtime.c`).
+
 ## Running
 
 ```bat
 build\windows\halo.exe
 ```
 
-The game data is found as on Linux: `HALO_DATA_ROOT` if set, else the
+The game data is found as on Linux: `paths.data` in `config.toml` if set, else the
 current directory when it has `maps\`, else `assets\` in the current
 directory or in the repository that holds the executable. It must be the PAL
 data of this build (01.01.14.2342). Saves go to `%APPDATA%\halo`
-(`HALO_SAVE_ROOT` overrides it). Controls and the `HALO_*` settings are
-those of the Linux build (`port/linux/README.md`); like it, the game draws
+(`paths.saves` overrides it). The settings are in `config.toml` next to
+`halo.exe`, written with the defaults on the first run; they and the
+controls are those of the Linux build (`port/linux/README.md`); like it, the game draws
 a frame at every refresh of the display, between its 30 Hz ticks ("Frame
-rate" there). `HALO_STACK_REPORT=<n>`, Windows only, logs where the game's
-main thread is every n seconds, which finds a hang without a debugger (the
-addresses, less the logged image address plus `0x400000`, go to
+rate" there). One setting is Windows's own among the desktop builds:
+`debug.sample_seconds` (`HALO_SAMPLE`) logs where the game's main thread is
+that often, which finds a hang without a debugger (the addresses, less the
+logged image address plus `0x400000`, go to
 `llvm-symbolizer --obj=build\windows\halo.exe`).
 
 ## How it works
@@ -52,17 +63,16 @@ addresses, less the logged image address plus `0x400000`, go to
 The game is 32-bit code for the same reason as on Linux: its data formats
 embed 32-bit pointers. Clang's `i686-pc-windows-msvc` target gives it the
 ABI it was written against natively (MSVC structure layout, 16-bit
-`wchar_t`, `__asm` blocks, calling conventions), so much less adaptation is
+`wchar_t`, calling conventions), so much less adaptation is
 needed than on Linux. The executable is large-address-aware: the Xbox memory
 window the platform layer reserves is at 0x80000000.
 
 ### Headers
 
-- The Xbox SDK and the Windows SDK both have `winnt.h`, `winbase.h`,
-  `dsound.h` and more. Game and platform units must see the Xbox ones, so
-  `tools/windows_sdk_overlay.py` copies the Xbox SDK's headers, minus its C
-  runtime, into `build/windows/sdk_include`, which comes ahead of the Windows
-  SDK. The C runtime is the Windows one (the static UCRT).
+- Game and platform units see the Xbox SDK declarations, not the Windows
+  SDK's of the same names (`winbase.h`, `windef.h`, ...): `port/include/xdk`,
+  which stands in for the Xbox SDK's headers, comes ahead of the Windows SDK.
+  The C runtime is the Windows one (the static UCRT).
 - `include/halo_windows_prefix.h` is force-included into game and platform
   units. It renames the Xbox SDK functions that the platform layer
   implements under Windows names (`CreateFileA`, `ReadFile`, `Sleep`, ...;
@@ -89,7 +99,7 @@ The files named `src/win32_*.c` are compiled against the Windows SDK only:
   start-up;
 - `win32_memory_watch.c` replaces `memory_watch.c` (texture write tracking
   with a vectored exception handler), reports crashes, and makes the
-  `HALO_STACK_REPORT` reports.
+  `debug.sample_seconds` reports.
 
 `port.json` lists the Linux platform files these replace, and the Windows
 libraries linked.

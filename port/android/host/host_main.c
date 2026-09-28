@@ -6,17 +6,21 @@ own thread).
 
 It loads the guest image (the game, built as ILP32 code) from the APK's
 assets, gives it an environment describing where the game data and saves
-live, and runs its main() on this thread, on a stack in guest memory.
+live, and runs its main() on a thread of its own with its stack in guest
+memory (host_thread.c), on which everything here after startup runs; the
+SDL thread waits for it.
 
 Storage (see port/android/README.md): the game data (the directory holding
 maps/) is the app's external files directory,
 /sdcard/Android/data/<package>/files, where the launcher activity copies it
-on first run; saves go to its save/ subdirectory. A halo.env file there can
-set any of the port's environment variables (HALO_*), one NAME=value per
-line.
+on first run; saves go to its save/ subdirectory. The settings,
+config.toml, live there too (port/linux/src/port_config.c, which the game
+reads); this file reads only debug.sample_seconds from it, for the sampler
+that runs here.
 */
 
 #include "host.h"
+#include "tomlc17.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -50,12 +54,6 @@ void host_log(int priority, const char *text)
 	__android_log_write(priority, "halo", text);
 }
 
-static uint64_t message_box_native(uint64_t message, uint64_t b, uint64_t c, uint64_t d)
-{
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Halo", (const char *)(uintptr_t)message, NULL);
-	return 0;
-}
-
 void host_fatal(const char *format, ...)
 {
 	char message[1024];
@@ -65,8 +63,7 @@ void host_fatal(const char *format, ...)
 	vsnprintf(message, sizeof(message), format, arguments);
 	va_end(arguments);
 	__android_log_write(ANDROID_LOG_FATAL, "halo", message);
-	/* on the thread's own stack: the message box calls into Java */
-	HOST_NATIVE(message_box_native, (uintptr_t)message, 0, 0, 0);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Halo", message, NULL);
 	_exit(1);
 }
 
@@ -161,27 +158,27 @@ static void environment_set(struct environment *environment, const char *name, c
 		free(entry);
 }
 
-static void environment_read_file(struct environment *environment, const char *path)
+/* debug.sample_seconds from config.toml, as text for the sampler, or 0 */
+static int config_sample_seconds(const char *path, char *text, size_t size)
 {
-	FILE *file = fopen(path, "r");
-	char line[512];
+	toml_result_t result = toml_parse_file_ex(path);
+	int found = 0;
 
-	if (!file)
-		return;
-	while (fgets(line, sizeof(line), file))
+	if (!result.ok)
+		return 0;
 	{
-		char *equals = strchr(line, '=');
-		char *end = line + strlen(line);
+		toml_datum_t seconds = toml_seek(result.toptab, "debug.sample_seconds");
+		double value = seconds.type == TOML_FP64 ? seconds.u.fp64 :
+			seconds.type == TOML_INT64 ? (double)seconds.u.int64 : 0.0;
 
-		while (end > line && (end[-1] == '\n' || end[-1] == '\r'))
-			*--end = 0;
-		if (line[0] == '#' || !equals)
-			continue;
-		*equals = 0;
-		environment_set(environment, line, equals + 1);
-		host_logf(HOST_LOG_INFO, "halo.env: %s=%s", line, equals + 1);
+		if (value > 0.0)
+		{
+			snprintf(text, size, "%g", value);
+			found = 1;
+		}
 	}
-	fclose(file);
+	toml_free(result);
+	return found;
 }
 
 /* POSIX TZ for the current local offset (the guest's musl has no zone
@@ -234,7 +231,9 @@ static uint32_t make_boot(const struct environment *environment)
 
 /* ---------- main */
 
-int main(int argc, char *argv[])
+#define MAIN_STACK_SIZE (16 * 1024 * 1024)
+
+static void *game_main(void *unused)
 {
 	struct environment environment = { { 0 }, 0 };
 	const char *external;
@@ -244,11 +243,7 @@ int main(int argc, char *argv[])
 	void *image;
 	uint32_t boot;
 
-	(void)argc;
-	(void)argv;
-	host_logf(HOST_LOG_INFO, "Halo for Android starting");
-	host_install_signal_handlers();
-
+	(void)unused;
 	external = SDL_GetAndroidExternalStoragePath();
 	if (!external)
 		host_fatal("Android storage is unavailable: %s", SDL_GetError());
@@ -268,7 +263,7 @@ int main(int argc, char *argv[])
 	environment_set(&environment, "HALO_SAVE_ROOT", save_root);
 	{
 		/* the game renders 480 lines at the display's aspect ratio
-		(landscape); halo.env's HALO_SCREEN_WIDTH=640 restores the Xbox's 4:3 */
+		(landscape) unless display.screen_width says otherwise (d3d8_gl.c) */
 		const SDL_DisplayMode *mode;
 		char width[16];
 
@@ -280,14 +275,13 @@ int main(int argc, char *argv[])
 			int shorter = mode->w > mode->h ? mode->h : mode->w;
 
 			snprintf(width, sizeof(width), "%d", (480 * longer / shorter) & ~1);
-			environment_set(&environment, "HALO_SCREEN_WIDTH", width);
+			environment_set(&environment, "HALO_DISPLAY_WIDTH", width);
 			host_logf(HOST_LOG_INFO, "display %dx%d: rendering %sx480", mode->w, mode->h, width);
 		}
 	}
 	time_zone(zone, sizeof(zone));
 	environment_set(&environment, "TZ", zone);
-	snprintf(path, sizeof(path), "%s/halo.env", data_root);
-	environment_read_file(&environment, path);
+	snprintf(path, sizeof(path), "%s/config.toml", data_root);
 
 	image = SDL_LoadFile("halo_guest.elf", &image_size);
 	if (!image)
@@ -297,16 +291,25 @@ int main(int argc, char *argv[])
 	SDL_free(image);
 
 	{
-		int index;
+		char seconds[32];
 
-		for (index = 0; index < environment.count; index++)
-		{
-			if (!strncmp(environment.entries[index], "HALO_SAMPLE=", 12))
-				host_debug_start_sampler(environment.entries[index] + 12);
-		}
+		if (config_sample_seconds(path, seconds, sizeof(seconds)))
+			host_debug_start_sampler(seconds);
 	}
 	boot = make_boot(&environment);
 	host_logf(HOST_LOG_INFO, "data %s, saves %s", data_root, save_root);
 	host_run_guest_main(boot);
-	return 0;
+}
+
+int main(int argc, char *argv[])
+{
+	(void)argc;
+	(void)argv;
+	host_logf(HOST_LOG_INFO, "Halo for Android starting");
+	host_install_signal_handlers();
+	if (host_native_thread_create(game_main, NULL, MAIN_STACK_SIZE) != 0)
+		host_fatal("cannot start the game thread");
+	/* the game ends the process itself (host_exit) */
+	for (;;)
+		pause();
 }

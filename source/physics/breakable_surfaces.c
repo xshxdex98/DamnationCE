@@ -51,21 +51,6 @@ static void breakable_surface_effect(
 	const struct damage_data *damage_data,
 	long seed_surface_index);
 
-static __inline real_plane3d *breakable_surface_get_plane_from_designator(
-	struct bsp3d const *bsp,
-	long plane_designator,
-	real_plane3d *result)
-{
-	real_plane3d *plane = TAG_BLOCK_GET_ELEMENT(&bsp->planes, plane_designator & LONG_MAX, real_plane3d);
-
-	if (plane_designator & LONG_MIN)
-		plane3d_negate(plane, result);
-	else
-		*result = *plane;
-
-	return result;
-}
-
 /* ---------- globals */
 
 static struct breakable_surface_globals *globals;
@@ -230,6 +215,11 @@ void breakable_surface_damage_area_of_effect(
 
 		if (cutoff_radius > 4.0f)
 		{
+			/* BUG (preserved for exact matching): %d is given a real, which the variadic call
+			 * passes as a double (January 0x536430 +0x73..+0x79 fstp qword [esp]), so the
+			 * message prints the double's low word. Reached for damaging area-of-effect damage
+			 * with a cutoff radius above 4 while breakable surfaces are enabled. A corrected
+			 * build should use %f. Source-policy approval pending (2026-09-27 audit). */
 			error(_error_silent, "WARNING: area of effect breakable surface damage with radius %d", cutoff_radius);
 		}
 
@@ -318,7 +308,7 @@ static void breakable_surface_effect(
 			edge_index = surface->first_edge_index;
 			surface_vertex_index = 0;
 
-			breakable_surface_get_plane_from_designator(&collision_bsp->bsp3d, surface->plane_designator, &surface_plane);
+			bsp3d_get_plane_from_designator(&collision_bsp->bsp3d, surface->plane_designator, &surface_plane);
 			projection_axis = projection_from_vector3d(&surface_plane.n);
 			projection_sign = projection_sign_from_vector3d(&surface_plane.n, projection_axis);
 			
@@ -580,5 +570,3 @@ static void breakable_surface_effect(
 
 	return;
 }
-
-#undef BREAKABLE_SURFACE_POINT_FROM_LINE3D

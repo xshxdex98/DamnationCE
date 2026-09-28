@@ -108,80 +108,80 @@ boolean structure_test_ray2d(
 
 	while (TRUE)
 	{
-		long next_surface_index;
-		byte pathfinding_surface_flags;
-		boolean surface_passable;
+		long next_surface_index = NONE;
 
-		if (distance < surface_result.enter_t)
+		if (distance < surface_result.enter_t &&
+			pathfinding_surfaces[surface_result.enter_surface_index])
 		{
-			pathfinding_surface_flags = pathfinding_surfaces[surface_result.enter_surface_index];
-			if (pathfinding_surface_flags)
+			boolean surface_passable = TRUE;
+
+			if (!ignore_broken_surfaces &&
+				TEST_FLAG(
+					pathfinding_surfaces[surface_result.enter_surface_index],
+					_pathfinding_surface_breakable_bit))
 			{
-				surface_passable = TRUE;
-				if (!ignore_broken_surfaces &&
-					TEST_FLAG(pathfinding_surface_flags, _pathfinding_surface_breakable_bit))
-				{
-					struct collision_surface const *collision_surface;
+				struct collision_surface const *collision_surface;
 
-					collision_surface = TAG_BLOCK_GET_ELEMENT(
-						&bsp->surfaces,
-						surface_result.enter_surface_index,
-						struct collision_surface);
-					match_assert(
-						"c:\\halo\\SOURCE\\ai\\path_structure_bsp.c",
-						105,
-						TEST_FLAG(collision_surface->flags, _collision_surface_breakable_bit));
-					surface_passable = BIT_VECTOR_TEST_FLAG(
-						(long *)breakable_surface_flags,
-						collision_surface->breakable_surface_index);
-				}
+				collision_surface = TAG_BLOCK_GET_ELEMENT(
+					&bsp->surfaces,
+					surface_result.enter_surface_index,
+					struct collision_surface);
+				match_assert(
+					"c:\\halo\\SOURCE\\ai\\path_structure_bsp.c",
+					105,
+					TEST_FLAG(collision_surface->flags, _collision_surface_breakable_bit));
+				surface_passable = BIT_VECTOR_TEST_FLAG(
+					(long *)breakable_surface_flags,
+					collision_surface->breakable_surface_index);
+			}
 
-				if (surface_passable && surface_result.enter_surface_index != NONE)
-				{
-					next_surface_index = surface_result.enter_surface_index;
-					goto continue_from_surface;
-				}
+			if (surface_passable)
+			{
+				next_surface_index = surface_result.enter_surface_index;
 			}
 		}
 
-		if (distance > surface_result.exit_t)
+		if (next_surface_index == NONE &&
+			distance > surface_result.exit_t &&
+			pathfinding_surfaces[surface_result.exit_surface_index])
 		{
-			pathfinding_surface_flags = pathfinding_surfaces[surface_result.exit_surface_index];
-			if (pathfinding_surface_flags)
+			boolean surface_passable = TRUE;
+
+			if (!ignore_broken_surfaces &&
+				TEST_FLAG(
+					pathfinding_surfaces[surface_result.exit_surface_index],
+					_pathfinding_surface_breakable_bit))
 			{
-				surface_passable = TRUE;
-				if (!ignore_broken_surfaces &&
-					TEST_FLAG(pathfinding_surface_flags, _pathfinding_surface_breakable_bit))
-				{
-					struct collision_surface const *collision_surface;
+				struct collision_surface const *collision_surface;
 
-					collision_surface = TAG_BLOCK_GET_ELEMENT(
-						&bsp->surfaces,
-						surface_result.exit_surface_index,
-						struct collision_surface);
-					match_assert(
-						"c:\\halo\\SOURCE\\ai\\path_structure_bsp.c",
-						126,
-						TEST_FLAG(collision_surface->flags, _collision_surface_breakable_bit));
-					surface_passable = BIT_VECTOR_TEST_FLAG(
-						(long *)breakable_surface_flags,
-						collision_surface->breakable_surface_index);
-				}
+				collision_surface = TAG_BLOCK_GET_ELEMENT(
+					&bsp->surfaces,
+					surface_result.exit_surface_index,
+					struct collision_surface);
+				match_assert(
+					"c:\\halo\\SOURCE\\ai\\path_structure_bsp.c",
+					126,
+					TEST_FLAG(collision_surface->flags, _collision_surface_breakable_bit));
+				surface_passable = BIT_VECTOR_TEST_FLAG(
+					(long *)breakable_surface_flags,
+					collision_surface->breakable_surface_index);
+			}
 
-				if (surface_passable && surface_result.exit_surface_index != NONE)
-				{
-					next_surface_index = surface_result.exit_surface_index;
-					goto continue_from_surface;
-				}
+			if (surface_passable)
+			{
+				next_surface_index = surface_result.exit_surface_index;
 			}
 		}
 
-		break;
+		if (next_surface_index == NONE)
+		{
+			break;
+		}
 
-continue_from_surface:
+		surface_index = next_surface_index;
 		collision_surface_test_line2d(
 			bsp,
-			surface_index = next_surface_index,
+			surface_index,
 			_z,
 			TRUE,
 			point,
@@ -641,6 +641,17 @@ boolean structure_test_pill2d(
 			best_result = NULL;
 		}
 
+		/* BUG (preserved for exact matching): a side whose p0 surface index is NONE gets only
+		 * its collision flag, so when p0_surface_index is NONE the copy below returns
+		 * left_result's point, surface_index, edge_index and t unassigned (January 0x452500
+		 * writes only the byte [ebp-0x4c] at +0x189 and copies seven dwords from [ebp-0x4c]
+		 * at +0x24f..+0x25a), and the function returns FALSE. actor_move_try_evasion_vector
+		 * passes the actor's pathfinding surface as p0 and, on a FALSE return, reads
+		 * result->point.z to accept or reject the evasion point; actor_find_pathfinding_location
+		 * leaves that surface NONE for a non-flying actor when no ground surface is found or
+		 * when the actor's vehicle is not a ground vehicle. A runtime occurrence was not
+		 * traced. A corrected build should fill both side results before selecting.
+		 * Source-policy approval pending (2026-09-27 audit). */
 		if (!best_result ||
 			distance_squared2d((real_point2d const *)&best_result->point, p1) < radius * radius)
 		{

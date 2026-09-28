@@ -14,8 +14,8 @@ the byte-matching build, and it shares the Linux port's platform layer
 
 ## Building
 
-Requirements, in addition to what the Linux build needs (the XDK headers in
-`xbox/include`, Python, ninja):
+Requirements, in addition to what the Linux build needs (Python, ninja; no
+part of the Xbox SDK):
 
 - a clang with the `arm64_32` target (any recent LLVM, e.g. the system
   clang; `--android-guest-cc` selects another);
@@ -77,15 +77,19 @@ and a Bluetooth or USB keyboard works as described in the Linux README.
 
 ## Settings
 
-A text file `files/halo.env` (next to `maps`) sets any of the port's
-environment variables, one `NAME=value` per line: the `HALO_*` settings of
-the Linux README (volume, language, renderer debugging), plus:
+The settings are in `files/config.toml`, next to `maps`
+(`adb pull /sdcard/Android/data/com.halo.decomp/files/config.toml`, edit,
+`adb push` it back). The game writes it with the defaults and a comment on
+each setting the first time it runs; delete it to get the defaults back.
+The settings are those of the Linux README's Settings (volume, language,
+vsync, renderer debugging) without the desktop's window, mouse and paths,
+plus:
 
-| Variable | Effect |
+| Setting | Effect |
 | --- | --- |
-| `HALO_SCREEN_WIDTH` | columns of the 480-line picture; by default the display's aspect ratio (1068 on a 20:9 phone), `640` for the Xbox's 4:3 |
-| `HALO_INTERPOLATION` | `0`: the original 30 frames per second instead of one per display refresh (port/linux/README.md, "Frame rate") |
-| `HALO_SAMPLE` | see Debugging |
+| `display.screen_width` | columns of the 480-line picture; `0` (the default) for the display's aspect ratio (1068 on a 20:9 phone), `640` for the Xbox's 4:3 |
+| `display.interpolation` | `false`: the original 30 frames per second instead of one per display refresh (port/linux/README.md, "Frame rate") |
+| `debug.sample_seconds` | see Debugging |
 
 ## Widescreen
 
@@ -95,7 +99,7 @@ viewport's shape with a fixed vertical one, so the 3D view simply widens
 ("Hor+"). The HUD anchors to the title-safe frame, which widens with the
 screen; the menus, the loading bar and the post-game screens are laid out
 for 640 columns and are drawn centered (the vertex shaders shift them,
-`halo_android_ui_offset`); chapter titles keep their place relative to the
+`halo_screen_ui_offset`); chapter titles keep their place relative to the
 screen's sides; letterbox bars and fades cover the whole width. The
 changes are in `rasterizer_xbox.c`, `render.c`, `ui_widget.c`,
 `cinematics.c`, `main.c` and `rasterizer_xbox_screen_effect.c`, under
@@ -148,11 +152,13 @@ creation, the thread pointer and clang's emulated TLS are in
   it claims above the image first because ART keeps its own low-4 GB heaps
   at the bottom of the address space (`host/host_memory.c`);
 - loads the image and fills its import table (`host/host_loader.c`);
-- runs the game's `main` on a stack in guest memory: ILP32 code keeps stack
-  addresses in 32-bit registers (`host/host_thread.c`, `host_switch.S`);
-- runs everything that may call into Java (all of SDL) on the thread's own
-  stack rather than the guest stack it was called on, since ART checks the
-  stack pointer on every JNI call (`HOST_NATIVE`, `host_run_native`);
+- runs the game's `main`, and every guest thread, on a thread whose stack
+  is in guest memory, since ILP32 code keeps stack addresses in 32-bit
+  registers (`host/host_thread.c`); the stack is given to `pthread_create`,
+  so it is also the stack ART knows, and SDL may call into Java from it;
+- hands SDL's audio callback, which SDL calls on its own thread, to a
+  thread with a guest stack that runs the game's callback
+  (`host/host_sdl.c`);
 - serves the guest's calls: system calls, converting the few structures
   whose layout differs and keeping mappings below 4 GB
   (`host/host_syscall.c`); SDL, whose objects become small handles
@@ -180,12 +186,16 @@ targets OpenGL ES 3.0 with optional 3.2 features under `HALO_ANDROID`:
 - the sampler LOD bias (used by water ripples) is applied in the pixel
   shaders;
 - `D3DCOLOR` vertex attributes are byte-swapped on upload;
-- vertex and index data stream into a ring of three buffers, one per frame
-  in flight, with unsynchronized mapped writes: Mali copies a whole buffer
-  for every `glBufferSubData` into one that queued draws still use, and
-  orphaning a large buffer each frame costs as much, which exhausted the
-  phone's memory within seconds;
-- indexed draws are rebased on the CPU instead of using base-vertex draws;
+- vertex and index data that is not drawn from the copy of the contiguous
+  memory (`d3d8_gl.c`, dynamic vertices and colour streams) streams into a
+  ring of three buffers, one per frame in flight, with unsynchronized mapped
+  writes: Mali copies a whole buffer for every `glBufferSubData` into one
+  that queued draws still use, and orphaning a large buffer each frame costs
+  as much, which exhausted the phone's memory within seconds. For the same
+  reason pages enter the copy with unsynchronized writes too (no queued draw
+  reads a page before its first upload);
+- indexed draws use base-vertex draws on ES 3.2, and are rebased on the CPU
+  before that;
 - border clamping, anisotropy and image copies are used where available;
 - visibility tests (lens flare occlusion) count samples with a fragment
   shader atomic counter on OpenGL ES 3.1 and later, as the NV2A did; ES 3.0
@@ -212,16 +222,21 @@ x86 original had no fused multiply-add.
 
 ### Game source changes
 
-The nine x86 inline-assembly sites of the game (x87 float conversions, an
-SSE matrix multiply, the time stamp counter, frame-pointer walks, a naked
-string search) have C equivalents under `#ifdef HALO_ANDROID`, as do the
-seven `#pragma bss_seg(".bss")` lines Darwin's section syntax rejects;
-the stack walker the assertion handler uses follows AArch64 frame records,
-so an assertion's log (`debug.txt`) lists the call sites. The
-XDK's `winnt.h` has three 64-bit shift helpers written in x86 assembly;
-`tools/android_sdk_overlay.py` exposes the SDK to the Android build with a
-copy of that header whose helpers are in C, and the SDK itself is not
-modified. The MSVC build never defines `HALO_ANDROID`.
+The game's x86 inline assembly has C equivalents under `#ifdef HALO_LINUX`,
+shared by all native ports ([port/linux/README.md](../linux/README.md#game-source-edits));
+the Xbox SDK declarations the ports use (`port/include/xdk`) contain none. Under
+`#ifdef HALO_ANDROID` are the seven `#pragma bss_seg(".bss")` lines
+Darwin's section syntax rejects, and a stack walker for the assertion
+handler that follows AArch64 frame records, so an assertion's log
+(`debug.txt`) lists the call sites. The MSVC build defines neither.
+
+The guest's musl uses its generic C math rather than the AArch64 inline
+assembly versions, leaving the choice of instructions to the compiler. The
+only assembly the port itself contains is necessary: the generated import
+stubs through which the guest calls the host (a 32-bit guest cannot hold
+or branch to a 64-bit host address), and the symbol aliases in
+`guest/libc/src_include/features.h` (the Darwin target rejects alias
+attributes).
 
 ## Debugging
 
@@ -230,10 +245,10 @@ modified. The MSVC build never defines `HALO_ANDROID`.
 - A crash in guest code is logged with its registers and frame chain;
   `llvm-symbolizer --obj=build/android/halo_guest.elf <address>` names the
   functions.
-- `HALO_SAMPLE=<seconds>` in `halo.env` logs every guest thread's program
+- `sample_seconds = <seconds>` in `config.toml`'s `[debug]` logs every guest thread's program
   counter and frame chain that often, which finds hangs on devices without
   root.
-- `HALO_GL_DEBUG=1` reports OpenGL ES errors around draws.
+- `gl_debug = true` in `config.toml`'s `[debug]` reports OpenGL ES errors around draws.
 
 ## Known limitations
 

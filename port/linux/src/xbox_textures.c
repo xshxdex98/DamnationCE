@@ -15,6 +15,7 @@ memory_watch.c detects that by write-protecting the pages.
 */
 
 #include "xgpu.h"
+#include "port_config.h"
 #include "../game/cache_file_formats.h"
 
 #include <stdio.h>
@@ -532,7 +533,7 @@ static GLenum compressed_format(unsigned char kind)
 
 /* ---------- upload */
 
-/* HALO_TEXTURE_DUMP=<dir> writes level 0 of every upload as a TGA, read back from GL */
+/* debug.texture_dump_directory writes level 0 of every upload as a TGA, read back from GL */
 static void texture_dump(GLenum target, const struct xgpu_texture_description *description)
 {
 #ifdef HALO_ANDROID
@@ -542,7 +543,8 @@ static void texture_dump(GLenum target, const struct xgpu_texture_description *d
 }
 #else
 	static unsigned long dump_index = 0;
-	const char *directory = getenv("HALO_TEXTURE_DUMP");
+	const char *directory = *config_string("debug.texture_dump_directory") ?
+		config_string("debug.texture_dump_directory") : NULL;
 	unsigned long width = description->width, height = description->height;
 	unsigned char header[18];
 	unsigned char *pixels;
@@ -684,6 +686,7 @@ static void upload(GLuint texture, GLenum target, const struct xgpu_texture_desc
 #endif
 	converted = description->compressed && !decode_compressed ? NULL : malloc(largest * sizeof(unsigned long));
 	glBindTexture(target, texture);
+	xgpu_gl_state_invalidate();
 	/* the channel of the texture each channel is sampled from, set on every
 	upload: a texture object can be reused for different texels */
 	{
@@ -775,6 +778,21 @@ struct texture_entry
 #define MAXIMUM_PALETTE_VARIANTS 8
 
 static struct texture_entry *texture_buckets[TEXTURE_BUCKET_COUNT];
+
+/* Draws mostly bind the textures the draws before them bound. A lookup of a
+texture that is not palettized is remembered with the memory watch serial it
+started at: while no watched page has been written since, and no texture
+has been dropped, the same lookup finds the same current texture. */
+#define RECENT_TEXTURE_COUNT 64
+
+static struct
+{
+	DWORD data, format_word, size_word;
+	struct texture_entry *entry;
+	unsigned long watch_serial;
+	unsigned long drop_serial;
+} recent_textures[RECENT_TEXTURE_COUNT];
+static unsigned long texture_drop_serial = 1;
 static unsigned long texture_frame = 0;
 
 static unsigned long bucket_index(DWORD data, DWORD format_word, DWORD size_word)
@@ -807,6 +825,21 @@ GLuint xgpu_texture_get(const DWORD *resource, const D3DCOLOR *palette, GLenum *
 
 	struct texture_entry *oldest_variant = NULL;
 	unsigned long variant_count = 0;
+	static int no_cache = -1;
+	unsigned long recent = bucket_index(data, format_word, size_word) % RECENT_TEXTURE_COUNT;
+	unsigned long watch_serial = memory_watch_serial();
+
+	if (!palettized && recent_textures[recent].entry && recent_textures[recent].data == data &&
+		recent_textures[recent].format_word == format_word && recent_textures[recent].size_word == size_word &&
+		recent_textures[recent].watch_serial == watch_serial &&
+		recent_textures[recent].drop_serial == texture_drop_serial)
+	{
+		entry = recent_textures[recent].entry;
+		entry->last_used_frame = texture_frame;
+		*target = entry->target;
+		*description = entry->description;
+		return entry->texture;
+	}
 
 	for (entry = *bucket; entry; entry = entry->next)
 	{
@@ -844,8 +877,10 @@ GLuint xgpu_texture_get(const DWORD *resource, const D3DCOLOR *palette, GLenum *
 		*bucket = entry;
 	}
 
+	if (no_cache < 0)
+		no_cache = config_boolean("debug.texture_no_cache");
 	generation = memory_watch_generation(entry->address, entry->size);
-	if (!entry->generation || generation > entry->generation || getenv("HALO_TEXTURE_NO_CACHE"))
+	if (!entry->generation || generation > entry->generation || no_cache)
 	{
 		/* protect first, so a write racing with the upload is noticed */
 		memory_watch_protect(entry->address, entry->size);
@@ -855,7 +890,7 @@ GLuint xgpu_texture_get(const DWORD *resource, const D3DCOLOR *palette, GLenum *
 		if (platform_is_contiguous((void *)entry->address) &&
 			platform_is_contiguous((void *)(entry->address + entry->size - 1)))
 		{
-			if (getenv("HALO_TEXTURE_LOG"))
+			if (config_boolean("debug.texture_log"))
 			{
 				const unsigned char *bytes = (const unsigned char *)entry->address;
 				unsigned long index, ones = 0, zeros = 0;
@@ -875,6 +910,15 @@ GLuint xgpu_texture_get(const DWORD *resource, const D3DCOLOR *palette, GLenum *
 		}
 	}
 	entry->last_used_frame = texture_frame;
+	if (!palettized && !no_cache)
+	{
+		recent_textures[recent].data = data;
+		recent_textures[recent].format_word = format_word;
+		recent_textures[recent].size_word = size_word;
+		recent_textures[recent].entry = entry;
+		recent_textures[recent].watch_serial = watch_serial;
+		recent_textures[recent].drop_serial = texture_drop_serial;
+	}
 	*target = entry->target;
 	*description = entry->description;
 	return entry->texture;
@@ -900,6 +944,8 @@ void xgpu_texture_cache_begin_frame(void)
 			{
 				*link = entry->next;
 				glDeleteTextures(1, &entry->texture);
+				xgpu_gl_state_invalidate();
+				texture_drop_serial++;
 				free(entry);
 			}
 			else

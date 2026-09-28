@@ -21,6 +21,8 @@ struct xgpu_capabilities
 	BOOL border_clamp;
 	BOOL anisotropy;
 	BOOL s3tc;
+	/* ES 3.2: glDrawElementsBaseVertex */
+	BOOL base_vertex;
 	/* ES 3.1 with fragment atomic counters: exact visibility test counts */
 	BOOL atomic_counters;
 	/* "300 es" or "310 es" */
@@ -36,6 +38,14 @@ void host_gl_buffer_write(unsigned int target, unsigned int offset, unsigned int
 void host_gl_fence_frame(unsigned int slot);
 void host_gl_wait_frame(unsigned int slot);
 #endif
+
+/* ---------- GL state
+
+The device caches the GL state it sets for draws (d3d8_gl.c); code that
+changes GL state behind it (binding a texture to upload it, deleting one)
+must call this afterwards. */
+
+void xgpu_gl_state_invalidate(void);
 
 /* ---------- generated source text */
 
@@ -149,6 +159,10 @@ struct xgpu_render_target
 	unsigned long width, height;
 	BOOL depth;
 	GLuint texture;
+	/* pixels per unit of width and height: more than 1 for the screen's
+	targets when the game draws at the display's resolution (d3d8_gl.c) */
+	float scale[2];
+	unsigned long gl_width, gl_height;
 };
 
 /* the GL texture holding a render target with this physical address, or 0 */

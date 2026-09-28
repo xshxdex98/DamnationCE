@@ -8,8 +8,8 @@ verified to leave every MSVC object byte-identical (see below).
 
 ## Building
 
-Requirements, in addition to the XDK headers already needed by the matching
-build (`xbox/include`):
+Requirements (no part of the Xbox SDK: the declarations the game uses from
+it are in `port/include/xdk`):
 
 - clang (any recent version; `--linux-cc` selects another compiler)
 - 32-bit glibc development files (`lib32-glibc` on Arch,
@@ -33,17 +33,17 @@ build/linux/halo
 ```
 
 The game data (the directory holding `maps/`) is found automatically:
-`HALO_DATA_ROOT` if set, else the current directory when it has `maps/`,
-else `assets/`, looked up in the current directory and in the repository
-that holds the executable. It must be the PAL data of this build
+`paths.data` in `config.toml` if set (see Settings), else the current
+directory when it has `maps/`, else `assets/`, looked up in the current
+directory and in the repository that holds the executable. It must be the PAL data of this build
 (01.01.14.2342); the game rejects cache files from any other build. Halo
-Custom Edition and OpenSauce caches are named and refused, unless
-`HALO_CUSTOM_EDITION` is set: the game then loads, converts and runs them,
-experimentally ([docs/custom_edition_caches.md](../../docs/custom_edition_caches.md),
+Custom Edition and OpenSauce caches are named and refused, unless the
+`game.custom_edition` setting is on: the game then loads, converts and runs
+them, experimentally ([docs/custom_edition_caches.md](../../docs/custom_edition_caches.md),
 which also covers checking them with `port/tools/cache_file_report.c`).
 
 `d:\` is the data root. Every other Xbox drive `X:\` is the directory `X/`
-below the save root, which is `HALO_SAVE_ROOT`, else
+below the save root, which is `paths.saves`, else
 `$XDG_DATA_HOME/halo-linux` (`~/.local/share/halo-linux`): `z:\` holds the
 cache partition (about 800 MB of copied map data) and saves, `u:\` user
 data. Directories are created on first use and path components are matched
@@ -65,7 +65,7 @@ further gamepads become controllers 2-4.
 | space, enter | A (jump, accept) |
 | F, backspace, mouse button 4 | B (melee, back) |
 | E, R | X (action, reload) |
-| tab, mouse wheel | Y (switch weapon) |
+| tab, mouse wheel | Y (switch weapon; one scroll of the wheel switches once, and scrolling again after a moment's pause switches again) |
 | Q | white (flashlight) |
 | X | black |
 | left ctrl, C | left stick click (crouch) |
@@ -75,26 +75,46 @@ further gamepads become controllers 2-4.
 | F1 | back |
 | \` | opens the developer console (typing then goes to the console) |
 | F12 | releases or recaptures the mouse |
+| F11 | switches between fullscreen and the window |
+
+In the menus (the main menu, the pause menu and the dialogs), the mouse is released and drives a pointer: the item under it takes the focus, a left click selects it (on a setting with a value, clicking its left or right half steps the value; on the rows of profiles and levels, clicking one moves to it and selects it; on a button in a screen's key, such as "B = Back", presses that button), a right click goes back and the wheel moves through the items. The keyboard keeps working alongside it. When the game resumes the mouse aims again; a button held from the click that resumed it does not fire until pressed again.
 
 ### Settings
 
-| Variable | Effect |
-| --- | --- |
-| `HALO_DATA_ROOT`, `HALO_SAVE_ROOT` | see above |
-| `HALO_WINDOW_SCALE` | initial window size as a multiple of 640x480 (default 2); the window is resizable and the picture is letterboxed |
-| `HALO_MOUSE_SENSITIVITY` | mouse aim multiplier (default 1.0) |
-| `HALO_MOUSE_INVERT` | set to invert vertical mouse aim |
-| `HALO_VOLUME` | master volume (default 1.0) |
-| `HALO_NO_AUDIO` | do not open an audio device (sound still runs, silently) |
-| `HALO_CUSTOM_EDITION` | load and run Halo Custom Edition and OpenSauce maps (experimental; [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md)) instead of refusing them; reserves the address window their tags need |
-| `HALO_LANGUAGE` | dashboard language: `en`, `ja`, `de`, `fr`, `es`, `it` |
-| `HALO_INTERPOLATION=0` | the original 30 frames per second (see Frame rate) |
-| `HALO_NO_VSYNC` | do not wait for the display between frames |
-| `HALO_NET_ADDRESS=<IPv4>` | this machine's system link address: sockets bind to it instead of to every address, other machines see games at it, and traffic to 127.0.0.1 goes to it. Lets several copies of the game play together on one computer, each on its own loopback address (see System link) |
-| `HALO_NET_BROADCAST=<IPv4>,...` | send the game search broadcast to these addresses instead of 255.255.255.255, for example to the loopback address of a host on the same computer |
-| `HALO_SCREENSHOT_DIR`, `HALO_SCREENSHOT_EVERY` | write every Nth presented frame as a BMP |
-| `HALO_GPU_STATS`, `HALO_GPU_TRACE=<frame>` (with `HALO_GPU_TRACE_CONSTANTS`), `HALO_GPU_DUMP_SHADERS=<dir>`, `HALO_TEXTURE_DUMP=<dir>`, `HALO_TEXTURE_LOG`, `HALO_GL_DEBUG`, `HALO_TEXTURE_NO_CACHE` | renderer debugging: per-frame counts, a full state trace of one frame, the generated GLSL, uploaded textures |
-| `HALO_GPU_SKIP_VS=<id>,...`, `HALO_GPU_DEBUG_EXPR=<glsl>`, `HALO_GPU_DEBUG_FLAT`, `HALO_GPU_DEBUG_T0` | renderer debugging: drop draws by vertex shader, or replace every pixel shader's output with a GLSL expression (for example `t0.rgb` or `xD0.rgb`) |
+The settings are in `config.toml` next to the executable
+(`build/linux/config.toml`). The game writes it with the defaults and a
+comment on each setting the first time it runs; delete it to get the
+defaults back. It is read once at start-up, with
+[tomlc17](../third_party/tomlc17) (`src/port_config.c`): a misspelt key or a
+value of the wrong type is reported in the log (with its line) and the
+default used. Each setting can also be set for one run with its environment
+variable, which wins over the file; the tools use those
+(`tools/pgo_train.py`).
+
+| Setting | Default | Environment | Effect |
+| --- | --- | --- | --- |
+| `display.fullscreen` | `true` | `HALO_FULLSCREEN` | fullscreen at the display's resolution and shape: 480 of the game's lines, as wide as the display (the view widens, the HUD keeps to the screen's edges, menus stay centered), each drawn at as many pixels as the display has; `false` opens a window, which draws the Xbox's 640x480. F11 switches between the two |
+| `display.window_scale` | `2` | `HALO_WINDOW_SCALE` | window size as a multiple of 640x480; the window is resizable and the picture is letterboxed |
+| `display.vsync` | `true` | `HALO_NO_VSYNC=1` turns it off | wait for the display between frames |
+| `display.interpolation` | `true` | `HALO_INTERPOLATION` | a frame at every display refresh; `false` the original 30 frames per second (see Frame rate) |
+| `audio.enabled` | `true` | `HALO_NO_AUDIO=1` turns it off | open an audio device (with `false`, sound still runs, silently) |
+| `audio.volume` | `1.0` | `HALO_VOLUME` | master volume |
+| `input.mouse_sensitivity` | `1.0` | `HALO_MOUSE_SENSITIVITY` | mouse aim multiplier |
+| `input.invert_mouse` | `false` | `HALO_MOUSE_INVERT=1` turns it on | invert vertical mouse aim |
+| `game.language` | `""` | `HALO_LANGUAGE` | dashboard language: `ja`, `de`, `fr`, `es`, `it`; empty for English |
+| `game.custom_edition` | `false` | `HALO_CUSTOM_EDITION=1` turns it on | load and run Halo Custom Edition and OpenSauce maps (experimental; [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md)) instead of refusing them; reserves the address window their tags need |
+| `paths.data`, `paths.saves` | `""` | `HALO_DATA_ROOT`, `HALO_SAVE_ROOT` | see Running |
+| `network.address` | `""` | `HALO_NET_ADDRESS` | this machine's system link IPv4 address: sockets bind to it instead of to every address, other machines see games at it, and traffic to 127.0.0.1 goes to it. Lets several copies of the game play together on one computer, each on its own loopback address (see System link) |
+| `network.broadcast` | `""` | `HALO_NET_BROADCAST` | comma-separated IPv4 addresses to send the game's broadcasts (a client's game search, a host's game advertisement) to instead of 255.255.255.255, for example the other copies' loopback addresses on the same computer (listing 255.255.255.255 too still broadcasts). Machines with an address receive no broadcasts, so they find each other only through these lists |
+| `debug.exit_after` | `0.0` | `HALO_EXIT_AFTER` | quit that many seconds after the window opens (profile training, benchmarks) |
+| `debug.screenshot_directory`, `debug.screenshot_every` | `""`, `0` | `HALO_SCREENSHOT_DIR`, `HALO_SCREENSHOT_EVERY` | write every Nth presented frame as a BMP |
+| `debug.gpu_stats`, `debug.gpu_trace_frame` (with `debug.gpu_trace_constants`), `debug.gpu_dump_shaders`, `debug.texture_dump_directory`, `debug.texture_log`, `debug.gl_debug`, `debug.texture_no_cache` | off | `HALO_GPU_STATS`, `HALO_GPU_TRACE`, `HALO_GPU_TRACE_CONSTANTS`, `HALO_GPU_DUMP_SHADERS`, `HALO_TEXTURE_DUMP`, `HALO_TEXTURE_LOG`, `HALO_GL_DEBUG`, `HALO_TEXTURE_NO_CACHE` | renderer debugging: per-frame counts, a full state trace of one frame, the generated GLSL, uploaded textures |
+| `debug.gpu_skip_vertex_shaders`, `debug.gpu_debug_expression`, `debug.gpu_debug_flat`, `debug.gpu_debug_texture0` | off | `HALO_GPU_SKIP_VS`, `HALO_GPU_DEBUG_EXPR`, `HALO_GPU_DEBUG_FLAT`, `HALO_GPU_DEBUG_T0` | renderer debugging: drop draws by vertex shader, or replace every pixel shader's output with a GLSL expression (for example `t0.rgb` or `xD0.rgb`) |
+| `debug.hidden_window`, `debug.null_renderer` | `false` | `HALO_HIDDEN_WINDOW`, `HALO_NULL_RENDERER` | run with the window hidden, or with none |
+
+One environment variable is not the game's: `mesa_glthread=false`, with Mesa
+drivers, makes the GL calls on the game's own thread (the game turns Mesa's
+GL thread on otherwise).
 
 ### Frame rate
 
@@ -111,7 +131,7 @@ camera cuts snap. What is drawn is therefore one tick (33 ms) behind the
 simulation. Particles, contrails and other effects already moved every
 frame. The simulation itself is unchanged: 30 Hz, as on the Xbox.
 
-`HALO_INTERPOLATION=0` restores the original behaviour: one frame per
+`interpolation = false` in `config.toml` restores the original behaviour: one frame per
 tick, throttled to 30 per second.
 
 `display_framerate true` in the developer console shows the frame rate at
@@ -142,9 +162,16 @@ limits: every change is under `#ifdef HALO_LINUX`.
   of upload for a host of 128 machines (measured). The traffic grows with
   the square of the session; a host of 32 machines with one player each
   sends about 8 Mbit/s.
+  A 100 Mbit/s network carries about 100 machines, Wi-Fi far fewer.
 - The host waits up to 60 seconds (15 on the Xbox) for slower machines to
   load the map, and keeps the machines that have loaded connected
-  meanwhile.
+  meanwhile. A machine that stops reading the host's messages for two
+  seconds is dropped from the game rather than holding everyone up.
+- The game state is saved whole, so checkpoints and saved games are 16 MB
+  (3.4 MB on the Xbox), and saves from earlier native builds do not carry
+  over. Garbage (bodies, dropped weapons) is collected as on the Xbox in
+  campaign and games of up to 16 players, and in proportion to the players
+  in larger games.
 - The lobby has panels for the local machine and three remote machines,
   and shows the first three remote machines to join; the others are in
   the game all the same. Finishing places past 16th, which the game's
@@ -153,13 +180,23 @@ limits: every change is under `#ifdef HALO_LINUX`.
 
 Several copies of the game can play together on one computer. The host
 tells machines apart by address, so every copy needs its own loopback
-address, the host included: for example
-`HALO_NET_ADDRESS=127.0.0.200` for the host, and
-`HALO_NET_ADDRESS=127.0.0.201` (`.202`, ...) with
-`HALO_NET_BROADCAST=127.0.0.200` for the others, which then find the
-host's game. Never give a copy 127.0.0.1: every copy reaches its own
-address through 127.0.0.1. Linux and Windows route all of 127.0.0.0/8 to
-the loopback interface without configuration.
+address, the host included. A copy bound to one address receives no
+broadcasts, so each lists the others in `network.broadcast`: the clients
+send their game search to the host, and the host its game advertisement
+to the clients. For a host and two clients (the environment variables
+override `config.toml`'s `[network]` for one run):
+
+```sh
+HALO_NET_ADDRESS=127.0.0.200 HALO_NET_BROADCAST=127.0.0.201,127.0.0.202 build/linux/halo
+HALO_NET_ADDRESS=127.0.0.201 HALO_NET_BROADCAST=127.0.0.200 build/linux/halo
+HALO_NET_ADDRESS=127.0.0.202 HALO_NET_BROADCAST=127.0.0.200 build/linux/halo
+```
+
+Never give a copy 127.0.0.1: every copy reaches its own address through
+127.0.0.1. Linux and Windows route all of 127.0.0.0/8 to the loopback
+interface without configuration. Pinning a machine to a network card's
+address with `network.address` works the same way: every machine must list
+the others' addresses.
 
 `tools/system_link_bots.py` fills a session without a hundred copies of the
 game. It joins a host with lightweight stand-in machines, one player each,
@@ -173,14 +210,14 @@ python tools/system_link_bots.py --host 127.0.0.200 --machines 127 --start
 ```
 
 `--start` starts the game once every stand-in is in the lobby. A host
-without `HALO_NET_ADDRESS` is found at the default `--host 127.0.0.1`.
+without `network.address` is found at the default `--host 127.0.0.1`.
 
 ## What works
 
 | Area | Status |
 | --- | --- |
 | Game code | All 466 C translation units of the game project, unmodified apart from the edits listed below. |
-| Graphics | Direct3D 8 on OpenGL 4.5 core through SDL3 (`src/d3d8_gl.c`): NV2A vertex shader microcode and register combiner pixel shaders are translated to GLSL, Xbox textures (swizzled, linear, DXT, palettized, cube and volume) are decoded and cached with page-protection write tracking, render targets are framebuffer objects, and the picture is presented letterboxed in a resizable window. |
+| Graphics | Direct3D 8 on OpenGL 4.5 core through SDL3 (`src/d3d8_gl.c`): NV2A vertex shader microcode and register combiner pixel shaders are translated to GLSL, Xbox textures (swizzled, linear, DXT, palettized, cube and volume) are decoded and cached with page-protection write tracking, vertex and index buffers are drawn from a copy of the Xbox's contiguous memory in GL buffers kept current the same way, GL state is set only when it changes, render targets are framebuffer objects, and the picture is presented letterboxed in a resizable window. |
 | Sound | Xbox DirectSound over SDL3 audio (`src/dsound_sdl.c`): PCM and Xbox ADPCM streams mixed at 48 kHz with volume, pitch, mix bins, distance rolloff, stereo panning and I3DL2 occlusion/obstruction levels. Doppler, cones and reverb are not modelled. |
 | Input | XInput over SDL3 (`src/xinput_sdl.c`): keyboard and mouse as controller 1, SDL gamepads with rumble, and the debug keyboard for the console. |
 | Files | Win32 file API over POSIX (`CreateFile`, overlapped/`ReadFileEx` with completion APCs, find, attributes, times, free space), MSVC `fopen`/`open`/`_stat` families with Xbox path translation. |
@@ -201,10 +238,11 @@ error (`addr2line -e build/linux/halo <address>` symbolises it).
 ### Compiling MSVC-era code with clang
 
 `tools/linux_build.py` compiles the game with
-`--target=i686-linux-gnu -fms-extensions -fasm-blocks -fshort-wchar
--malign-double -fcommon` and the other flags listed there, which reproduce
-the ABI the source was written for: MSVC inline assembly, 16-bit `wchar_t`,
-8-byte alignment of 64-bit struct members, and C89 tentative definitions.
+`--target=i686-linux-gnu -fms-extensions -fshort-wchar -malign-double
+-fcommon` and the other flags listed there, which reproduce the ABI the
+source was written for: MSVC extensions, 16-bit `wchar_t`, 8-byte alignment
+of 64-bit struct members, and C89 tentative definitions. The game's inline
+assembly is not compiled (see [Game source edits](#game-source-edits)).
 glibc is restricted to ISO C (`__STRICT_ANSI__`) so POSIX names such as
 `random` and `strnlen` cannot collide with the game's own.
 
@@ -217,9 +255,9 @@ editing the game:
 - `include/` shims extend or replace C runtime headers: MSVC names in
   `stdio.h`/`stdlib.h`/`string.h`/`math.h`/`float.h`, a complete 16-bit
   `wchar.h`, `io.h`, `direct.h`, `sys/stat.h` with the MSVC `struct _stat`.
-- The XDK's own headers are used unmodified through a case-insensitive
-  symlink overlay (`tools/linux_sdk_overlay.py`), which leaves out the XDK's
-  C runtime headers in favour of glibc.
+- The Xbox SDK declarations come from `port/include/xdk` (after every other
+  include directory), which stands in for the SDK's headers; the C runtime
+  headers they include are glibc's and the shims above.
 - `tools/linux_msvc_semantics.py` generates a header that forward-declares
   every struct/union tag at file scope (MSVC gives a tag first seen in a
   prototype file scope; C gives it prototype scope) and marks header inline
@@ -240,9 +278,12 @@ definition, since the linker would otherwise resolve it to address 0.
 
 Files named `posix_*.c` talk to glibc and are compiled with the host ABI:
 glibc structures with 64-bit members (`struct stat`, `struct dirent`) have a
-different layout under `-malign-double`. Everything else includes the XDK
-headers through `platform.h`, so each definition is type-checked against the
-SDK prototype it implements, calling convention included.
+different layout under `-malign-double`. With link-time optimisation they
+stay native objects, as LLVM will not optimise code with glibc's 32-bit
+`wchar_t` together with the game's 16-bit one. Everything else includes the
+SDK declarations (`port/include/xdk`) through `platform.h`, so each definition
+is type-checked against the SDK prototype it implements, calling convention
+included.
 `src/halo_linker_common.c` holds weak, zero-filled storage for globals that
 the January link pooled from tentative definitions in units not yet
 reconstructed, plus stand-ins for `fast_ftol_C` and `main_crash`. Being
@@ -289,16 +330,41 @@ prefix header, never by the matching build):
 | `scenario/scenario.c` | the structure BSP connection tables are named directly instead of being addressed at MSVC's offsets from `global_structure_bsp_index` |
 | `rasterizer/xbox/rasterizer_xbox_environment_fog.c` | a local pointer initialized from the file-scope array of the same name; MSVC resolved the name in the initializer to the array, standard C to the new local |
 | `game/player_control.c` | adds direct mouse aim (`halo_linux_mouse_look`) to the facing change of the player on controller 1 |
-| `bitmaps/bitmap_utilities.c`, `math/periodic_functions.c`, `rasterizer/xbox/rasterizer_xbox_transparent_geometry.c` | colour blends and periodic function values are pinned to [0, 1] before the game asserts that they are valid colours: the x87 code can carry them at more than single precision, a hair past 1 (starting a game on Blood Gulch stopped on these asserts) |
+| `sound/game_sound.c` | `compute_sound_obstruction` (a collision test from the camera to each audible sound) runs once per game tick and its result is reused by the tick's other frames: the sound manager refreshes sounds every frame, which on the Xbox was once per tick |
 | `networking/`, `game/` (players, player queues, game engine and its game types), `interface/` (lobby, HUD, motion sensor), `bungie_net/network/`, and the pools in `objects/`, `effects/`, `render/`, `sound/`, `hs/`, `structures/`, `cache/physical_memory_map.c` and `saved games/` | the system link limits and the memory they need (see System link); sizes and offsets that followed from the Xbox limits come from `include/halo_port_limits.h` and `include/halo_port_capacity.h` |
 | `cseries/errors.c` | `debug.txt` stays open between lines (opening and closing it for each line took milliseconds on Windows, and a large session logs thousands of lines at once) |
-| `cache/cache_files.c`, `cache/cache_files_windows.c` | a Halo Custom Edition cache is named and refused instead of being called an old version of this build's caches, and an OpenSauce `.yelo` cache is found when there is no `.map` of that name; with `HALO_CUSTOM_EDITION` set, such a map is loaded, read in place and converted instead, and its structure BSPs are given compressed vertices and buffers as they load (`game/custom_edition_cache.c`, `game/custom_edition_geometry.c`); the cache request slots start zeroed, since reads of such a map never fill them; see [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md), which also covers the loader for these caches, `game/cache_file_formats.c`, and its report tool |
+| `cache/cache_files.c`, `cache/cache_files_windows.c` | a Halo Custom Edition cache is named and refused instead of being called an old version of this build's caches, and an OpenSauce `.yelo` cache is found when there is no `.map` of that name; with `game.custom_edition` on, such a map is loaded, read in place and converted instead, and its structure BSPs are given compressed vertices and buffers as they load (`game/custom_edition_cache.c`, `game/custom_edition_geometry.c`); the cache request slots start zeroed, since reads of such a map never fill them; see [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md), which also covers the loader for these caches, `game/cache_file_formats.c`, and its report tool |
 | `rasterizer/rasterizer_geometry.h` | declares the vertex and triangle buffer functions of `rasterizer_xbox_hardware_geometry.c`, which nothing in January calls, for the Custom Edition geometry conversion |
 | `rasterizer/xbox/rasterizer_xbox_transparent_geometry.c` | the transparent chicago shader's extra layer loop advances: January's never does (a preserved bug), which no Xbox map triggers but Custom Edition maps do, hanging the game |
+| `cache/physical_memory_map.c`, `cache/xbox_texture_cache.c` | the texture cache is twice the Xbox's 22 MB (`include/halo_port_capacity.h`): a frame of a Custom Edition map, made for Halo PC, can draw more textures than the Xbox's holds |
+| `game/game_engine.c` | the multiplayer vehicles' resources are predicted only when the globals have the three every Xbox map has (a Custom Edition map can have fewer), and a Custom Edition map's vehicles are not remapped to the variant's vehicle set (`game/custom_edition_objects.c`) |
+| `objects/object_types.c` | a Custom Edition map's vehicle placements are placed when their multiplayer spawn flags name the game type, as in retail Halo (`game/custom_edition_objects.c`) |
+
+The game's x86 inline assembly is also replaced under `#ifdef HALO_LINUX`,
+which every native port (Linux, Windows, Android) defines, so the compiler
+optimizes and vectorizes that code for each target like any other C:
+
+| File | Assembly | Replacement |
+| --- | --- | --- |
+| `cseries/cseries.h` | x87 `fistp` float to integer conversion (`fast_ftol`) | `__builtin_rint` |
+| `bitmaps/bitmaps_inlines.h` | x87 float to integer conversions | C conversions |
+| `math/matrix_math.c` | SSE `matrix4x3_multiply` | the C loop |
+| `effects/decals.c` | x87 float to integer conversion | C conversion |
+| `cseries/profile.c` | `rdtsc` | `QueryPerformanceCounter`, at its own frequency |
+| `cseries/cseries.c` | naked `stristr` | a C `stristr` |
+| `cseries/stack_walk_windows.c` | reads EBP | `__builtin_frame_address` |
+| `interface/hud_draw.c` | reads the caller's return address from `[ebp+4]` | `__builtin_return_address(1)` |
+| `bink/bink_playback.c` | `int 3` | `__builtin_trap` |
+
+The C runtime's x87 control and status words (`_control87`, `_statusfp`,
+`_clearfp`, `src/msvc_crt.c`) go through `fenv.h`, or the FPCR and FPSR
+builtins on Android.
 
 ## The matching build on a Linux host
 
-The byte-matching build (`ninja`, `ninja all_source`) also works on Linux:
+This fork no longer generates the byte-matching build (see the main
+README), but with it turned back on and the Xbox SDK in `xbox/`, it (`ninja`,
+`ninja all_source`) also works on Linux:
 
 - The nine vendor-assembly CRT units are assembled with UASM (downloaded
   automatically) when no MASM is available. Their code sections are

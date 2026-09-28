@@ -27,12 +27,15 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .linux_build import LINUX_PROFILE, XDK_INCLUDE, compile_launcher, pgo_mode, pgo_profile, profile_use_flags, xdk_headers
 from .ninja_syntax import Writer
 
 PORT_DIR = Path("port/android")
 LINUX_DIR = Path("port/linux")
 BUILD = Path("build/android")
 THIRD_PARTY = BUILD / "third_party"
+# the TOML parser config.toml is read with (port/linux/src/port_config.c)
+TOML_DIR = Path("port/third_party/tomlc17")
 MUSL_VERSION = "1.2.5"
 MUSL_DIR = THIRD_PARTY / f"musl-{MUSL_VERSION}"
 MUSL_URL = f"https://musl.libc.org/releases/musl-{MUSL_VERSION}.tar.gz"
@@ -112,16 +115,9 @@ MUSL_THREAD_PREFIXES = (
 MUSL_EXCLUDE = {
     "env/__stack_chk.c", "env/__init_tls.c", "env/__libc_start_main.c",
     "env/__reset_tls.c", "malloc/oldmalloc", "thread/pthread_create.c",
+    # unused, and its compiler barrier is an inline assembly statement
+    "string/explicit_bzero.c",
 }
-# math functions taken from musl's aarch64 directory (FP register inline
-# assembly only); the ones returning long are left generic, as long is
-# 32-bit here
-MUSL_AARCH64_MATH = [
-    "ceil", "ceilf", "fabs", "fabsf", "floor", "floorf", "fma", "fmaf",
-    "fmax", "fmaxf", "fmin", "fminf", "nearbyint", "nearbyintf", "rint",
-    "rintf", "round", "roundf", "sqrt", "sqrtf", "trunc", "truncf",
-]
-
 # game files that call variadic functions without a prototype in scope, which
 # only works under x86's calling convention (tools/android_abi_check.py)
 VARIADIC_PROTOTYPE_FILES = {
@@ -190,8 +186,6 @@ def _musl_sources() -> List[Path]:
         relative = path.relative_to(src).as_posix()
         if relative in MUSL_EXCLUDE or any(relative.startswith(e + "/") for e in MUSL_EXCLUDE):
             continue
-        if relative.startswith("math/") and path.stem in MUSL_AARCH64_MATH:
-            path = src / "math" / "aarch64" / path.name
         sources.append(path)
     return sources
 
@@ -228,8 +222,6 @@ def generate_android_build(n: Writer, sln: Any) -> None:
     libc_include = guest_dir / "libc_include"
     libc_internal = guest_dir / "libc_internal"
     gl_include = guest_dir / "gl_include"
-    sdk_overlay = BUILD / "sdk_include"
-    sdk_stamp = BUILD / "sdk_include.stamp"
     arch = PORT_DIR / "guest" / "libc" / "arch" / "arm64_32"
     semantics_header = Path("build/linux/halo_msvc_semantics.h")
     platform_semantics_header = Path("build/linux/platform_msvc_semantics.h")
@@ -248,14 +240,6 @@ def generate_android_build(n: Writer, sln: Any) -> None:
     n.variable("android_ndk_bin", str(ndk_bin))
 
     # ---------- generated headers and sources
-
-    n.rule(
-        name="android_sdk_overlay",
-        command=f"{python} tools/android_sdk_overlay.py --output {sdk_overlay} --stamp $out",
-        description="ANDROID SDK HEADERS",
-    )
-    n.build(outputs=sdk_stamp, rule="android_sdk_overlay",
-            implicit=[Path("tools/android_sdk_overlay.py"), Path("tools/linux_sdk_overlay.py")])
 
     alltypes = libc_include / "bits" / "alltypes.h"
     syscall_h = libc_include / "bits" / "syscall.h"
@@ -324,14 +308,14 @@ def generate_android_build(n: Writer, sln: Any) -> None:
             inputs=[host_imports_list, posix_imports, gl_imports],
             implicit=[Path("tools/android_imports.py")])
 
-    generated_headers = [sdk_stamp, alltypes, syscall_h, version_h, gl_stamp,
+    generated_headers = [*xdk_headers(), alltypes, syscall_h, version_h, gl_stamp,
                          semantics_header, platform_semantics_header]
 
     # ---------- guest compilation: C -> Darwin assembly -> ELF assembly -> object
 
     n.rule(
         name="android_guest_cc",
-        command=(f"$android_guest_cc -MMD -MF $out.d $cflags -S $in -o $out.darwin.s && "
+        command=(f"{compile_launcher(sln)}$android_guest_cc -MMD -MF $out.d $cflags -S $in -o $out.darwin.s && "
                  f"{python} tools/android_asm_convert.py $out.darwin.s $out.s && "
                  f"$android_guest_cc --target=aarch64-linux-android -c $out.s -o $out"),
         description="ANDROID CC $out",
@@ -351,6 +335,13 @@ def generate_android_build(n: Writer, sln: Any) -> None:
     guest_abi = " ".join(GUEST_ABI_FLAGS + (["-DHALO_RELEASE"] if getattr(sln, "port_release", False) else []))
     guest_code = " ".join(GUEST_CODE_FLAGS)
     tool_implicit = [Path("tools/android_asm_convert.py"), *generated_headers]
+    # profile-guided optimisation with the Linux build's profile (committed,
+    # or trained by the Linux build with --pgo=train): the game and platform
+    # code are the same, and functions that differ simply go without
+    profile = pgo_profile(sln, LINUX_PROFILE if pgo_mode(sln) == "train" else None, [LINUX_PROFILE], guest_cc)
+    profile_flags = " ".join(profile_use_flags(profile))
+    if profile:
+        tool_implicit.append(profile)
 
     def guest_object(source: Path, cflags: str, prefix: str = "") -> Path:
         obj = obj_dir / prefix / Path(str(source).lstrip("/")).with_suffix(".o")
@@ -399,13 +390,13 @@ def generate_android_build(n: Writer, sln: Any) -> None:
             f"-I{_quote(d)}" for d in options.get("include_dirs") or [] if Path(d) != Path("xbox/include")
         )
         game_cflags = " ".join([
-            guest_abi, guest_code, " ".join(game_flags),
+            guest_abi, guest_code, " ".join(game_flags), profile_flags,
             f"-include {prefix_header}", f"-include {semantics_header}", defines,
             f"-I{LINUX_DIR}/include",
             # the headers of the port's own game units, for the game sources
             # that call them under HALO_LINUX
             f"-iquote {config['game_sources']}",
-            includes, *libc_includes, f"-idirafter {sdk_overlay}",
+            includes, *libc_includes, f"-idirafter {XDK_INCLUDE}",
         ])
         for obj in proj.objects:
             name = str(obj.file_path).replace(os.sep, "/")
@@ -420,17 +411,19 @@ def generate_android_build(n: Writer, sln: Any) -> None:
 
     # the platform layer shared with Linux, and the guest runtime
     platform_cflags = " ".join([
-        guest_abi, guest_code, "-std=gnu11", "-D_GNU_SOURCE", "-DHALO_LINUX_PLATFORM_LAYER", "-w",
+        guest_abi, guest_code, "-std=gnu11", "-D_GNU_SOURCE", "-DHALO_LINUX_PLATFORM_LAYER", "-w", profile_flags,
         f"-include {prefix_header}", f"-include {platform_semantics_header}",
         f"-I{LINUX_DIR}/src", f"-I{LINUX_DIR}/include", f"-I{PORT_DIR}/guest/runtime",
-        f"-I{PORT_DIR}/include", "-Isource -Isource/cseries",
-        f"-I{SDL_DIR}/include", f"-I{gl_include}", *libc_includes, f"-idirafter {sdk_overlay}",
+        f"-I{PORT_DIR}/include", f"-I{TOML_DIR}", "-Isource -Isource/cseries",
+        f"-I{SDL_DIR}/include", f"-I{gl_include}", *libc_includes, f"-idirafter {XDK_INCLUDE}",
     ])
     guest_host_only = {"memory_watch.c"}  # replaced by guest_memory_watch.c
     for source in sorted((LINUX_DIR / "src").glob("*.c")):
         if source.name.startswith("posix_") or source.name in guest_host_only:
             continue
         objects.append(guest_object(source, platform_cflags))
+    # the settings file's parser (port/third_party/tomlc17)
+    objects.append(guest_object(TOML_DIR / "tomlc17.c", platform_cflags))
     runtime_internal_cflags = " ".join([
         guest_abi, "-std=c99", "-ffreestanding", "-fno-common", "-D_XOPEN_SOURCE=700", "-D_GNU_SOURCE",
         f"-I{PORT_DIR}/guest/runtime", f"-I{PORT_DIR}/include",
@@ -499,9 +492,12 @@ def generate_android_build(n: Writer, sln: Any) -> None:
     host_cflags = " ".join([
         "-O2", "-g", "-fPIC", "-Wall", "-Wno-unused-function", "-D_GNU_SOURCE",
         f"-I{PORT_DIR}/include", f"-I{PORT_DIR}/host", f"-I{SDL_DIR}/include", f"-I{LINUX_DIR}/src",
+        f"-I{TOML_DIR}",
     ])
-    host_sources = sorted((PORT_DIR / "host").glob("*.c")) + sorted((PORT_DIR / "host").glob("*.S")) + [
+    host_sources = sorted((PORT_DIR / "host").glob("*.c")) + [
         LINUX_DIR / "src" / "posix_files.c", LINUX_DIR / "src" / "posix_net.c",
+        # the app reads debug.sample_seconds from config.toml (host_main.c)
+        TOML_DIR / "tomlc17.c",
     ]
     for source in host_sources:
         obj = host_obj_dir / (source.name + ".o")

@@ -119,8 +119,8 @@ BOOL platform_is_contiguous(const void *address);
 #define PLATFORM_VIRTUAL_TO_PHYSICAL(address) ((unsigned long)(address) & ~PLATFORM_CONTIGUOUS_BASE)
 
 /* The window Halo Custom Edition tag data are linked to (0x40440000), for
-the experimental Custom Edition map loading: reserved at start-up when
-HALO_CUSTOM_EDITION is set, else NULL (also declared for the game in
+the experimental Custom Edition map loading: reserved at start-up when the
+game.custom_edition setting is on, else NULL (also declared for the game in
 halo_linux_source_fixups.h). */
 void *halo_custom_edition_tag_cache(void);
 /* Which textures hold their channels where Halo PC keeps them, for the same
@@ -139,6 +139,9 @@ void memory_watch_initialize(void);
 void memory_watch_protect(unsigned long address, unsigned long size);
 /* newest write generation of any page in the range */
 unsigned long memory_watch_generation(unsigned long address, unsigned long size);
+/* changes whenever any page's generation does: while it stays the same, so
+do all generations */
+unsigned long memory_watch_serial(void);
 /* call before the host itself (read(), the kernel) writes into the range */
 void memory_watch_prepare_write(void *address, unsigned long size);
 /* the range was remapped or reprotected: treat it as written and unwatched */

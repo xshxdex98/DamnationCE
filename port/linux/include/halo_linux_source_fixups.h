@@ -18,7 +18,7 @@ declaration and call collapses to the one-parameter form here. */
 #define rasterizer_debug_drawing_begin(opaque, ...) (rasterizer_debug_drawing_begin)(opaque)
 
 /* frames between the 30 Hz ticks (port/linux/game/render_interpolation.c);
-the platform layer reads the HALO_INTERPOLATION setting */
+the platform layer reads the display.interpolation setting */
 struct observer_result;
 struct render_camera;
 struct real_matrix4x3;
@@ -35,8 +35,8 @@ void render_interpolation_first_person(short local_player_index, struct real_mat
 	short node_count, struct render_camera const *camera);
 float render_interpolation_game_time_sec(long ticks);
 
-/* the Custom Edition tag cache window, or NULL unless HALO_CUSTOM_EDITION
-reserved it (port/linux/src/xbox_memory.c) */
+/* the Custom Edition tag cache window, or NULL unless the
+game.custom_edition setting reserved it (port/linux/src/xbox_memory.c) */
 void *halo_custom_edition_tag_cache(void);
 /* where Halo PC keeps the channels of the pixels a Custom Edition bitmap
 just arrived at (an enum custom_edition_channel_order,
@@ -53,11 +53,14 @@ struct scenario_object_datum;
 unsigned char custom_edition_vehicles_by_placement(void);
 unsigned char custom_edition_vehicle_placement_allowed(struct scenario_object_datum const *placement);
 
-#ifdef HALO_ANDROID
-/* the screen at the device's aspect ratio (port/linux/src/d3d8_gl.c) */
-long halo_android_screen_width(void);
+/* the width of the screen the game draws, 480 lines tall: the device's or
+the display's shape, or 640 (port/linux/src/d3d8_gl.c) */
+long halo_screen_width(void);
+/* takes up a new width between frames (F11); returns the width */
+long halo_screen_commit(void);
 /* while TRUE, drawing shifts right to center 640-column layouts */
-void halo_android_ui_offset(unsigned char centered);
-#endif
+void halo_screen_ui_offset(unsigned char centered);
+/* the mouse in the menus (source/interface/ui_widget.c) */
+#include "halo_ui_pointer.h"
 
 #endif

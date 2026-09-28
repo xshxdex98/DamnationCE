@@ -71,9 +71,45 @@ parser.add_argument(
     help="compiler for the native Linux build, `ninja linux` (default: clang)",
 )
 parser.add_argument(
+    "--compiler-launcher",
+    metavar="BINARY",
+    help="native ports: a program that runs each compile, such as ccache "
+    "(links and the Android host's few units run the compiler directly)",
+)
+parser.add_argument(
     "--release",
     action="store_true",
     help="release builds of the native ports (Linux, Windows, Android): assertions are not checked",
+)
+parser.add_argument(
+    "--lto",
+    choices=["full", "thin", "off"],
+    default="full",
+    help="link-time optimisation of the native ports (Linux, Windows): full (the default: the whole game "
+    "optimised as one module, the fastest code and the slowest links), thin (parallel and incremental) or off",
+)
+parser.add_argument(
+    "--portable",
+    action="store_true",
+    help="native x86 ports (Linux, Windows): code for any x86-64 processor (SSE2) rather than for this "
+    "machine's (-march=native, the default); use it for builds that run on other computers",
+)
+parser.add_argument(
+    "--pgo",
+    nargs="?",
+    const="train",
+    default="use",
+    choices=["use", "train", "off"],
+    help="profile-guided optimisation of the native ports: use (the default) optimises with the profiles in pgo/, "
+    "train (or plain --pgo) first records this platform's profile if it is missing, by letting an instrumented "
+    "build play every campaign level (needs the game data in assets/ and a display; Linux and Windows), off does "
+    "without",
+)
+parser.add_argument(
+    "--pgo-profile",
+    metavar="PROFDATA",
+    type=Path,
+    help="native ports: profile-guided optimisation from this profile instead",
 )
 parser.add_argument(
     "--android-ndk",
@@ -143,7 +179,12 @@ sln.csplit_path = args.csplit
 sln.ninja_path = args.ninja
 sln.ml_path = args.ml
 sln.linux_cc = args.linux_cc
+sln.compiler_launcher = args.compiler_launcher
 sln.port_release = args.release
+sln.port_lto = args.lto
+sln.port_portable = args.portable
+sln.port_pgo = args.pgo
+sln.port_pgo_profile = args.pgo_profile
 sln.android_ndk = args.android_ndk
 sln.android_guest_cc = args.android_guest_cc
 if not is_windows():
@@ -178,7 +219,7 @@ for build_project in build_config["projects"]:
 # build file generation
 
 if args.mode == "configure":
-    if any(
+    if sln.matching and any(
         obj["status"] != "MISSING" and obj["name"].startswith("libs/d3d8/")
         for project in build_config["projects"]
         for obj in project["objects"]
