@@ -1,9 +1,9 @@
-Halo 1 decomp, ported to Linux
+Halo 1 xbox decomp, ported to Linux, Windows and Android 
 =============
 
-This is a port of the decompilation of Halo: Combat Evolved build 2342 (`cachebeta.exe`, sha256 `4cc87b45f721270392a96f1674ed2b5cd4a7bb4355faeab4531d1cf1884d9520`) to Linux.
+This is a port of the decompilation of Halo: Combat Evolved build 2342 (`cachebeta.exe`, sha256 `4cc87b45f721270392a96f1674ed2b5cd4a7bb4355faeab4531d1cf1884d9520`) to Linux, Windows and Android.
 
-<img width="1284" height="989" alt="Main_Menu_Screenshot" src="https://github.com/user-attachments/assets/92e03c85-0d96-45f5-bdd9-8e69555c996d" />
+<img width="1289" height="995" alt="image" src="https://github.com/user-attachments/assets/0d3ad50f-f8b8-46cf-aef8-e3661da2a7d7" />
 
 This is based on [bnunu](https://github.com/bnunu/halo)'s decompilation project, which itself is a fork of [punpckhdq/halo](https://github.com/punpckhdq/halo).
 
@@ -17,7 +17,9 @@ This is based on [bnunu](https://github.com/bnunu/halo)'s decompilation project,
 
 ## Build instructions
 
-You must source the August 2001 Xbox SDK yourself, and you need Python and [ninja-build](https://ninja-build.org/) on your PATH. Extract the `XDK/xbox` folder from the installer into the repository root such that `xbox/{bin,include}` are valid paths, then run `configure.py` from the repository root.
+You need Python and [ninja-build](https://ninja-build.org/) on your PATH; run `configure.py` from the repository root, then `ninja` with the target below (plain `ninja` builds the one for the computer you are on). No part of the Xbox SDK is needed: the SDK declarations the game uses are in [port/include/xdk](port/include/xdk/README.md).
+
+Every pushed commit is built by GitHub Actions ([.github/workflows/build.yml](.github/workflows/build.yml)): debug and release builds for Linux, Windows and Android, made by `tools/ci_build.py` (which also works locally, e.g. `python tools/ci_build.py linux release`) and kept as artifacts for three days.
 
 ### Native Linux build
 
@@ -37,7 +39,7 @@ They are also optimised with profiles of the game at play, recorded by an instru
 
 With Mesa drivers the Linux build makes its GL calls through Mesa's GL thread (`mesa_glthread`), which takes them off the game's thread.
 
-Frames per second at the opening of a30, uncapped (`HALO_NO_VSYNC=1`), about 510 draws per frame; each row adds one change to the one above (Linux: a laptop with an Intel Core i7-1355U and Iris Xe graphics, median of three runs; Android: a Pixel 9 Pro XL, Tensor G4, median of three runs):
+Frames per second at the opening of a30, uncapped (`vsync = false` in `config.toml`, or `HALO_NO_VSYNC=1`), about 510 draws per frame; each row adds one change to the one above (Linux: a laptop with an Intel Core i7-1355U and Iris Xe graphics, median of three runs; Android: a Pixel 9 Pro XL, Tensor G4, median of three runs):
 
 | Change | Linux | Android |
 | --- | ---: | ---: |
@@ -56,7 +58,7 @@ Unity ("jumbo") builds, which compile many files as one, would give the compiler
 
 ### Frame rate
 
-The native builds draw a frame at every refresh of the display (60, 90, 120, 240 Hz, ...), paced by vsync, while the game still simulates at 30 Hz as on the Xbox: each frame blends the last two ticks. To see the frame rate, open the developer console (the \` key) and enter `display_framerate true`; the frames per second, averaged over half a second, appear at the bottom right of the screen. `HALO_INTERPOLATION=0` restores the original 30 frames per second. See [port/linux/README.md](port/linux/README.md#frame-rate).
+The native builds draw a frame at every refresh of the display (60, 90, 120, 240 Hz, ...), paced by vsync, while the game still simulates at 30 Hz as on the Xbox: each frame blends the last two ticks. To see the frame rate, open the developer console (the \` key) and enter `display_framerate true`; the frames per second, averaged over half a second, appear at the bottom right of the screen. `interpolation = false` in `config.toml` (written next to the executable, or in the data folder on Android, on the first run) restores the original 30 frames per second. See [port/linux/README.md](port/linux/README.md#frame-rate).
 
 ### Native Windows build
 
@@ -68,7 +70,7 @@ The native builds draw a frame at every refresh of the display (60, 90, 120, 240
 
 ### Matching build
 
-The byte-matching build also needs `cachebeta.exe` from the Halo 1 PAL debug build in the repository root. Run `ninja` to compile the game and report progress statistics. On Linux it runs the XDK compiler through [wibo](https://github.com/decompals/wibo) (downloaded automatically), assembles the CRT `.asm` units with UASM when no MASM is available, and builds csplit from source; see [port/linux/README.md](port/linux/README.md#the-matching-build-on-a-linux-host).
+This fork builds only the native ports. The upstream project's byte-matching build, which compiles the game with the Xbox SDK's own compiler and compares it with `cachebeta.exe`, needs the August 2001 Xbox SDK, which cannot be redistributed, so `configure.py` no longer writes it. Its sources, configuration and `#ifdef`s are kept as they are, so that upstream's matching work still merges; `SolutionConfig.matching` in `tools/project_x86.py` turns it back on, for a checkout with the SDK's `XDK/xbox` folder extracted to `xbox/` and `cachebeta.exe` in the repository root. See [port/linux/README.md](port/linux/README.md#the-matching-build-on-a-linux-host) for running it on Linux.
 
 ## Where's all the type information?
 

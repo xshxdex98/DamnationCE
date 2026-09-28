@@ -100,6 +100,9 @@ symbols in this file:
 #include "objects/widgets/widget_types.h"
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox.h"
+#ifdef HALO_LINUX
+#include "main/main.h"
+#endif
 
 /* ---------- constants */
 
@@ -312,23 +315,6 @@ struct rasterizer_lens_flare_submit_parameters
 	long internal__occlusion_pixels;
 };
 
-struct rasterizer_light_submit_parameters
-{
-	struct point_light_definition *definition;
-	real_point3d position;
-	real_vector3d forward;
-	real_vector3d up;
-	real_rgb_color color;
-	real radius;
-};
-
-struct rasterizer_lights_globals
-{
-	long light_count;
-	struct rasterizer_light_submit_parameters lights[MAXIMUM_LIGHTS_PER_WINDOW];
-	long fixed_function_light_count;
-};
-
 typedef char verify_structure_cluster_size[
 	sizeof(struct structure_cluster) == 0x68 ? 1 : -1];
 typedef char verify_structure_cluster_lens_flare_marker_count_offset[
@@ -370,7 +356,6 @@ static struct lens_flare_occlusion_test_results local_lens_flare_occlusion_test_
 static byte local_lens_flare_occlusion_test_results2[MAXIMUM_LENS_FLARE_MARKERS_PER_STRUCTURE+MAXIMUM_QUEUED_LENS_FLARES][MAXIMUM_WINDOWS];
 static struct rasterizer_lens_flare_submit_parameters local_lens_flare_parameters[MAXIMUM_LENS_FLARES_PER_FRAME] = {0};
 static long local_lens_flare_count = 0;
-extern struct rasterizer_lights_globals rasterizer_lights;
 extern struct rasterizer_window_begin_parameters global_window_parameters;
 extern short global_screenshot_count;
 extern short global_screenshot_size;
@@ -665,6 +650,33 @@ void rasterizer_lights_begin_for_new_frame(
 			{
 				byte previous_visibility= *occlusion_test_result;
 
+#ifdef HALO_LINUX
+				/* The native builds draw several frames per tick
+				(port/linux/game/render_interpolation.c): move a quarter of the
+				way up and half of the way down per 30 Hz tick, not per frame,
+				at least a step a frame for as long as a tick's step would still
+				move it. */
+				real frame_ticks= main_get_seconds_elapsed()*TICKS_PER_SECOND;
+
+				if (latest_visibility>previous_visibility)
+				{
+					long difference= latest_visibility - previous_visibility;
+
+					if (difference>=4)
+					{
+						long step= (long)(difference*(1.f - (real)pow(0.75f, frame_ticks)) + 0.5f);
+
+						*occlusion_test_result= (byte)(previous_visibility + PIN(step, 1, difference));
+					}
+				}
+				else if (latest_visibility<previous_visibility)
+				{
+					long difference= previous_visibility - latest_visibility;
+					long step= (long)(difference*(1.f - (real)pow(0.5f, frame_ticks)) + 0.5f);
+
+					*occlusion_test_result= (byte)(previous_visibility - PIN(step, 1, difference));
+				}
+#else
 				if (latest_visibility>previous_visibility)
 				{
 					*occlusion_test_result= (byte)((3*previous_visibility + latest_visibility)/4);
@@ -673,6 +685,7 @@ void rasterizer_lights_begin_for_new_frame(
 				{
 					*occlusion_test_result= (byte)((previous_visibility + latest_visibility)/2);
 				}
+#endif
 			}
 		}
 

@@ -890,6 +890,14 @@ void network_game_server_dispose(
 		struct message_server_graceful_game_exit_pregame message_packet;
 		struct network_message *message;
 
+		/* BUG (preserved for exact matching): message_packet is sent without being
+		 * initialised. January serialises the reused argument slot [ebp+8], which still
+		 * holds the server pointer, so four bytes of a host address go to every machine
+		 * (0x51e250 +0x56 lea ecx,[ebp+8] for this pregame message, +0x3b lea eax,[ebp+8]
+		 * for the postgame one below; tools/test_network_server_dispose_payloads.py). The
+		 * receiving client decodes the field but does not read it. Reached whenever a server
+		 * in the pregame or postgame state is disposed. A corrected build should
+		 * zero-initialise both payloads. Source-policy approval pending (2026-09-27 audit). */
 		message = create_network_game_message(
 			_message_server_graceful_game_exit_pregame,
 			&message_packet,
@@ -2395,6 +2403,34 @@ boolean network_game_server_remove_client_machine_from_game(
 				}
 			}
 
+#ifdef HALO_LINUX
+			{
+				/* players this machine queued to join in game go with it: a
+				machine that joins later may get its index */
+				long waiting_index = 0;
+
+				if (server->queued_player_valid &&
+					server->queued_player.machine_index == client->machine_index)
+				{
+					server->queued_player_valid = FALSE;
+				}
+				while (waiting_index < server->waiting_player_count)
+				{
+					if (server->waiting_players[waiting_index].machine_index == client->machine_index)
+					{
+						server->waiting_player_count--;
+						csmemmove(
+							&server->waiting_players[waiting_index],
+							&server->waiting_players[waiting_index + 1],
+							(server->waiting_player_count - waiting_index) * sizeof(struct network_player));
+					}
+					else
+					{
+						waiting_index++;
+					}
+				}
+			}
+#endif
 			server->client_machines[i].connection = NULL;
 			server->client_machines[i].last_received_update_sequence_number = 0;
 			server->client_machines[i].stall_start_time = 0;
@@ -3451,7 +3487,10 @@ static boolean network_game_server_idle_pregame_tasks(
 				_message_server_pregame_keep_alive,
 				&message_packet,
 				sizeof(message_packet));
-			network_game_server_send_message_to_all_machines(server, message);
+			if (message)
+			{
+				network_game_server_send_message_to_all_machines(server, message);
+			}
 
 			server->time_of_last_keep_alive = now;
 		}

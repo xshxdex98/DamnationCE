@@ -2044,6 +2044,10 @@ static real source_distance_squared(
 			source->location.position.z * source->location.position.z;
 		break;
 
+	/* distance_squared is left unassigned only by this default arm. Not reached unassigned: the
+	 * arm's assertion failure calls system_exit, which does not return in January
+	 * (0x47c960 jumps to halt_and_catch_fire 0x4f21c0, which loops or calls exit).
+	 * Source-policy approval pending (2026-09-27 audit). */
 	default:
 		match_vassert(
 			"c:\\halo\\SOURCE\\sound\\sound_manager.c",
@@ -3816,7 +3820,23 @@ void sound_render(
 				((real)render_time - sound_manager_globals.render_time) *
 				0.029999999f;
 			sound_manager_globals.render_time = render_time;
+#ifdef HALO_LINUX
+			/* Sounds are rendered once a frame, and a frame is well under a
+			tick on the native builds, so the ticks truncate to none and
+			scripted sound class fades would never move: carry the
+			fraction over. */
+			{
+				static real leftover_ticks = 0.f;
+				long ticks;
+
+				leftover_ticks += sound_manager_globals.ticks_elapsed;
+				ticks = (long)leftover_ticks;
+				leftover_ticks -= (real)ticks;
+				sound_classes_update(ticks);
+			}
+#else
 			sound_classes_update((long)sound_manager_globals.ticks_elapsed);
+#endif
 			refresh_listener();
 			process_looping_sounds();
 			refresh_sounds();

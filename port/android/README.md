@@ -14,8 +14,8 @@ the byte-matching build, and it shares the Linux port's platform layer
 
 ## Building
 
-Requirements, in addition to what the Linux build needs (the XDK headers in
-`xbox/include`, Python, ninja):
+Requirements, in addition to what the Linux build needs (Python, ninja; no
+part of the Xbox SDK):
 
 - a clang with the `arm64_32` target (any recent LLVM, e.g. the system
   clang; `--android-guest-cc` selects another);
@@ -77,15 +77,19 @@ and a Bluetooth or USB keyboard works as described in the Linux README.
 
 ## Settings
 
-A text file `files/halo.env` (next to `maps`) sets any of the port's
-environment variables, one `NAME=value` per line: the `HALO_*` settings of
-the Linux README (volume, language, renderer debugging), plus:
+The settings are in `files/config.toml`, next to `maps`
+(`adb pull /sdcard/Android/data/com.halo.decomp/files/config.toml`, edit,
+`adb push` it back). The game writes it with the defaults and a comment on
+each setting the first time it runs; delete it to get the defaults back.
+The settings are those of the Linux README's Settings (volume, language,
+vsync, renderer debugging) without the desktop's window, mouse and paths,
+plus:
 
-| Variable | Effect |
+| Setting | Effect |
 | --- | --- |
-| `HALO_SCREEN_WIDTH` | columns of the 480-line picture; by default the display's aspect ratio (1068 on a 20:9 phone), `640` for the Xbox's 4:3 |
-| `HALO_INTERPOLATION` | `0`: the original 30 frames per second instead of one per display refresh (port/linux/README.md, "Frame rate") |
-| `HALO_SAMPLE` | see Debugging |
+| `display.screen_width` | columns of the 480-line picture; `0` (the default) for the display's aspect ratio (1068 on a 20:9 phone), `640` for the Xbox's 4:3 |
+| `display.interpolation` | `false`: the original 30 frames per second instead of one per display refresh (port/linux/README.md, "Frame rate") |
+| `debug.sample_seconds` | see Debugging |
 
 ## Widescreen
 
@@ -95,7 +99,7 @@ viewport's shape with a fixed vertical one, so the 3D view simply widens
 ("Hor+"). The HUD anchors to the title-safe frame, which widens with the
 screen; the menus, the loading bar and the post-game screens are laid out
 for 640 columns and are drawn centered (the vertex shaders shift them,
-`halo_android_ui_offset`); chapter titles keep their place relative to the
+`halo_screen_ui_offset`); chapter titles keep their place relative to the
 screen's sides; letterbox bars and fades cover the whole width. The
 changes are in `rasterizer_xbox.c`, `render.c`, `ui_widget.c`,
 `cinematics.c`, `main.c` and `rasterizer_xbox_screen_effect.c`, under
@@ -219,8 +223,8 @@ x86 original had no fused multiply-add.
 ### Game source changes
 
 The game's x86 inline assembly has C equivalents under `#ifdef HALO_LINUX`,
-shared by all native ports ([port/linux/README.md](../linux/README.md#game-source-edits)),
-and so has the XDK `winnt.h`'s (`tools/linux_sdk_overlay.py`). Under
+shared by all native ports ([port/linux/README.md](../linux/README.md#game-source-edits));
+the Xbox SDK declarations the ports use (`port/include/xdk`) contain none. Under
 `#ifdef HALO_ANDROID` are the seven `#pragma bss_seg(".bss")` lines
 Darwin's section syntax rejects, and a stack walker for the assertion
 handler that follows AArch64 frame records, so an assertion's log
@@ -241,10 +245,10 @@ attributes).
 - A crash in guest code is logged with its registers and frame chain;
   `llvm-symbolizer --obj=build/android/halo_guest.elf <address>` names the
   functions.
-- `HALO_SAMPLE=<seconds>` in `halo.env` logs every guest thread's program
+- `sample_seconds = <seconds>` in `config.toml`'s `[debug]` logs every guest thread's program
   counter and frame chain that often, which finds hangs on devices without
   root.
-- `HALO_GL_DEBUG=1` reports OpenGL ES errors around draws.
+- `gl_debug = true` in `config.toml`'s `[debug]` reports OpenGL ES errors around draws.
 
 ## Known limitations
 
