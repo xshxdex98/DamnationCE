@@ -499,11 +499,12 @@ with the same log and the day structure BSP kept.
 - **Other maps.** Only the three above were run. The stock maps load and
   convert in the report tool with the same code; the game-side conversion
   was not tried on them.
-- **The Linux and Android builds** were not built (no 32-bit Linux sysroot
-  or SDL3, no Android NDK on the machine used). Their build scripts compile
-  the same units, and upstream's workflow (`.github/workflows/build.yml`)
-  builds both, and the Windows builds, for every pushed commit. Only one
-  release run was made (above).
+- **The Linux and Android builds** were never run: the machine used has
+  no 32-bit Linux sysroot or SDL3 and no Android NDK. Upstream's workflow
+  (`.github/workflows/build.yml`) built them for the merged branch
+  (`0fe82574`), debug and release, with the Windows builds, and ran
+  `tools/test_linux_port.py` on Linux: all passed. Only one release run
+  was made (above).
 - **OpenSauce itself**: mod sets (none available; the file names are an
   assumption, below), protected caches, OpenSauce compression parameters,
   tag symbol or string id storage, and the runtime features `project_yellow`
