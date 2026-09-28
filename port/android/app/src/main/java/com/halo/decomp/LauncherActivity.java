@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Starts the game once its data is in place.
  *
- * The game reads the PAL Xbox data (the folder holding maps/) from the
+ * The game reads the Xbox game data (the folder holding maps/) from the
  * app's external files directory, /sdcard/Android/data/com.halo.decomp/files.
  * If it is missing, this screen lets the player pick the folder with the
  * system file picker and copies it there (or they can push it with adb).
@@ -62,11 +62,28 @@ public class LauncherActivity extends Activity {
         // readable (a directory adb creates there belongs to the shell user)
         if (dataRoot != null)
             new File(dataRoot, "maps").mkdirs();
+        passOnInvite(getIntent());
         if (haveData()) {
             startGame();
             return;
         }
         buildInterface();
+    }
+
+    /**
+     * An internet play invite link the app was opened with: the game
+     * (port/linux/src/p2p.c) picks it up from join_link.txt, whether it is
+     * starting now or already running.
+     */
+    private void passOnInvite(Intent intent) {
+        if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction()) || intent.getData() == null
+            || dataRoot == null)
+            return;
+        try (OutputStream out = new FileOutputStream(new File(dataRoot, "join_link.txt"))) {
+            out.write(intent.getData().toString().getBytes("UTF-8"));
+        } catch (java.io.IOException e) {
+            // the link is lost; the player can copy it instead
+        }
     }
 
     private boolean haveData() {
@@ -98,8 +115,10 @@ public class LauncherActivity extends Activity {
         layout.addView(title);
 
         TextView message = new TextView(this);
-        message.setText("Choose the folder that contains the \"maps\" folder of the PAL game data "
-            + "(build 01.01.14.2342). It is copied into the app's storage (about 1.8 GB).\n\n"
+        message.setText("Choose the folder that contains the \"maps\" folder. To get it, open an Xbox disc "
+            + "image of Halo: Combat Evolved (any version) with the Windows or Linux version of this game, "
+            + "which extracts it, and copy it to this device. It is copied into the app's storage "
+            + "(about 1.8 GB).\n\n"
             + "You can also copy it from a computer:\n"
             + "adb push <folder>/. " + (dataRoot != null ? dataRoot.getAbsolutePath() : "") + "/");
         message.setTextColor(Color.rgb(200, 205, 210));

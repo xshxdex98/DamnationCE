@@ -62,6 +62,11 @@ LINUX_ABI_FLAGS = [
     # the game keeps EBP frames (MSVC /Oy-): get_return_eip and the stack
     # walker follow the frame chain
     "-fno-omit-frame-pointer",
+    # the same floating point results on every port (system link games run
+    # in lockstep, and a machine whose results differ goes out of sync): no
+    # fused multiply-adds, which -march=native and ARM64 would otherwise
+    # emit (port/include/halo_math.h)
+    "-ffp-contract=off",
     OPTIMISATION,
     "-g",
     # glibc's wide string functions assume a 32-bit wchar_t; stop clang from
@@ -90,6 +95,21 @@ GAME_FLAGS = [
 
 # the TOML parser the platform layer reads config.toml with (port_config.c)
 TOML_DIR = Path("port/third_party/tomlc17")
+KCP_DIR = Path("port/third_party/kcp")
+MUSL_MATH_DIR = Path("port/third_party/musl-math")
+# the self-updater's TLS (port/linux/src/posix_update.c)
+MBEDTLS_DIR = Path("port/third_party/mbedtls")
+
+
+def updater_defines(release: bool) -> str:
+    """the self-updater's build (port/linux/src/updater.c): its number, from
+    HALO_BUILD_NUMBER (tools/ci_build.py gives it for builds of main; none
+    elsewhere, which never look for updates), and its configuration"""
+    number = os.environ.get("HALO_BUILD_NUMBER", "0")
+    if not number.isdigit():
+        number = "0"
+    flavor = "release" if release else "debug"
+    return f'-DHALO_BUILD_NUMBER={number} -DHALO_BUILD_FLAVOR=\\"{flavor}\\"'
 
 PLATFORM_FLAGS = [
     "-std=gnu11",
@@ -130,6 +150,17 @@ PROFILE_USE_FLAGS = [
     "-Wno-profile-instr-missing",
     "-Wno-backend-plugin",
 ]
+
+
+def musl_math_sources() -> List[Path]:
+    """musl's maths functions the game uses (port/third_party/musl-math)"""
+    return sorted((MUSL_MATH_DIR / "src").glob("*.c"))
+
+
+def musl_math_cflags(abi: str) -> str:
+    """their flags: the game's ABI, and the headers standing in for musl's"""
+    return " ".join([abi, "-std=gnu11", "-w", f"-I{MUSL_MATH_DIR}/include",
+                     f"-include {MUSL_MATH_DIR}/include/libm.h"])
 
 
 def march_flag(sln: Any) -> str:
@@ -367,18 +398,38 @@ def generate_linux_build(n: Writer, sln: Any) -> None:
             f"-I{platform_dir}",
             f"-I{port_include}",
             f"-I{TOML_DIR}",
+            f"-I{KCP_DIR}",
             "-Isource -Isource/cseries",
             sdk_flags,
         ])
         posix_cflags = " ".join(POSIX_FLAGS + [march_flag(sln), f"-I{platform_dir}"])
+        mbedtls_include = f"-I{MBEDTLS_DIR / 'include'}"
         for source in sorted(platform_dir.glob("*.c")):
-            if source.name.startswith("posix_"):
+            if source.name == "posix_update.c":
+                add_object(source, f"{posix_cflags} {mbedtls_include}", posix=True)
+            elif source.name.startswith("posix_"):
                 add_object(source, posix_cflags, posix=True)
+            elif source.name == "updater.c":
+                add_object(source, f"{platform_cflags} {updater_defines(getattr(sln, 'port_release', False))}")
             else:
                 add_object(source, platform_cflags)
+        # the self-updater's TLS (port/third_party/mbedtls), with the host's
+        # ABI as the posix_*.c that use it (and no loop turned into glibc's
+        # wcslen, which linux_link_check.py rejects: the game's wchar_t is
+        # 16-bit)
+        for source in sorted((MBEDTLS_DIR / "library").glob("*.c")):
+            add_object(source, " ".join(POSIX_FLAGS + [march_flag(sln), mbedtls_include,
+                                                       f"-I{MBEDTLS_DIR / 'library'}", "-fno-builtin-wcslen",
+                                                       "-w"]), posix=True)
         # the settings file's parser (port/third_party/tomlc17), with the
         # platform layer's ABI (its structs hold doubles) and nothing else
         add_object(TOML_DIR / "tomlc17.c", " ".join([abi, "-std=gnu11", "-w"]))
+        # internet play's reliable streams (port/third_party/kcp; p2p.c)
+        add_object(KCP_DIR / "ikcp.c", " ".join([abi, "-std=gnu11", "-w"]))
+        # the game's sin, pow and the rest, the same on every port
+        # (port/include/halo_math.h)
+        for source in musl_math_sources():
+            add_object(source, musl_math_cflags(abi))
 
         n.build(
             outputs=output,
