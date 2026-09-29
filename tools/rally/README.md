@@ -37,3 +37,29 @@ port's `HALO_LINUX` code, so the Xbox build is untouched.
 
 The bots are stand-ins that speak the system link protocol and only run,
 jump and turn: they don't fight.
+
+## Boarding
+
+A variant, run by hand: the bots board the map's dropships.
+`rally_board_patch.py` adds a second dump beside the position dump: every
+vehicle, the entrance of each of its seats and who sits where, in
+`vehicles.txt` in the data folder. `system_link_bots_board.py`, a copy of
+the rally bots, then sends each bot with `--board` to the nearest free
+passenger seat of a Pelican or Phantom and in (a Phantom's bay with a
+jump). The game gives no seat in a vehicle that holds an enemy, so this
+takes a team game with players on both teams, which `--team split` sets up
+from the lobby:
+
+```bat
+python tools\rally\rally_patch.py source\game\players.c
+python tools\rally\rally_board_patch.py source\game\players.c
+ninja windows
+rem start the host: HALO_POSITIONS=1, HALO_NETCODE=lockstep and
+rem HALO_NETWORK_TEST=host:<map>:team_slayer, on a map with dropships
+python tools\rally\system_link_bots_board.py --machines 127 --start --team split --board ^
+  --positions <data>\positions.txt --vehicles <data>\vehicles.txt
+```
+
+The scripts' own descriptions give the details: how close a seat has to
+be, driver seats (left alone unless `--board-drivers`: a dropship with a
+driver lifts off), and how teams are chosen.
