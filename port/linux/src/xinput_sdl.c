@@ -40,6 +40,7 @@ drive the controller.
 #include "sdl_platform.h"
 #include "port_config.h"
 #include "halo_keyboard.h"
+#include "touch_input.h"
 
 #include <SDL3/SDL.h>
 #include <math.h>
@@ -969,6 +970,14 @@ static int controller_port(HANDLE device)
 	return -1;
 }
 
+/**
+ * @brief Reads a controller's state. For port 0 the keyboard, the mouse,
+ * the debug input and the touchscreen are merged into the first gamepad's.
+ * Runs on the game's main thread (touch_input_gamepad relies on it).
+ * @param device the controller's handle
+ * @param state receives the state (cleared first)
+ * @return ERROR_SUCCESS, or ERROR_DEVICE_NOT_CONNECTED for an unknown port
+ */
 DWORD WINAPI XInputGetState(HANDLE device, PXINPUT_STATE state)
 {
 	int port = controller_port(device);
@@ -999,6 +1008,7 @@ DWORD WINAPI XInputGetState(HANDLE device, PXINPUT_STATE state)
 		if (port_gamepad(gamepads, count, 0))
 			sdl_gamepad_state(gamepads[0], &state->Gamepad);
 		test_input_gamepad(&state->Gamepad);
+		touch_input_gamepad(&state->Gamepad);
 		if (abs(state->Gamepad.sThumbRX) > STICK_AIMING_DEFLECTION ||
 			abs(state->Gamepad.sThumbRY) > STICK_AIMING_DEFLECTION)
 		{
