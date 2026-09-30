@@ -30,7 +30,6 @@ in lines of about 20 characters.
 #include "tag_files/files.h"
 #include "tag_files/tag_files.h"
 #include "bitmaps/bitmaps.h"
-#include "bitmaps/bitmaps_internal.h"
 #include "bitmaps/bitmap_group.h"
 #include "cache/cache_files.h"
 #include "bmp_files.h"

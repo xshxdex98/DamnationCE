@@ -458,12 +458,12 @@ symbols in this file:
 #include "cseries/cseries_windows.h"
 #include "cseries/errors.h"
 #include "game/game.h"
-#include "game/game_engine_runtime.h"
+#include "game/game_engine.h"
 #include "game/player_queues_new.h"
 #include "game/players.h"
 #include "interface/ui_widget.h"
 #include "main/main.h"
-#include "math/random_math.h"
+#include "math/real_math.h"
 #include "networking/network_client_manager.h"
 #include "networking/network_connection.h"
 #include "networking/network_game_globals.h"
@@ -647,42 +647,8 @@ struct message_server_game_update
 	byte player_updates[MAXIMUM_NETWORK_PLAYER_COUNT * PLAYER_UPDATE_SIZE];
 };
 
-struct network_machine
-{
-	wchar_t name[32];
-	char machine_index;
-	byte padding41[3];
-};
-
 typedef char network_machine_size_assert[
 	sizeof(struct network_machine) == 0x44 ? 1 : -1];
-
-struct network_game_map
-{
-	long version;
-	char name[NETWORK_GAME_MAP_NAME_LENGTH];
-};
-
-struct network_game
-{
-	wchar_t name[NETWORK_GAME_NAME_LENGTH];
-	struct network_game_map map;
-	struct game_variant variant;
-	byte opaque10C;
-	char minimum_players;
-	byte maximum_players;
-	byte maximum_teams;
-	short difficulty;
-	short machine_count;
-	struct network_machine machines[MAXIMUM_NETWORK_MACHINE_COUNT];
-	short player_count;
-	struct network_player players[MAXIMUM_NETWORK_PLAYER_COUNT];
-	byte opaque426[2];
-	long random_seed;
-	long number_of_games_played;
-	boolean load_ui;
-	byte padding431[3];
-};
 
 struct network_game_server_client_machine
 {
@@ -1325,7 +1291,7 @@ boolean network_game_server_start_network_game(
 	return success;
 }
 
-void network_game_server_send_player_quit_messages_ingame(
+static void network_game_server_send_player_quit_messages_ingame(
 	struct network_game_server *server,
 	struct network_game_server_client_machine *machine)
 {
@@ -1608,11 +1574,11 @@ void network_game_server_all_machines_have_loaded(
 
 	server->state = _network_game_server_state_ingame;
 	server->time_of_first_client_loading_completion = 0;
-	server->game.load_ui = global_network_game_client_get()
-		? network_game_client_get_game(global_network_game_client_get())->load_ui
+	server->game.local_data.game_objects_loaded = global_network_game_client_get()
+		? network_game_client_get_game(global_network_game_client_get())->local_data.game_objects_loaded
 		: FALSE;
 
-	match_vassert(NETWORK_SERVER_MANAGER_FILE, 0x4E0, server->game.load_ui,
+	match_vassert(NETWORK_SERVER_MANAGER_FILE, 0x4E0, server->game.local_data.game_objects_loaded,
 		"local game data not loaded");
 
 	return;
@@ -1948,6 +1914,36 @@ static boolean network_game_server_machine_has_waiting_players(
 	return FALSE;
 }
 
+/* the players in the settings each machine joining the game in progress
+was started with (by machine index): those added and gone while it loaded
+it, whose messages it did not hear, it is told of once it has */
+static struct network_player late_joiner_players[MAXIMUM_NETWORK_MACHINE_COUNT][NUMBEROF(((struct network_game *)0)->players)];
+
+static boolean network_game_server_same_player(
+	struct network_player const *player0,
+	struct network_player const *player1)
+{
+	return player0->machine_index == player1->machine_index &&
+		player0->controller_index == player1->controller_index &&
+		player0->player_list_index == player1->player_list_index;
+}
+
+/* whether the player is valid and one of the players */
+static boolean network_game_server_player_among(
+	struct network_player const *player,
+	struct network_player *players,
+	long count)
+{
+	long index;
+
+	for (index = 0; index < count; index++)
+	{
+		if (network_player_is_valid(&players[index]) && network_game_server_same_player(&players[index], player))
+			return TRUE;
+	}
+	return FALSE;
+}
+
 /* the settings (with the machine's players) and the start, to the machine
 alone, the start with the host's game time */
 static void network_game_server_start_late_joiner(
@@ -1966,6 +1962,11 @@ static void network_game_server_start_late_joiner(
 	{
 		network_event("failed to start machine #%d in the game in progress", machine->machine_index);
 		return;
+	}
+	if (machine->machine_index >= 0 && machine->machine_index < MAXIMUM_NETWORK_MACHINE_COUNT)
+	{
+		csmemcpy(late_joiner_players[machine->machine_index], server->game.players,
+			sizeof(late_joiner_players[machine->machine_index]));
 	}
 	network_event("machine #%d joins the game in progress at game tick #%ld", machine->machine_index,
 		begin_game.unused);
@@ -2006,9 +2007,52 @@ void network_game_server_late_joiner_loaded(
 	struct network_game_server *server,
 	struct network_game_server_client_machine *machine)
 {
-	(void)server;
 	SET_FLAG(machine->flags, _network_client_machine_level_loaded_bit, TRUE);
 	network_event("machine #%d has loaded the game in progress", machine->machine_index);
+	if (machine->machine_index >= 0 && machine->machine_index < MAXIMUM_NETWORK_MACHINE_COUNT)
+	{
+		struct network_player *started = late_joiner_players[machine->machine_index];
+		long count = (long)NUMBEROF(server->game.players);
+		long index;
+
+		/* the players gone while it loaded (first: a player's machine index
+		may be a new machine's, which a player added is told apart from by
+		that only) */
+		for (index = 0; index < count; index++)
+		{
+			struct network_player *player = &started[index];
+			struct message_server_remove_player_ingame remove_player;
+			void *message;
+
+			if (!network_player_is_valid(player) || network_game_server_player_among(player, server->game.players, count))
+				continue;
+			remove_player.player = *player;
+			remove_player.reason = game_time_get();
+			message = create_network_game_message(_message_server_remove_player_ingame, &remove_player,
+				sizeof(remove_player));
+			if (message)
+				network_game_server_send_message_to_client_machine(server, machine, message);
+			network_event("told machine #%d of a player gone while it loaded (machine #%d / controller #%d)",
+				machine->machine_index, player->machine_index, player->controller_index);
+		}
+		/* and those added */
+		for (index = 0; index < count; index++)
+		{
+			struct network_player *player = &server->game.players[index];
+			struct network_player message_packet;
+			void *message;
+
+			if (!network_player_is_valid(player) || network_game_server_player_among(player, started, count))
+				continue;
+			message_packet = *player;
+			message = create_network_game_message(_message_server_add_player_ingame, &message_packet,
+				sizeof(message_packet));
+			if (message)
+				network_game_server_send_message_to_client_machine(server, machine, message);
+			network_event("told machine #%d of a player added while it loaded (machine #%d / controller #%d)",
+				machine->machine_index, player->machine_index, player->controller_index);
+		}
+	}
 }
 
 #endif
@@ -2018,6 +2062,40 @@ void network_game_server_queue_player_for_addition(
 {
 	match_assert(NETWORK_SERVER_MANAGER_FILE, 0x5DE, server && player);
 
+#ifdef HALO_LINUX
+	/* port: a player already in the game or queued to join it, asked for
+	again: the pregame screen asks every frame until its player is in the
+	settings, which a machine joining the game in progress has only once
+	started, and that waits for the machine's queued players (the repeats
+	among them, which fail to join) */
+	{
+		long index;
+
+		if (server->queued_player_valid &&
+			server->queued_player.machine_index == player->machine_index &&
+			server->queued_player.controller_index == player->controller_index)
+		{
+			return;
+		}
+		for (index = 0; index < server->waiting_player_count; index++)
+		{
+			if (server->waiting_players[index].machine_index == player->machine_index &&
+				server->waiting_players[index].controller_index == player->controller_index)
+			{
+				return;
+			}
+		}
+		for (index = 0; index < (long)NUMBEROF(server->game.players); index++)
+		{
+			if (network_player_is_valid(&server->game.players[index]) &&
+				server->game.players[index].machine_index == player->machine_index &&
+				server->game.players[index].controller_index == player->controller_index)
+			{
+				return;
+			}
+		}
+	}
+#endif
 	if (!server->queued_player_valid && network_player_is_valid(player))
 	{
 		csmemcpy(&server->queued_player, player, sizeof(server->queued_player));

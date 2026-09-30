@@ -108,18 +108,17 @@ symbols in this file:
 #include "effects/effects.h"
 #include "effects/particles.h"
 #include "game/game_globals.h"
-#include "game/player_control.h"
 #include "game/players.h"
 #include "items/weapon_datum_flags.h"
 #include "items/weapon_definitions.h"
 #include "items/weapons.h"
-#include "models/model_animations.h"
+#include "models/model_animation_definitions.h"
 #include "models/model_definitions.h"
 #include "models/models.h"
 #include "networking/network_connection.h"
 #include "objects/objects.h"
+#include "rasterizer/rasterizer_model_types.h"
 #include "render/render.h"
-#include "render/render_objects.h"
 #include "saved games/game_state.h"
 #include "scenario/scenario.h"
 #include "sound/game_sound.h"
@@ -230,19 +229,6 @@ struct animation_graph_node
 
 typedef char verify_animation_graph_node_size[
 	sizeof(struct animation_graph_node) == 0x40 ? 1 : -1];
-
-/* TU-private rendering packet layout, also recovered independently by the rendering owners. */
-struct render_model_effect
-{
-	short type;
-	word pad;
-	real intensity;
-	real parameter;
-	long source_object_index;
-	real_point3d source_object_centroid;
-	struct shader const *modifier_shader;
-	byte reserved0020[8];			/* render_animation modifier_animation */
-};
 
 typedef char verify_render_model_effect_size[
 	sizeof(struct render_model_effect) == 0x28 ? 1 : -1];
@@ -386,6 +372,12 @@ static short first_person_weapon_index_from_weapon_index(
 	long weapon_index);
 static short first_person_weapon_index_from_unit_index(
 	long unit_index);
+
+#ifdef HALO_LINUX
+/* port/linux/game/pal_tags.c's */
+boolean pal_tags_first_person_advance(short local_player_index, long graph_index, short animation_index,
+	short frame_index);
+#endif
 
 /* ---------- globals */
 
@@ -1724,6 +1716,18 @@ static void first_person_weapon_update(
 			}
 		}
 
+#ifdef HALO_LINUX
+		/* port: a PAL map's first-person animation at the NTSC maps' pace,
+		which the weapon's timing keeps (port/linux/game/pal_tags.c) */
+		if (!pal_tags_first_person_advance(local_player_index,
+			weapon_definition->weapon.interface_definition.first_person_animations.index,
+			first_person_weapon->state_animation.index, first_person_weapon->state_animation.frame_index))
+		{
+			animation_update_result= _animation_no_key_frame;
+			sound_definition_index= NONE;
+		}
+		else
+#endif
 		animation_update_result= animation_update_render_only(
 			weapon_definition->weapon.interface_definition.first_person_animations.index,
 			&first_person_weapon->state_animation,

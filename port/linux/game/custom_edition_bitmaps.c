@@ -31,8 +31,6 @@ pixels as they arrive, and samples them in this build's order
 #include "errors.h"
 #include "tag_files/tag_groups.h"
 #include "bitmaps/bitmaps.h"
-#include "bitmaps/bitmaps_internal.h"
-#include "bitmaps/bitmaps_mipmap.h"
 #include "bitmaps/bitmap_group.h"
 #include "rasterizer/rasterizer_swizzle.h"
 #include "shaders/shader_definitions.h"
