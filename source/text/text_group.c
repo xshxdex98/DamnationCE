@@ -28,7 +28,6 @@ symbols in this file:
 
 /* ---------- globals */
 
-#ifdef HALO_LINUX
 /* ---------- NTSC maps' missing multiplayer strings */
 
 #include "tag_files/tag_files.h"
@@ -230,7 +229,6 @@ static wchar_t *fallback_string(long tag_index, short string_index)
 	return fallback_multiplayer_game_text_strings[fallback_index];
 }
 
-#endif
 /* ---------- public code */
 
 char *string_list_get_string(long tag_index, short string_index)
@@ -280,12 +278,10 @@ wchar_t *unicode_string_list_get_string(long tag_index, short string_index)
 				result[entry->string.size / sizeof(wchar_t) - 1] = L'\0';
 			}
 		}
-#ifdef HALO_LINUX
 		else if (fallback_string(tag_index, string_index))
 		{
 			result = fallback_string(tag_index, string_index);
 		}
-#endif
 	}
 
 	return result;

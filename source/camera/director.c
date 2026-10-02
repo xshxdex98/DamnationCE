@@ -137,6 +137,9 @@ symbols in this file:
 #include "units/unit_definitions.h"
 #include "units/units.h"
 
+/* network_game_globals.c's */
+boolean network_game_distributed_client(void);
+
 /* ---------- constants */
 
 /* ---------- macros */
@@ -700,7 +703,10 @@ static void director_choose_camera_game(
 		struct player_datum *player = player_get(local_player_get_player_index(local_player_index));
 		boolean use_dead_camera = player->unit_index == NONE && player->statistics.deaths > 0;
 
-		if (key)
+		/* (port: not a client in another's game, the host's rules: a flying
+		camera would see all of it, and one behind the player round its
+		corners) */
+		if (key && !network_game_distributed_client())
 			director_rotate_cameras(local_player_index, director_game_camera_modes, 3);
 		if (!*director_camera_scripted)
 		{
@@ -803,7 +809,6 @@ static boolean director_update_controls(
 		else
 		{
 			byte ticks = gamepad->buttons[_gamepad_analog_button_black];
-#ifdef HALO_LINUX
 			/* The hold count is in 30 Hz ticks (input_xbox.c) and this runs
 			once a frame, several frames a tick: switch once per second held,
 			on the frame the count reaches it. */
@@ -812,9 +817,6 @@ static boolean director_update_controls(
 			switch_camera = ticks > 0 && ticks % TICKS_PER_SECOND == 0 &&
 				ticks != last_ticks[local_player_index];
 			last_ticks[local_player_index] = ticks;
-#else
-			switch_camera = ticks > 0 && ticks % TICKS_PER_SECOND == 0;
-#endif
 		}
 
 		if (director->camera_proc !=

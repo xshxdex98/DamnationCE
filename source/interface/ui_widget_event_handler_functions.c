@@ -908,6 +908,7 @@ symbols in this file:
 /* ---------- headers */
 
 #include "cseries.h"
+#include "cache/cache_files.h"
 #include "bungie_net/network/transport.h"
 #include "bungie_net/network/transport_endpoint_winsock.h"
 #include "cseries/errors.h"
@@ -1043,14 +1044,12 @@ boolean network_game_client_initiate_join_game(
 	void *server,
 	struct network_game_join_descriptor *join_descriptor,
 	struct transport_address *address);
-#ifdef HALO_LINUX
 /* network_client_manager.c's: whether the host's network version is this
 machine's (else the player is told, and it is not joined) */
 boolean network_game_client_advertised_game_compatible(
 	void *client,
 	void const *game,
 	boolean tell);
-#endif
 boolean network_game_client_update_local_player_data(
 	void *client,
 	struct network_player *player);
@@ -1927,12 +1926,10 @@ static boolean network_game_join_game_from_server_list(
 						struct transport_address address = { { { 0 } } };
 						struct network_game_join_descriptor join_descriptor;
 
-#ifdef HALO_LINUX
 						/* (a host of another network version: the player is told
 						which is the newer, and stays in the list) */
 						if (!network_game_client_advertised_game_compatible(global_network_game_client_get(), server, TRUE))
 							return FALSE;
-#endif
 						transport_client_start(server + 0x18, server + 8, server, 0x141E, &address);
 						if (address.address.long_words[0] != zero && address.port != zero)
 						{
@@ -5580,6 +5577,18 @@ static boolean multiplayer_level_select(
 		strtok(automation_map_name, "\n\r \t");
 		map_name = automation_map_name;
 		fclose(file);
+	}
+	/* port: a map of a build this version does not play with others (its
+	objects would not be the same as theirs): said, and the list stays */
+	{
+		char build[0x20];
+
+		if (global_network_game_server_get() && !network_game_is_splitscreen_local() &&
+			!cache_files_map_plays_multiplayer(map_name, build))
+		{
+			cache_files_show_multiplayer_unavailable(map_name, build);
+			return FALSE;
+		}
 	}
 	main_set_multiplayer_map_name(map_name);
 	game_engine_override_map_name(map_name);

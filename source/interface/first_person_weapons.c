@@ -339,6 +339,8 @@ static void first_person_weapon_set_state(
 	boolean reset_sounds);
 static void first_person_weapon_switch_weapons(
 	short local_player_index);
+static void first_person_weapon_forget_weapon(
+	short local_player_index);
 static void first_person_weapon_new_unit(
 	short local_player_index,
 	long unit_index);
@@ -373,11 +375,11 @@ static short first_person_weapon_index_from_weapon_index(
 static short first_person_weapon_index_from_unit_index(
 	long unit_index);
 
-#ifdef HALO_LINUX
 /* port/linux/game/pal_tags.c's */
 boolean pal_tags_first_person_advance(short local_player_index, long graph_index, short animation_index,
 	short frame_index);
-#endif
+real pal_tags_first_person_fraction(short local_player_index, long graph_index, short animation_index,
+	short frame_index);
 
 /* ---------- globals */
 
@@ -728,10 +730,13 @@ void first_person_weapon_message_from_unit(
 	{
 		struct unit_datum *unit= unit_get(unit_index);
 
-		if (unit->unit.current_weapon_index!=NONE)
+		/* port: the weapon in hand's object (not its slot's number, which
+		played some other object's sound) */
+		if (unit->unit.current_weapon_index>=0 &&
+			unit->unit.current_weapon_index<MAXIMUM_WEAPONS_PER_UNIT)
 		{
 			weapon_play_first_person_weapon_sound(
-				unit->unit.current_weapon_index,
+				unit->unit.weapon_object_indices[unit->unit.current_weapon_index],
 				message_type);
 		}
 	}
@@ -768,7 +773,15 @@ struct real_matrix4x3 *first_person_weapon_get_node_matrix(
 		1433,
 		local_player_index>=0 && local_player_index<MAXIMUM_NUMBER_OF_LOCAL_PLAYERS);
 	first_person_weapon = &first_person_weapons[local_player_index];
-	weapon = weapon_get(first_person_weapon->weapon_index);
+	/* port: the last matrices built when the weapon is gone (an effect or
+	particle on it asking before first_person_weapon_forget_weapon stopped
+	them was a NULL weapon, and a crash) */
+	weapon = first_person_weapon->weapon_index!=NONE ? weapon_try_and_get(first_person_weapon->weapon_index) : NULL;
+	if (!weapon)
+	{
+		return &first_person_weapon->node_matrices[
+			node_index>=0 && node_index<MAXIMUM_NODES_PER_ANIMATION ? node_index : 0];
+	}
 	weapon_definition = weapon_definition_get(weapon->definition_index);
 	animation_graph = animation_graph_definition_get(
 		weapon_definition->weapon.interface_definition.first_person_animations.index);
@@ -834,6 +847,19 @@ static void first_person_weapon_set_visibility(
 		}
 		first_person_weapon->visible= visible;
 	}
+
+	return;
+}
+
+/* port: the weapon dropped or deleted: hidden first, which stops the effects
+and particles that follow it in first person (they asked for the weapon's
+nodes, and found none, until the next update switched weapons; the
+renderer shows the next weapon again) */
+static void first_person_weapon_forget_weapon(
+	short local_player_index)
+{
+	first_person_weapon_set_visibility(local_player_index, FALSE);
+	first_person_weapon_get(local_player_index)->weapon_index= NONE;
 
 	return;
 }
@@ -1046,7 +1072,6 @@ static void first_person_weapon_build_node_matrices(
 		euler_angles2d_from_vector3d(&first_person_weapon->render_facing, &render.camera.forward);
 		first_person_weapon->render_position= render.camera.position;
 	}
-#ifdef HALO_LINUX
 	/* The native ports draw several frames per tick. The turning sway
 	(first_person_weapon_update) takes the facing change since the last
 	frame as a tick's worth: move the last facing on once a tick. */
@@ -1060,10 +1085,6 @@ static void first_person_weapon_build_node_matrices(
 			last_render_ticks[local_player_index]= game_time_get();
 		}
 	}
-#else
-	first_person_weapon->last_render_facing= first_person_weapon->render_facing;
-	first_person_weapon->last_render_position= first_person_weapon->render_position;
-#endif
 	euler_angles2d_from_vector3d(&first_person_weapon->render_facing, &render.camera.forward);
 	first_person_weapon->render_position= render.camera.position;
 	first_person_weapon->render_forward= render.camera.forward;
@@ -1077,7 +1098,7 @@ static void first_person_weapon_build_node_matrices(
 			"local player %d, weapon (0x%x), deleted unexpectedly",
 			local_player_index,
 			first_person_weapon->weapon_index);
-		first_person_weapon->weapon_index= NONE;
+		first_person_weapon_forget_weapon(local_player_index);
 	}
 
 	if (first_person_weapon->weapon_index!=NONE)
@@ -1114,6 +1135,38 @@ static void first_person_weapon_build_node_matrices(
 						state_animation,
 						first_person_weapon->state_animation.frame_index,
 						first_person_weapon->node_orientations);
+					/* port: a PAL map's animation, slowed to the NTSC maps' pace,
+					between the frame it is on and the next: held on the frame, it
+					stood still for that tick, and a reload moved in fits and starts
+					(port/linux/game/pal_tags.c) */
+					{
+						real fraction= pal_tags_first_person_fraction(
+							local_player_index,
+							weapon_definition->weapon.interface_definition.first_person_animations.index,
+							first_person_weapon->state_animation.index,
+							first_person_weapon->state_animation.frame_index);
+
+						if (fraction>0.0f &&
+							first_person_weapon->state_animation.frame_index+1<state_animation->frame_count)
+						{
+							real_orientation next_node_orientations[MAXIMUM_NODES_PER_ANIMATION];
+							short node_index;
+
+							animation_get_node_orientations(
+								NULL,
+								state_animation,
+								(short)(first_person_weapon->state_animation.frame_index+1),
+								next_node_orientations);
+							for (node_index= 0; node_index<state_animation->node_count; node_index++)
+							{
+								orientations_interpolate(
+									&first_person_weapon->node_orientations[node_index],
+									&next_node_orientations[node_index],
+									fraction,
+									&first_person_weapon->node_orientations[node_index]);
+							}
+						}
+					}
 				}
 				else
 				{
@@ -1321,14 +1374,12 @@ static void first_person_weapon_build_node_matrices(
 			&render.camera.position,
 			&render.camera.forward,
 			&render.camera.up);
-#ifdef HALO_LINUX
 		/* the pose between the last two ticks (render_interpolation.c) */
 		render_interpolation_first_person(
 			local_player_index,
 			first_person_weapon->node_matrices,
 			(short)animation_graph->nodes.count,
 			&render.camera);
-#endif
 	}
 
 	return;
@@ -1346,7 +1397,7 @@ static void first_person_weapon_message(
 		switch (message_type)
 		{
 			case _first_person_weapon_message_drop:
-				first_person_weapon->weapon_index= NONE;
+				first_person_weapon_forget_weapon(local_player_index);
 				break;
 
 			case _first_person_weapon_message_ready:
@@ -1680,7 +1731,7 @@ static void first_person_weapon_update(
 			"local player %d, weapon (0x%x), deleted unexpectedly",
 			local_player_index,
 			first_person_weapon->weapon_index);
-		first_person_weapon->weapon_index= NONE;
+		first_person_weapon_forget_weapon(local_player_index);
 	}
 
 	if (first_person_weapon->unit_index!=NONE && first_person_weapon->weapon_index!=NONE)
@@ -1716,7 +1767,6 @@ static void first_person_weapon_update(
 			}
 		}
 
-#ifdef HALO_LINUX
 		/* port: a PAL map's first-person animation at the NTSC maps' pace,
 		which the weapon's timing keeps (port/linux/game/pal_tags.c) */
 		if (!pal_tags_first_person_advance(local_player_index,
@@ -1727,7 +1777,6 @@ static void first_person_weapon_update(
 			sound_definition_index= NONE;
 		}
 		else
-#endif
 		animation_update_result= animation_update_render_only(
 			weapon_definition->weapon.interface_definition.first_person_animations.index,
 			&first_person_weapon->state_animation,

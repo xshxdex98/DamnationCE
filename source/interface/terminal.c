@@ -59,9 +59,7 @@ symbols in this file:
 #include "telnet_console.h"
 #include "rasterizer.h"
 #include "render.h"
-#ifdef HALO_LINUX
 #include "main/main.h"
-#endif
 #include "draw_string.h"
 #include "byte_swapping.h"
 #include "tag_groups.h"
@@ -316,6 +314,33 @@ boolean terminal_update(
 	return result;
 }
 
+/* port/linux/src/port_config.c's */
+const char *config_string(const char *name);
+
+boolean terminal_command_running = FALSE;
+
+/* port: whether the console shows a kind of what is logged on screen, as
+config.toml's game.console_log says: "all", everything; "important" (and
+anything else), the serious and the important; "none", the serious only
+(the asserts that stop the game). debug.txt has every line whatever it is */
+boolean terminal_shows(
+	short kind)
+{
+	static short level = NONE;
+
+	if (level == NONE)
+	{
+		const char *setting = config_string("game.console_log");
+
+		level = _terminal_message_important;
+		if (setting && !csstrcmp(setting, "all"))
+			level = _terminal_message_chatter;
+		else if (setting && !csstrcmp(setting, "none"))
+			level = _terminal_message_serious;
+	}
+	return kind <= level;
+}
+
 void terminal_printf(
 	real_argb_color const *color,
 	char const *format,
@@ -436,7 +461,6 @@ static void terminal_update_output(
 {
 	struct output_line_datum *line;
 	long line_index = terminal_globals.newest_output_line_index;
-#ifdef HALO_LINUX
 	/* This runs once a frame, several frames per tick on the native builds
 	(port/linux/game/render_interpolation.c): count the line timers in 30 Hz
 	ticks of real time, as they counted on the Xbox, not in frames. */
@@ -446,7 +470,6 @@ static void terminal_update_output(
 	leftover_ticks += main_get_seconds_elapsed() * TICKS_PER_SECOND;
 	ticks = (long)leftover_ticks;
 	leftover_ticks -= (real)ticks;
-#endif
 
 	while (line_index!=NONE)
 	{
@@ -454,11 +477,7 @@ static void terminal_update_output(
 		
 		line = output_line_get(line_index);
 		older_line_index = line->older_line_index;
-#ifdef HALO_LINUX
 		line->timer += ticks;
-#else
-		line->timer++;
-#endif
 
 		if (line->timer>OUTPUT_TOTAL_TIME)
 		{

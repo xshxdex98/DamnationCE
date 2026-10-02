@@ -633,6 +633,7 @@ struct widget_instance;
 #include "bitmaps/bitmaps.h"
 #include "bink/bink_playback.h"
 #include "bungie_net/common/thread.h"
+#include "cache/cache_files.h"
 #include "cache/texture_cache.h"
 #include "cseries/cseries_windows.h"
 #include "cutscene/cinematics.h"
@@ -2314,6 +2315,25 @@ static struct widget_instance *ui_widget_launch_widget(
 	struct widget_instance *new_widget;
 	short local_player_index;
 
+	/* port: the menus of multiplayer with other machines (not split screen's
+	or co-op's) open only on maps of a build that plays multiplayer with the
+	others (cache_files.c, cache_files_multiplayer_region); otherwise the
+	player is told why, and the menu stays */
+	{
+		static char const multiplayer_menus[] = "ui\\shell\\main_menu\\multiplayer_type_select\\connected\\";
+		char const *name = tag_get_name(new_widget_tag_index);
+		char build[0x20];
+
+		if (name &&
+			!csstrncmp(name, multiplayer_menus, sizeof(multiplayer_menus) - 1) &&
+			!cache_files_multiplayer_region(build))
+		{
+			cache_files_show_multiplayer_unavailable(NULL, build);
+
+			return NULL;
+		}
+	}
+
 	if (TEST_FLAG(definition->flags, _widget_always_use_tag_controller_index_bit))
 	{
 		switch (definition->controller_index)
@@ -2743,14 +2763,12 @@ void ui_widgets_close_all(
 {
 	long local_player_index;
 
-#ifdef HALO_LINUX
 	/* port: the virtual keyboard goes with the widgets (while the widget
 	whose text it edits is still there): left open, it drew on after a game
 	loaded, with the menu map's font, which the game's tags no longer have
 	(a player typing when the host started the game) */
 	if (virtual_keyboard_active())
 		virtual_keyboard_close();
-#endif
 	for (local_player_index = 0;
 		local_player_index < MAXIMUM_NUMBER_OF_LOCAL_PLAYERS;
 		local_player_index++)
@@ -5180,7 +5198,6 @@ static void widget_instance_render_spinner_list(
 	return;
 }
 
-#ifdef HALO_LINUX
 /* ---------- the mouse (desktop builds)
 
 The menus were made for a controller: the d-pad moves the focus through a
@@ -5697,8 +5714,6 @@ static void ui_widgets_process_mouse(
 	return;
 }
 
-#endif
-
 static void widget_instance_render_recursive(
 	struct widget_instance *widget,
 	rectangle2d *clip_rect,
@@ -5738,8 +5753,8 @@ static void widget_instance_render_recursive(
 	}
 	if (!widget->visible)
 		return;
-#ifdef HALO_LINUX
 	ui_mouse_note_target(widget, definition, offset);
+#ifdef HALO_LINUX
 	/* a Custom Edition map's picture, drawn over the whole widget, or the
 	unknown level's frame for a map without one
 	(port/linux/game/custom_edition_maps.c) */
@@ -5771,6 +5786,19 @@ static void widget_instance_render_recursive(
 			&bitmap_group->sequences,
 			0,
 			struct bitmap_group_sequence);
+		/* port: a widget whose bounds cover the whole 640x480 design space (the
+		 * pause menu's dim, for example) should cover the whole screen too,
+		 * not just the centered 640 columns -- same as the fade_to_black
+		 * quad in render_ui_widgets(). Both the bounds and the clip are
+		 * widened symmetrically below, before the centering offset is
+		 * added. Only flat fills (the dims, and the menus' vertical
+		 * gradient, at most 16 texels wide): a picture is drawn texel for
+		 * texel, so wider bounds would shift it (the loading screen). */
+		boolean widen_to_screen =
+			bounds.x0 <= 0 && bounds.y0 <= 0 &&
+			bounds.x1 >= 640 && bounds.y1 >= 480 &&
+			bitmap->width <= 16 &&
+			halo_screen_width() > 640;
 
 		if (use_nifty_plasma_fx)
 		{
@@ -5778,6 +5806,12 @@ static void widget_instance_render_recursive(
 			ui_plasma_effect_color.red = 0.05f;
 			ui_plasma_effect_color.green = 0.05f;
 			ui_plasma_effect_color.blue = 0.05f;
+		}
+		if (widen_to_screen)
+		{
+			long extra = (halo_screen_width() - 640) / 2;
+			bounds.x0 -= (short)extra;
+			bounds.x1 = (short)(640 + extra);
 		}
 		bounds.x0 += offset.x;
 		bounds.x1 += offset.x;
@@ -5791,6 +5825,17 @@ static void widget_instance_render_recursive(
 			clip->x1 += offset.x;
 			clip->y0 += offset.y;
 			clip->y1 += offset.y;
+		}
+		if (widen_to_screen && clip)
+		{
+			/* widen the clip by the same amount (it is offset-shifted but
+			 * still 640-wide at the edges) so the dim is not clipped back
+			 * to the centered columns */
+			long extra = (halo_screen_width() - 640) / 2;
+			if (clip->x0 <= 0)
+				clip->x0 -= (short)extra;
+			if (clip->x1 >= 640)
+				clip->x1 = (short)(clip->x1 + extra);
 		}
 		if (TEST_FLAG(definition->flags, _widget_flash_background_bitmap_bit))
 		{
@@ -6012,20 +6057,16 @@ void render_ui_widgets(
 				bounds.y1 = window_bounds->y1 - window_bounds->y0;
 				offset.x = 0;
 				offset.y = 0;
-#ifdef HALO_LINUX
 				/* the mouse drives the first player's menus */
 				ui_mouse_noting_targets = widget->local_player_index == NONE ||
 					widget->local_player_index == 0;
-#endif
 				widget_instance_render_recursive(
 					widget_globals.active_widgets[widget_index],
 					&bounds,
 					offset,
 					TRUE,
 					FALSE);
-#ifdef HALO_LINUX
 				ui_mouse_noting_targets = FALSE;
-#endif
 				if (widget_globals.debug_show_path)
 				{
 					real_argb_color color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -6055,14 +6096,9 @@ void render_ui_widgets(
 		{
 			real alpha;
 
-#ifdef HALO_LINUX
 			/* the whole screen, around the centered 640 columns */
 			bounds.x0 = (short)(-(halo_screen_width() - 640) / 2);
 			bounds.x1 = (short)(640 + (halo_screen_width() - 640) / 2);
-#else
-			bounds.x0 = 0;
-			bounds.x1 = 640;
-#endif
 			bounds.y0 = 0;
 			bounds.y1 = 480;
 			if (widget_globals.fade_to_black >= 0.95f)
@@ -6928,7 +6964,6 @@ static boolean ui_check_for_pause_game(
 			}
 		}
 	}
-#ifdef HALO_LINUX
 	/* This runs once a frame, several frames per tick on the native builds
 	(port/linux/game/render_interpolation.c): count the lock down in 30 Hz
 	ticks of real time, not in frames. */
@@ -6942,10 +6977,6 @@ static boolean ui_check_for_pause_game(
 		widget_globals.pause_disabled_ticks =
 			FLOOR(widget_globals.pause_disabled_ticks - ticks, 0);
 	}
-#else
-	widget_globals.pause_disabled_ticks =
-		FLOOR(widget_globals.pause_disabled_ticks - 1, 0);
-#endif
 
 	return pause_pressed;
 }
@@ -6965,9 +6996,7 @@ void process_ui_widgets(
 		644,
 		widget_globals.initialized);
 	widget_globals.current_system_milliseconds = system_milliseconds();
-#ifdef HALO_LINUX
 	ui_widgets_process_mouse();
-#endif
 	if (widget_globals.initialization_thread)
 	{
 		if (!thread_has_exited(widget_globals.initialization_thread))

@@ -185,17 +185,10 @@ struct local_network_player
 
 typedef char network_machine_index_offset_assert[
 	offsetof(struct network_machine, machine_index) == 0x40 ? 1 : -1];
-#ifdef HALO_LINUX
 typedef char network_game_players_offset_assert[
 	offsetof(struct network_game, players) == HALO_PORT_NETWORK_GAME_PLAYERS_OFFSET ? 1 : -1];
 typedef char network_game_random_seed_offset_assert[
 	offsetof(struct network_game, random_seed) == HALO_PORT_NETWORK_GAME_RANDOM_SEED_OFFSET ? 1 : -1];
-#else
-typedef char network_game_players_offset_assert[
-	offsetof(struct network_game, players) == 0x226 ? 1 : -1];
-typedef char network_game_random_seed_offset_assert[
-	offsetof(struct network_game, random_seed) == 0x428 ? 1 : -1];
-#endif
 
 struct network_game_globals
 {
@@ -267,23 +260,22 @@ struct player_action_collection_definition player_action_collection_definition =
 
 /* ---------- public code */
 
-#ifdef HALO_LINUX
 /* the distributed netcode's per-tick state (port/linux/game/network_distributed.c),
 unreliably to the host, as the game update is */
 boolean network_distributed_client_send(
 	void *message,
 	word size)
 {
-	struct transport_address remote_server_address;
 	byte buffer[0x1000];
 
 	if (!global_network_game_client || size > sizeof(buffer))
 		return FALSE;
 	/* (the write swaps the header in place) */
 	csmemcpy(buffer, message, size);
-	network_game_client_get_remote_server_address(global_network_game_client, &remote_server_address);
+	/* (no address: the client's datagram socket is connected to the host,
+	network_connection_connect, and sends there) */
 	return network_game_client_write(network_game_client_get_connection(global_network_game_client),
-		(message_header *)buffer, size, &remote_server_address, 0);
+		(message_header *)buffer, size, NULL, 0);
 }
 
 /* ... reliably (a client's players' hits, network_damage.c) */
@@ -301,40 +293,13 @@ boolean network_distributed_client_send_reliably(
 		(message_header *)buffer, size, NULL, 1);
 }
 
-/* the platform layer's (port/linux/src/port_config.c) */
-char const *config_string(char const *name);
-
 /* a client of the distributed netcode, which decides nothing the host does */
 boolean network_game_distributed_client(
 	void)
 {
-	return game_connection() == _game_connection_network_client && network_game_distributed();
+	return game_connection() == _game_connection_network_client;
 }
 
-/* the netcode of the host this machine joined (network_client_manager.c),
-NONE when it hosts, or has joined none: then its own setting */
-static short network_game_host_distributed = NONE;
-
-boolean network_game_distributed(
-	void)
-{
-	static short distributed = NONE;
-
-	if (network_game_host_distributed != NONE)
-		return network_game_host_distributed;
-	if (distributed == NONE)
-		distributed = !csstrcmp(config_string("network.netcode"), "distributed");
-	return distributed;
-}
-
-/* joining a host: its netcode is this machine's until it hosts */
-void network_game_follow_host_netcode(
-	boolean distributed)
-{
-	network_game_host_distributed = distributed ? TRUE : FALSE;
-}
-
-#endif
 boolean network_game_is_active(
 	void)
 {
@@ -615,7 +580,6 @@ boolean network_game_client_end_frame(
 {
 	struct player_action_collection update;
 	struct client_game_update_message message;
-	struct transport_address remote_server_address;
 	unsigned long now;
 	message_header *encoded_message;
 	boolean result;
@@ -630,29 +594,20 @@ boolean network_game_client_end_frame(
 	{
 		now = system_milliseconds();
 		if (now-bss_004566dc.last_client_update_time >=
-#ifdef HALO_LINUX
-			/* (the distributed netcode's input goes in its own message,
-			network_distributed.c: this one only says the client is there) */
-			(network_game_distributed() ? 100 : 0x10) &&
-#else
-			0x10 &&
-#endif
+			/* (the input goes in its own message, network_distributed.c,
+			and the host takes its own players' at each tick,
+			update_server_next_update: this one only says the client is
+			there) */
+			100 &&
 			network_game_client_server_has_started_game(global_network_game_client))
 		{
-			network_game_client_get_next_update_number(global_network_game_client);
-			network_game_client_get_game(global_network_game_client);
 			update_client_build_client_update(&update);
 
-			if (network_client_get_oos(global_network_game_client))
-			{
-				message.update_number = network_game_client_get_next_update_number(
-					global_network_game_client) | 0x80000000;
-			}
-			else
-			{
-				message.update_number = network_game_client_get_next_update_number(
-					global_network_game_client) & 0x7FFFFFFF;
-			}
+			/* (the out-of-sync bit, 0x80000000, went with the lockstep
+			netcode: a machine no longer simulates others' players to go
+			out of sync with) */
+			message.update_number = network_game_client_get_next_update_number(
+				global_network_game_client) & 0x7FFFFFFF;
 
 			csmemcpy(message.update, &update, sizeof(update));
 			message.local_player_count = local_player_count();
@@ -662,14 +617,13 @@ boolean network_game_client_end_frame(
 				sizeof(message));
 			if (encoded_message)
 			{
-				network_game_client_get_remote_server_address(
-					global_network_game_client,
-					&remote_server_address);
+				/* (to the host: the client's datagram socket is connected to
+				it, network_distributed_client_send) */
 				result = network_game_client_write(
 					network_game_client_get_connection(global_network_game_client),
 					encoded_message,
 					GET_MESSAGE_SIZE(*encoded_message),
-					&remote_server_address,
+					NULL,
 					0);
 				if (!result)
 					network_event("failed to send a game update to the server");
@@ -722,11 +676,7 @@ void network_game_client_local_player_quit(
 		{
 			player_index = 0;
 			player_machine_index = &game->players[0].machine_index;
-#ifdef HALO_LINUX
 			while (player_index < HALO_PORT_MAXIMUM_NETWORK_PLAYERS)
-#else
-			while (player_index < 16)
-#endif
 			{
 				test_player = (struct network_player *)(
 					player_machine_index - offsetof(struct network_player, machine_index));
@@ -820,10 +770,6 @@ boolean create_global_network_game_server(
 		0xD6,
 		global_network_game_server==NULL);
 
-#ifdef HALO_LINUX
-	/* (hosting: this machine's own netcode setting) */
-	network_game_host_distributed = NONE;
-#endif
 	global_network_game_server = network_game_server_create();
 	if (global_network_game_server)
 	{

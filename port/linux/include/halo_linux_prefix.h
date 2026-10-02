@@ -14,6 +14,9 @@ byte-for-byte identical to what the matching MSVC build compiles.
 #error the Linux port targets 32-bit x86: game data structures assume 32-bit pointers
 #endif
 
+/* this fork's Custom Edition changes to the game sources are each under
+#ifdef HALO_LINUX, as all the port's changes were until upstream removed
+those conditions and this definition (4adc3a87) */
 #define HALO_LINUX 1
 
 /* ---------- XDK architecture selection (MSVC predefines these) */
