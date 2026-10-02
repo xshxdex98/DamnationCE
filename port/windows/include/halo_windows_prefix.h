@@ -16,9 +16,6 @@ much shorter than the Linux build's halo_linux_prefix.h.
 #endif
 
 #define HALO_WINDOWS 1
-/* this fork's Custom Edition changes to the game sources are each under
-#ifdef HALO_LINUX (port/linux/include/halo_linux_prefix.h) */
-#define HALO_LINUX 1
 
 /* ---------- XDK architecture selection */
 

@@ -8,9 +8,11 @@ Android) to recognize, load and, with the `game.custom_edition` setting
 on, run Halo Custom Edition caches (`.map`, cache
 version 609), OpenSauce caches (`.yelo`, and `.map` files with an OpenSauce
 header), with the Custom Edition resource maps `bitmaps.map`, `sounds.map`
-and `loc.map`. The byte-matching build is not affected: every game-source
-change is under `#ifdef HALO_LINUX`, and all 621 matching objects compile to
-the same bytes as before (see [Verification](#verification)).
+and `loc.map`. The changes to the game sources are not under a condition,
+as the rest of the port's are not: upstream has no byte-matching build and
+no `HALO_LINUX` conditions since `4adc3a87`. While it had them, all 621
+matching objects compiled to the same bytes as before (see
+[Verification](#verification)).
 
 **Three maps have been seen running, with limits.** In the Windows debug
 build, the stock Custom Edition `bloodgulch.map`, the OpenSauce
@@ -325,13 +327,13 @@ changed:
   oddball, the native builds place the vehicles whose spawn flags name the
   game type by default and let any vehicle be created
   (`custom_edition_objects.c`, called from `object_types_place_all` and
-  `game_engine_remap_vehicle` under `HALO_LINUX`); a variant without
+  `game_engine_remap_vehicle`); a variant without
   vehicles still has none, and race, which has no spawn flag, keeps this
   build's rule.
 - **Multiplayer vehicles.** `game_engine_predict_resources` takes the three
   multiplayer vehicles Xbox globals always have; `beavercreek_halo3.yelo` has
   one, and oddball stopped on it. With fewer than three, the native builds
-  predict none (`game_engine.c`, under `HALO_LINUX`).
+  predict none (`game_engine.c`).
 
 ## Tested
 
@@ -773,7 +775,7 @@ python tools/custom_edition_tag_footprints.py --blocks assets/custom_edition "<X
 
 ## Verification
 
-- **The byte-matched build is unchanged.** All 621 matching objects
+- **The byte-matched build was unchanged, while upstream had one.** All 621 matching objects
   (`ninja all_source`, XDK `CL.exe`) were built from the January sources as
   they are on this branch and as they are at `f2fa457f`, and again after
   each merge, as they are on the branch and at `223fa93f`, then at
@@ -784,7 +786,9 @@ python tools/custom_edition_tag_footprints.py --blocks assets/custom_edition "<X
   needs cannot be redistributed); for this check it
   was turned on in `tools/project_x86.py` (`SolutionConfig.matching`), in a
   checkout with the SDK's compiler, and turned off again. The game-source
-  changes are all under `#ifdef HALO_LINUX`: `cache/cache_files.c`,
+  changes were all under `#ifdef HALO_LINUX` then; upstream removed the
+  matching build and those conditions (`4adc3a87`), and the changes have
+  no condition since: `cache/cache_files.c`,
   `cache/cache_files_windows.c`, `rasterizer/rasterizer_geometry.h`
   (declarations of the buffer functions),
   `rasterizer/xbox/rasterizer_xbox_transparent_geometry.c` (the chicago

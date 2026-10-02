@@ -354,9 +354,7 @@ symbols in this file:
 #include "saved games/playlist_profile.h"
 #include "text/text_group.h"
 #include "text/unicode.h"
-#ifdef HALO_LINUX
 #include "custom_edition_maps.h"
-#endif
 
 /* ---------- constants */
 
@@ -1110,9 +1108,7 @@ static void server_list_menu_update(
 				struct network_advertised_game *server = displayed_servers[
 					widget->parameters.list.selected_list_item_index];
 				char const *map_name;
-#ifdef HALO_LINUX
 				short custom_edition_map_index;
-#endif
 
 				switch (server->engine_type)
 				{
@@ -1171,14 +1167,12 @@ static void server_list_menu_update(
 					map_bitmap->animation.current_frame_index = 12;
 				else
 					map_bitmap->animation.current_frame_index = 13;
-#ifdef HALO_LINUX
 				/* a Custom Edition map this machine has shows its own name and
 				picture, even one whose name holds an Xbox level's
 				(port/linux/game/custom_edition_maps.c) */
 				custom_edition_map_index = custom_edition_maps_display_index(map_name);
 				if (custom_edition_map_index != NONE)
 					map_bitmap->animation.current_frame_index = custom_edition_map_index;
-#endif
 
 				open_closed_text->parameters.text_box.string_list_index =
 					(server->open == TRUE) ? 20 : 21;
@@ -2413,9 +2407,7 @@ static void multiplayer_game_set_text_box_for_map_name(
 {
 	struct network_game *game;
 	char const *map_name;
-#ifdef HALO_LINUX
 	short custom_edition_map_index;
-#endif
 
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
@@ -2427,7 +2419,6 @@ static void multiplayer_game_set_text_box_for_map_name(
 	if (game)
 	{
 		map_name = game->map.name;
-#ifdef HALO_LINUX
 		/* a Custom Edition map shows its own name, even one whose name holds
 		an Xbox level's (port/linux/game/custom_edition_maps.c) */
 		custom_edition_map_index = custom_edition_maps_display_index(map_name);
@@ -2436,7 +2427,6 @@ static void multiplayer_game_set_text_box_for_map_name(
 			widget->parameters.text_box.string_list_index = custom_edition_map_index;
 			return;
 		}
-#endif
 	if (strstr(map_name, "beavercreek"))
 	{
 		widget->parameters.text_box.string_list_index = 0;
@@ -2694,9 +2684,7 @@ static void multiplayer_game_set_bitmap_for_map(
 {
 	struct network_game *game;
 	char const *map_name;
-#ifdef HALO_LINUX
 	short custom_edition_map_index;
-#endif
 
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
@@ -2708,7 +2696,6 @@ static void multiplayer_game_set_bitmap_for_map(
 	if (game)
 	{
 		map_name = game->map.name;
-#ifdef HALO_LINUX
 		/* a Custom Edition map shows its own picture, even one whose name
 		holds an Xbox level's (port/linux/game/custom_edition_maps.c) */
 		custom_edition_map_index = custom_edition_maps_display_index(map_name);
@@ -2717,7 +2704,6 @@ static void multiplayer_game_set_bitmap_for_map(
 			widget->animation.current_frame_index = custom_edition_map_index;
 			return;
 		}
-#endif
 	if (strstr(map_name, "beavercreek"))
 	{
 		widget->animation.current_frame_index = 0;
@@ -4261,12 +4247,10 @@ static void mp_level_select_list_update_displayed_items(
 				_ui_widget_type_text_box,
 			"expected a text box widget for the list item's third child (map description)");
 
-#ifdef HALO_LINUX
 		/* the Custom Edition maps after the Xbox levels show their own names,
 		pictures and descriptions (port/linux/game/custom_edition_maps.c) */
 		displayed_item_indices[item_index] = custom_edition_maps_level_display_index(
 			(short)displayed_item_indices[item_index]);
-#endif
 		map_name->parameters.text_box.string_list_index =
 			(short)displayed_item_indices[item_index];
 		map_bitmap->animation.current_frame_index =

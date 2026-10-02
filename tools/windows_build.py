@@ -334,7 +334,7 @@ def generate_windows_build(n: Writer, sln: Any) -> None:
             f"-I{crt_include}",
             f"-I{PORT_DIR / 'include'}",
             # the headers of the port's own game units (port/linux/game), for
-            # the game sources that call them under HALO_LINUX
+            # the game sources that call them
             f"-iquote {Path(linux_config['game_sources'])}",
             game_defines_and_includes(linux_config),
             # the Xbox SDK declarations (port/include/xdk) come before the

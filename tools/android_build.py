@@ -388,7 +388,7 @@ def generate_android_build(n: Writer, sln: Any) -> None:
         f"-include {prefix_header}", f"-include {semantics_header}",
         f"-I{LINUX_DIR}/include",
         # the headers of the port's own game units, for the game sources
-        # that call them under HALO_LINUX
+        # that call them
         f"-iquote {config['game_sources']}",
         game_defines_and_includes(config), *libc_includes, f"-idirafter {XDK_INCLUDE}",
     ])
