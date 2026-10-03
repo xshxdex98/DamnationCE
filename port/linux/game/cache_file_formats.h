@@ -442,6 +442,12 @@ void *custom_edition_cache_data_get(
 
 /* The path of tag `tag_index` of a tag cache custom_edition_cache_load
 filled, for messages. */
+/* Whether the tag of absolute index `tag_index` was read from a resource map
+(bitmaps.map and the like): Halo PC's own, as it shipped. */
+int custom_edition_cache_tag_in_resource_map(
+	uint8_t *tag_cache,
+	uint32_t loaded_bytes,
+	int32_t tag_index);
 char const *custom_edition_cache_tag_name(
 	uint8_t *tag_cache,
 	uint32_t loaded_bytes,

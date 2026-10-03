@@ -2553,6 +2553,21 @@ char const *custom_edition_cache_tag_name(
 	return (char const *)tag_cache + name_offset;
 }
 
+int custom_edition_cache_tag_in_resource_map(
+	uint8_t *tag_cache,
+	uint32_t loaded_bytes,
+	int32_t tag_index)
+{
+	struct load_state state;
+	uint8_t const *instances;
+	int32_t tag_count;
+
+	loaded_state_initialize(&state, tag_cache, loaded_bytes);
+	instances = loaded_tag_instances(&state, &tag_count);
+	return instances && tag_index >= 0 && tag_index < tag_count &&
+		read_u32(instances + (uint32_t)tag_index * TAG_INSTANCE_BYTES + TAG_INSTANCE_IN_RESOURCE_MAP_OFFSET) != 0;
+}
+
 int32_t custom_edition_cache_tags_regroup(
 	uint8_t *tag_cache,
 	uint32_t loaded_bytes,

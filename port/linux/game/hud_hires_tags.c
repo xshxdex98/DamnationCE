@@ -24,6 +24,9 @@ long hud_hires_asset_count(void);
 char const *hud_hires_asset_tag(long asset);
 long hud_hires_asset_bitmap(long asset);
 long hud_hires_asset_fits(long asset, long width, long height);
+int hud_hires_asset_custom_edition(long asset);
+/* (custom_edition_cache.c) */
+boolean custom_edition_cache_stock_tag(long tag_index);
 
 void hud_hires_tags_loaded(void);
 void hud_hires_tags_unloaded(void);
@@ -44,6 +47,9 @@ static struct
 {
 	struct bitmap_data *bitmap;
 	long asset;
+	/* a Custom Edition map's stock bitmap of a layout the texture was made
+	for, whose pixels are its own: drawn without the pixels' check */
+	boolean stock_custom_edition;
 } hires_bitmaps[MAXIMUM_HIRES_BITMAPS];
 static long hires_bitmap_count = 0;
 
@@ -77,6 +83,8 @@ void hud_hires_tags_loaded(
 		{
 			hires_bitmaps[hires_bitmap_count].bitmap = bitmap;
 			hires_bitmaps[hires_bitmap_count].asset = asset;
+			hires_bitmaps[hires_bitmap_count].stock_custom_edition =
+				hud_hires_asset_custom_edition(asset) && custom_edition_cache_stock_tag(group_index);
 			hires_bitmap_count++;
 		}
 	}
@@ -92,6 +100,30 @@ void hud_hires_tags_unloaded(
 	hires_bitmap_count = 0;
 
 	return;
+}
+
+/* whether the bitmap at address that `asset` stands for is a Custom Edition
+map's stock one (its pixels are not those the texture was drawn from) */
+long hud_hires_asset_stock_custom_edition(
+	unsigned long address,
+	long width,
+	long height,
+	long asset)
+{
+	long index;
+
+	for (index = 0; index < hires_bitmap_count; index++)
+	{
+		struct bitmap_data *bitmap = hires_bitmaps[index].bitmap;
+
+		if (hires_bitmaps[index].asset == asset && bitmap->cache_block_index != NONE &&
+			(unsigned long)bitmap->base_address == address && bitmap->width == width && bitmap->height == height)
+		{
+			return hires_bitmaps[index].stock_custom_edition;
+		}
+	}
+
+	return FALSE;
 }
 
 long hud_hires_asset_at(

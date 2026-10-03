@@ -567,6 +567,16 @@ struct cache_file_tag_header *custom_edition_cache_tags_load(
 	return (struct cache_file_tag_header *)tag_cache;
 }
 
+boolean custom_edition_cache_stock_tag(
+	long tag_index)
+{
+	struct custom_edition_cache_globals *globals = &custom_edition_cache_globals;
+
+	return globals->tags_loaded && tag_index != NONE &&
+		custom_edition_cache_tag_in_resource_map(globals->tag_cache, globals->loaded_bytes,
+			(int32_t)DATUM_INDEX_TO_ABSOLUTE_INDEX(tag_index));
+}
+
 boolean custom_edition_cache_tags_loaded(
 	void)
 {

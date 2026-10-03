@@ -32,6 +32,9 @@ struct hud_hires_embedded
 	int title;
 	/* the Glassed menus theme's (display.theme), drawn only while it is chosen */
 	int glassed;
+	/* drawn for a Custom Edition map's stock bitmap of its name too, whose
+	layout is its own (port/assets/hud/custom_edition.json) */
+	int custom_edition;
 	const unsigned int *png;
 	unsigned int png_size;
 };

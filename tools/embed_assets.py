@@ -32,6 +32,8 @@ from typing import Any, List
 ROOT = Path(__file__).resolve().parent.parent
 HUD_ASSETS = Path("port/assets/hud")
 LAYOUT = HUD_ASSETS / "layout.json"
+# the HUD textures whose bitmaps Halo Custom Edition lays out alike
+CUSTOM_EDITION_HUD = HUD_ASSETS / "custom_edition.json"
 TITLE_ASSETS = Path("port/assets/titles")
 TITLE_LIST = TITLE_ASSETS / "titles.json"
 FONT_ASSETS = Path("port/assets/fonts")
@@ -87,7 +89,8 @@ def menu_files() -> List[str]:
 
 def hud_asset_inputs() -> List[Path]:
     """The files the generated source is made from."""
-    inputs = [listing for listing in (LAYOUT, TITLE_LIST, SKIN_LIST, FONT_LIST, MENU_LIST) if (ROOT / listing).is_file()]
+    inputs = [listing for listing in (LAYOUT, CUSTOM_EDITION_HUD, TITLE_LIST, SKIN_LIST, FONT_LIST, MENU_LIST)
+              if (ROOT / listing).is_file()]
     if not inputs:
         return []
     return [*inputs, *(folder / f"{asset['name']}.png" for folder, asset, _, _ in textures()),
@@ -193,6 +196,10 @@ def main() -> None:
         "",
     ]
     table = []
+    custom_edition = set()
+    if (ROOT / CUSTOM_EDITION_HUD).is_file():
+        custom_edition = {(entry["tag"], entry["bitmap"])
+                          for entry in json.loads((ROOT / CUSTOM_EDITION_HUD).read_text())["assets"]}
     for index, (folder, asset, title, glassed) in enumerate(textures()):
         name = f"{asset['name']}.png"
         data = (ROOT / folder / name).read_bytes()
@@ -207,7 +214,8 @@ def main() -> None:
         tag = asset["tag"].replace("\\", "\\\\")
         coverage = int(any(cell["kind"] == "meter" for cell in asset.get("cells", [])))
         table.append(f'\t{{ "{tag}", {asset["bitmap"]}, {width}, {height}, 0x{asset["crc"]:08x}u, {coverage}, '
-                     f'{int(title)}, {int(glassed)}, asset{index}, {len(data)} }},')
+                     f'{int(title)}, {int(glassed)}, {int((asset["tag"], asset["bitmap"]) in custom_edition)}, '
+                     f'asset{index}, {len(data)} }},')
     lines.append("const struct hud_hires_embedded hud_hires_embedded[] =")
     lines.append("{")
     lines.extend(table)
