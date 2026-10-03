@@ -4977,9 +4977,11 @@ struct ui_mouse_target
 	rectangle2d bounds;
 	short kind;
 	short button_index;
-	/* where a value splits into previous / next: the middle of the box as
-	drawn, which ui_mouse_widen_values keeps when a neighbour or the screen's
-	edge holds the widened box to one side */
+	/* where a value splits into previous / next: the middle of its box
+	before ui_mouse_widen_values widens it, so across the middle of the value
+	as drawn, where its arrows are, and up and down the middle of its row once
+	ui_mouse_merge_setting_rows has given it the row's height. A widened box
+	that a neighbour or the screen's edge holds to one side keeps it */
 	short split_x;
 	short split_y;
 	/* a button's parts, kept so its area can be settled once the whole frame's
@@ -4992,6 +4994,13 @@ struct ui_mouse_target
 static struct ui_mouse_target ui_mouse_targets[UI_MOUSE_MAXIMUM_TARGETS];
 static long ui_mouse_target_count = 0;
 static boolean ui_mouse_noting_targets = FALSE;
+/* the frame's targets are noted and settled (ui_mouse_fit_button_targets,
+ui_mouse_merge_setting_rows, ui_mouse_widen_values) by one render only:
+render_ui_widgets runs once per player's viewport, and once more for a
+mirror (render.c), and a second render would note the same widgets again
+and widen the values once more, which moves their split off the arrows.
+Cleared with the targets, by ui_widgets_process_mouse */
+static boolean ui_mouse_targets_settled = FALSE;
 
 /* The presses the mouse makes, posted one a frame: the event queue keeps
 only the latest event posted between two frames (queue_event). What they
@@ -5546,7 +5555,8 @@ static short ui_mouse_label_text_right(
  * cover the next legend), stops before the next legend's icon on its row,
  * and, for a touchscreen only, grows up to 8 units upward (not past an item,
  * value or list slot above it) and in the screen's bottom strip runs down to
- * the screen's edge. Recomputed from the parts kept at noting, so running it
+ * the screen's edge (not past an item, value or list slot below it).
+ * Recomputed from the parts kept at noting, so running it
  * again changes nothing.
  */
 static void ui_mouse_fit_button_targets(
@@ -5603,7 +5613,26 @@ static void ui_mouse_fit_button_targets(
 		if (target->kind != _ui_mouse_target_button || !ui_mouse_pointer_is_touch)
 			continue;
 		if (target->bounds.y1 >= 400)
-			target->bounds.y1 = 480;
+		{
+			short bottom = 480;
+
+			/* running down to the screen's edge must not take the tap from an
+			item, value or list slot that a mod puts under the legend, as
+			growing upward must not above it: the legend is noted later, so it
+			would win the overlap */
+			for (other = 0; other < ui_mouse_target_count; other++)
+			{
+				struct ui_mouse_target const *below = &ui_mouse_targets[other];
+
+				if (below->kind != _ui_mouse_target_button &&
+					below->bounds.y0 >= target->bounds.y1 &&
+					below->bounds.x0 < target->bounds.x1 && below->bounds.x1 > target->bounds.x0)
+				{
+					bottom = MIN(bottom, below->bounds.y0);
+				}
+			}
+			target->bounds.y1 = bottom;
+		}
 		/* growing upward must not take the tap from an item, value or list
 		slot above the legend: those keep their areas, and the legend is noted
 		later, so it would win the overlap */
@@ -5924,7 +5953,8 @@ void ui_widget_port_post_button(
  * slot's hover steps the list first), so it is resolved against the
  * targets of a later frame than the one the tap arrived in; the frames
  * between are logged so the target can be read against the screen that
- * showed then.
+ * showed then. A value's line also gives the point where it splits into
+ * previous and next.
  * @param x horizontal position of the tap, in menu coordinates
  * @param y vertical position of the tap, in menu coordinates
  * @param target what the click acts on, or NULL for none
@@ -5940,10 +5970,23 @@ static void ui_debug_log_click(
 
 	if (target)
 	{
-		platform_log("touch targets: tap at %d,%d hit %s %s [%d,%d,%d,%d] after %ld frames", x, y,
-			kinds[PIN(target->kind, 0, 3)],
-			tag_get_name(target->widget->definition_tag_index),
-			target->bounds.x0, target->bounds.y0, target->bounds.x1, target->bounds.y1, frames);
+		char const *kind = kinds[PIN(target->kind, 0, 3)];
+		char const *name = tag_get_name(target->widget->definition_tag_index);
+
+		/* a value steps by the side of its split the tap is on, and once
+		widened the split is not the middle of the logged box
+		(ui_mouse_widen_values) */
+		if (target->kind == _ui_mouse_target_value)
+		{
+			platform_log("touch targets: tap at %d,%d hit %s %s [%d,%d,%d,%d] split %d,%d after %ld frames", x, y,
+				kind, name, target->bounds.x0, target->bounds.y0, target->bounds.x1, target->bounds.y1,
+				target->split_x, target->split_y, frames);
+		}
+		else
+		{
+			platform_log("touch targets: tap at %d,%d hit %s %s [%d,%d,%d,%d] after %ld frames", x, y,
+				kind, name, target->bounds.x0, target->bounds.y0, target->bounds.x1, target->bounds.y1, frames);
+		}
 	}
 	else
 	{
@@ -5988,10 +6031,14 @@ static void ui_debug_log_keyboard_tap(
  * into the first player's controller events. While the virtual keyboard is
  * up it gets the clicks and the menu behind gets nothing. A touch drag
  * stops at the list's ends and skips settings (ui_mouse_wheel_widget,
- * ui_mouse_wheel_room); the desktop wheel wraps as the d-pad does. With
- * debug.touch_targets on it also notes the finger-down and tap points for
- * the debug view, and logs each tap: a menu click where it is resolved, a
- * keyboard click where it is taken.
+ * ui_mouse_wheel_room); the desktop wheel wraps as the d-pad does. It
+ * records whether the pointer read is the touchscreen
+ * (ui_mouse_pointer_is_touch), because the legends' taller tap areas are
+ * for a finger only (ui_mouse_fit_button_targets). With debug.touch_targets
+ * on it also notes the finger-down and tap points for the debug view, and
+ * logs each tap: a menu click where it is resolved, a keyboard click where
+ * it is taken. It forgets the frame's targets at the end, so that the next
+ * frame's render notes and settles them anew.
  */
 static void ui_widgets_process_mouse(
 	void)
@@ -6173,6 +6220,7 @@ static void ui_widgets_process_mouse(
 		}
 	}
 	ui_mouse_target_count = 0;
+	ui_mouse_targets_settled = FALSE;
 
 	return;
 }
@@ -6467,7 +6515,8 @@ void render_ui_widgets_postgame(
 
 /**
  * @brief Renders the active widgets for one local player's viewport (or the
- * whole screen), noting the first player's tap targets, and draws the
+ * whole screen), noting and settling the first player's tap targets in the
+ * frame's first render that can (ui_mouse_targets_settled), and draws the
  * debug view of the targets and the virtual keyboard when they are up.
  * @param local_player_index the viewport's player, or NONE for the whole screen
  * @param window_bounds the viewport's bounds on the screen
@@ -6551,9 +6600,11 @@ void render_ui_widgets(
 				bounds.y1 = window_bounds->y1 - window_bounds->y0;
 				offset.x = 0;
 				offset.y = 0;
-				/* the mouse drives the first player's menus */
-				ui_mouse_noting_targets = widget->local_player_index == NONE ||
-					widget->local_player_index == 0;
+				/* the mouse drives the first player's menus; a widget shown in
+				every viewport (a dialog for everyone) is noted in the first
+				player's render only, and once a frame */
+				ui_mouse_noting_targets = first_players_render && !ui_mouse_targets_settled &&
+					(widget->local_player_index == NONE || widget->local_player_index == 0);
 				widget_instance_render_recursive(
 					widget_globals.active_widgets[widget_index],
 					&bounds,
@@ -6585,9 +6636,13 @@ void render_ui_widgets(
 				}
 			}
 		}
-		ui_mouse_fit_button_targets();
-		ui_mouse_merge_setting_rows();
-		ui_mouse_widen_values();
+		if (first_players_render && !ui_mouse_targets_settled)
+		{
+			ui_mouse_fit_button_targets();
+			ui_mouse_merge_setting_rows();
+			ui_mouse_widen_values();
+			ui_mouse_targets_settled = TRUE;
+		}
 #ifdef HALO_GAME_BROWSER
 		/* port: the lobby is drawn over its own (invisible) widgets */
 		if (lobby_screen_active())
