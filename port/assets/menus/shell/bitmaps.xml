@@ -8,6 +8,26 @@
 		<frame png="shell/art/item_0.png" width="300" height="22"/>
 		<frame png="shell/art/item_1.png" width="300" height="22"/>
 	</bitmap>
+	<!-- the title: at rest, then a light sliding across it ("port title shine") -->
+	<bitmap name="shell/title">
+		<frame png="shell/art/title_0.png" width="330" height="48"/>
+		<frame png="shell/art/title_1.png" width="330" height="48"/>
+		<frame png="shell/art/title_2.png" width="330" height="48"/>
+		<frame png="shell/art/title_3.png" width="330" height="48"/>
+		<frame png="shell/art/title_4.png" width="330" height="48"/>
+		<frame png="shell/art/title_5.png" width="330" height="48"/>
+		<frame png="shell/art/title_6.png" width="330" height="48"/>
+		<frame png="shell/art/title_7.png" width="330" height="48"/>
+		<frame png="shell/art/title_8.png" width="330" height="48"/>
+		<frame png="shell/art/title_9.png" width="330" height="48"/>
+		<frame png="shell/art/title_10.png" width="330" height="48"/>
+		<frame png="shell/art/title_11.png" width="330" height="48"/>
+		<frame png="shell/art/title_12.png" width="330" height="48"/>
+		<frame png="shell/art/title_13.png" width="330" height="48"/>
+		<frame png="shell/art/title_14.png" width="330" height="48"/>
+		<frame png="shell/art/title_15.png" width="330" height="48"/>
+		<frame png="shell/art/title_16.png" width="330" height="48"/>
+	</bitmap>
 	<bitmap name="shell/rule">
 		<frame png="shell/art/rule.png" width="420" height="2"/>
 	</bitmap>
