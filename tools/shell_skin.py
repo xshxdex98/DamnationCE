@@ -33,7 +33,7 @@ import zlib
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 import shell_art
 from shell_art import SHADE, WHITE, box, paint, polygon, ramp
@@ -71,6 +71,10 @@ XBOX_BOXES = ("pausebox", "pausebox2", "helpbox")
 XBOX_ARROWS = ("arrow_big_left", "arrow_big_right")
 XBOX_SCALE = 4              # a picture is drawn this many times its bitmap's size,
 XBOX_LARGEST = 2048         # or fewer, to be at most this many texels
+# the maps', levels' and game types' pictures: enlarged (there are no larger
+# originals) so they stay smooth drawn large, in both themes
+PICTURES = ("mp_map_grafix", "sp_levels", "game_type_grafix")
+PICTURE_SCALE = 3
 
 # the selection lists' rows (eight screens share them: profiles, saved games,
 # levels, maps, the lobby, game types, playlists, colors): this wide, from
@@ -233,6 +237,13 @@ def arrow(picture):
     return Image.fromarray(pixels, "RGBA")
 
 
+def enlarged_picture(pixels, scale):
+    """A picture enlarged smoothly, then sharpened a little against the blur."""
+    image = Image.fromarray(pixels, "RGBA")
+    image = image.resize((image.width * scale, image.height * scale), Image.Resampling.LANCZOS)
+    return image.filter(ImageFilter.UnsharpMask(radius=2, percent=60, threshold=2))
+
+
 def three_part_box(picture, part):
     """A part of a box the game puts together across the screen: dark glass
     between hairlines, closed by a hairline at its left and right ends."""
@@ -345,23 +356,28 @@ def skin_maps(folder):
                     continue
                 done.add((name, index))
                 width, height = bitmap["width"], bitmap["height"]
-                scale = min(XBOX_SCALE, XBOX_LARGEST // max(width, height))
+                picture = last in PICTURES
+                scale = PICTURE_SCALE if picture else min(XBOX_SCALE, XBOX_LARGEST // max(width, height))
                 if scale < 2:
                     continue
                 try:
                     pixels = decode_bitmap(bitmap)
                 except ValueError:
                     continue
-                enlarged = np.array(Image.fromarray(pixels, "RGBA").resize((width * scale, height * scale),
-                                                                           Image.Resampling.NEAREST))
-                image = redrawn(name.replace("\\", "/"), Picture(None, width, height, enlarged), index)
+                if picture:
+                    image = enlarged_picture(pixels, scale)
+                else:
+                    enlarged = np.array(Image.fromarray(pixels, "RGBA").resize((width * scale, height * scale),
+                                                                               Image.Resampling.NEAREST))
+                    image = redrawn(name.replace("\\", "/"), Picture(None, width, height, enlarged), index)
                 if image is None:
                     continue
                 asset = f"{name.replace(chr(92), '__')}__{index}".replace(" ", "_")
                 image.save(out / f"{asset}.png")
                 assets.append({"name": asset, "tag": name, "bitmap": index, "width": width, "height": height,
                                "format": FORMATS[bitmap["format"]], "scale": scale,
-                               "crc": zlib.crc32(bitmap["pixels"][:level0_size(bitmap)])})
+                               "crc": zlib.crc32(bitmap["pixels"][:level0_size(bitmap)]),
+                               "glassed": not picture})
     (out / "textures.json").write_text(json.dumps({"assets": assets}, indent=1) + "\n")
     print(f"{len(assets)} of the maps' pictures")
 

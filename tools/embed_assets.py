@@ -65,7 +65,9 @@ def textures() -> List[tuple]:
     for folder, listing, title, glassed in ((HUD_ASSETS, LAYOUT, False, False), (TITLE_ASSETS, TITLE_LIST, True, False),
                                             (SKIN_ASSETS, SKIN_LIST, True, True)):
         if (ROOT / listing).is_file():
-            result += [(folder, asset, title, glassed) for asset in json.loads((ROOT / listing).read_text())["assets"]]
+            # (an entry may say otherwise: the maps' pictures are in both themes)
+            result += [(folder, asset, title, asset.get("glassed", glassed))
+                       for asset in json.loads((ROOT / listing).read_text())["assets"]]
     return result
 
 
