@@ -5,7 +5,7 @@ The Halo Custom Edition maps in the multiplayer menus
 (custom_edition_maps.h).
 
 The maps are the Custom Edition caches of multiplayer scenarios in the maps
-folder, OpenSauce's ".yelo" maps among them (custom_edition_cache_multiplayer),
+folder, then in the Halo Custom Edition install's (custom_edition_cache.h), OpenSauce's ".yelo" maps among them (custom_edition_cache_multiplayer),
 looked for whenever the level list opens. A map is offered under its file's
 name, as the level levels\test\<name>\<name> as the Xbox levels are named:
 the cache file loader finds a map by the last part of its level name. The
@@ -13,7 +13,7 @@ game engine keeps a level name in 64 characters, so a map whose name is
 longer than 25 characters is left out, and so is a map named as one of the
 Xbox levels, which that level already offers.
 
-A map's picture is the Windows bitmap <name>.bmp beside it, when there is one
+A map's picture is the Windows bitmap <name>.bmp beside it (in its folder), when there is one
 (bmp_files.c): the middle of it with the shape of the menus' level pictures,
 in a texture of its own that is drawn over the whole picture widget. A map
 without one shows the unknown level's picture. A picture is read the first
@@ -86,8 +86,9 @@ enum
 
 struct custom_edition_map
 {
-	/* the name of its file, without the extension */
+	/* the name of its file, without the extension, and the maps folder it is in */
 	char name[MAXIMUM_MAP_NAME_LENGTH + 1];
+	char folder[32];
 	/* saved_game_file_remember_last_used_multiplayer_map writes
 	MAXIMUM_FILENAME_LENGTH+1 characters of a level name */
 	char level_name[MAXIMUM_FILENAME_LENGTH + 1];
@@ -193,7 +194,7 @@ static void custom_edition_map_description_read(
 	long text_index = 0;
 	short length = 0;
 
-	csprintf(path, "%s%s%s", cache_files_map_directory(), map->name, DESCRIPTION_EXTENSION);
+	csprintf(path, "%s%s%s", map->folder, map->name, DESCRIPTION_EXTENSION);
 	stream = fopen(path, "rb");
 	if (stream)
 	{
@@ -253,6 +254,7 @@ static void custom_edition_map_description_read(
 is a Custom Edition multiplayer map not added yet (as a .map and a .yelo of
 one name are, which the loader reads the .map of). */
 static void custom_edition_map_add(
+	char const *folder,
 	char const *name,
 	char const *extension)
 {
@@ -297,6 +299,7 @@ static void custom_edition_map_add(
 	map = &globals->maps[globals->map_count++];
 	csmemset(map, 0, sizeof(*map));
 	csstrcpy(map->name, name);
+	csstrncpy(map->folder, folder, sizeof(map->folder) - 1);
 	csprintf(map->level_name, LEVEL_NAME_FORMAT, name, name);
 	display_name_make(name, map->display_name);
 	custom_edition_map_description_read(map);
@@ -321,6 +324,8 @@ static void custom_edition_maps_look_for(
 	struct file_reference file;
 	char name[MAXIMUM_FILENAME_LENGTH + 1];
 	char extension[MAXIMUM_FILENAME_LENGTH + 1];
+	char const *folders[] = { cache_files_map_directory(), CUSTOM_EDITION_INSTALL_MAP_DIRECTORY };
+	short folder_index;
 
 	custom_edition_maps_forget();
 	globals->looked_for = TRUE;
@@ -329,13 +334,17 @@ static void custom_edition_maps_look_for(
 		return;
 	}
 
-	file_reference_create_from_path(&directory, cache_files_map_directory(), TRUE);
-	find_files_start(0, &directory);
-	while (find_files_next(&file, NULL))
+	/* (the game's folder first: a map in both is the game's) */
+	for (folder_index = 0; folder_index < NUMBEROF(folders); folder_index++)
 	{
-		file_reference_get_name(&file, FLAG(_name_filename_bit), name);
-		file_reference_get_name(&file, FLAG(_name_extension_bit), extension);
-		custom_edition_map_add(name, extension);
+		file_reference_create_from_path(&directory, folders[folder_index], TRUE);
+		find_files_start(0, &directory);
+		while (find_files_next(&file, NULL))
+		{
+			file_reference_get_name(&file, FLAG(_name_filename_bit), name);
+			file_reference_get_name(&file, FLAG(_name_extension_bit), extension);
+			custom_edition_map_add(folders[folder_index], name, extension);
+		}
 	}
 	qsort(globals->maps, globals->map_count, sizeof(globals->maps[0]), custom_edition_map_compare);
 	error(_error_silent, "custom edition: %d multiplayer maps for the level list", globals->map_count);
@@ -356,7 +365,7 @@ static struct bitmap_data *custom_edition_map_picture_read(
 	FILE *stream;
 	long size = 0;
 
-	csprintf(path, "%s%s%s", cache_files_map_directory(), map->name, PICTURE_EXTENSION);
+	csprintf(path, "%s%s%s", map->folder, map->name, PICTURE_EXTENSION);
 	stream = fopen(path, "rb");
 	if (!stream)
 	{
