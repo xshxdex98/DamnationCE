@@ -689,6 +689,11 @@ void browser_screen_process(void);
 void browser_screen_render(void);
 struct halo_ui_pointer;
 void browser_screen_pointer(struct halo_ui_pointer const *pointer);
+/* the multiplayer map picker (port/linux/game/map_screen.c), as the browser */
+boolean map_screen_active(void);
+void map_screen_process(void);
+void map_screen_render(void);
+void map_screen_pointer(struct halo_ui_pointer const *pointer);
 /* (ONLINE GAMES, below: its list moves focus item by item) */
 boolean ui_widget_online_games_list(struct widget_instance *widget);
 #endif
@@ -3253,6 +3258,27 @@ static void widget_instance_go_back_to_previous(
 
 	return;
 }
+
+#ifdef HALO_GAME_BROWSER
+/* port: the screen named opened in place of player 1's, which B on it goes
+back to (port/linux/game/map_screen.c: a map picked, its game types) */
+boolean ui_widget_port_open_from_top(
+	char const *name)
+{
+	struct widget_instance *top = widget_globals.active_widgets[0];
+
+	return ui_widget_load_by_name_or_tag(name, NONE, NULL, 0,
+		top ? widget_instance_get_topmost_parent(top)->definition_tag_index : NONE, NONE, NONE) != NULL;
+}
+
+/* port: player 1's screen left for the one before it, as its B leaves it */
+void ui_widget_port_go_back_from_top(
+	void)
+{
+	if (widget_globals.active_widgets[0])
+		widget_instance_go_back_to_previous(widget_globals.active_widgets[0]);
+}
+#endif
 
 static __inline struct widget_instance *widget_instance_find_by_tag_index(
 	long tag_index)
@@ -6086,6 +6112,7 @@ static void ui_widgets_process_mouse(
 		/* (nor over Online Games, which takes the pointer itself: a click
 		left in the queue would pick a game) */
 		|| (browser_screen_active() && (browser_screen_pointer(&pointer), TRUE))
+		|| (map_screen_active() && (map_screen_pointer(&pointer), TRUE))
 #endif
 		)
 	{
@@ -6496,6 +6523,11 @@ void render_ui_widgets(
 	if (browser_screen_active())
 	{
 		browser_screen_render();
+		return;
+	}
+	if (map_screen_active())
+	{
+		map_screen_render();
 		return;
 	}
 #endif
@@ -7584,6 +7616,12 @@ void process_ui_widgets(
 	if (browser_screen_active())
 	{
 		browser_screen_process();
+
+		return;
+	}
+	if (map_screen_active())
+	{
+		map_screen_process();
 
 		return;
 	}

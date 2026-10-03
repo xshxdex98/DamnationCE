@@ -92,6 +92,12 @@ CHILD_CHANGES = {
     ("main_menu/new_select/scroll_down_button", "main_menu/new_select/scroll_down_arrow"): {"x": "152"},
 }
 
+# handlers added to the screens' widgets: the Map screen opens the map
+# picker (port/linux/game/map_screen.c) over its own list
+HANDLER_ADDITIONS = {
+    "main_menu/multiplayer_type_select/mp_map_select/mp_map_select_screen": [{"event": "created", "run": "port map select"}],
+}
+
 # the screens' text colors, and the look's
 TEXT_COLORS = {"#FF2896FF": "#FFD2D6DA", "#FF0080FF": "#FFA8ACB0"}
 
@@ -247,6 +253,11 @@ def restyle(menus):
                         widget.attrib.pop(attribute, None)
                     else:
                         widget.set(attribute, value)
+            changed = True
+        for attributes in HANDLER_ADDITIONS.get(name, []):
+            handlers = widget.findall("on")
+            at = list(widget).index(handlers[-1]) + 1 if handlers else 0
+            widget.insert(at, ET.Element("on", attributes))
             changed = True
         for child in widget.findall("child"):
             for attribute, value in CHILD_CHANGES.get((name, child.get("widget")), {}).items():
