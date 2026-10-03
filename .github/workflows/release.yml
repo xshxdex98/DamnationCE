@@ -36,6 +36,8 @@ jobs:
   build:
     needs: version
     uses: ./.github/workflows/build.yml
+    # (the Android signing key's)
+    secrets: inherit
     with:
       version: ${{ needs.version.outputs.version }}
       release: true
