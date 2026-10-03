@@ -30,14 +30,14 @@ import java.util.zip.ZipInputStream;
  * The app's self-updater, as the desktop games' (port/linux/src/updater.c).
  *
  * A release's build (BuildConfig.HALO_RELEASE_BUILD: built from the
- * release's tag, v<version>, by ChupathingyCE's release workflow) knows its
+ * release's tag, v<version>, by DamnationCE's release workflow) knows its
  * version (BuildConfig.HALO_VERSION, 0.5.0b); nightlies and other builds
  * never look. When
  * update.auto in config.toml is true (the default), the game asks GitHub for
  * the latest release when it starts, on a thread of its own, and if it is
  * newer asks the player whether to update:
  *
- * - Yes: the release's app (chupathingyce-android-release.zip or -debug.zip) is
+ * - Yes: the release's app (damnationce-android-release.zip or -debug.zip) is
  *   downloaded and handed to Android's package installer, which replaces the
  *   game (closing it) and offers to open the new version.
  * - No: nothing, until the next start.
@@ -49,8 +49,8 @@ import java.util.zip.ZipInputStream;
  * over it.
  */
 final class Updater {
-    private static final String REPOSITORY = "ChupathingyCE/chupathingyce";
-    private static final String USER_AGENT = "chupathingyce-updater";
+    private static final String REPOSITORY = "xshxdex98/DamnationCE";
+    private static final String USER_AGENT = "damnationce-updater";
     private static final int TIMEOUT_MILLISECONDS = 20000;
 
     private Updater() {
@@ -227,8 +227,8 @@ final class Updater {
         if (activity.isFinishing())
             return;
         new AlertDialog.Builder(activity)
-            .setTitle("ChupathingyCE: new version")
-            .setMessage("A new version of ChupathingyCE is out (" + latest + "; this is "
+            .setTitle("DamnationCE: new version")
+            .setMessage("A new version of DamnationCE is out (" + latest + "; this is "
                 + BuildConfig.HALO_VERSION + ").\n\nDo you want to update? The game will close and start "
                 + "the new version.")
             .setCancelable(false)
@@ -240,7 +240,7 @@ final class Updater {
 
     private static void confirmNever(Activity activity) {
         new AlertDialog.Builder(activity)
-            .setTitle("ChupathingyCE: new version")
+            .setTitle("DamnationCE: new version")
             .setMessage("Stop asking about new versions?\n\nTo ask again, set auto = true in the [update] section "
                 + "of config.toml.")
             .setCancelable(false)
@@ -257,7 +257,7 @@ final class Updater {
     /* ---------- updating */
 
     private static void update(Activity activity, String latest) {
-        String asset = "chupathingyce-android-" + (BuildConfig.DEBUG ? "debug" : "release") + ".zip";
+        String asset = "damnationce-android-" + (BuildConfig.DEBUG ? "debug" : "release") + ".zip";
         File directory = new File(activity.getCacheDir(), UpdateProvider.DIRECTORY);
         LinearLayout layout = new LinearLayout(activity);
         TextView status = new TextView(activity);
@@ -272,7 +272,7 @@ final class Updater {
         layout.addView(status);
         layout.addView(bar);
         AlertDialog progress = new AlertDialog.Builder(activity)
-            .setTitle("ChupathingyCE: new version")
+            .setTitle("DamnationCE: new version")
             .setView(layout)
             .setCancelable(false)
             .show();
@@ -300,7 +300,7 @@ final class Updater {
                 activity.runOnUiThread(() -> {
                     progress.dismiss();
                     new AlertDialog.Builder(activity)
-                        .setTitle("ChupathingyCE: new version")
+                        .setTitle("DamnationCE: new version")
                         .setMessage("The update failed:\n\n" + e.getMessage())
                         .setPositiveButton("OK", null)
                         .show();

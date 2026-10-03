@@ -42,7 +42,7 @@ ninja) and these items:
 
 The game needs the `maps/` folder from an Xbox disc image (`.xiso` or
 `.iso`) of any version of the game. The app extracts `maps/` from the disc
-image. The app keeps the data in `/sdcard/Android/data/com.halo.decomp/files`.
+image. The app keeps the data in `/sdcard/Android/data/io.github.xshxdex98.damnationce/files`.
 
 To install the data with the app:
 
@@ -57,16 +57,16 @@ To install the data with the app:
 To install the data from a computer:
 
 1. Start the app one time. The app makes its folders.
-2. Enter `adb push <folder>/. /sdcard/Android/data/com.halo.decomp/files/`.
+2. Enter `adb push <folder>/. /sdcard/Android/data/io.github.xshxdex98.damnationce/files/`.
 
-| Item | Location in `/sdcard/Android/data/com.halo.decomp/files` |
+| Item | Location in `/sdcard/Android/data/io.github.xshxdex98.damnationce/files` |
 | --- | --- |
 | Saved games (`z:\` and `u:\`) | `save` |
 | Log | `debug.txt` |
 | Settings | `config.toml` |
 
 To make a copy of the saved games, enter
-`adb pull /sdcard/Android/data/com.halo.decomp/files/save`.
+`adb pull /sdcard/Android/data/io.github.xshxdex98.damnationce/files/save`.
 
 ## Controls
 
@@ -100,9 +100,9 @@ not accept touch input.
 The settings are in `config.toml` in the data folder of the app. To change
 them:
 
-1. Enter `adb pull /sdcard/Android/data/com.halo.decomp/files/config.toml`.
+1. Enter `adb pull /sdcard/Android/data/io.github.xshxdex98.damnationce/files/config.toml`.
 2. Change the file.
-3. Enter `adb push config.toml /sdcard/Android/data/com.halo.decomp/files/`.
+3. Enter `adb push config.toml /sdcard/Android/data/io.github.xshxdex98.damnationce/files/`.
 
 At the first start, the game writes the file with the default values. To
 get the default values again, delete the file.
