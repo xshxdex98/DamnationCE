@@ -5,9 +5,8 @@ Campaign and Multiplayer each open a column of their own in its place.
 The campaign's does what the PC version's menu does (main_menu/campaign_select).
 
 Each item opens a screen that already works: the PC version's campaign,
-settings and profile screens (ce/), the Xbox's own System Link, split screen
-and game type screens (the map's tags), and Online Games, the game list
-(port online games).
+settings, profile, LAN and game type screens (ce/), the Xbox's own split
+screen (the map's tags), and Online Games, the game list (port online games).
 
 The panel begins 106 units left of the 4:3 screen, so it reaches the edge
 of a 16:9 window.
@@ -40,15 +39,16 @@ of a 16:9 window.
 		<on event="left_mouse" run="mouse emit accept event"/>
 	</widget>
 	<widget name="shell/item_lan" type="text" width="300" height="22" bitmap="shell/item" text="LAN GAMES" font="ui\large_ui" color="#FFD2D6DA" text_x="8" text_y="1">
-		<on event="a start" run="error if no network connection" open="ui\shell\main_menu\multiplayer_type_select\connected\4way_profile_select\4way_start2join_screen"/>
+		<on event="a start" run="new game if no plyr profiles" open="main_menu/multiplayer_type_select/multiplayer_type_select_screen" branch="true"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
+		<conditional widget="main_menu/profile_manager/multiplayer_creating_profile" if_failed="true"/>
 	</widget>
 	<widget name="shell/item_split" type="text" width="300" height="22" bitmap="shell/item" text="SPLIT SCREEN" font="ui\large_ui" color="#FFD2D6DA" text_x="8" text_y="1">
 		<on event="a start" open="ui\shell\main_menu\multiplayer_type_select\split_screen\4way_profile_select\4way_start2join_screen"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
 	</widget>
 	<widget name="shell/item_gametypes" type="text" width="300" height="22" bitmap="shell/item" text="GAME TYPES" font="ui\large_ui" color="#FFD2D6DA" text_x="8" text_y="1">
-		<on event="a start" open="ui\shell\main_menu\settings_select\multiplayer_setup\playlist_select\gametype_select_screen"/>
+		<on event="a start" open="main_menu/settings_select/multiplayer_setup/playlist_select/gametype_select_screen"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
 	</widget>
 	<widget name="shell/item_settings" type="text" width="300" height="22" bitmap="shell/item" text="SETTINGS" font="ui\large_ui" color="#FFD2D6DA" text_x="8" text_y="1">
