@@ -30,6 +30,12 @@ struct structure_bsp;
 
 /* ---------- prototypes/CUSTOM_EDITION_CACHE.C */
 
+/* Whether a tag of the Custom Edition map loaded is one of Halo PC's own, as
+it shipped: read from bitmaps.map, sounds.map or loc.map. FALSE when no
+Custom Edition map is loaded. */
+boolean custom_edition_cache_stock_tag(
+	long tag_index);
+
 /* When `header` (CACHE_FILE_HEADER_BYTES bytes, with `build` its build
 string field) is a Custom Edition cache header, logs what it is, asserts when
 `fatal` as cache_file_header_verify does, and returns TRUE. */

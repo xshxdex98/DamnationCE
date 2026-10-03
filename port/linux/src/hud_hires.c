@@ -31,8 +31,10 @@ the game's zlib.
 /* the game's (port/linux/game/hud_hires_tags.c) */
 long hud_hires_asset_at(unsigned long address, long width, long height);
 long hud_hires_asset_after(unsigned long address, long width, long height, long asset);
+long hud_hires_asset_stock_custom_edition(unsigned long address, long width, long height, long asset);
 
-#define MAXIMUM_TEXTURES 128
+/* (the HUD's, the menus' titles and the menus' themes' pictures) */
+#define MAXIMUM_TEXTURES 512
 
 static struct
 {
@@ -45,6 +47,13 @@ static struct
 long hud_hires_asset_count(void)
 {
 	return hud_hires_embedded_count < MAXIMUM_TEXTURES ? (long)hud_hires_embedded_count : MAXIMUM_TEXTURES;
+}
+
+/* whether the texture may stand for a Custom Edition map's stock bitmap of
+its name too (port/assets/hud/custom_edition.json) */
+int hud_hires_asset_custom_edition(long asset)
+{
+	return asset >= 0 && asset < hud_hires_asset_count() && hud_hires_embedded[asset].custom_edition;
 }
 
 char const *hud_hires_asset_tag(long asset)
@@ -91,6 +100,10 @@ long hud_hires_override_find(unsigned long address, unsigned long width, unsigne
 		return -1;
 	if (!(hud_hires_embedded[asset].title ? titles_enabled : hud_enabled))
 		return -1;
+	/* (a Custom Edition map's stock HUD bitmap, laid out as this texture's,
+	has its own pixels) */
+	if (hud_hires_asset_stock_custom_edition(address, (long)width, (long)height, asset))
+		return asset;
 #ifdef HALO_64BIT
 	/* (an Xbox address: the texture's pixels in the contiguous memory) */
 	if (crc32(0L, (const Bytef *)xbox_pointer(address), (uInt)level0_size) != hud_hires_embedded[asset].crc)
