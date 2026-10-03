@@ -9,9 +9,10 @@ folder, then in the Halo Custom Edition install's (custom_edition_cache.h), Open
 looked for whenever the level list opens. A map is offered under its file's
 name, as the level levels\test\<name>\<name> as the Xbox levels are named:
 the cache file loader finds a map by the last part of its level name. The
-game engine keeps a level name in 64 characters, so a map whose name is
-longer than 25 characters is left out, and so is a map named as one of the
-Xbox levels, which that level already offers.
+game engine keeps a level name in 63 characters, so a map whose name is
+longer than 25 characters is the level levels\<name>, and one longer than
+56 is left out, as is a map named as one of the Xbox levels, which that
+level already offers.
 
 A map's picture is the Windows bitmap <name>.bmp beside it (in its folder), when there is one
 (bmp_files.c): the middle of it with the shape of the menus' level pictures,
@@ -41,15 +42,18 @@ in lines of about 20 characters.
 
 /* ---------- constants */
 
-#define MAXIMUM_CUSTOM_EDITION_MAPS 128
+#define MAXIMUM_CUSTOM_EDITION_MAPS 1024
 /* room for the level list's Xbox levels
 (ui_widget_event_handler_functions.c offers 13) */
 #define MAXIMUM_XBOX_LEVELS 16
 
 /* levels\test\<name>\<name> in the 63 characters the game engine's stage
-keeps of a level name (game_engine.c, struct game_engine_stage) */
+keeps of a level name (game_engine.c, struct game_engine_stage), or for a
+longer name levels\<name> */
 #define LEVEL_NAME_FORMAT "levels\\test\\%s\\%s"
-#define MAXIMUM_MAP_NAME_LENGTH 25
+#define LONG_LEVEL_NAME_FORMAT "levels\\%s"
+#define LONGEST_LEVEL_NAME_FORMAT_NAME 25
+#define MAXIMUM_MAP_NAME_LENGTH 56
 
 /* The maps' display indices: beyond every string and frame of the menus'
 tags (the level names are 15 strings, the level pictures 14 frames). */
@@ -300,7 +304,14 @@ static void custom_edition_map_add(
 	csmemset(map, 0, sizeof(*map));
 	csstrcpy(map->name, name);
 	csstrncpy(map->folder, folder, sizeof(map->folder) - 1);
-	csprintf(map->level_name, LEVEL_NAME_FORMAT, name, name);
+	if (csstrlen(name) <= LONGEST_LEVEL_NAME_FORMAT_NAME)
+	{
+		csprintf(map->level_name, LEVEL_NAME_FORMAT, name, name);
+	}
+	else
+	{
+		csprintf(map->level_name, LONG_LEVEL_NAME_FORMAT, name);
+	}
 	display_name_make(name, map->display_name);
 	custom_edition_map_description_read(map);
 
