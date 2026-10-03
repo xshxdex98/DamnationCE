@@ -12,8 +12,15 @@ entry (timberland.map's player_effect_start would call the function 29
 places before it, and beavercreek_halo3.yelo's switch_bsp would call
 playback). A compiled script also keeps every name, in its string data:
 each call and each engine global is found again here by that name, with
-the game's own hs_find_function_by_name and hs_find_global_by_name, and a
-map whose scripts use one this build does not have is refused. The value
+the game's own hs_find_function_by_name and hs_find_global_by_name.
+
+A call of a function this build does not have (OpenSauce's, as its
+post-processing effects) does nothing: it becomes a constant of its value
+type with that type's default, which the interpreter evaluates as any
+constant (hs_evaluate), when the type is one whose default is harmless:
+nothing, a boolean, a number. A map calling one that gives a string, an
+object or a tag, which a script may go on to use, is refused, as is one
+using an engine global this build does not have. The value
 types of both builds are numbered alike: every call in the maps examined
 has its function's type here (docs/custom_edition_caches.md).
 */
@@ -47,6 +54,10 @@ enum
 designator (hs_find_global_by_name) */
 #define HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT 15
 
+/* the value types (hs.h) from _hs_type_void to _hs_type_long_integer,
+whose default (nothing, false, 0, 0.0) a missing function may give */
+#define INERT_CALL_TYPE(type) ((type) >= _hs_type_void && (type) <= _hs_type_long_integer)
+
 /* missing names are logged up to this many times */
 #define MAXIMUM_MISSING_NAME_MESSAGES 8
 
@@ -61,6 +72,7 @@ struct scripts_conversion
 	long functions_renumbered;
 	long globals_renumbered;
 	long missing_count;
+	long calls_made_inert;
 };
 
 /* ---------- private code */
@@ -114,7 +126,18 @@ static boolean function_call_convert(
 		return FALSE;
 	}
 	function_index = hs_find_function_by_name(name);
-	if (function_index == NONE)
+	if (function_index == NONE && INERT_CALL_TYPE(call->type))
+	{
+		if (conversion->calls_made_inert < MAXIMUM_MISSING_NAME_MESSAGES)
+		{
+			error(_error_silent, "custom edition: the scripts call '%s', which this build does not have: it does nothing", name);
+		}
+		call->flags = FLAG(_hs_syntax_node_primitive_bit);
+		call->constant_type = call->type;
+		call->data = 0;
+		conversion->calls_made_inert++;
+	}
+	else if (function_index == NONE)
 	{
 		script_name_missing(conversion, "function", name);
 	}
