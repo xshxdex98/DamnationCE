@@ -146,6 +146,7 @@ void game_connection_set(short connection);
 /* (interface/: the network, as System Link's list starts it, and a game of
 this machine's, as its Y makes one) */
 boolean ui_online_games_start_network(void);
+void ui_online_games_stop_network(void);
 boolean ui_widget_online_games_create_game(void);
 
 static void utf8_name(unsigned short const *name, char *text, long size);
@@ -399,7 +400,10 @@ void browser_screen_process(
 				if (browser_screen.connecting)
 					browser_screen.connecting = FALSE;
 				else
+				{
 					browser_screen.active = FALSE;
+					ui_online_games_stop_network();
+				}
 				break;
 			default: break;
 			}
@@ -419,32 +423,35 @@ void browser_screen_process(
 
 /* ---------- drawing: the Online Games screen (the overlay, ui_overlay.c) */
 
-/* the screen's colors (0xRRGGBBAA), as the mockups */
+/* the screen's colors (0xRRGGBBAA), the menus' (tools/shell_skin.py): dark
+glass over the scene, hairlines, white for what is chosen */
 enum
 {
-	COLOR_BACKGROUND_TOP = 0x0B1830FF,
-	COLOR_BACKGROUND_BOTTOM = 0x03070FFF,
-	COLOR_RULE = 0x2A62C8FF,
-	COLOR_TITLE = 0x3D8BFFFF,
-	COLOR_PANEL = 0x081530F0,
-	COLOR_PANEL_EDGE = 0x2F6DD0FF,
-	COLOR_HEAD = 0x7FB0FFFF,
-	COLOR_ROW_SELECTED = 0x2052B0FF,
-	COLOR_ROW_RULE = 0x16294AFF,
-	COLOR_TEXT = 0xE6EEFCFF,
-	COLOR_DIM = 0x8FA6C8FF,
-	COLOR_LABEL = 0x4AA3FFFF,
+	COLOR_GLASS = 0x06080C8C,
+	COLOR_RULE = 0xFFFFFF5A,
+	COLOR_TITLE = 0xFFFFFFD7,
+	COLOR_PANEL = 0x06080C78,
+	COLOR_PANEL_EDGE = 0xFFFFFF46,
+	COLOR_PANEL_HEAD = 0xFFFFFF1A,
+	COLOR_HEAD = 0xB4B8BCFF,
+	COLOR_ROW_SELECTED = 0xFFFFFF3E,
+	COLOR_ROW_RULE = 0xFFFFFF14,
+	COLOR_TEXT = 0xD2D6DAFF,
+	COLOR_DIM = 0x8C9096FF,
+	COLOR_LABEL = 0xA8ACB0FF,
 	/* the roster's players of each team */
 	COLOR_RED_TEAM = 0xFF6B6BFF,
 	COLOR_BLUE_TEAM = 0x6BB0FFFF,
 	COLOR_CLOSED = 0xF08A4BFF,
-	COLOR_PROMPT = 0x4AA3FFFF,
+	COLOR_PROMPT = 0xD2D6DAFF,
 };
 
 /* the list's rows, columns and panels, in the 640x480 layout */
 enum
 {
-	LIST_X = 37, LIST_Y = 72, LIST_WIDTH = 566, LIST_HEAD = 20, LIST_ROW = 22, LIST_FOOT = 20,
+	/* (the glass: from under the title to over the buttons, as the other screens') */
+	GLASS_TOP = 66, GLASS_BOTTOM = 446,
+	LIST_X = 37, LIST_Y = 74, LIST_WIDTH = 566, LIST_HEAD = 20, LIST_ROW = 22, LIST_FOOT = 20,
 	DETAIL_Y = 318, DETAIL_HEIGHT = 117,
 	/* the roster's places in the details */
 	ROSTER_COLUMNS = 2, ROSTER_ROWS = 7,
@@ -523,7 +530,7 @@ static void draw_picture(
 	bounds.y0 = y0;
 	bounds.x1 = x1;
 	bounds.y1 = y1;
-	draw_quad(&bounds, 0xFF0A1A33);
+	draw_quad(&bounds, 0xFF0A0C10);
 	if (bitmap)
 	{
 		/* (the picture fills the bitmap's top left; the rest is margin) */
@@ -568,9 +575,8 @@ void browser_screen_render(
 		players += browser_screen.games[index].players;
 
 	/* the screen, its widescreen margins too */
-	ui_overlay_gradient(-margin, 0, 640 + 2 * margin, 480, 0, COLOR_BACKGROUND_TOP, COLOR_BACKGROUND_BOTTOM);
-	ui_overlay_gradient(-margin, 0, 640 + 2 * margin, 62, 0, 0x0A1A36FF, 0x050C1AFF);
-	ui_overlay_rect(-margin, 61.5f, 640 + 2 * margin, 1.0f, 0, COLOR_RULE);
+	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, COLOR_GLASS);
+	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
 	ui_overlay_text(UI_FONT_BOLD, 30.0f, 37, 17, UI_ALIGN_LEFT, COLOR_TITLE, "ONLINE GAMES");
 
 	/* servers, players and the list it comes from, at the right */
@@ -585,8 +591,8 @@ void browser_screen_render(
 	ui_overlay_text(UI_FONT_REGULAR, 9.0f, x, 39, UI_ALIGN_RIGHT, COLOR_DIM, "SERVERS");
 
 	/* the list */
-	ui_overlay_rect(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD + ROWS_PER_PAGE * LIST_ROW + LIST_FOOT, 6, COLOR_PANEL);
-	ui_overlay_gradient(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD, 6, 0x123266FF, 0x0C2347FF);
+	ui_overlay_rect(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD + ROWS_PER_PAGE * LIST_ROW + LIST_FOOT, 0, COLOR_PANEL);
+	ui_overlay_rect(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD, 0, COLOR_PANEL_HEAD);
 	ui_overlay_text(UI_FONT_BOLD, 8.0f, COLUMN_NAME, LIST_Y + 6, UI_ALIGN_LEFT, COLOR_HEAD, "Server");
 	ui_overlay_text(UI_FONT_BOLD, 8.0f, COLUMN_MAP, LIST_Y + 6, UI_ALIGN_LEFT, COLOR_HEAD, "Map");
 	ui_overlay_text(UI_FONT_BOLD, 8.0f, COLUMN_TYPE, LIST_Y + 6, UI_ALIGN_LEFT, COLOR_HEAD, "Type");
@@ -613,7 +619,11 @@ void browser_screen_render(
 			continue;
 		game = &browser_screen.games[page_first + row];
 		if (page_first + row == browser_screen.selected)
+		{
+			/* (the chosen row: clear glass behind a tick, as a menu's item) */
 			ui_overlay_rect(LIST_X + 1, y, LIST_WIDTH - 2, LIST_ROW, 0, COLOR_ROW_SELECTED);
+			ui_overlay_rect(LIST_X + 1, y, 1.5f, LIST_ROW, 0, 0xFFFFFFFF);
+		}
 		color = game->open ? COLOR_TEXT : COLOR_DIM;
 		utf8_name(game->name, name, sizeof(name));
 		ui_overlay_text(UI_FONT_BOLD, 10.0f, COLUMN_NAME, y + 5, UI_ALIGN_LEFT, color, name);
@@ -633,12 +643,12 @@ void browser_screen_render(
 		snprintf(text, sizeof(text), "\xE2\x80\xB9   PAGE %d OF %d   \xE2\x80\xBA", page_first / ROWS_PER_PAGE + 1, page_count);
 		ui_overlay_text(UI_FONT_BOLD, 8.0f, LIST_X + LIST_WIDTH - 12, y + 5.5f, UI_ALIGN_RIGHT, COLOR_LABEL, text);
 	}
-	ui_overlay_outline(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD + ROWS_PER_PAGE * LIST_ROW + LIST_FOOT, 6, 1.0f,
+	ui_overlay_outline(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD + ROWS_PER_PAGE * LIST_ROW + LIST_FOOT, 0, 0.75f,
 		COLOR_PANEL_EDGE);
 
 	/* the selected game */
-	ui_overlay_rect(LIST_X, DETAIL_Y, LIST_WIDTH, DETAIL_HEIGHT, 6, COLOR_PANEL);
-	ui_overlay_outline(LIST_X, DETAIL_Y, LIST_WIDTH, DETAIL_HEIGHT, 6, 1.0f, COLOR_PANEL_EDGE);
+	ui_overlay_rect(LIST_X, DETAIL_Y, LIST_WIDTH, DETAIL_HEIGHT, 0, COLOR_PANEL);
+	ui_overlay_outline(LIST_X, DETAIL_Y, LIST_WIDTH, DETAIL_HEIGHT, 0, 0.75f, COLOR_PANEL_EDGE);
 	if (selected)
 	{
 		short map_frame = NUMBEROF(map_picture_order);
@@ -716,7 +726,7 @@ void browser_screen_render(
 	}
 
 	/* the buttons */
-	ui_overlay_rect(-margin, 444, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
+	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
 	width = prompt_width(UI_BUTTON_A, "=JOIN") + prompt_width(UI_BUTTON_B, "=BACK") +
 		prompt_width(UI_BUTTON_X, "=REFRESH") + prompt_width(UI_BUTTON_Y, "=CREATE GAME") +
 		prompt_width(UI_BUTTON_BACK, "=FILTERS") +
@@ -736,8 +746,8 @@ void browser_screen_render(
 		long dots = (long)((system_milliseconds() - browser_screen.connecting_time) / 400 % 4);
 
 		snprintf(line, sizeof(line), "Connecting to %s%.*s", browser_screen.connecting_name, (int)dots, "...");
-		ui_overlay_rect(170, 200, 300, 64, 6, 0x0A1A36F8);
-		ui_overlay_outline(170, 200, 300, 64, 6, 1.0f, COLOR_PANEL_EDGE);
+		ui_overlay_rect(170, 200, 300, 64, 0, 0x06080CE6);
+		ui_overlay_outline(170, 200, 300, 64, 0, 0.75f, COLOR_PANEL_EDGE);
 		ui_overlay_text(UI_FONT_BOLD, 12.0f, 320, 212, UI_ALIGN_CENTER, 0xFFFFFFFF, line);
 		x = 320 - (ui_overlay_button_width(UI_BUTTON_B, 13.0f) + ui_overlay_text_width(UI_FONT_BOLD, 10.0f, "=CANCEL")) / 2;
 		x += ui_overlay_button(UI_BUTTON_B, 13.0f, x, 236, 0xFFFFFFFF) + 3;
