@@ -70,13 +70,20 @@ def menu_files() -> List[str]:
     return json.loads((ROOT / MENU_LIST).read_text())["files"]
 
 
+def menu_file(name: str) -> Path:
+    """Where a menu file is read from: its copy under skin/, which
+    tools/shell_skin.py writes in this client's look, or else the file."""
+    skinned = MENU_ASSETS / "skin" / name
+    return skinned if (ROOT / skinned).is_file() else MENU_ASSETS / name
+
+
 def hud_asset_inputs() -> List[Path]:
     """The files the generated source is made from."""
     inputs = [listing for listing in (LAYOUT, TITLE_LIST, FONT_LIST, MENU_LIST) if (ROOT / listing).is_file()]
     if not inputs:
         return []
     return [*inputs, *(folder / f"{asset['name']}.png" for folder, asset, _ in textures()),
-            *(FONT_ASSETS / name for name in font_files()), *(MENU_ASSETS / name for name in menu_files())]
+            *(FONT_ASSETS / name for name in font_files()), *(menu_file(name) for name in menu_files())]
 
 
 def hud_configure_inputs() -> List[Path]:
@@ -226,7 +233,7 @@ def main() -> None:
     lines.append("")
     menus = menu_files()
     for index, name in enumerate(menus):
-        data = (ROOT / MENU_ASSETS / name).read_bytes()
+        data = (ROOT / menu_file(name)).read_bytes()
         if name.endswith(".png"):
             png_size(data, name)
         lines.append(f"static const unsigned int menu{index}[] = {{")
@@ -236,7 +243,7 @@ def main() -> None:
     lines.append("const struct menu_file_embedded menu_files_embedded[] =")
     lines.append("{")
     for index, name in enumerate(menus):
-        size = (ROOT / MENU_ASSETS / name).stat().st_size
+        size = (ROOT / menu_file(name)).stat().st_size
         lines.append(f'\t{{ "{name}", menu{index}, {size} }},')
     if not menus:
         lines.append("\t{ 0 },")
