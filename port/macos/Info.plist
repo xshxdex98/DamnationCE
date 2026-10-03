@@ -5,17 +5,17 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>ChupathingyCE</string>
+	<string>DamnationCE</string>
 	<key>CFBundleExecutable</key>
 	<string>halo</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>io.github.chupathingyce</string>
+	<string>io.github.xshxdex98.damnationce</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>ChupathingyCE</string>
+	<string>DamnationCE</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<!-- (the version: bundle.py writes the build's) -->

@@ -1,0 +1,59 @@
+name: Release
+
+# A release of every platform, made when a tag v<VERSION> is pushed:
+#
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# The tag must be VERSION's. build.yml makes the release builds, versioned
+# and zipped as the game's updater names them, and this publishes them as
+# the tag's release ("DamnationCE v0.1.0"), with notes from the commits
+# since the last one.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          expected="$(tr -d '[:space:]' < VERSION)"
+          if [ "$version" != "$expected" ]; then
+            echo "::error::the tag $GITHUB_REF_NAME is not VERSION's ($expected)"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+      release: true
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: damnationce-*-release-zip
+          path: release
+          merge-multiple: true
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -l release
+          gh release create "$GITHUB_REF_NAME" release/*.zip --repo "$GITHUB_REPOSITORY" \
+            --title "DamnationCE $GITHUB_REF_NAME" --generate-notes

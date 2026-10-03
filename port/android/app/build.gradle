@@ -26,7 +26,7 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.halo.decomp"
+        applicationId "io.github.xshxdex98.damnationce"
         minSdk 28
         targetSdk 35
         versionCode Math.max(1, buildNumber)

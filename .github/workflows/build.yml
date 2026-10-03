@@ -5,10 +5,10 @@ name: Build
 # every pushed commit and pull request, uploaded as artifacts: whether a
 # change builds. tools/ci_build.py does each build; see it for the options.
 #
-# Releases and nightlies are not made here: DamnationCE's release
-# workflows build them from the versions they pin, signed, and publish them
-# to this repository's Releases (tools/version.py). These builds are
-# VERSION's -dev, and never look for updates.
+# These builds are VERSION's -dev, and never look for updates. A release is
+# this workflow called by release.yml (a tag v<VERSION> pushed): then only
+# the release builds are made, versioned, and zipped as the updater names
+# them (damnationce-<platform>-release.zip).
 #
 # Kept cheap:
 # - one job per platform builds both configurations, so its set-up (tools,
@@ -22,15 +22,25 @@ name: Build
 # - artifacts are kept for three days.
 on:
   push:
+    # (a tag is a release: release.yml builds it)
+    branches: ["**"]
     paths-ignore:
       - "**.md"
   pull_request:
     paths-ignore:
       - "**.md"
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+      release:
+        type: boolean
+        default: true
 
 concurrency:
-  group: build-${{ github.ref }}
+  group: build-${{ github.ref }}-${{ inputs.release || false }}
   cancel-in-progress: true
 
 permissions:
@@ -41,6 +51,9 @@ env:
   CCACHE_DIR: ${{ github.workspace }}/.ccache
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_MAXSIZE: 1G
+  # (tools/version.py: empty unless release.yml calls this)
+  HALO_VERSION: ${{ inputs.version }}
+  HALO_RELEASE_BUILD: ${{ inputs.release && '1' || '' }}
 
 jobs:
   linux:
@@ -65,6 +78,7 @@ jobs:
           restore-keys: ccache-linux-
 
       - name: Debug
+        if: ${{ !inputs.release }}
         run: python tools/ci_build.py linux debug
 
       - name: Release
@@ -77,6 +91,7 @@ jobs:
         run: ccache --show-stats
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.release }}
         with:
           name: damnationce-linux-debug
           path: dist/damnationce-linux-debug
@@ -86,6 +101,17 @@ jobs:
         with:
           name: damnationce-linux-release
           path: dist/damnationce-linux-release
+          retention-days: 3
+
+      - name: Zip for the release
+        if: ${{ inputs.release }}
+        run: python -c "import shutil; shutil.make_archive('damnationce-linux-release', 'zip', 'dist/damnationce-linux-release')"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.release }}
+        with:
+          name: damnationce-linux-release-zip
+          path: damnationce-linux-release.zip
           retention-days: 3
 
   android:
@@ -125,6 +151,7 @@ jobs:
 
       # (signed with the runner's debug key: the release workflows sign)
       - name: Debug
+        if: ${{ !inputs.release }}
         run: python3 tools/ci_build.py android debug
 
       - name: Release
@@ -134,6 +161,7 @@ jobs:
         run: ccache --show-stats
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.release }}
         with:
           name: damnationce-android-debug
           path: dist/damnationce-android-debug
@@ -143,6 +171,17 @@ jobs:
         with:
           name: damnationce-android-release
           path: dist/damnationce-android-release
+          retention-days: 3
+
+      - name: Zip for the release
+        if: ${{ inputs.release }}
+        run: python3 -c "import shutil; shutil.make_archive('damnationce-android-release', 'zip', 'dist/damnationce-android-release')"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.release }}
+        with:
+          name: damnationce-android-release-zip
+          path: damnationce-android-release.zip
           retention-days: 3
 
   windows:
@@ -180,6 +219,7 @@ jobs:
           key: windows-third-party-${{ hashFiles('tools/windows_build.py') }}
 
       - name: Debug
+        if: ${{ !inputs.release }}
         run: python tools/ci_build.py windows debug
 
       - name: Release
@@ -189,6 +229,7 @@ jobs:
         run: ccache --show-stats
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.release }}
         with:
           name: damnationce-windows-debug
           path: dist/damnationce-windows-debug
@@ -198,6 +239,17 @@ jobs:
         with:
           name: damnationce-windows-release
           path: dist/damnationce-windows-release
+          retention-days: 3
+
+      - name: Zip for the release
+        if: ${{ inputs.release }}
+        run: python -c "import shutil; shutil.make_archive('damnationce-windows-release', 'zip', 'dist/damnationce-windows-release')"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.release }}
+        with:
+          name: damnationce-windows-release-zip
+          path: damnationce-windows-release.zip
           retention-days: 3
 
   macos:
@@ -226,6 +278,7 @@ jobs:
           key: macos-sdl3-${{ hashFiles('tools/android_build.py', 'tools/macos_build.py') }}
 
       - name: Debug
+        if: ${{ !inputs.release }}
         run: python3 tools/ci_build.py macos debug
 
       - name: Release
@@ -233,10 +286,13 @@ jobs:
 
       - name: Package
         run: |
-          tar -C dist -cf damnationce-macos-debug.tar damnationce-macos-debug
+          if [ -d dist/damnationce-macos-debug ]; then
+            tar -C dist -cf damnationce-macos-debug.tar damnationce-macos-debug
+          fi
           tar -C dist -cf damnationce-macos-release.tar damnationce-macos-release
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.release }}
         with:
           name: damnationce-macos-debug
           path: damnationce-macos-debug.tar
@@ -246,4 +302,16 @@ jobs:
         with:
           name: damnationce-macos-release
           path: damnationce-macos-release.tar
+          retention-days: 3
+
+      # (ditto keeps the application's symbolic links, which its signature needs)
+      - name: Zip for the release
+        if: ${{ inputs.release }}
+        run: ditto -c -k --sequesterRsrc dist/damnationce-macos-release damnationce-macos-release.zip
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.release }}
+        with:
+          name: damnationce-macos-release-zip
+          path: damnationce-macos-release.zip
           retention-days: 3
