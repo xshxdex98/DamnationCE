@@ -7,9 +7,9 @@ Online Games is (browser_screen.c), in place of the PC menus' map list.
 
 It opens on two categories, VANILLA (the Xbox's 13 levels and Halo PC's own
 six) and CUSTOM (the other Custom Edition maps in the maps folder,
-custom_edition_maps.c); a category opens its maps. Y turns the maps between a list, with the chosen map's
-picture and description beside it, and a grid of cards, each map's picture
-over its name. A picks the map, as the PC menus' list does, and opens the
+custom_edition_maps.c); a category opens its maps. Y turns the maps between
+a list, with the chosen map's picture and description beside it, and a grid
+of cards, each map's picture over its name. A picks the map, as the PC menus' list does, and opens the
 game types that follow it; B goes back a step.
 
 It opens over two screens. The PC menus' Map screen runs "port map select"
@@ -38,6 +38,7 @@ it too.
 #include "interface/ui_widget_instance.h"
 
 #include "custom_edition_maps.h"
+#include "overlay_screens.h"
 #include "../src/ui_overlay.h"
 #include "halo_ui_pointer.h"
 
@@ -48,17 +49,11 @@ it too.
 
 enum
 {
-	/* (event_manager.c's event types, which it keeps to itself) */
-	MAP_EVENT_LEFT_STICK = 1,
-	MAP_EVENT_BUTTON = 3,
 	/* (event_manager_post_button's buttons) */
 	BUTTON_A = 0,
 
 	/* the screen takes no A this soon after it opens */
 	OPEN_SETTLE = 600,
-	/* a held direction moves again after this long, and then this often */
-	REPEAT_DELAY = 350,
-	REPEAT_PERIOD = 90,
 
 	NUMBER_OF_CATEGORIES = 2,
 	/* (the Xbox's 13 and custom_edition_maps.c's most) */
@@ -97,9 +92,8 @@ enum
 	COLOR_EDGE = 0xFFFFFF46,
 };
 
-/* the Xbox levels' pictures and their names, in the game's order of them
-(ui_widget_event_handler_functions.c: the menus' mp_map_grafix frames) */
-#define LEVEL_PICTURES "ui\\shell\\bitmaps\\mp_map_grafix"
+/* the Xbox levels' descriptions and names, in the game's order of them
+(ui_widget_event_handler_functions.c) */
 #define LEVEL_DESCRIPTIONS "pc\\main_menu\\multiplayer_type_select\\mp_map_select\\map_data"
 #define GAMETYPES_SCREEN "pc\\main_menu\\multiplayer_type_select\\connected\\gametype_select_screen_wrapper"
 static char const *const xbox_level_names[] =
@@ -139,35 +133,15 @@ static struct
 	struct widget_instance *xbox_list;
 	short xbox_count;
 	unsigned long opened_time;
-	boolean held;
-	unsigned long repeat_time;
+	struct overlay_repeat repeat;
 } map_screen = { FALSE, NONE, VIEW_LIST };
 
 /* ---------- private code */
 
+/* a string, 0-terminated, as UTF-8 */
 static void utf8_of(wchar_t const *text, char *out, long size)
 {
-	long used = 0;
-
-	for (; text && *text && used < size - 4; text++)
-	{
-		unsigned int character = (unsigned int)*text & 0xFFFF;
-
-		if (character < 0x80)
-			out[used++] = (char)character;
-		else if (character < 0x800)
-		{
-			out[used++] = (char)(0xC0 | (character >> 6));
-			out[used++] = (char)(0x80 | (character & 0x3F));
-		}
-		else
-		{
-			out[used++] = (char)(0xE0 | (character >> 12));
-			out[used++] = (char)(0x80 | ((character >> 6) & 0x3F));
-			out[used++] = (char)(0x80 | (character & 0x3F));
-		}
-	}
-	out[used] = 0;
+	overlay_utf8(text, size, out, size);
 }
 
 /* a level's name in the menus, and its description (empty if none) */
@@ -188,38 +162,6 @@ static void level_text(short level, char *name, char *description, long size)
 	}
 	utf8_of(custom_edition_maps_name(display), name, size);
 	utf8_of(custom_edition_maps_description(display), description, size);
-}
-
-/* a level's picture in a place of the screen: an Xbox level's frame of the
-menus' pictures, or a Custom Edition map's own (the unknown level's frame
-for one without) */
-static void level_picture(short level, short x0, short y0, short x1, short y1)
-{
-	long pictures = tag_loaded('bitm', LEVEL_PICTURES);
-	short frame = custom_edition_maps_level_display_index(level);
-	struct bitmap_data *bitmap = pictures == NONE ? NULL : custom_edition_maps_picture(pictures, &frame);
-	rectangle2d bounds, art;
-
-	ui_overlay_cutout(x0, y0, (float)(x1 - x0), (float)(y1 - y0));
-	bounds.x0 = x0;
-	bounds.y0 = y0;
-	bounds.x1 = x1;
-	bounds.y1 = y1;
-	draw_quad(&bounds, 0xFF0A0C10);
-	if (bitmap)
-	{
-		draw_bitmap_in_rect(bitmap, &bounds, NULL, NULL, 0xFFFFFFFF, NULL, FALSE);
-		return;
-	}
-	bitmap = pictures == NONE ? NULL : bitmap_group_get_bitmap_from_sequence(pictures, 0, frame);
-	if (!bitmap)
-		return;
-	/* (the picture fills the bitmap's top left; the rest is margin) */
-	art.x0 = 0;
-	art.y0 = 0;
-	art.x1 = (short)MIN(140, bitmap->width);
-	art.y1 = (short)MIN(114, bitmap->height);
-	draw_bitmap_in_rect(bitmap, &bounds, &art, NULL, 0xFFFFFFFF, NULL, FALSE);
 }
 
 /* whether a level is one of the stock ones: the Xbox's, or Halo PC's own */
@@ -320,29 +262,6 @@ static void move(short dx, short dy)
 	keep_in_view();
 }
 
-/* a direction's steps this frame: one when it is first pressed, then, held,
-one every REPEAT_PERIOD after REPEAT_DELAY */
-static boolean repeated(boolean held)
-{
-	unsigned long now = system_milliseconds();
-
-	if (!held)
-	{
-		map_screen.held = FALSE;
-		return FALSE;
-	}
-	if (!map_screen.held)
-	{
-		map_screen.held = TRUE;
-		map_screen.repeat_time = now + REPEAT_DELAY;
-		return TRUE;
-	}
-	if (now < map_screen.repeat_time)
-		return FALSE;
-	map_screen.repeat_time = now + REPEAT_PERIOD;
-	return TRUE;
-}
-
 /* the row or card at a point of the 640x480 layout (its index in what is
 shown), or NONE */
 static short item_at(short x, short y)
@@ -373,12 +292,6 @@ static void chosen_row(float x, float y, float width, float height)
 {
 	ui_overlay_rect(x, y, width, height, 0, COLOR_CHOSEN);
 	ui_overlay_rect(x, y, 1.5f, height, 0, COLOR_TICK);
-}
-
-static float prompt(int button, char const *words, float x)
-{
-	x += ui_overlay_button(button, 15.0f, x, 455.0f, 0xFFFFFFFF) + 3.0f;
-	return x + ui_overlay_text(UI_FONT_BOLD, 12.0f, x, 456.5f, UI_ALIGN_LEFT, COLOR_TEXT, words) + 20.0f;
 }
 
 static void render_categories(void)
@@ -422,8 +335,8 @@ static void render_list(void)
 	if (!map_screen.count)
 		return;
 	/* the chosen map, at the right */
-	level_picture(map_screen.levels[map_screen.selected], PREVIEW_X, PREVIEW_Y, PREVIEW_X + PREVIEW_WIDTH,
-		PREVIEW_Y + PREVIEW_HEIGHT);
+	overlay_map_picture(custom_edition_maps_level_display_index(map_screen.levels[map_screen.selected]),
+		PREVIEW_X, PREVIEW_Y, PREVIEW_WIDTH, PREVIEW_HEIGHT);
 	ui_overlay_outline(PREVIEW_X, PREVIEW_Y, PREVIEW_WIDTH, PREVIEW_HEIGHT, 0, 0.75f, COLOR_EDGE);
 	level_text(map_screen.levels[map_screen.selected], name, description, sizeof(description));
 	ui_overlay_text(UI_FONT_BOLD, 15.0f, PREVIEW_X, PREVIEW_Y + PREVIEW_HEIGHT + 8, UI_ALIGN_LEFT, COLOR_TITLE, name);
@@ -456,7 +369,8 @@ static void render_grid(void)
 		short x = (short)(GRID_X + (slot % GRID_COLUMNS) * (CARD_WIDTH + CARD_GAP_X));
 		short y = (short)(GRID_Y + (slot / GRID_COLUMNS) * (CARD_HEIGHT + CARD_GAP_Y));
 
-		level_picture(map_screen.levels[index], x, y, (short)(x + CARD_WIDTH), (short)(y + CARD_PICTURE));
+		overlay_map_picture(custom_edition_maps_level_display_index(map_screen.levels[index]), x, y, CARD_WIDTH,
+			CARD_PICTURE);
 		if (index == map_screen.selected)
 		{
 			ui_overlay_outline(x, y, CARD_WIDTH, CARD_PICTURE, 0, 1.5f, COLOR_TICK);
@@ -487,7 +401,7 @@ boolean map_screen_open(void)
 	map_screen.level_names = ui_widget_port_multiplayer_levels(&map_screen.level_count, &map_screen.xbox_count);
 	map_screen.active = TRUE;
 	map_screen.opened_time = system_milliseconds();
-	map_screen.held = FALSE;
+	map_screen.repeat.held = FALSE;
 	/* (a category open before, the game types backed out of: still open) */
 	if (map_screen.category != NONE)
 	{
@@ -542,12 +456,12 @@ void map_screen_process(void)
 
 	while (map_screen.active && get_next_event(&event, NONE))
 	{
-		if (event.type == MAP_EVENT_LEFT_STICK)
+		if (event.type == OVERLAY_EVENT_LEFT_STICK)
 		{
 			dy = event.data.stick.y == SHORT_MAX ? -1 : event.data.stick.y == SHORT_MIN ? 1 : dy;
 			dx = event.data.stick.x == SHORT_MIN ? -1 : event.data.stick.x == SHORT_MAX ? 1 : dx;
 		}
-		else if (event.type == MAP_EVENT_BUTTON)
+		else if (event.type == OVERLAY_EVENT_BUTTON)
 		{
 			switch (event.data.button.index)
 			{
@@ -571,7 +485,7 @@ void map_screen_process(void)
 			}
 		}
 	}
-	if (repeated(dx || dy))
+	if (overlay_repeat_step(&map_screen.repeat, dx || dy))
 		move(dx, dy);
 	/* (the widgets behind take nothing while this is up; once a map is
 	picked, the A given to the Xbox's list goes through) */
@@ -600,10 +514,10 @@ void map_screen_render(void)
 		render_list();
 
 	x = 37;
-	x = prompt(UI_BUTTON_A, "=SELECT", x);
-	x = prompt(UI_BUTTON_B, "=BACK", x);
+	x = overlay_prompt(UI_BUTTON_A, "=SELECT", x, COLOR_TEXT);
+	x = overlay_prompt(UI_BUTTON_B, "=BACK", x, COLOR_TEXT);
 	if (map_screen.category != NONE)
-		prompt(UI_BUTTON_Y, map_screen.view == VIEW_LIST ? "=GRID VIEW" : "=LIST VIEW", x);
+		overlay_prompt(UI_BUTTON_Y, map_screen.view == VIEW_LIST ? "=GRID VIEW" : "=LIST VIEW", x, COLOR_TEXT);
 }
 
 #endif
