@@ -7,8 +7,9 @@ Xbox paths are translated below two roots. d:\ is the data root, the
 directory holding the game's maps/ folder: paths.data (port_config.c), else the current
 directory when it has maps/, else assets/ in the current directory or two
 levels above the executable (the repository root for build/linux/halo).
-h:\ is the Halo Custom Edition install, when there is one (its maps folder
-holds the resource maps Custom Edition maps need, and more maps).
+h:\ is the Halo Custom Edition install paths.custom_edition names, if any
+(its maps folder holds the resource maps Custom Edition maps need, and more
+maps).
 Every other drive letter X:\ is the subdirectory X/ of the save root (z:\ holds the persistent cache and saves,
 u:\ user data, t:\ title data): paths.saves, else
 $XDG_DATA_HOME/halo-linux or ~/.local/share/halo-linux. Path components are
@@ -255,10 +256,6 @@ const char *platform_custom_edition_root(void)
 
 		found = 1;
 		snprintf(root, sizeof(root), "%s", config_string("paths.custom_edition"));
-#ifdef _WIN32
-		if (!root[0] && !platform_custom_edition_install(root, sizeof(root)))
-			root[0] = 0;
-#endif
 		snprintf(maps, sizeof(maps), "%s/maps", root);
 		if (root[0] && posix_stat(maps, &information) != 0)
 		{

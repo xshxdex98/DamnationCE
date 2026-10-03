@@ -17,15 +17,6 @@ turn into Xbox error codes.
 
 #include "posix.h"
 
-int platform_custom_edition_install(char *path, unsigned long size)
-{
-	/* (a 32-bit program reads the 32-bit registry view, where the installer wrote it) */
-	DWORD bytes = size;
-
-	return RegGetValueA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Microsoft Games\\Halo CE", "EXE Path",
-		RRF_RT_REG_SZ, NULL, path, &bytes) == ERROR_SUCCESS && path[0];
-}
-
 static int fail(void)
 {
 	switch (GetLastError())

@@ -5,9 +5,9 @@ The multiplayer map picker (configure.py --game-browser, as the overlay it
 draws on): a screen of its own over the menus, drawn and driven by code as
 Online Games is (browser_screen.c), in place of the PC menus' map list.
 
-It opens on two categories, VANILLA (the Xbox's 13 levels) and CUSTOM (the
-Custom Edition maps in the maps folder, custom_edition_maps.c); a category
-opens its maps. Y turns the maps between a list, with the chosen map's
+It opens on two categories, VANILLA (the Xbox's 13 levels and Halo PC's own
+six) and CUSTOM (the other Custom Edition maps in the maps folder,
+custom_edition_maps.c); a category opens its maps. Y turns the maps between a list, with the chosen map's
 picture and description beside it, and a grid of cards, each map's picture
 over its name. A picks the map, as the PC menus' list does, and opens the
 game types that follow it; B goes back a step.
@@ -222,14 +222,20 @@ static void level_picture(short level, short x0, short y0, short x1, short y1)
 	draw_bitmap_in_rect(bitmap, &bounds, &art, NULL, 0xFFFFFFFF, NULL, FALSE);
 }
 
-/* the level list's levels in a category: the Xbox levels, or the maps after them */
+/* whether a level is one of the stock ones: the Xbox's, or Halo PC's own */
+static boolean level_vanilla(short level)
+{
+	return level < map_screen.xbox_count || custom_edition_maps_stock(custom_edition_maps_level_display_index(level));
+}
+
+/* the level list's levels in a category: the stock ones, or the rest */
 static short category_levels(short category, short *levels)
 {
 	short count = 0, level;
 
 	for (level = 0; level < map_screen.level_count && count < MAXIMUM_LEVELS; level++)
 	{
-		if ((level < map_screen.xbox_count) == (category == 0))
+		if (level_vanilla(level) == (category == 0))
 			levels[count++] = level;
 	}
 	return count;

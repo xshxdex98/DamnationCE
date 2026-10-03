@@ -223,9 +223,10 @@ static const struct config_setting config_settings[] =
 		"working directory and its assets folder. Windows paths are easiest in\n"
 		"single quotes: 'C:\\Games\\Halo'." },
 	{ "paths.custom_edition", _config_string, "\"\"", "HALO_CUSTOM_EDITION_ROOT", _environment_value, _platform_desktop,
-		"The Halo Custom Edition install, whose maps folder gives Custom Edition\n"
-		"maps their bitmaps.map, sounds.map and loc.map and adds its maps to\n"
-		"the map list (game.custom_edition); empty finds it on Windows." },
+		"A Halo Custom Edition install whose maps folder is looked in after the\n"
+		"game's for Custom Edition maps and their bitmaps.map, sounds.map and\n"
+		"loc.map (game.custom_edition); empty for none: copy those into the\n"
+		"game's maps folder instead." },
 	{ "paths.saves", _config_string, "\"\"", "HALO_SAVE_ROOT", _environment_value, _platform_desktop,
 		"Where saved games and profiles go; empty for the usual place\n"
 		"(~/.local/share/halo-linux, or %APPDATA%\\halo on Windows)." },

@@ -116,6 +116,18 @@ struct custom_edition_maps_globals
 
 static struct custom_edition_maps_globals custom_edition_maps_globals;
 
+/* Halo PC's own multiplayer maps, which the Xbox did not have, and their
+names in its menus (its ui.map's mp_map_list) */
+static struct
+{
+	char const *file;
+	wchar_t const *name;
+} const stock_maps[] =
+{
+	{ "icefields", L"Ice Fields" }, { "deathisland", L"Death Island" }, { "dangercanyon", L"Danger Canyon" },
+	{ "infinity", L"Infinity" }, { "timberland", L"Timberland" }, { "gephyrophobia", L"Gephyrophobia" },
+};
+
 /* the description of a map without a description file, in the manner of
 the Xbox levels' */
 static wchar_t const default_description[] = L"Halo Custom\r\nEdition map";
@@ -156,12 +168,33 @@ static boolean xbox_level_named(
 
 /* the file name as the menus show it: "beavercreek_halo3" as
 "Beavercreek Halo3" */
+static short stock_map_index(
+	char const *name)
+{
+	short index;
+
+	for (index = 0; index < NUMBEROF(stock_maps); index++)
+	{
+		if (!csstrcasecmp(name, stock_maps[index].file))
+			return index;
+	}
+	return NONE;
+}
+
+/* a map's name in the menus: Halo PC's for its own maps, else its file's,
+words split at underscores and capitalized */
 static void display_name_make(
 	char const *name,
 	wchar_t *display_name)
 {
 	boolean word_start = TRUE;
-	short index;
+	short index = stock_map_index(name);
+
+	if (index != NONE)
+	{
+		wcscpy(display_name, stock_maps[index].name);
+		return;
+	}
 
 	for (index = 0; name[index]; index++)
 	{
@@ -498,6 +531,14 @@ short custom_edition_maps_display_index(
 	}
 
 	return NONE;
+}
+
+boolean custom_edition_maps_stock(
+	short display_index)
+{
+	struct custom_edition_map *map = custom_edition_map_get(display_index);
+
+	return map && stock_map_index(map->name) != NONE;
 }
 
 wchar_t *custom_edition_maps_name(

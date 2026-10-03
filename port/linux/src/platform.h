@@ -98,15 +98,9 @@ host path below the data root. Components are matched case-insensitively
 against what exists on disk, as the Xbox file system is case-insensitive. */
 void platform_translate_path(const char *xbox_path, char *host_path, unsigned long host_path_size);
 const char *platform_data_root(void);
-/* the Halo Custom Edition install the Xbox drive h:\ is (paths.custom_edition,
-else on Windows the one its installer recorded), or "" when there is none
-with a maps folder */
+/* the Halo Custom Edition install the Xbox drive h:\ is (paths.custom_edition),
+or "" when none is set or it has no maps folder */
 const char *platform_custom_edition_root(void);
-#ifdef _WIN32
-/* (win32_files.c) the install Halo Custom Edition's installer recorded, in
-path; 0 if none */
-int platform_custom_edition_install(char *path, unsigned long size);
-#endif
 /* on the desktop, when the data root has no maps folder: offers to copy it
 out of an Xbox disc image into destination (sdl_platform.c), and quits if
 the player declines; nonzero once destination has one */
