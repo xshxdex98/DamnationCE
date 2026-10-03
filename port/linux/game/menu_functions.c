@@ -69,6 +69,7 @@ their handlers open opens.
 #include "text/unicode.h"
 
 #include "halo_menus.h"
+#include "custom_edition_maps.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -2548,21 +2549,39 @@ static void lobby_row_text(short row, wchar_t *text)
 }
 
 /* the lobby's panel's map: its picture and name */
+/* the game's map in the lobby's picture and name: an Xbox level's from the
+menus' lists, a Custom Edition map's its own (custom_edition_maps.c, by its
+display index, as the map picker shows it), else the unknown level's */
+#define UNKNOWN_MAP 19
+
 static void lobby_map_show(struct widget_instance *description, char const *map_name)
 {
 	char const *const *names;
-	short last, count = ui_widget_port_multiplayer_maps(&names, &last), map = 19, index;
+	short last, count = ui_widget_port_multiplayer_maps(&names, &last), map = NONE, index;
+	short custom = custom_edition_maps_display_index(map_name);
 	struct widget_instance *widget;
+	wchar_t name[ROW_TEXT_LENGTH];
 
 	for (index = 0; index < count; index++)
 	{
 		if (!_stricmp(names[index], map_name))
 			map = index;
 	}
+	if (map == NONE && custom != NONE && custom_edition_maps_name(custom))
+	{
+		ustrncpy(name, custom_edition_maps_name(custom), ROW_TEXT_LENGTH - 1);
+		name[ROW_TEXT_LENGTH - 1] = 0;
+		map = custom;
+	}
+	else
+	{
+		if (map == NONE)
+			map = UNKNOWN_MAP;
+		string_get("pc\\main_menu\\mp_map_list", map, name);
+	}
 	if ((widget = named(description, "lobby_map_pic", 0)) != NULL)
 		widget->animation.current_frame_index = map;
-	if ((widget = named(description, "lobby_map_name", 0)) != NULL)
-		widget->parameters.text_box.string_list_index = map;
+	text_set(named(description, "lobby_map_name", 0), name);
 }
 
 /* "port lobby update" */
