@@ -190,6 +190,7 @@ symbols in this file:
 #include "tag_files/tag_files.h"
 #include "scenario/scenario_definitions.h"
 #include "rasterizer/rasterizer.h"
+#include "custom_edition_cache.h"
 
 #include <xtl.h>
 
@@ -615,6 +616,12 @@ boolean cache_files_precache_is_copying_map(
 boolean cache_files_precache_map_loaded(
 	const char *map_name)
 {
+	/* a Halo Custom Edition map, when those may run, is read in place and
+	never copied to the cache partition (port/linux/game/custom_edition_cache.c) */
+	if (custom_edition_cache_playable(map_name))
+	{
+		return TRUE;
+	}
 	return cached_map_files_find_map(tag_name_strip_path(map_name)) != NONE;
 }
 
@@ -687,6 +694,13 @@ void cache_files_initialize(
 		"c:\\halo\\SOURCE\\cache\\cache_files_windows.c",
 		188,
 		cache_file_globals.requests);
+	/* cache_file_open clears the requests before an Xbox map is read; a
+	Halo Custom Edition map is read without it, so they start out free
+	(port/linux/game/custom_edition_cache.c) */
+	memset(
+		cache_file_globals.requests,
+		0,
+		MAXIMUM_SIMULTANEOUS_CACHE_REQUESTS * sizeof(struct cache_file_request));
 	cache_file_windows_thread_create();
 	cache_files_verify_language();
 	cache_files_open_cache_files();
@@ -823,6 +837,15 @@ short cache_file_read(
 	short request_index = cache_request_next_free_index();
 	struct cache_file_request *request = cache_request_get(request_index);
 
+	/* reads of a Halo Custom Edition map are served in place, at once; the
+	request slot stays free (port/linux/game/custom_edition_cache.c) */
+	if (custom_edition_cache_tags_loaded())
+	{
+		custom_edition_cache_read(tag_index, offset, size, buffer);
+		*completion_flag_reference = TRUE;
+
+		return request_index;
+	}
 	match_assert(
 		"c:\\halo\\SOURCE\\cache\\cache_files_windows.c",
 		269,
@@ -1198,6 +1221,10 @@ static void cache_file_get_map_path(
 	char *path)
 {
 	sprintf(path, "%s%s.map", cache_files_map_directory(), map_name);
+	/* or the OpenSauce .yelo cache of that name, which the header check
+	names and refuses; every caller's path holds 256 characters
+	(port/linux/game/custom_edition_cache.c) */
+	opensauce_cache_path_find(path, 256);
 
 	return;
 }

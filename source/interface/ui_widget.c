@@ -690,6 +690,7 @@ void browser_screen_render(void);
 /* (ONLINE GAMES, below: its list moves focus item by item) */
 boolean ui_widget_online_games_list(struct widget_instance *widget);
 #endif
+#include "custom_edition_maps.h"
 
 /* ---------- constants */
 
@@ -6219,6 +6220,8 @@ static void widget_instance_render_recursive(
 	long input_index;
 	struct widget_instance *child;
 	struct bitmap_data *bitmap;
+	struct bitmap_data *custom_edition_picture;
+	short frame_index;
 
 	if (!use_nifty_plasma_fx &&
 		TEST_FLAG(definition->flags, _widget_always_render_with_nifty_fx_bit))
@@ -6241,10 +6244,17 @@ static void widget_instance_render_recursive(
 	if (!widget->visible)
 		return;
 	ui_mouse_note_target(widget, definition, offset);
-	bitmap = bitmap_group_get_bitmap_from_sequence(
+	/* a Custom Edition map's picture, drawn over the whole widget, or the
+	unknown level's frame for a map without one
+	(port/linux/game/custom_edition_maps.c) */
+	frame_index = widget->animation.current_frame_index;
+	custom_edition_picture = custom_edition_maps_picture(
+		definition->background_bitmap.index,
+		&frame_index);
+	bitmap = custom_edition_picture ? custom_edition_picture : bitmap_group_get_bitmap_from_sequence(
 		definition->background_bitmap.index,
 		0,
-		widget->animation.current_frame_index);
+		frame_index);
 	if (bitmap)
 	{
 		real alpha = alpha_modifier;
@@ -6321,7 +6331,7 @@ static void widget_instance_render_recursive(
 		draw_bitmap_in_rect(
 			bitmap,
 			&bounds,
-			&bounds,
+			custom_edition_picture ? NULL : &bounds,
 			clip,
 			color,
 			&multitexture_params,

@@ -2310,13 +2310,15 @@ void rasterizer_transparent_geometry_group_draw(
 							short map_index;
 							long result;
 
-							/* BUG (preserved for exact matching): January never advances layer_index, so the
-							 * loop redraws extra layer 0 for as long as the block is non-empty (the bytes push
-							 * index 0 and re-test the count). A corrected build should increment layer_index.
+							/* port: January never advances layer_index (a bug), so its loop redraws extra
+							 * layer 0 for as long as the block is non-empty (the bytes push index 0 and
+							 * re-test the count). No Xbox map has such layers; Halo Custom Edition maps have
+							 * chicago shaders with them, which would hang the game
+							 * (port/linux/game/custom_edition_cache.c), so the port advances it.
 							 */
 							for (layer_index = 0;
 								layer_index < shader_transparent_chicago->chicago.extra_layers.count;
-								)
+								layer_index++)
 							{
 								struct transparent_geometry_group layer_group;
 
