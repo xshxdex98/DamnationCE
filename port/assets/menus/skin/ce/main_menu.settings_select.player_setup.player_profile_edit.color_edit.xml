@@ -5,7 +5,7 @@
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/color_edit/color_right_name" x="415" y="85"/>
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/color_edit/color_right_pic" x="421" y="106"/>
 	</widget>
-	<widget name="main_menu/settings_select/player_setup/player_profile_edit/color_edit/color_right_name" type="text" controller="1" width="147" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/color_edit/colors_list" string_index="2" font="ui\large_ui" color="#FFD6ECFF" align="center">
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/color_edit/color_right_name" type="text" controller="1" width="147" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/color_edit/colors_list" string_index="2" font="ui\large_ui" color="#FFE6F0FF" align="center">
 	</widget>
 	<widget name="main_menu/settings_select/player_setup/player_profile_edit/color_edit/color_right_pic" controller="1" width="143" height="294" bitmap="ui\shell\main_menu\settings_select\player_setup\player_profile_edit\color_edit\player_color_marine_large">
 	</widget>

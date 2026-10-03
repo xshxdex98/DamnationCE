@@ -10,7 +10,7 @@
 		<on event="start" run="main menu quit game"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
 	</widget>
-	<widget name="main_menu/quit_select/quit_screen" type="text" controller="1" left="180" top="160" width="280" height="160" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/alert_bkd" string_list="main_menu/quit_select/header_quit_game_prompt" font="ui\large_ui" color="#FFD6ECFF" align="center" text_x="-10" text_y="35">
+	<widget name="main_menu/quit_select/quit_screen" type="text" controller="1" left="180" top="160" width="280" height="160" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/alert_bkd" string_list="main_menu/quit_select/header_quit_game_prompt" font="ui\large_ui" color="#FFE6F0FF" align="center" text_x="-10" text_y="35">
 		<child widget="main_menu/quit_select/quit_button_bar" x="182" y="293"/>
 		<child widget="error/header_are_you_sure" x="182" y="164"/>
 	</widget>
