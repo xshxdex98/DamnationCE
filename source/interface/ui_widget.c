@@ -687,6 +687,8 @@ boolean browser_screen_active(void);
 void browser_screen_open(void);
 void browser_screen_process(void);
 void browser_screen_render(void);
+struct halo_ui_pointer;
+void browser_screen_pointer(struct halo_ui_pointer const *pointer);
 /* (ONLINE GAMES, below: its list moves focus item by item) */
 boolean ui_widget_online_games_list(struct widget_instance *widget);
 #endif
@@ -6081,8 +6083,9 @@ static void ui_widgets_process_mouse(
 	if (!halo_ui_pointer_update(ui_mouse_menus_active(), &pointer) ||
 		virtual_keyboard_active()
 #ifdef HALO_GAME_BROWSER
-		/* (nor over Online Games: a click left in the queue would pick a game) */
-		|| browser_screen_active()
+		/* (nor over Online Games, which takes the pointer itself: a click
+		left in the queue would pick a game) */
+		|| (browser_screen_active() && (browser_screen_pointer(&pointer), TRUE))
 #endif
 		)
 	{
@@ -6488,6 +6491,14 @@ void render_ui_widgets(
 		local_player_index == NONE ? 0 : local_player_index;
 	if (bink_playback_ui_rendering_inhibited())
 		return;
+#ifdef HALO_GAME_BROWSER
+	/* port: Online Games is drawn alone, without the menu it was opened from */
+	if (browser_screen_active())
+	{
+		browser_screen_render();
+		return;
+	}
+#endif
 	if (!virtual_keyboard_active())
 	{
 		local_player_index = PIN(
@@ -6590,10 +6601,6 @@ void render_ui_widgets(
 	{
 		virtual_keyboard_render();
 	}
-#ifdef HALO_GAME_BROWSER
-	if (browser_screen_active())
-		browser_screen_render();
-#endif
 
 	return;
 }
