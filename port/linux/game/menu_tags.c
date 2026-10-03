@@ -32,6 +32,7 @@ is let go in scenario_tags_unload, before the next map's tags load.
 #include "rasterizer/xbox/rasterizer_xbox_hardware_bitmaps.h"
 
 #include "halo_menus.h"
+#include "cache/cache_files.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -1260,6 +1261,48 @@ static void menu_tags_release(void)
 	memset(&menu_tags, 0, sizeof(menu_tags));
 }
 
+/* the maps' own widgets' text colors (as 0xAARRGGBB), and the PC menus' for
+them (tools/shell_skin.py's TEXT_COLORS): every map has some (its pause
+menus, the split screen and lobby screens in ui.map) */
+static struct
+{
+	unsigned long map, ours;
+} const text_colors[] =
+{
+	{ 0xFF2896FF, 0xFFD2D6DA },
+	{ 0xFF0080FF, 0xFFA8ACB0 },
+};
+
+static unsigned long argb_of(real_argb_color const *color)
+{
+	return ((unsigned long)(color->alpha * 255.0f + 0.5f) << 24) | ((unsigned long)(color->red * 255.0f + 0.5f) << 16) |
+		((unsigned long)(color->green * 255.0f + 0.5f) << 8) | (unsigned long)(color->blue * 255.0f + 0.5f);
+}
+
+static void recolor_map_widgets(void)
+{
+	struct tag_iterator iterator;
+	long tag_index;
+
+	tag_iterator_new(&iterator, UI_WIDGET_DEFINITION_TAG);
+	while ((tag_index = tag_iterator_next(&iterator)) != NONE)
+	{
+		struct ui_widget_definition *definition = tag_get(UI_WIDGET_DEFINITION_TAG, tag_index);
+		unsigned long color = argb_of(&definition->text_color);
+		long index;
+
+		for (index = 0; index < NUMBEROF(text_colors); index++)
+		{
+			if (color != text_colors[index].map)
+				continue;
+			definition->text_color.alpha = (real)(text_colors[index].ours >> 24) / 255.0f;
+			definition->text_color.red = (real)((text_colors[index].ours >> 16) & 0xFF) / 255.0f;
+			definition->text_color.green = (real)((text_colors[index].ours >> 8) & 0xFF) / 255.0f;
+			definition->text_color.blue = (real)(text_colors[index].ours & 0xFF) / 255.0f;
+		}
+	}
+}
+
 /* ---------- public code */
 
 void menu_tags_loaded(
@@ -1269,7 +1312,10 @@ void menu_tags_loaded(
 	struct cache_file_tag_instance *instances;
 	long widget_count, own_lists = 0, total, index;
 
-	if (strcmp(map_name, "ui") || strcmp(config_string("display.menus"), "pc"))
+	if (strcmp(config_string("display.menus"), "pc"))
+		return;
+	recolor_map_widgets();
+	if (strcmp(map_name, "ui"))
 		return;
 	menus = halo_menus_load();
 	if (!menus)

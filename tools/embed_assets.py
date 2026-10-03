@@ -34,6 +34,9 @@ HUD_ASSETS = Path("port/assets/hud")
 LAYOUT = HUD_ASSETS / "layout.json"
 TITLE_ASSETS = Path("port/assets/titles")
 TITLE_LIST = TITLE_ASSETS / "titles.json"
+# the maps' own menu pictures in this client's look (tools/shell_skin.py --maps)
+SKIN_ASSETS = Path("port/assets/menus/skin/xbox")
+SKIN_LIST = SKIN_ASSETS / "textures.json"
 FONT_ASSETS = Path("port/assets/fonts")
 FONT_LIST = FONT_ASSETS / "fonts.json"
 MENU_ASSETS = Path("port/assets/menus")
@@ -57,7 +60,8 @@ def textures() -> List[tuple]:
     """The textures: each one's folder, its entry in its list, and whether
     it is a title."""
     result = []
-    for folder, listing, title in ((HUD_ASSETS, LAYOUT, False), (TITLE_ASSETS, TITLE_LIST, True)):
+    for folder, listing, title in ((HUD_ASSETS, LAYOUT, False), (TITLE_ASSETS, TITLE_LIST, True),
+                                   (SKIN_ASSETS, SKIN_LIST, True)):
         if (ROOT / listing).is_file():
             result += [(folder, asset, title) for asset in json.loads((ROOT / listing).read_text())["assets"]]
     return result
@@ -79,7 +83,7 @@ def menu_file(name: str) -> Path:
 
 def hud_asset_inputs() -> List[Path]:
     """The files the generated source is made from."""
-    inputs = [listing for listing in (LAYOUT, TITLE_LIST, FONT_LIST, MENU_LIST) if (ROOT / listing).is_file()]
+    inputs = [listing for listing in (LAYOUT, TITLE_LIST, SKIN_LIST, FONT_LIST, MENU_LIST) if (ROOT / listing).is_file()]
     if not inputs:
         return []
     return [*inputs, *(folder / f"{asset['name']}.png" for folder, asset, _ in textures()),
@@ -91,8 +95,8 @@ def hud_configure_inputs() -> List[Path]:
     folders, for files added or removed), not each file, which a change of a
     list may rename or remove."""
     inputs = []
-    for folder, listing in ((HUD_ASSETS, LAYOUT), (TITLE_ASSETS, TITLE_LIST), (FONT_ASSETS, FONT_LIST),
-                            (MENU_ASSETS, MENU_LIST)):
+    for folder, listing in ((HUD_ASSETS, LAYOUT), (TITLE_ASSETS, TITLE_LIST), (SKIN_ASSETS, SKIN_LIST),
+                            (FONT_ASSETS, FONT_LIST), (MENU_ASSETS, MENU_LIST)):
         if (ROOT / listing).is_file():
             inputs += [folder, listing]
     return inputs

@@ -33,7 +33,8 @@ long hud_hires_asset_at(unsigned long address, long width, long height);
 
 enum
 {
-	MAXIMUM_HIRES_BITMAPS = 128,
+	/* (the HUD's, the menus' titles, and the menus' look's pictures) */
+	MAXIMUM_HIRES_BITMAPS = 256,
 };
 
 /* ---------- globals */
