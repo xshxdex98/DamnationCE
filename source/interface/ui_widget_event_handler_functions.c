@@ -5854,6 +5854,19 @@ boolean ui_online_games_start_network(
 	return network_game_server_list_initialize(NULL, NULL, &deleted);
 }
 
+/* backed out of: the search ended, as System Link's B ends it ("cancel
+network game"), and the game this machine's own again. While it is a
+network client's, the game's time waits for a host, and the menus' scene
+stands still. */
+void ui_online_games_stop_network(
+	void)
+{
+	boolean deleted = FALSE;
+
+	network_game_cancel(NULL, NULL, &deleted);
+	game_connection_set(0);
+}
+
 boolean ui_online_games_start_server(
 	void)
 {
