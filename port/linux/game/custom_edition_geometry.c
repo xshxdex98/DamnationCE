@@ -138,6 +138,19 @@ typedef char verify_custom_edition_model_part_vertex_offset[
 typedef char verify_structure_material_size[
 	sizeof(struct structure_material) == 0x100 ? 1 : -1];
 
+/* A part of a model with more nodes than the renderer skins at once
+(RASTERIZER_MAXIMUM_NODES_PER_MODEL - 1): its vertices name the part's own
+nodes, and before it is drawn the renderer is given those nodes' matrices
+alone (rasterizer_model_part_skinning, by its vertex buffer). Custom Edition
+models of so many nodes have local nodes, at most
+MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART to a part. */
+struct part_palette
+{
+	struct vertex_buffer const *vertex_buffer;
+	byte node_count;
+	byte nodes[MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART];
+};
+
 /* what the models of a map need, counted before any is converted */
 struct model_geometry_totals
 {
@@ -145,6 +158,8 @@ struct model_geometry_totals
 	long vertex_count;
 	long strip_index_count;
 	long largest_part_vertex_count;
+	/* the parts of models of more nodes than the renderer skins at once */
+	long many_node_part_count;
 };
 
 struct custom_edition_geometry_globals
@@ -154,6 +169,9 @@ struct custom_edition_geometry_globals
 	struct model_geometry_part **model_parts;
 	long model_part_count;
 	byte *model_geometry;
+	/* the parts of the models of many nodes, in the order they were converted */
+	struct part_palette *palettes;
+	long palette_count;
 
 	/* the structure BSP whose materials have buffers, and the compressed
 	vertices those were made from */
@@ -237,9 +255,18 @@ static boolean custom_edition_model_part_verify(
 	return TRUE;
 }
 
-/* Whether this build can draw `model`: its renderer skins at most
-RASTERIZER_MAXIMUM_NODES_PER_MODEL - 1 nodes, and every part must pass
-custom_edition_model_part_verify. Adds what its parts need to `totals`. */
+/* whether the model has more nodes than the renderer skins at once, and so
+is drawn a part's own nodes at a time */
+static boolean model_has_many_nodes(
+	struct model const *model)
+{
+	return model->nodes.count >= RASTERIZER_MAXIMUM_NODES_PER_MODEL;
+}
+
+/* Whether this build can draw `model`: every part must pass
+custom_edition_model_part_verify, and a model of more nodes than the
+renderer skins at once must have local nodes (each part few enough). Adds
+what its parts need to `totals`. */
 static boolean custom_edition_model_verify(
 	struct model const *model,
 	char const *name,
@@ -249,14 +276,16 @@ static boolean custom_edition_model_verify(
 {
 	long geometry_index;
 
-	if (model->nodes.count < 1 || model->nodes.count >= RASTERIZER_MAXIMUM_NODES_PER_MODEL)
+	if (model->nodes.count < 1 || model->nodes.count > MAXIMUM_NODES_PER_MODEL ||
+		(model_has_many_nodes(model) && !TEST_FLAG(model->flags, _gbxmodel_parts_have_local_nodes_bit)))
 	{
 		error(
 			_error_silent,
-			"custom edition: the model '%s' has %ld nodes; this build draws models of 1 to %d",
+			"custom edition: the model '%s' has %ld nodes; this build draws models of 1 to %d, or up to %d whose parts have local nodes",
 			name,
 			model->nodes.count,
-			RASTERIZER_MAXIMUM_NODES_PER_MODEL - 1);
+			RASTERIZER_MAXIMUM_NODES_PER_MODEL - 1,
+			MAXIMUM_NODES_PER_MODEL);
 		return FALSE;
 	}
 	for (geometry_index = 0; geometry_index < model->geometries.count; geometry_index++)
@@ -290,6 +319,8 @@ static boolean custom_edition_model_verify(
 				return FALSE;
 			}
 			totals->part_count++;
+			if (model_has_many_nodes(model))
+				totals->many_node_part_count++;
 			totals->vertex_count += part->vertex_count;
 			totals->strip_index_count += part->strip_triangle_count + 2;
 			totals->largest_part_vertex_count = MAX(totals->largest_part_vertex_count, part->vertex_count);
@@ -301,7 +332,8 @@ static boolean custom_edition_model_verify(
 
 /* Makes `part` this build's part for the Custom Edition part `source`,
 compressing its vertices (by way of `scratch`, room for all of them) to
-`vertices` and copying its strip to `strip`, and gives it buffers. */
+`vertices` and copying its strip to `strip`, and gives it buffers. Its
+vertices name the model's nodes when local_nodes, else as they are. */
 static boolean custom_edition_model_part_convert(
 	struct model_geometry_part *part,
 	struct custom_edition_model_part const *source,
@@ -316,7 +348,6 @@ static boolean custom_edition_model_part_convert(
 	long uncompressed_vertex_size = rasterizer_geometry_get_vertex_size(_rasterizer_vertex_type_model_uncompressed);
 	long strip_index_count = source->strip_triangle_count + 2;
 
-	/* the renderer skins with the model's nodes */
 	csmemcpy(scratch, source_vertices, source->vertex_count * uncompressed_vertex_size);
 	if (local_nodes)
 	{
@@ -381,6 +412,9 @@ static boolean custom_edition_model_convert(
 {
 	struct custom_edition_geometry_globals *globals = &custom_edition_geometry_globals;
 	boolean local_nodes = TEST_FLAG(model->flags, _gbxmodel_parts_have_local_nodes_bit);
+	/* (the renderer skins with the model's nodes, or a part's own when the
+	model has more than it skins at once) */
+	boolean part_palettes = model_has_many_nodes(model);
 	long geometry_index;
 
 	for (geometry_index = 0; geometry_index < model->geometries.count; geometry_index++)
@@ -408,7 +442,7 @@ static boolean custom_edition_model_convert(
 			if (!custom_edition_model_part_convert(
 				part,
 				&source,
-				local_nodes,
+				local_nodes && !part_palettes,
 				(struct model_vertex_uncompressed const *)(model_data + source.vertex_offset),
 				(word const *)(model_data + report->model_index_data_offset + source.strip_offset),
 				scratch,
@@ -417,11 +451,20 @@ static boolean custom_edition_model_convert(
 			{
 				return FALSE;
 			}
+			if (part_palettes)
+			{
+				struct part_palette *palette = &globals->palettes[globals->palette_count++];
+
+				palette->vertex_buffer = &part->vertex_buffer;
+				palette->node_count = source.local_node_count;
+				csmemcpy(palette->nodes, source.local_node_indices, sizeof(palette->nodes));
+			}
 			*vertices += source.vertex_count;
 			*strips += source.strip_triangle_count + 2;
 		}
 	}
-	/* the parts' node indices are now the model's */
+	/* the parts' node indices are now the model's, or their own as the
+	palettes say: the game's code knows nothing of local nodes */
 	model->flags &= ~FLAG(_gbxmodel_parts_have_local_nodes_bit);
 
 	return TRUE;
@@ -542,11 +585,12 @@ boolean custom_edition_models_convert(
 	}
 
 	globals->model_parts = malloc((totals.part_count + 1) * sizeof(*globals->model_parts));
+	globals->palettes = malloc((totals.many_node_part_count + 1) * sizeof(*globals->palettes));
 	globals->model_geometry = malloc(
 		totals.vertex_count * rasterizer_geometry_get_vertex_size(_rasterizer_vertex_type_model_compressed) +
 		totals.strip_index_count * sizeof(*strips) + 1);
 	scratch = malloc(totals.largest_part_vertex_count * sizeof(*scratch) + 1);
-	if (!globals->model_parts || !globals->model_geometry || !scratch)
+	if (!globals->model_parts || !globals->model_geometry || !globals->palettes || !scratch)
 	{
 		error(_error_silent, "custom edition: out of memory for the geometry of %ld model parts", totals.part_count);
 		free(scratch);
@@ -574,12 +618,31 @@ boolean custom_edition_models_convert(
 		custom_edition_cache_tags_regroup(tag_cache, loaded_bytes, GBXMODEL_GROUP_TAG, MODELS_GROUP_TAG);
 		error(
 			_error_silent,
-			"custom edition: %ld model parts converted (%ld vertices compressed)",
+			"custom edition: %ld model parts converted (%ld vertices compressed, %ld parts drawn with their own nodes)",
 			totals.part_count,
-			totals.vertex_count);
+			totals.vertex_count,
+			totals.many_node_part_count);
 	}
 
 	return success;
+}
+
+short custom_edition_part_palette(
+	struct vertex_buffer const *vertex_buffer,
+	byte const **nodes)
+{
+	struct custom_edition_geometry_globals *globals = &custom_edition_geometry_globals;
+	long index;
+
+	for (index = 0; index < globals->palette_count; index++)
+	{
+		if (globals->palettes[index].vertex_buffer == vertex_buffer)
+		{
+			*nodes = globals->palettes[index].nodes;
+			return globals->palettes[index].node_count;
+		}
+	}
+	return 0;
 }
 
 void custom_edition_models_dispose(
@@ -603,9 +666,15 @@ void custom_edition_models_dispose(
 	{
 		free(globals->model_geometry);
 	}
+	if (globals->palettes)
+	{
+		free(globals->palettes);
+	}
 	globals->model_parts = NULL;
 	globals->model_part_count = 0;
 	globals->model_geometry = NULL;
+	globals->palettes = NULL;
+	globals->palette_count = 0;
 
 	return;
 }

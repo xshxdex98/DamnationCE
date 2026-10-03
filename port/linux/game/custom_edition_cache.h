@@ -151,6 +151,14 @@ boolean custom_edition_vehicle_placement_allowed(
 
 /* ---------- prototypes/CUSTOM_EDITION_GEOMETRY.C */
 
+/* The nodes a model part's vertices name, by its vertex buffer, when its
+model has more nodes than the renderer skins at once
+(rasterizer_model_part_skinning): their number, or 0 for any other part. */
+struct vertex_buffer;
+short custom_edition_part_palette(
+	struct vertex_buffer const *vertex_buffer,
+	byte const **nodes);
+
 /* Gives every model of a tag cache custom_edition_cache_load filled
 (`loaded_bytes` of it in use) this build's layout and compressed geometry in
 buffers of its own, made from `model_data`, the model data the report
