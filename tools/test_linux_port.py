@@ -201,8 +201,29 @@ MENU_INTEGER_ATTRIBUTES = {"auto_close", "auto_close_fade", "height", "index", "
 def test_menus_are_well_formed():
     """What port/linux/src/menu_files.c and port/linux/game/menu_tags.c check
     when the game loads them, but the map's own names (paths with backslashes),
-    which only the map has."""
+    which only the map has. Each theme is checked as the game loads it: its
+    layer's files (skin/<theme>/, not listed: embed_assets.py finds them) in
+    place of those they shadow, and the left-hand menus (shell/) Glassed's
+    alone."""
     import json
+
+    listed = json.loads((MENUS / "menus.json").read_text())["files"]
+    menus = sorted(path.relative_to(MENUS).as_posix() for path in MENUS.rglob("*.xml")
+                   if path.relative_to(MENUS).parts[0] != "skin")
+    assert menus == sorted(name for name in listed if name.endswith(".xml"))
+    for layer in sorted(path for path in (MENUS / "skin").iterdir() if path.is_dir()):
+        def resolve(name, layer=layer):
+            return layer / name if (layer / name).is_file() else MENUS / name
+
+        for path in layer.rglob("*.xml"):
+            assert path.relative_to(layer).as_posix() in menus, path
+        check_menus([name for name in menus if layer.name == "glassed" or not name.startswith("shell/")],
+                    listed, resolve)
+
+
+def check_menus(names, listed, resolve):
+    """One theme's menus (test_menus_are_well_formed): names as listed, read
+    from resolve(name)."""
     import xml.etree.ElementTree as ElementTree
 
     root = MENUS.parent.parent.parent
@@ -213,12 +234,9 @@ def test_menus_are_well_formed():
     functions |= set(c_strings(tags, "port_function_names[] =", "};"))
     inputs = set(c_strings(tags, "game_data_input_names[] =", "};"))
     inputs |= set(c_strings(tags, "port_game_data_input_names[] =", "};"))
-    listed = json.loads((MENUS / "menus.json").read_text())["files"]
-    files = sorted(MENUS.rglob("*.xml"))
-    assert sorted(path.relative_to(MENUS).as_posix() for path in files) == \
-        sorted(name for name in listed if name.endswith(".xml"))
     widgets, bitmaps, strings, references, roots = {}, {}, {}, [], []
-    for path in files:
+    for name in names:
+        path = resolve(name)
         tree = ElementTree.parse(path)
         assert tree.getroot().tag == "menus", path
         if tree.getroot().get("root"):
@@ -244,8 +262,9 @@ def test_menus_are_well_formed():
                     if frame.get("map"):
                         assert "\\" in frame.get("map") and int(frame.get("index")) >= 0, where
                         continue
-                    assert frame.get("png") in listed, where
-                    with (MENUS / frame.get("png")).open("rb") as png:
+                    picture = resolve(frame.get("png"))
+                    assert frame.get("png") in listed or picture != MENUS / frame.get("png"), where
+                    with picture.open("rb") as png:
                         header = png.read(24)
                     width, height = int.from_bytes(header[16:20], "big"), int.from_bytes(header[20:24], "big")
                     logical = int(frame.get("width")), int(frame.get("height"))

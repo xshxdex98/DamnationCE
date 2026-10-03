@@ -23,6 +23,7 @@ Edition vertices (docs/custom_edition_caches.md).
 /* ---------- headers */
 
 #include "cseries.h"
+#include "cseries/cseries_windows.h"
 #include "errors.h"
 #include "tag_files/tag_groups.h"
 #include "models/model_definitions.h"
@@ -509,7 +510,7 @@ static boolean structure_material_convert(
 	long lightmap_vertex_count = material->lightmap_vertices.count;
 	long vertex_size = rasterizer_geometry_get_vertex_size(_rasterizer_vertex_type_environment_compressed);
 	long lightmap_vertex_size = rasterizer_geometry_get_vertex_size(_rasterizer_vertex_type_environment_lightmap_compressed);
-	byte *uncompressed_vertices = material->uncompressed_vertex_data.address;
+	byte *uncompressed_vertices = XBOX_POINTER(byte, material->uncompressed_vertex_data.address);
 	byte *lightmap_vertices = vertices + vertex_count * vertex_size;
 	boolean success = TRUE;
 
@@ -548,7 +549,7 @@ static boolean structure_material_convert(
 			lightmap_vertex_count * lightmap_vertex_size);
 	}
 	material->compressed_vertex_data.size = vertex_count * vertex_size + lightmap_vertex_count * lightmap_vertex_size;
-	material->compressed_vertex_data.address = vertices;
+	material->compressed_vertex_data.address = XBOX_ADDRESS(vertices);
 
 	return success;
 }
@@ -722,7 +723,8 @@ boolean custom_edition_structure_bsp_load(
 	}
 
 	globals->structure_bsp = structure_bsp;
-	globals->structure_bsp_vertices = malloc(vertices_size + 1);
+	/* (the game's heap: the material points at them by Xbox address) */
+	globals->structure_bsp_vertices = system_malloc(vertices_size + 1);
 	if (!globals->structure_bsp_vertices)
 	{
 		error(_error_silent, "custom edition: out of memory for 0x%lX bytes of structure BSP vertices", vertices_size);
@@ -773,7 +775,7 @@ void custom_edition_structure_bsp_unload(
 	if (globals->structure_bsp)
 	{
 		structure_bsp_buffers_release(globals->structure_bsp);
-		free(globals->structure_bsp_vertices);
+		system_free(globals->structure_bsp_vertices);
 		globals->structure_bsp = NULL;
 		globals->structure_bsp_vertices = NULL;
 	}

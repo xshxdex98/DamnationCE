@@ -820,7 +820,7 @@ long scenario_tags_load(
 			&cache_file_globals.header);
 		if (cache_file_globals.tag_header)
 		{
-			global_tag_instances = cache_file_globals.tag_header->tag_instances;
+			global_tag_instances = xbox_pointer(cache_file_globals.tag_header->tag_instances);
 			cache_file_globals.tags_loaded = TRUE;
 			result = cache_file_globals.tag_header->scenario_tag_index;
 		}
@@ -943,7 +943,7 @@ boolean scenario_structure_bsp_load(
 	vertices are compressed and given buffers instead
 	(port/linux/game/custom_edition_geometry.c) */
 	if (custom_edition_cache_tags_loaded() &&
-		!custom_edition_structure_bsp_load(cache_file_globals.structure_bsp_header->base_address))
+		!custom_edition_structure_bsp_load(xbox_pointer(cache_file_globals.structure_bsp_header->base_address)))
 	{
 		cache_file_globals.structure_bsp_header = NULL;
 
