@@ -70,7 +70,7 @@ float ui_overlay_button(int button, float size, float x, float y, unsigned int c
 float ui_overlay_button_width(int button, float size);
 
 /* a place the overlay leaves for the game's own drawing (a map's picture),
-for this frame (at most 4) */
+for this frame (at most 16: Online Games shows 8) */
 void ui_overlay_cutout(float x, float y, float width, float height);
 
 /* whether the overlay draws (no window: the dedicated server, a run with

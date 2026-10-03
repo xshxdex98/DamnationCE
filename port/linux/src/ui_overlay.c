@@ -67,6 +67,11 @@ struct glyph
 	float advance;
 };
 
+/* the game's own pictures the overlay leaves room for in a frame
+(ui_overlay_cutout), and the same as the shader's text */
+#define MAXIMUM_CUTOUTS 16
+#define MAXIMUM_CUTOUTS_TEXT "16"
+
 static struct
 {
 	int ready, failed;
@@ -74,7 +79,7 @@ static struct
 	GLint scale_location, atlas_location, cutouts_location, window_height_location;
 
 	/* the places the game draws its own pictures into (layout coordinates) */
-	float cutouts[4][4];
+	float cutouts[MAXIMUM_CUTOUTS][4];
 	int cutout_count;
 
 	struct quad quads[MAXIMUM_QUADS];
@@ -132,7 +137,7 @@ static int scheme(void)
 
 void ui_overlay_cutout(float x, float y, float width, float height)
 {
-	if (overlay.cutout_count >= 4)
+	if (overlay.cutout_count >= MAXIMUM_CUTOUTS)
 		return;
 	overlay.cutouts[overlay.cutout_count][0] = x;
 	overlay.cutouts[overlay.cutout_count][1] = y;
@@ -339,7 +344,7 @@ static const char fragment_source[] =
 	"in vec2 v_edge;\n"
 	"in vec4 v_color;\n"
 	"uniform sampler2D atlas;\n"
-	"uniform vec4 cutouts[4];\n"
+	"uniform vec4 cutouts[" MAXIMUM_CUTOUTS_TEXT "];\n"
 	"uniform float window_height;\n"
 	"out vec4 fragment;\n"
 	"void main()\n"
@@ -348,7 +353,7 @@ static const char fragment_source[] =
 	/* (the game's own pictures show through: x0, y0, x1, y1 in window pixels
 	from the top) */
 	"\tvec2 p = vec2(gl_FragCoord.x, window_height - gl_FragCoord.y);\n"
-	"\tfor (int i = 0; i < 4; i++)\n"
+	"\tfor (int i = 0; i < " MAXIMUM_CUTOUTS_TEXT "; i++)\n"
 	"\t\tif (p.x >= cutouts[i].x && p.y >= cutouts[i].y && p.x < cutouts[i].z && p.y < cutouts[i].w)\n"
 	"\t\t\tdiscard;\n"
 	"\tif (v_texture_coordinate.x >= 0.0)\n"
@@ -745,7 +750,7 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 	glBindTexture(GL_TEXTURE_2D, overlay.atlas);
 	glUniform1i(overlay.atlas_location, 0);
 	{
-		float cutouts[4][4];
+		float cutouts[MAXIMUM_CUTOUTS][4];
 		int cutout;
 
 		memset(cutouts, 0, sizeof(cutouts));
@@ -756,7 +761,7 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 			cutouts[cutout][2] = origin_x + overlay.cutouts[cutout][2] * scale;
 			cutouts[cutout][3] = origin_y + overlay.cutouts[cutout][3] * scale;
 		}
-		glUniform4fv(overlay.cutouts_location, 4, &cutouts[0][0]);
+		glUniform4fv(overlay.cutouts_location, MAXIMUM_CUTOUTS, &cutouts[0][0]);
 		glUniform1f(overlay.window_height_location, (float)window_height);
 	}
 	glBindVertexArray(overlay.vertex_array);
