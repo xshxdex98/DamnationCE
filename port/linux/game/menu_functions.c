@@ -3455,6 +3455,13 @@ boolean pc_menu_event_function_invoke(
 		{
 			return gametype_setup_edit();
 		}
+		else if (!strcmp(name, "port theme glassed") || !strcmp(name, "port theme vanilla"))
+		{
+			extern void pc_menus_theme_choose(char const *theme);
+
+			pc_menus_theme_choose(name + strlen("port theme "));
+			return TRUE;
+		}
 		else if (!strcmp(name, "port map select"))
 		{
 #ifdef HALO_GAME_BROWSER

@@ -30,6 +30,8 @@ struct hud_hires_embedded
 	unsigned int crc;
 	int coverage;
 	int title;
+	/* the Glassed menus theme's (display.theme), drawn only while it is chosen */
+	int glassed;
 	const unsigned int *png;
 	unsigned int png_size;
 };

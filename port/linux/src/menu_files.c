@@ -50,6 +50,20 @@ static struct menu_file *files;
 static long file_count;
 static char folder[1024];
 
+/* The menus' themes (display.theme). A theme's layer, skin/<theme>/, holds
+files read in place of those of the same path below it while the theme is
+chosen (tools/shell_skin.py writes them); the left-hand menus, shell/, are
+the Glassed theme's alone. */
+enum
+{
+	THEME_GLASSED,
+	THEME_VANILLA,
+	NUMBER_OF_THEMES,
+};
+static const char *const theme_names[NUMBER_OF_THEMES] = { "glassed", "vanilla" };
+/* the chosen theme's layer, "skin/glassed/" */
+static char theme_layer[32];
+
 static long file_find(const char *path)
 {
 	long index;
@@ -186,7 +200,13 @@ static void files_gather(void)
 menus folder's, else the embedded one */
 static const unsigned char *file_data(const char *path, unsigned long *size)
 {
-	long index = file_find(path);
+	char layered[1200];
+	long index;
+
+	snprintf(layered, sizeof(layered), "%s%s", theme_layer, path);
+	index = file_find(layered);
+	if (index < 0)
+		index = file_find(path);
 
 	if (index < 0)
 	{
@@ -826,23 +846,48 @@ static int read_file(struct reader *reader, const struct menu_file *file)
 
 struct halo_menus const *halo_menus_load(void)
 {
-	static int read;
-	static struct halo_menus menus;
-	static int succeeded;
+	static int gathered;
+	static int read[NUMBER_OF_THEMES];
+	static struct halo_menus menus[NUMBER_OF_THEMES];
+	static int succeeded[NUMBER_OF_THEMES];
+	int theme = strcmp(config_string("display.theme"), theme_names[THEME_VANILLA]) ? THEME_GLASSED : THEME_VANILLA;
 	struct reader reader;
 	long index;
 
-	if (read)
-		return succeeded ? &menus : NULL;
-	read = 1;
-	files_gather();
+	snprintf(theme_layer, sizeof(theme_layer), "skin/%s/", theme_names[theme]);
+	if (read[theme])
+		return succeeded[theme] ? &menus[theme] : NULL;
+	read[theme] = 1;
+	if (!gathered)
+		files_gather();
+	gathered = 1;
 	memset(&reader, 0, sizeof(reader));
 	for (index = 0; index < file_count && !reader.failed; index++)
 	{
-		size_t length = strlen(files[index].path);
+		const char *path = files[index].path;
+		size_t length = strlen(path);
+		char layered[1200];
+		long chosen;
 
-		if (length > 4 && !strcmp(files[index].path + length - 4, ".xml"))
+		if (length <= 4 || strcmp(path + length - 4, ".xml") || !strncmp(path, "skin/", 5) ||
+			(theme != THEME_GLASSED && !strncmp(path, "shell/", 6)))
+		{
+			continue;
+		}
+		/* (the theme's copy, under the file's own name for what is logged) */
+		snprintf(layered, sizeof(layered), "%s%s", theme_layer, path);
+		chosen = file_find(layered);
+		if (chosen >= 0)
+		{
+			struct menu_file file = files[chosen];
+
+			file.path = files[index].path;
+			read_file(&reader, &file);
+		}
+		else
+		{
 			read_file(&reader, &files[index]);
+		}
 	}
 	free(reader.last_child);
 	free(reader.last_handler);
@@ -857,9 +902,9 @@ struct halo_menus const *halo_menus_load(void)
 	}
 	if (!reader.menus.root)
 		reader.menus.root = "main_menu";
-	menus = reader.menus;
-	succeeded = 1;
-	return &menus;
+	menus[theme] = reader.menus;
+	succeeded[theme] = 1;
+	return &menus[theme];
 }
 
 long halo_menus_utf16(char const *utf8, unsigned short *out, long capacity)
