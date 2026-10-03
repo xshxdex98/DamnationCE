@@ -1,4 +1,4 @@
-"""ChupathingyCE's version, for the builds (tools/linux_build.py,
+"""DamnationCE's version, for the builds (tools/linux_build.py,
 windows_build.py, macos_build.py; port/android/app/build.gradle reads the
 same):
 

@@ -13,7 +13,7 @@ and is skipped with an older one). CI_COMPILER_LAUNCHER (ccache, say) is
 passed on as --compiler-launcher.
 
 The version comes from the environment (tools/version.py), which
-ChupathingyCE's release workflows set: HALO_VERSION (0.5.0b, or
+DamnationCE's release workflows set: HALO_VERSION (0.5.0b, or
 0.5.0b-nightly.42), HALO_RELEASE_BUILD=1 for a release (whose version must
 be VERSION's), and HALO_BUILD_NUMBER, which orders the Android builds.
 Without them, a build is VERSION's -dev and never looks for updates.
@@ -37,7 +37,7 @@ OUTPUTS = {
     "windows": ["build/windows/halo.exe", "build/windows/SDL3.dll"],
     "android": [],  # the APK, below
     # the application (universal and self-contained: --portable), whole
-    "macos": ["build/macos/ChupathingyCE.app"],
+    "macos": ["build/macos/DamnationCE.app"],
 }
 APKS = {
     "debug": "port/android/app/build/outputs/apk/debug/app-debug.apk",
@@ -82,7 +82,7 @@ def main() -> int:
         run(["ninja", args.platform])
         outputs = OUTPUTS[args.platform]
 
-    dist = ROOT / "dist" / f"chupathingyce-{args.platform}-{args.config}"
+    dist = ROOT / "dist" / f"damnationce-{args.platform}-{args.config}"
     if dist.exists():
         shutil.rmtree(dist)
     dist.mkdir(parents=True)

@@ -13,7 +13,7 @@ work without changing what the other builds compile:
     32 bits, macOS's is 64.
 
 The result is build/macos/halo and the application bundle
-build/macos/ChupathingyCE.app. See port/macos/README.md.
+build/macos/DamnationCE.app. See port/macos/README.md.
 """
 
 import json
@@ -399,7 +399,7 @@ def generate_macos_build(n: Writer, sln: Any) -> None:
         n.build(outputs=output, rule="macos_lipo", inputs=slices)
 
     # the application bundle, which macOS shows with the game's name and icon
-    bundle = build_dir / "ChupathingyCE.app"
+    bundle = build_dir / "DamnationCE.app"
     n.rule(
         name="macos_bundle",
         command=(f"$python {PORT_DIR / 'bundle.py'} --executable $in --output {_quote(bundle)} --version {version()}"

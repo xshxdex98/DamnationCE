@@ -1,6 +1,6 @@
 # Running a dedicated server
 
-A dedicated server is a copy of ChupathingyCE that hosts games on its own,
+A dedicated server is a copy of DamnationCE that hosts games on its own,
 with nobody playing on it. It runs through a list of maps and game types
 (a playlist), starts each game when players join, and moves on to the next
 one when it ends.
@@ -14,7 +14,7 @@ same way they reach anyone's invite link, even if it's behind a home router.
 
 ## What you need
 
-- ChupathingyCE, set up and working: you've started it once and it found
+- DamnationCE, set up and working: you've started it once and it found
   your maps. The server uses the same maps, and needs all of the
   multiplayer maps.
 - A computer that stays on while the server runs. It doesn't need a screen
@@ -25,8 +25,8 @@ same way they reach anyone's invite link, even if it's behind a home router.
 
 Find the folder with your `maps` folder in it:
 
-- **Windows and Linux:** the ChupathingyCE folder, next to the program.
-- **Mac:** `~/Library/Application Support/ChupathingyCE` (in Finder: Go,
+- **Windows and Linux:** the DamnationCE folder, next to the program.
+- **Mac:** `~/Library/Application Support/DamnationCE` (in Finder: Go,
   Go to Folder, and paste that in).
 
 Not sure? When the game starts it prints a line like `data root: ...`:
@@ -63,7 +63,7 @@ game. If there isn't one, that player waits for a second.
 The server is the normal game, started with a few settings. Pick a name
 (15 characters at most, the game's limit) and run:
 
-**Windows** (Command Prompt, in the ChupathingyCE folder):
+**Windows** (Command Prompt, in the DamnationCE folder):
 
 ```
 set HALO_DEDICATED=playlists\my_playlist.txt
@@ -75,10 +75,10 @@ halo.exe
 
 ```
 HALO_DEDICATED=playlists/my_playlist.txt HALO_DEDICATED_NAME="My Server" \
-  /Applications/ChupathingyCE.app/Contents/MacOS/halo
+  /Applications/DamnationCE.app/Contents/MacOS/halo
 ```
 
-**Linux** (in the ChupathingyCE folder):
+**Linux** (in the DamnationCE folder):
 
 ```
 HALO_DEDICATED=playlists/my_playlist.txt HALO_DEDICATED_NAME="My Server" ./halo
@@ -107,8 +107,8 @@ carnage report shows for 20 seconds, then the next game's lobby opens.
 
 ## Who can join
 
-Players need a build with the same network version: ChupathingyCE 0.5.1b
-or newer, or OpenCE build-73 or newer. Players can also join from the
+Players need a build with the same network version: DamnationCE, ChupathingyCE
+0.5.1b or newer, or OpenCE build-73 or newer. Players can also join from the
 site's Join button, or with your server's invite link, which the server
 prints when it starts.
 
