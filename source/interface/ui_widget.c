@@ -6157,10 +6157,9 @@ static void ui_widgets_process_mouse(
 				{
 				case _ui_mouse_target_item:
 				case _ui_mouse_target_value:
-					/* (a selection list's row is chosen by a click, not
-					by passing over it on the way to its buttons) */
-					if (!ui_mouse_selection_row(target->widget))
-						ui_mouse_give_focus(target->widget);
+					/* (a selection list's row too, as the main menu's
+					items: the row under the pointer is the one chosen) */
+					ui_mouse_give_focus(target->widget);
 					break;
 				case _ui_mouse_target_list_slot:
 					ui_mouse_step_list_to_slot(target->widget);
