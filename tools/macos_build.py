@@ -296,7 +296,10 @@ def generate_macos_build(n: Writer, sln: Any) -> None:
         game_cflags = " ".join([
             abi, " ".join(MACOS_GAME_FLAGS),
             f"-include {_quote(prefix_header)}", f"-include {_quote(semantics_header)}",
-            defines, f"-I{_quote(port_include)}", includes, f"-idirafter {xdk}",
+            defines, f"-I{_quote(port_include)}",
+            # the headers of the port's own game units, for the game sources that call them
+            f"-iquote {_quote(lp64(Path(linux_config['game_sources'])))}",
+            includes, f"-idirafter {xdk}",
         ])
         for source in game_sources(linux_config):
             if source.as_posix() not in excluded:
