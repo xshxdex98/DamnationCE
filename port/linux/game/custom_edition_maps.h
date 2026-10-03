@@ -40,6 +40,11 @@ found; the maps are looked for the first time this is asked. */
 short custom_edition_maps_display_index(
 	char const *level_name);
 
+/* Whether the display index is one of Halo PC's own multiplayer maps (Ice
+Fields, Death Island and the rest), which the menus offer beside the Xbox's. */
+boolean custom_edition_maps_stock(
+	short display_index);
+
 /* A Custom Edition map's name and description, for the display index
 `display_index`, or NULL when that is no map's (text_group.c). */
 wchar_t *custom_edition_maps_name(
