@@ -12,7 +12,9 @@ controller, the keyboard and the mouse, on every port.
 | `ce/shell/...png` | The pictures, drawn from the high-res redraws in `svg/` (up to 4x), else a placeholder |
 | `NON_HANDDRAWN.md` | The pictures that are not redraws: those drawn from the Xbox's map (the player's own), and the placeholders, to be redrawn |
 | `UNWIRED.md` | The menus' functions that do nothing yet: the lists they fill are empty, and the settings they change do not change |
-| `menus.json` | The files the game embeds |
+| `menus.json` | The files the game embeds (and every file under `skin/`) |
+| `shell/` | The Glassed theme's left-hand menus: the main menu (the root) and its Campaign, Multiplayer and Menus columns; `tools/shell_art.py` draws their pictures |
+| `skin/glassed/`, `skin/vanilla/` | The two themes' layers (below), written by `tools/shell_skin.py` |
 
 `tools/ce_menus.py` writes all of them from the PC version's tags and the
 redraws, but the settings screens (Controls Setup, Gamepads, Mouse, Audio,
@@ -29,6 +31,34 @@ names is found there first. If any file has a problem, the log names the
 file, the line and the problem, and the game uses the Xbox's menus. The
 setting `display.menus = "xbox"` also uses them. `debug.menu_open` starts on
 one screen (by its name, `main_menu/settings_select/...`), for looking at it.
+
+## Themes
+
+`display.theme` picks the menus' theme, and the main menu's MENUS button
+switches it on the spot (`port theme glassed`, `port theme vanilla`; the
+menus are built again in it on the next frame, `menu_tags.c`).
+
+A theme is a layer: `skin/<theme>/` holds files under the same paths as the
+ones they replace while that theme is chosen (`ce/main_menu.xml`,
+`ce/shell/bitmaps/...png`); the game reads a layer's file in place of the
+original (`port/linux/src/menu_files.c`). Nothing in `ce/` is edited for a
+theme, so `tools/ce_menus.py` can write it again at any time; run
+`tools/shell_skin.py --maps <the Xbox maps>` after it.
+
+- **Glassed** (this client's): `shell/` is its main menu; `skin/glassed/ce`
+  redraws the PC screens' shared pictures in glass, recolors their text and
+  fixes their layout (`WIDGET_CHANGES` and the tables beside it in
+  `shell_skin.py`, the place for any further layout change);
+  `skin/glassed/xbox` redraws the pictures the maps carry themselves (pause
+  menus, split screen, the lobby), drawn in place of the maps' bitmaps as
+  the high-res HUD is. The map picker (`port/linux/game/map_screen.c`) and
+  Online Games' look are this theme's too.
+- **Vanilla**: the menus as they were, with a MENUS button
+  (`skin/vanilla/ce/main_menu.xml`).
+
+`tools/menu_preview.py <widget> <out.png>` draws a screen roughly as the game
+does, from the XML, with the widgets that draw nothing outlined: a quick
+look for overlaps without running the game.
 
 ## Elements
 
