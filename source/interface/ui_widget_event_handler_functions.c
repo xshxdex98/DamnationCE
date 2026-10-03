@@ -2977,6 +2977,15 @@ static boolean multiplayer_level_list_initialize(
 		if (widget->parameters.list.selected_index == level_count)
 			widget->parameters.list.selected_index = 0;
 	}
+#ifdef HALO_GAME_BROWSER
+	{
+		/* port: the map picker over the list, in the Glassed menus
+		(port/linux/game/map_screen.c), which picks through it */
+		extern boolean map_screen_open_over_list(struct widget_instance *list);
+
+		map_screen_open_over_list(widget);
+	}
+#endif
 	return TRUE;
 }
 
