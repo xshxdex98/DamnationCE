@@ -7574,6 +7574,19 @@ void process_ui_widgets(
 		"c:\\halo\\SOURCE\\interface\\ui_widget.c",
 		644,
 		widget_globals.initialized);
+	{
+		/* port: a frame of the menus this much later than the last, a stall
+		the player sees, is logged with the screen that was up */
+		static unsigned long last_frame = 0;
+		unsigned long now = system_milliseconds();
+
+		if (last_frame && now - last_frame >= 250 && widget_globals.active_widgets[0] && !game_in_progress())
+		{
+			error(_error_silent, "menus: a frame took %lu ms (on %s)", now - last_frame,
+				widget_globals.active_widgets[0]->name);
+		}
+		last_frame = now;
+	}
 	widget_globals.current_system_milliseconds = system_milliseconds();
 	ui_widgets_process_mouse();
 	if (widget_globals.initialization_thread)

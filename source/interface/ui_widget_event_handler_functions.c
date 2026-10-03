@@ -917,6 +917,7 @@ symbols in this file:
 #include "interface/marketing_and_strategic_business_development.h"
 #include "interface/player_ui.h"
 #include "interface/ui_widget.h"
+#include "cseries/cseries_windows.h"
 #include "main/console.h"
 #include "main/main.h"
 #include "networking/network_game_globals.h"
@@ -3338,7 +3339,46 @@ static boolean multiplayer_profiles_list_initialize(
 	return TRUE;
 }
 
+static boolean event_handler_function_call(
+	struct widget_instance *widget,
+	struct event_record *event,
+	word function_index,
+	boolean *widget_deleted);
+
+/* port: a menu function this slow holds the menus' frame up for a moment the
+player sees; each one is logged, with the screen it ran for */
+#define SLOW_EVENT_FUNCTION_MILLISECONDS 100
+
 boolean ui_widget_event_handler_function_invoke(
+	struct widget_instance *widget,
+	struct event_record *event,
+	word function_index,
+	boolean *widget_deleted)
+{
+	extern char const *pc_menu_function_name(long function_index);
+	unsigned long started = system_milliseconds();
+	char name[32];
+	boolean result;
+	unsigned long taken;
+
+	/* (the widget may be gone by the time the function returns) */
+	csstrncpy(name, widget->name, sizeof(name) - 1);
+	name[sizeof(name) - 1] = 0;
+	result = event_handler_function_call(widget, event, function_index, widget_deleted);
+	taken = system_milliseconds() - started;
+	if (taken >= SLOW_EVENT_FUNCTION_MILLISECONDS)
+	{
+		char const *function = function_index >= PC_MENU_FUNCTION_BASE && function_index < 0x8000 ?
+			pc_menu_function_name(function_index - PC_MENU_FUNCTION_BASE) :
+			(short)function_index >= 0 && function_index < 102 ? event_handler_function_list.names[(short)function_index] :
+			"?";
+
+		error(_error_silent, "menus: '%s' (on %s) took %lu ms", function ? function : "?", name, taken);
+	}
+	return result;
+}
+
+static boolean event_handler_function_call(
 	struct widget_instance *widget,
 	struct event_record *event,
 	word function_index,
