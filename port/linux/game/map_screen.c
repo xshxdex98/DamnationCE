@@ -52,7 +52,8 @@ enum
 	REPEAT_PERIOD = 90,
 
 	NUMBER_OF_CATEGORIES = 2,
-	MAXIMUM_LEVELS = 160,
+	/* (the Xbox's 13 and custom_edition_maps.c's most) */
+	MAXIMUM_LEVELS = 16 + 1024,
 };
 
 enum
