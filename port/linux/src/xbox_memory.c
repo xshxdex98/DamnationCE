@@ -148,6 +148,13 @@ address space below 2 GB. */
 __attribute__((constructor(102)))
 static void custom_edition_tag_cache_reserve(void)
 {
+#ifdef HALO_64BIT
+	/* (the 64-bit builds keep the Xbox's memory at XBOX_ADDRESS_SPACE_BASE,
+	where the game's heap (xbox_heap.c) has the tag cache's address: without
+	it, Custom Edition maps are not offered, custom_edition_maps.c) */
+	if (config_boolean("game.custom_edition"))
+		platform_log("Custom Edition maps are not supported on the 64-bit builds yet");
+#else
 	void *wanted = (void *)CUSTOM_EDITION_TAG_CACHE_ADDRESS;
 	void *result;
 
@@ -166,6 +173,7 @@ static void custom_edition_tag_cache_reserve(void)
 		platform_log("cannot reserve the Custom Edition tag cache at %p (%s)",
 			wanted, strerror(errno));
 	}
+#endif
 }
 
 void *halo_custom_edition_tag_cache(void)
