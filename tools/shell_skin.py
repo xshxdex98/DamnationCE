@@ -22,16 +22,16 @@ import numpy as np
 from PIL import Image
 
 import shell_art
-from shell_art import BAND, BAND_HEIGHT, BRIGHT, DEEP, LINE, NAVY, SLATE, SOLID, box, glow, paint, path, polygon, ramp
+from shell_art import SHADE, WHITE, box, paint, polygon, ramp
 
 MENUS = Path(__file__).resolve().parent.parent / "port" / "assets" / "menus"
 SKIN = MENUS / "skin"
 
-GREEN = (104, 190, 140)     # the game list's third frame: a game to join
+GREEN = (150, 255, 180)     # the game list's third frame: a game to join
 VISIBLE = 8                 # alpha above which a texel is part of a picture's shape
-SCREEN_HEIGHT = 480
-# the bands across a screen: under its header, and over its buttons' foot
-STRIP_BAND_TOP, STRIP_BAND_BOTTOM = 62, 446
+# where a screen's glass begins and ends: under its header, over its foot
+STRIP_TOP, STRIP_BOTTOM = 66, 446
+HAIRLINE = 0.8
 
 # the bitmaps redrawn, by the last part of their names
 PANES = ("alert_bkd", "list_field", "sel_list_desc_bkd", "spinner_list_3_wide_item_background",
@@ -44,7 +44,7 @@ STRIPS = ("gradient", "gradient_big")
 ARROWS = ("arrow_sm_left", "arrow_sm_right", "arrow_sm_up", "arrow_sm_down")
 
 # the screens' text colors, and the look's
-TEXT_COLORS = {"#FF2896FF": "#FFE6F0FF", "#FF0080FF": "#FF9DB9E6"}
+TEXT_COLORS = {"#FF2896FF": "#FFD2D6DA", "#FF0080FF": "#FFA8ACB0"}
 
 
 class Picture:
@@ -71,86 +71,63 @@ class Picture:
 
 
 def pane(picture, frame):
-    """A dark pane edged with light, its top right corner cut; frame 1 has the focus."""
+    """A pane of dark glass in a hairline; frame 1 has the focus."""
     image = picture.blank()
-    left, top, right, bottom = picture.box
-    cut = min(14, (right - left) // 6, (bottom - top) // 6)
-    shape = [(left, top), (right - cut, top), (right, top + cut), (right, bottom), (left, bottom)]
-    inside = picture.shape(shape)
-    paint(image, DEEP, inside, SOLID)
-    paint(image, NAVY, inside, ramp(image.size, 120, 0))
-    edge = picture.shape(shape, outline=1.2)
-    if frame:
-        paint(image, LINE, glow(edge, 2.0, picture.scale), 220)
-    paint(image, BRIGHT if frame else LINE, edge)
+    shape = box(*picture.box)
+    paint(image, SHADE, picture.shape(shape), 120)
+    paint(image, WHITE, picture.shape(shape, outline=HAIRLINE), 170 if frame else 70)
     return image
 
 
 def bar(picture, frame, name):
-    """The bar behind an option or a list item: dim, lit with the focus
-    (frame 1), or as a third frame lit; the game list's third is green."""
+    """What an option or a list item stands on: the faintest glass, or with
+    the focus (frame 1) the left-hand menus' strip. A third frame is the
+    strip too; the game list's is green."""
     image = picture.blank()
-    tint = GREEN if frame == 2 and name == "server_item_bkds" else SLATE
-    shell_art.bar(image, picture.size, picture.box, frame > 0, picture.scale, tint)
+    if frame == 0:
+        paint(image, WHITE, picture.shape(box(*picture.box)), ramp(image.size, 16, 0, across=True))
+        return image
+    tint = GREEN if frame == 2 and name == "server_item_bkds" else WHITE
+    shell_art.bar(image, picture.size, picture.box, True, picture.scale, tint)
     return image
 
 
 def tab(picture, frame):
-    """The heading of a column of the game list: a block of the bands' blue."""
+    """The heading of a column of the game list: glass over a hairline."""
     image = picture.blank()
     left, top, right, bottom = picture.box
-    inside = picture.shape(box(left, top, right, bottom))
-    paint(image, DEEP, inside, SOLID)
-    paint(image, BAND, inside, 255 if frame else 150)
-    line = picture.shape(path([(left, bottom - 0.5), (right, bottom - 0.5)]), outline=1.0)
-    paint(image, BRIGHT if frame else LINE, line)
+    paint(image, WHITE, picture.shape(box(left, top, right, bottom)), 70 if frame else 26)
+    paint(image, WHITE, picture.shape(box(left, bottom - HAIRLINE, right, bottom)), 150)
     return image
 
 
 def strip(picture):
-    """What a whole screen stands on: navy between two bands of blue, dark
-    beyond them. The game repeats the strip across the screen, so a band
-    here has no step; the screen's header draws one."""
+    """What a whole screen stands on: dark glass between two hairlines. The
+    game repeats the strip across the screen."""
     image = picture.blank()
     width = picture.size[0]
-    paint(image, DEEP, picture.shape(box(0, 0, width, SCREEN_HEIGHT)), SOLID)
-    middle = picture.shape(box(0, STRIP_BAND_TOP, width, STRIP_BAND_BOTTOM))
-    paint(image, NAVY, middle, ramp(image.size, 255, 150))
-    for y in (STRIP_BAND_TOP, STRIP_BAND_BOTTOM):
-        paint(image, BAND, picture.shape(box(0, y, width, y + BAND_HEIGHT)))
-        paint(image, LINE, picture.shape(path([(0, y + 0.5), (width, y + 0.5)]), outline=1.0))
+    paint(image, SHADE, picture.shape(box(0, STRIP_TOP, width, STRIP_BOTTOM)), 140)
+    for y in (STRIP_TOP, STRIP_BOTTOM - HAIRLINE):
+        paint(image, WHITE, picture.shape(box(0, y, width, y + HAIRLINE)), 90)
     return image
 
 
 def header(picture):
-    """A screen's heading: its letters bright, with their glow, over a line
-    that steps up past them and fades to the right."""
+    """A screen's heading: its letters alone, in clear white."""
     image = picture.blank()
     # the letters are the picture's brightest green; the glow around them is not
     green = picture.pixels[:, :, 1].astype(np.float32) * picture.pixels[:, :, 3] / 255.0
     brightest = float(np.percentile(green[green > 0], 99))
     letters = np.clip((green - 0.6 * brightest) / (0.3 * brightest), 0.0, 1.0)
-    mask = Image.fromarray((letters * 255).astype(np.uint8), "L")
-    paint(image, LINE, glow(mask, 1.5, picture.scale), 200)
-    paint(image, BRIGHT, mask)
-
-    rows, columns = np.nonzero(letters > 0.5)
-    left, right = columns.min() / picture.scale, (columns.max() + 1) / picture.scale
-    under = min((rows.max() + 1) / picture.scale + 5, picture.size[1] - 2)
-    step = shell_art.BAND_STEP
-    rule = [(left, under), (right + 10, under), (right + 10 + step, under - step), (picture.size[0], under - step)]
-    fade = Image.new("L", image.size, 0)
-    start = round(left * picture.scale)
-    fade.paste(ramp((image.size[0] - start, image.size[1]), 255, 0, across=True), (start, 0))
-    paint(image, LINE, picture.shape(path(rule), outline=1.4), fade)
+    paint(image, WHITE, Image.fromarray((letters * 255).astype(np.uint8), "L"), 215)
     return image
 
 
 def arrow(picture):
-    """An arrow, its blue made the look's bright (the red ones stay red)."""
+    """An arrow, its blue made white (the red ones stay red)."""
     pixels = picture.pixels.copy()
     blue = pixels[:, :, 2] > pixels[:, :, 0]
-    pixels[blue, 0:3] = BRIGHT
+    pixels[blue, 0:3] = WHITE
     return Image.fromarray(pixels, "RGBA")
 
 

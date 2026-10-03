@@ -5,10 +5,10 @@
 		<frame png="shell/art/panel.png" width="346" height="480"/>
 	</bitmap>
 	<bitmap name="shell/item">
-		<frame png="shell/art/item_0.png" width="184" height="30"/>
-		<frame png="shell/art/item_1.png" width="184" height="30"/>
+		<frame png="shell/art/item_0.png" width="300" height="22"/>
+		<frame png="shell/art/item_1.png" width="300" height="22"/>
 	</bitmap>
 	<bitmap name="shell/rule">
-		<frame png="shell/art/rule.png" width="168" height="2"/>
+		<frame png="shell/art/rule.png" width="420" height="2"/>
 	</bitmap>
 </menus>
