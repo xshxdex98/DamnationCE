@@ -5,7 +5,7 @@
 	</widget>
 	<widget name="main_menu/solo_level_select/header_replay_level" controller="1" left="35" top="11" width="605" height="59" bitmap="main_menu/solo_level_select/header_load_level">
 	</widget>
-	<widget name="main_menu/solo_level_select/replay_level_right_data" type="text" controller="1" left="417" top="258" width="146" height="136" string_list="main_menu/solo_level_select/map_data" string_index="2" font="ui\small_ui" color="#FFD6ECFF">
+	<widget name="main_menu/solo_level_select/replay_level_right_data" type="text" controller="1" left="417" top="258" width="146" height="136" string_list="main_menu/solo_level_select/map_data" string_index="2" font="ui\small_ui" color="#FFE6F0FF">
 	</widget>
 	<widget name="main_menu/solo_level_select/replay_level_right_item" controller="1" left="406" top="75" width="162" height="326" bitmap="bitmaps/spinner_list_3_wide_item_background">
 		<child widget="main_menu/solo_level_select/replay_level_right_name"/>
@@ -15,7 +15,7 @@
 		<child widget="main_menu/solo_level_select/difficulty_indicator" x="466" y="343"/>
 		<child widget="main_menu/solo_level_select/difficulty_indicator" x="516" y="343"/>
 	</widget>
-	<widget name="main_menu/solo_level_select/replay_level_right_name" type="text" controller="1" left="417" top="204" width="146" height="43" string_list="main_menu/map_list" string_index="2" font="ui\large_ui" color="#FFD6ECFF">
+	<widget name="main_menu/solo_level_select/replay_level_right_name" type="text" controller="1" left="417" top="204" width="146" height="43" string_list="main_menu/map_list" string_index="2" font="ui\large_ui" color="#FFE6F0FF">
 	</widget>
 	<widget name="main_menu/solo_level_select/replay_level_right_pic" controller="1" left="419" top="87" width="140" height="114" bitmap="ui\shell\bitmaps\sp_levels">
 	</widget>

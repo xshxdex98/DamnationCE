@@ -47,7 +47,7 @@
 		<on event="left_mouse" run="mouse emit accept event"/>
 		<conditional widget="main_menu/profile_manager/settings_creating_profile" if_failed="true"/>
 	</widget>
-	<widget name="main_menu/main_menu_list_ext_desc" controller="1" left="-1" top="-1" width="1" height="1" bitmap="bitmaps/white" color="#FF84B8E0">
+	<widget name="main_menu/main_menu_list_ext_desc" controller="1" left="-1" top="-1" width="1" height="1" bitmap="bitmaps/white" color="#FF9DB9E6">
 	</widget>
 	<widget name="main_menu/main_menu_select_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="main_menu/main_menu_list_ext_desc">
 		<data input="main menu fake animate"/>
