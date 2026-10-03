@@ -37,15 +37,12 @@ picked there as any.
 #include "../src/browser.h"
 #include "../src/ui_overlay.h"
 #include "halo_ui_pointer.h"
+#include "overlay_screens.h"
 
 /* ---------- constants */
 
 enum
 {
-	/* (event_manager.c's event types, which it keeps to itself) */
-	BROWSER_EVENT_LEFT_STICK = 1,
-	BROWSER_EVENT_BUTTON = 3,
-
 	/* the games shown at a time (left and right turn the page) */
 	ROWS_PER_PAGE = 7,
 	STATUS_DURATION = 6000,
@@ -53,9 +50,6 @@ enum
 	CONNECT_TIMEOUT = 15000,
 	/* the screen takes no A this soon after it opens */
 	OPEN_SETTLE = 600,
-	/* a held direction moves again after this long, and then this often */
-	REPEAT_DELAY = 350,
-	REPEAT_PERIOD = 90,
 };
 
 /* ui_widget.c owns the same private enum (virtual_keyboard.c keeps a copy) */
@@ -110,9 +104,7 @@ static struct
 	unsigned long connecting_time;
 	/* when the screen opened (the menu's A that opened it picks nothing) */
 	unsigned long opened_time;
-	/* a direction held since an earlier frame, and when it next moves */
-	boolean held;
-	unsigned long repeat_time;
+	struct overlay_repeat repeat;
 } browser_screen;
 
 /* ---------- private code */
@@ -157,8 +149,6 @@ void ui_online_games_stop_network(void);
 /* (the platform layer: the menus' theme) */
 char const *config_string(char const *name);
 boolean ui_widget_online_games_create_game(void);
-
-static void utf8_name(unsigned short const *name, char *text, long size);
 
 /* the first player in the game to be joined or made, with the profile
 System Link's Start would pick: the one last used, else the first saved.
@@ -223,7 +213,7 @@ static void join_selected(
 	browser_screen.connecting = TRUE;
 	csstrncpy(browser_screen.connecting_invite, game->invite, sizeof(browser_screen.connecting_invite) - 1);
 	browser_screen.connecting_invite[sizeof(browser_screen.connecting_invite) - 1] = 0;
-	utf8_name(game->name, browser_screen.connecting_name, sizeof(browser_screen.connecting_name));
+	overlay_utf8(game->name, NUMBEROF(game->name), browser_screen.connecting_name, sizeof(browser_screen.connecting_name));
 	browser_screen.connecting_time = system_milliseconds();
 }
 
@@ -328,31 +318,6 @@ static void leave(
 	ui_online_games_stop_network();
 }
 
-/* a direction's steps this frame: one when it is first pressed, then, held,
-one every REPEAT_PERIOD after REPEAT_DELAY (the game reports a held
-direction every frame) */
-static short repeated(
-	short move)
-{
-	unsigned long now = system_milliseconds();
-	boolean go = FALSE;
-
-	if (!move)
-		browser_screen.held = FALSE;
-	else if (!browser_screen.held)
-	{
-		browser_screen.held = TRUE;
-		browser_screen.repeat_time = now + REPEAT_DELAY;
-		go = TRUE;
-	}
-	else if (now >= browser_screen.repeat_time)
-	{
-		browser_screen.repeat_time = now + REPEAT_PERIOD;
-		go = TRUE;
-	}
-	return go ? move : 0;
-}
-
 /* ---------- public code */
 
 boolean browser_screen_active(
@@ -402,7 +367,7 @@ void browser_screen_process(
 		wait_for_host();
 	while (browser_screen.active && get_next_event(&event, NONE))
 	{
-		if (event.type == BROWSER_EVENT_LEFT_STICK)
+		if (event.type == OVERLAY_EVENT_LEFT_STICK)
 		{
 			if (event.data.stick.y == SHORT_MAX)
 				move = -1;
@@ -413,7 +378,7 @@ void browser_screen_process(
 			else if (event.data.stick.x == SHORT_MAX)
 				move = ROWS_PER_PAGE;
 		}
-		else if (event.type == BROWSER_EVENT_BUTTON)
+		else if (event.type == OVERLAY_EVENT_BUTTON)
 		{
 			switch (event.data.button.index)
 			{
@@ -458,8 +423,7 @@ void browser_screen_process(
 			}
 		}
 	}
-	move = repeated(move);
-	if (move)
+	if (overlay_repeat_step(&browser_screen.repeat, move != 0))
 	{
 		browser_screen.selected = (short)PIN(browser_screen.selected + move, 0,
 			MAX(0, browser_screen.count - 1));
@@ -533,14 +497,6 @@ enum
 	TABS_RIGHT = 603, TABS_Y = 44,
 };
 
-/* the map pictures (the menus' mp_map_grafix, in their order:
-ui_widget_game_data_input_functions.c) and the game types' (game_type_grafix) */
-static char const *const map_picture_order[] =
-{
-	"beavercreek", "sidewinder", "damnation", "ratrace", "prisoner", "hangemhigh", "chillout",
-	"carousel", "boardingaction", "bloodgulch", "wizard", "putput", "longest",
-};
-
 /* the row of the list at a point of the 640x480 layout, or NONE */
 static short row_at(
 	short x,
@@ -584,34 +540,6 @@ void browser_screen_pointer(
 
 static char const *const sort_names[NUMBER_OF_SORTS] = { "PLAYERS", "NAME", "MAP", "TYPE" };
 
-static void utf8_name(
-	unsigned short const *name,
-	char *text,
-	long size)
-{
-	long used = 0, index;
-
-	for (index = 0; index < BROWSER_NAME_LENGTH && name[index] && used < size - 4; index++)
-	{
-		unsigned int character = name[index];
-
-		if (character < 0x80)
-			text[used++] = (char)character;
-		else if (character < 0x800)
-		{
-			text[used++] = (char)(0xC0 | (character >> 6));
-			text[used++] = (char)(0x80 | (character & 0x3F));
-		}
-		else
-		{
-			text[used++] = (char)(0xE0 | (character >> 12));
-			text[used++] = (char)(0x80 | ((character >> 6) & 0x3F));
-			text[used++] = (char)(0x80 | (character & 0x3F));
-		}
-	}
-	text[used] = 0;
-}
-
 static char const *type_name(
 	struct browser_game const *game,
 	char *text,
@@ -625,78 +553,7 @@ static char const *type_name(
 	return text;
 }
 
-/* a game's picture from the game's own bitmaps, in a cut-out of the overlay */
-static void draw_picture(
-	char const *tag,
-	short frame,
-	short art_width,
-	short art_height,
-	short x0,
-	short y0,
-	short x1,
-	short y1)
-{
-	long bitmap_index = tag_loaded('bitm', tag);
-	struct bitmap_data *bitmap = bitmap_index != NONE ? bitmap_group_get_bitmap_from_sequence(bitmap_index, 0, frame) : NULL;
-	rectangle2d bounds;
-
-	ui_overlay_cutout(x0, y0, (float)(x1 - x0), (float)(y1 - y0));
-	bounds.x0 = x0;
-	bounds.y0 = y0;
-	bounds.x1 = x1;
-	bounds.y1 = y1;
-	draw_quad(&bounds, 0xFF0A0C10);
-	if (bitmap)
-	{
-		/* (the picture fills the bitmap's top left; the rest is margin) */
-		rectangle2d art;
-
-		art.x0 = 0;
-		art.y0 = 0;
-		art.x1 = (short)MIN(art_width, bitmap->width);
-		art.y1 = (short)MIN(art_height, bitmap->height);
-		draw_bitmap_in_rect(bitmap, &bounds, &art, NULL, 0xFFFFFFFF, NULL, FALSE);
-	}
-}
-
-static float prompt(
-	int button,
-	char const *words,
-	float x)
-{
-	x += ui_overlay_button(button, 15.0f, x, 455.0f, 0xFFFFFFFF) + 3.0f;
-	return x + ui_overlay_text(UI_FONT_BOLD, 12.0f, x, 456.5f, UI_ALIGN_LEFT, COLOR_PROMPT, words) + 20.0f;
-}
-
-static float prompt_width(
-	int button,
-	char const *words)
-{
-	return ui_overlay_button_width(button, 15.0f) + 3.0f + ui_overlay_text_width(UI_FONT_BOLD, 12.0f, words) + 20.0f;
-}
-
-/* the frame of the menus' map pictures for a game's map, or the unknown
-level's */
-static short map_picture_frame(
-	char const *map)
-{
-	char const *base = map;
-	char const *cursor;
-	short index;
-
-	for (cursor = map; *cursor; cursor++)
-	{
-		if (*cursor == '\\' || *cursor == '/')
-			base = cursor + 1;
-	}
-	for (index = 0; index < NUMBEROF(map_picture_order); index++)
-	{
-		if (!strcmp(base, map_picture_order[index]))
-			return index;
-	}
-	return NUMBEROF(map_picture_order);
-}
-
+/* a game's map's picture, edged */
 static void map_picture(
 	char const *map,
 	float x,
@@ -704,8 +561,7 @@ static void map_picture(
 	float width,
 	float height)
 {
-	draw_picture("ui\\shell\\bitmaps\\mp_map_grafix", map_picture_frame(map), 140, 114,
-		(short)x, (short)y, (short)(x + width), (short)(y + height));
+	overlay_map_picture(overlay_map_display_index(map), x, y, width, height);
 	ui_overlay_outline(x, y, width, height, 0, 0.75f, COLOR_PANEL_EDGE);
 }
 
@@ -754,7 +610,7 @@ static void render_card(
 			ui_overlay_rect(LIST_X, y + 1, 1.5f, CARD_HEIGHT - 2, 0, 0xFFFFFFFF);
 	}
 	map_picture(game->map, LIST_X + 7, y + 5, CARD_PICTURE_WIDTH, CARD_PICTURE_HEIGHT);
-	utf8_name(game->name, name, sizeof(name));
+	overlay_utf8(game->name, NUMBEROF(game->name), name, sizeof(name));
 	ui_overlay_text(UI_FONT_BOLD, 11.0f, LIST_X + 58, y + 7, UI_ALIGN_LEFT, chosen ? COLOR_TITLE : color, name);
 	snprintf(line, sizeof(line), "%s  \xC2\xB7  %s", map_display_name(game->map), type_name(game, rules, sizeof(rules)));
 	ui_overlay_text(UI_FONT_REGULAR, 9.0f, LIST_X + 58, y + 24, UI_ALIGN_LEFT, COLOR_DIM, line);
@@ -779,7 +635,7 @@ static void render_details(
 	if (!game)
 		return;
 	map_picture(game->map, DETAIL_X, DETAIL_Y, DETAIL_WIDTH, DETAIL_PICTURE_HEIGHT);
-	utf8_name(game->name, name, sizeof(name));
+	overlay_utf8(game->name, NUMBEROF(game->name), name, sizeof(name));
 	ui_overlay_text(UI_FONT_BOLD, 13.0f, DETAIL_X, y, UI_ALIGN_LEFT, COLOR_TITLE, name);
 	y += 20;
 #define DETAIL_LINE(label, value) \
@@ -815,7 +671,7 @@ static void render_details(
 			unsigned long color = !game->teams || player->team < 0 ? COLOR_TEXT :
 				player->team == 0 ? COLOR_RED_TEAM : COLOR_BLUE_TEAM;
 
-			utf8_name(player->name, name, sizeof(name));
+			overlay_utf8(player->name, NUMBEROF(player->name), name, sizeof(name));
 			ui_overlay_text(UI_FONT_REGULAR, 9.0f, DETAIL_X + (index / ROSTER_ROWS) * column_width,
 				y + (index % ROSTER_ROWS) * 11, UI_ALIGN_LEFT, color, name);
 		}
@@ -883,18 +739,18 @@ void browser_screen_render(
 
 	/* the buttons */
 	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
-	width = prompt_width(UI_BUTTON_A, "=JOIN") + prompt_width(UI_BUTTON_B, "=BACK") +
-		prompt_width(UI_BUTTON_X, "=REFRESH") + prompt_width(UI_BUTTON_Y, "=CREATE GAME") +
-		prompt_width(UI_BUTTON_LEFT_TRIGGER, "") + prompt_width(UI_BUTTON_RIGHT_TRIGGER, "=SORT") - 20 - 3;
+	width = overlay_prompt_width(UI_BUTTON_A, "=JOIN") + overlay_prompt_width(UI_BUTTON_B, "=BACK") +
+		overlay_prompt_width(UI_BUTTON_X, "=REFRESH") + overlay_prompt_width(UI_BUTTON_Y, "=CREATE GAME") +
+		overlay_prompt_width(UI_BUTTON_LEFT_TRIGGER, "") + overlay_prompt_width(UI_BUTTON_RIGHT_TRIGGER, "=SORT") - 20 - 3;
 	x = 37;
 	if (!palette->glassed)
 		x = 320 - width / 2;
-	x = prompt(UI_BUTTON_A, "=JOIN", x);
-	x = prompt(UI_BUTTON_B, "=BACK", x);
-	x = prompt(UI_BUTTON_X, "=REFRESH", x);
-	x = prompt(UI_BUTTON_Y, "=CREATE GAME", x);
+	x = overlay_prompt(UI_BUTTON_A, "=JOIN", x, COLOR_PROMPT);
+	x = overlay_prompt(UI_BUTTON_B, "=BACK", x, COLOR_PROMPT);
+	x = overlay_prompt(UI_BUTTON_X, "=REFRESH", x, COLOR_PROMPT);
+	x = overlay_prompt(UI_BUTTON_Y, "=CREATE GAME", x, COLOR_PROMPT);
 	x += ui_overlay_button(UI_BUTTON_LEFT_TRIGGER, 15.0f, x, 455.0f, 0xFFFFFFFF);
-	prompt(UI_BUTTON_RIGHT_TRIGGER, "=SORT", x);
+	overlay_prompt(UI_BUTTON_RIGHT_TRIGGER, "=SORT", x, COLOR_PROMPT);
 
 	if (browser_screen.connecting)
 	{
