@@ -35,6 +35,7 @@ picked there as any.
 #include "networking/network_game_globals.h"
 #include "../src/browser.h"
 #include "../src/ui_overlay.h"
+#include "halo_ui_pointer.h"
 
 /* ---------- constants */
 
@@ -52,6 +53,9 @@ enum
 	CONNECT_TIMEOUT = 15000,
 	/* the screen takes no A this soon after it opens */
 	OPEN_SETTLE = 600,
+	/* a held direction moves again after this long, and then this often */
+	REPEAT_DELAY = 350,
+	REPEAT_PERIOD = 90,
 };
 
 /* ui_widget.c owns the same private enum (virtual_keyboard.c keeps a copy) */
@@ -106,6 +110,9 @@ static struct
 	unsigned long connecting_time;
 	/* when the screen opened (the menu's A that opened it picks nothing) */
 	unsigned long opened_time;
+	/* a direction held since an earlier frame, and when it next moves */
+	boolean held;
+	unsigned long repeat_time;
 } browser_screen;
 
 /* ---------- private code */
@@ -298,6 +305,39 @@ static void fetch_games(
 	}
 }
 
+/* B: back to the menu, the search for games ended */
+static void leave(
+	void)
+{
+	browser_screen.active = FALSE;
+	ui_online_games_stop_network();
+}
+
+/* a direction's steps this frame: one when it is first pressed, then, held,
+one every REPEAT_PERIOD after REPEAT_DELAY (the game reports a held
+direction every frame) */
+static short repeated(
+	short move)
+{
+	unsigned long now = system_milliseconds();
+	boolean go = FALSE;
+
+	if (!move)
+		browser_screen.held = FALSE;
+	else if (!browser_screen.held)
+	{
+		browser_screen.held = TRUE;
+		browser_screen.repeat_time = now + REPEAT_DELAY;
+		go = TRUE;
+	}
+	else if (now >= browser_screen.repeat_time)
+	{
+		browser_screen.repeat_time = now + REPEAT_PERIOD;
+		go = TRUE;
+	}
+	return go ? move : 0;
+}
+
 /* ---------- public code */
 
 boolean browser_screen_active(
@@ -400,20 +440,17 @@ void browser_screen_process(
 				if (browser_screen.connecting)
 					browser_screen.connecting = FALSE;
 				else
-				{
-					browser_screen.active = FALSE;
-					ui_online_games_stop_network();
-				}
+					leave();
 				break;
 			default: break;
 			}
 		}
-		if (move)
-		{
-			browser_screen.selected = (short)PIN(browser_screen.selected + move, 0,
-				MAX(0, browser_screen.count - 1));
-			move = 0;
-		}
+	}
+	move = repeated(move);
+	if (move)
+	{
+		browser_screen.selected = (short)PIN(browser_screen.selected + move, 0,
+			MAX(0, browser_screen.count - 1));
 	}
 	if (browser_screen.selected >= browser_screen.count)
 		browser_screen.selected = (short)MAX(0, browser_screen.count - 1);
@@ -466,6 +503,47 @@ static char const *const map_picture_order[] =
 	"carousel", "boardingaction", "bloodgulch", "wizard", "putput", "longest",
 };
 static short const engine_picture[] = { 5, 0, 2, 3, 1, 4 };
+
+/* the row of the list at a point of the 640x480 layout, or NONE */
+static short row_at(
+	short x,
+	short y)
+{
+	short row = (short)((y - LIST_Y - LIST_HEAD) / LIST_ROW);
+
+	if (x < LIST_X || x >= LIST_X + LIST_WIDTH || y < LIST_Y + LIST_HEAD || row >= ROWS_PER_PAGE)
+		return NONE;
+	return row;
+}
+
+/* the mouse: the row under it is the selected one, a click there joins it,
+the wheel turns the page and the right button goes back */
+void browser_screen_pointer(
+	struct halo_ui_pointer const *pointer)
+{
+	short page_first = (short)(browser_screen.selected - browser_screen.selected % ROWS_PER_PAGE);
+	short row;
+
+	if (browser_screen.connecting)
+		return;
+	if (pointer->wheel_steps)
+	{
+		browser_screen.selected = (short)PIN(browser_screen.selected + (pointer->wheel_steps > 0 ? -1 : 1),
+			0, MAX(0, browser_screen.count - 1));
+	}
+	row = pointer->moved ? row_at(pointer->x, pointer->y) : NONE;
+	if (row != NONE && page_first + row < browser_screen.count)
+		browser_screen.selected = (short)(page_first + row);
+	row = pointer->left_clicks ? row_at(pointer->click_x, pointer->click_y) : NONE;
+	if (row != NONE && page_first + row < browser_screen.count &&
+		system_milliseconds() - browser_screen.opened_time > OPEN_SETTLE)
+	{
+		browser_screen.selected = (short)(page_first + row);
+		join_selected();
+	}
+	if (pointer->right_clicks)
+		leave();
+}
 
 static char const *const sort_names[NUMBER_OF_SORTS] = { "PLAYERS", "NAME", "MAP", "TYPE" };
 
