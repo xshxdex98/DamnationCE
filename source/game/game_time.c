@@ -75,6 +75,8 @@ symbols in this file:
 #include "networking/network_game_globals.h"
 #include "networking/network_server_manager.h"
 #include "saved games/game_state.h"
+#include "scenario/scenario.h"
+#include "scenario/scenario_definitions.h"
 /* port/linux/game/network_distributed.c's */
 void network_distributed_tick(void);
 
@@ -318,13 +320,17 @@ boolean game_time_reset_speed(
 
 /* whether a client's clock waits for the host's first game update, which
 brings the host's time (the host ticks only once every machine has
-loaded) */
+loaded). port: never in the main menu, where a client only looks for games
+(System Link's list, Online Games, a lobby): the menus' scene runs on. */
 boolean game_time_held(
 	void)
 {
 	struct network_game_client *client;
+	/* (none between maps; global_scenario_get asserts there is one) */
+	struct scenario *scenario = global_scenario;
 
-	if (game_connection() != _game_connection_network_client)
+	if (game_connection() != _game_connection_network_client ||
+		(scenario && scenario->type == _scenario_type_main_menu))
 		return FALSE;
 	client = global_network_game_client_get();
 	return client && !network_game_client_server_has_started_game(client);
