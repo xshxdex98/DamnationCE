@@ -40,6 +40,10 @@ where its offset falls in their combined offset space.
 
 /* where bitmaps.map and sounds.map start in the combined offset space; the
 largest map is 0x24000000 bytes long (cache_file_formats.h) */
+/* the combined offset space: the map, the Ogg Vorbis sounds decoded at load
+(custom_edition_sounds.c) after the largest map it takes, bitmaps.map,
+sounds.map */
+#define COMBINED_DECODED_OFFSET 0x30000000UL
 #define COMBINED_BITMAPS_OFFSET 0x40000000UL
 #define COMBINED_SOUNDS_OFFSET 0x60000000UL
 #define COMBINED_OFFSET_LIMIT 0x80000000UL
@@ -250,6 +254,8 @@ static boolean custom_edition_cache_tags_convert(
 		loaded_bytes,
 		COMBINED_BITMAPS_OFFSET,
 		COMBINED_SOUNDS_OFFSET);
+	/* (before the conversion, which silences sounds this build cannot play) */
+	custom_edition_sounds_decode(tag_cache, loaded_bytes, (long)COMBINED_DECODED_OFFSET);
 	status = custom_edition_cache_convert(tag_cache, loaded_bytes, &conversion);
 	if (status != _cache_file_status_ok)
 	{
@@ -446,7 +452,7 @@ struct cache_file_tag_header *custom_edition_cache_tags_load(
 	status = cache_file_identify(&globals->map.source, &identity);
 	if (status != _cache_file_status_ok ||
 		identity.format != _cache_file_format_custom_edition_cache ||
-		identity.file_size > COMBINED_BITMAPS_OFFSET ||
+		identity.file_size > COMBINED_DECODED_OFFSET ||
 		!globals->map.source.read(globals->map.source.context, 0, CACHE_FILE_HEADER_BYTES, header))
 	{
 		error(_error_silent, "custom edition: '%s' is not a loadable cache (%s)", path, cache_file_status_describe(status));
@@ -514,6 +520,7 @@ struct cache_file_tag_header *custom_edition_cache_tags_load(
 	if (!custom_edition_cache_tags_convert(tag_cache, &report))
 	{
 		error(_error_silent, "custom edition: cannot run '%s'", path);
+		custom_edition_sounds_dispose();
 		custom_edition_models_dispose();
 		custom_edition_bitmaps_dispose();
 		custom_edition_cache_files_close();
@@ -538,6 +545,7 @@ void custom_edition_cache_tags_unload(
 	/* the structure BSP goes first, as scenario_structure_bsp_unload would
 	have released it */
 	custom_edition_structure_bsp_unload();
+	custom_edition_sounds_dispose();
 	custom_edition_models_dispose();
 	custom_edition_bitmaps_dispose();
 	custom_edition_cache_files_close();
@@ -569,6 +577,12 @@ void custom_edition_cache_read(
 	{
 		file = &globals->resource_files[_resource_map_bitmaps];
 		file_offset = (unsigned long)offset - COMBINED_BITMAPS_OFFSET;
+	}
+	else if ((unsigned long)offset >= COMBINED_DECODED_OFFSET)
+	{
+		if (!custom_edition_sounds_read((long)((unsigned long)offset - COMBINED_DECODED_OFFSET), size, buffer))
+			csmemset(buffer, 0, size);
+		return;
 	}
 	else
 	{
