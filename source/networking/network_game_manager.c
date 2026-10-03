@@ -95,6 +95,12 @@ symbols in this file:
 
 #include <xtl.h>
 
+#ifdef HALO_64BIT
+/* (declared for the 64-bit build, which takes no implicit declarations; the
+32-bit build calls it as it did) */
+void player_delete(long player_index);
+#endif
+
 /* ---------- constants */
 
 /* the machine and player slots of a network game: the Xbox's 4 and 16, or the
