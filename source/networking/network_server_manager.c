@@ -1258,7 +1258,9 @@ void network_game_server_dispose(
 		network_connection_delete(server->connection);
 
 #ifdef xbox
-	SleepEx(MILLISECONDS_PER_SECOND, FALSE);
+	/* port: the Xbox waited a second here for the goodbye above to leave
+	the network adapter; a PC's sends are the system's once they return, and
+	the wait only froze the menus (backing out of a lobby to Multiplayer) */
 	transport_server_terminate();
 #endif
 
