@@ -62,8 +62,10 @@ def textures() -> List[tuple]:
     """The textures: each one's folder, its entry in its list, whether it is
     a title, and whether it is the Glassed theme's."""
     result = []
-    for folder, listing, title, glassed in ((HUD_ASSETS, LAYOUT, False, False), (TITLE_ASSETS, TITLE_LIST, True, False),
-                                            (SKIN_ASSETS, SKIN_LIST, True, True)):
+    # (the Glassed theme's before the titles, which stand for some of the same
+    # bitmaps in the Vanilla theme: hud_hires.c takes the first that applies)
+    for folder, listing, title, glassed in ((HUD_ASSETS, LAYOUT, False, False), (SKIN_ASSETS, SKIN_LIST, True, True),
+                                            (TITLE_ASSETS, TITLE_LIST, True, False)):
         if (ROOT / listing).is_file():
             # (an entry may say otherwise: the maps' pictures are in both themes)
             result += [(folder, asset, title, asset.get("glassed", glassed))

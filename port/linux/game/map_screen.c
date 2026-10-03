@@ -12,9 +12,14 @@ picture and description beside it, and a grid of cards, each map's picture
 over its name. A picks the map, as the PC menus' list does, and opens the
 game types that follow it; B goes back a step.
 
-The Map screen's widget runs "port map select" as it is made (menu_tags.c,
-the menus' skin): that opens this, which stays up over it until a map is
-picked or B leaves both.
+It opens over two screens. The PC menus' Map screen runs "port map select"
+as it is made (menu_tags.c, the Glassed theme's layer): a map picked there
+is chosen as its list would choose it, and the game types after it open.
+The Xbox's map list (split screen, a game's next map) opens it as it is
+made, in the Glassed theme (multiplayer_level_list_initialize): a map
+picked there becomes the list's choice, and the list is given an A, so
+whatever it does next it does. B on the categories leaves the screen under
+it too.
 */
 
 #ifdef HALO_GAME_BROWSER
@@ -30,6 +35,8 @@ picked or B leaves both.
 #include "text/text_group.h"
 #include "input/input.h"
 
+#include "interface/ui_widget_instance.h"
+
 #include "custom_edition_maps.h"
 #include "../src/ui_overlay.h"
 #include "halo_ui_pointer.h"
@@ -44,6 +51,8 @@ enum
 	/* (event_manager.c's event types, which it keeps to itself) */
 	MAP_EVENT_LEFT_STICK = 1,
 	MAP_EVENT_BUTTON = 3,
+	/* (event_manager_post_button's buttons) */
+	BUTTON_A = 0,
 
 	/* the screen takes no A this soon after it opens */
 	OPEN_SETTLE = 600,
@@ -105,6 +114,8 @@ list chooses it, and the screens opened and left) */
 char **ui_widget_port_multiplayer_levels(short *count, short *xbox_count);
 boolean ui_widget_port_multiplayer_level_choose(char const *map_name);
 boolean ui_widget_port_open_from_top(char const *name);
+void event_manager_post_button(short controller_index, short button_index);
+char const *config_string(char const *name);
 void ui_widget_port_go_back_from_top(void);
 
 /* ---------- globals */
@@ -124,6 +135,8 @@ static struct
 	short category_selected;
 	char **level_names;
 	short level_count;
+	/* the Xbox's map list it is open over, which picks, or NULL */
+	struct widget_instance *xbox_list;
 	short xbox_count;
 	unsigned long opened_time;
 	boolean held;
@@ -262,6 +275,14 @@ static void pick(void)
 		return;
 	}
 	map_screen.active = FALSE;
+	if (map_screen.xbox_list)
+	{
+		/* (the list's A: its own "multiplayer level select", and what it opens) */
+		map_screen.xbox_list->parameters.list.selected_index = map_screen.levels[map_screen.selected];
+		map_screen.xbox_list = NULL;
+		event_manager_post_button(0, BUTTON_A);
+		return;
+	}
 	ui_widget_port_open_from_top(GAMETYPES_SCREEN);
 }
 
@@ -273,6 +294,7 @@ static void back(void)
 		return;
 	}
 	map_screen.active = FALSE;
+	map_screen.xbox_list = NULL;
 	ui_widget_port_go_back_from_top();
 }
 
@@ -455,6 +477,7 @@ boolean map_screen_open(void)
 {
 	if (!ui_overlay_available())
 		return FALSE;
+	map_screen.xbox_list = NULL;
 	map_screen.level_names = ui_widget_port_multiplayer_levels(&map_screen.level_count, &map_screen.xbox_count);
 	map_screen.active = TRUE;
 	map_screen.opened_time = system_milliseconds();
@@ -470,6 +493,16 @@ boolean map_screen_open(void)
 	}
 	/* (the menu's A, still queued, is not a pick) */
 	event_manager_flush();
+	return TRUE;
+}
+
+/* (multiplayer_level_list_initialize) the Xbox's map list made: in the
+Glassed theme, this opened over it, to pick through it */
+boolean map_screen_open_over_list(struct widget_instance *list)
+{
+	if (strcmp(config_string("display.theme"), "glassed") || !map_screen_open())
+		return FALSE;
+	map_screen.xbox_list = list;
 	return TRUE;
 }
 
@@ -534,8 +567,10 @@ void map_screen_process(void)
 	}
 	if (repeated(dx || dy))
 		move(dx, dy);
-	/* (the widgets behind take nothing while this is up) */
-	event_manager_flush();
+	/* (the widgets behind take nothing while this is up; once a map is
+	picked, the A given to the Xbox's list goes through) */
+	if (map_screen.active)
+		event_manager_flush();
 }
 
 void map_screen_render(void)

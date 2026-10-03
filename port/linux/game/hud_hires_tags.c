@@ -28,6 +28,7 @@ long hud_hires_asset_fits(long asset, long width, long height);
 void hud_hires_tags_loaded(void);
 void hud_hires_tags_unloaded(void);
 long hud_hires_asset_at(unsigned long address, long width, long height);
+long hud_hires_asset_after(unsigned long address, long width, long height, long asset);
 
 /* ---------- constants */
 
@@ -98,10 +99,27 @@ long hud_hires_asset_at(
 	long width,
 	long height)
 {
+	return hud_hires_asset_after(address, width, height, NONE);
+}
+
+/* the next texture after `asset` (NONE: the first) standing for the bitmap
+whose pixels are at address: some bitmaps have one in each menus theme */
+long hud_hires_asset_after(
+	unsigned long address,
+	long width,
+	long height,
+	long asset)
+{
 	long index;
+	boolean passed = asset == NONE;
 
 	for (index = 0; index < hires_bitmap_count; index++)
 	{
+		if (!passed)
+		{
+			passed = hires_bitmaps[index].asset == asset;
+			continue;
+		}
 		struct bitmap_data *bitmap = hires_bitmaps[index].bitmap;
 
 		if (bitmap->cache_block_index != NONE &&

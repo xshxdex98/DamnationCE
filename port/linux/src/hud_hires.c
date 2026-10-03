@@ -30,6 +30,7 @@ the game's zlib.
 
 /* the game's (port/linux/game/hud_hires_tags.c) */
 long hud_hires_asset_at(unsigned long address, long width, long height);
+long hud_hires_asset_after(unsigned long address, long width, long height, long asset);
 
 #define MAXIMUM_TEXTURES 128
 
@@ -82,11 +83,13 @@ long hud_hires_override_find(unsigned long address, unsigned long width, unsigne
 	}
 	if (!hud_enabled && !titles_enabled)
 		return -1;
+	/* (a bitmap may have a Glassed theme's texture and then a title's) */
 	asset = hud_hires_asset_at(address, (long)width, (long)height);
+	while (asset >= 0 && asset < hud_hires_asset_count() && hud_hires_embedded[asset].glassed && !glassed)
+		asset = hud_hires_asset_after(address, (long)width, (long)height, asset);
 	if (asset < 0 || asset >= hud_hires_asset_count())
 		return -1;
-	if (!(hud_hires_embedded[asset].title ? titles_enabled : hud_enabled) ||
-		(hud_hires_embedded[asset].glassed && !glassed))
+	if (!(hud_hires_embedded[asset].title ? titles_enabled : hud_enabled))
 		return -1;
 #ifdef HALO_64BIT
 	/* (an Xbox address: the texture's pixels in the contiguous memory) */

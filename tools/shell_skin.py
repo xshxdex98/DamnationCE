@@ -339,7 +339,8 @@ def vanilla_layer():
 def skin_maps(folder):
     """Redraws the menu pictures of the Xbox maps in folder into skin/xbox, and
     lists them in its textures.json. (A picture is the same in every map
-    that has it; its headers are tools/title_assets.py's.)"""
+    that has it. Its headers are tools/title_assets.py's too, which the game
+    draws in the Vanilla theme.)"""
     out = SKIN / "xbox"
     if out.exists():
         shutil.rmtree(out)
@@ -349,7 +350,7 @@ def skin_maps(folder):
         game = XboxMap(path)
         for group, name in sorted(game.tags):
             last = name.rsplit("\\", 1)[-1]
-            if group != "bitm" or not name.startswith("ui\\shell") or last.startswith("header_"):
+            if group != "bitm" or not name.startswith("ui\\shell"):
                 continue
             for index, bitmap in enumerate(game.bitmap_group(name)["bitmaps"]):
                 if (name, index) in done:
