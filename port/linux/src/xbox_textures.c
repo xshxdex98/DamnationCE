@@ -624,7 +624,11 @@ static unsigned char custom_edition_texels_order(unsigned long address)
 
 void halo_custom_edition_texels_channels(const void *texels, unsigned char channel_order)
 {
+#ifdef HALO_64BIT
+	unsigned long address = xbox_address(texels); /* (an Xbox address, as the cache's entries keep) */
+#else
 	unsigned long address = (unsigned long)texels;
+#endif
 	unsigned long index;
 
 	if (channel_order >= NUMBER_OF_CUSTOM_EDITION_CHANNEL_ORDERS)

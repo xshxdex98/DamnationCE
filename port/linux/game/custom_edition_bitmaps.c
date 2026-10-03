@@ -634,7 +634,7 @@ void custom_edition_bitmap_pixels_arrived(
 	{
 		struct bitmap_data *bitmap = TAG_BLOCK_GET_ELEMENT(&group->bitmaps, bitmap_index, struct bitmap_data);
 
-		if (bitmap->base_address == pixels && bitmap->pixels_offset == offset)
+		if (xbox_pointer(bitmap->base_address) == pixels && bitmap->pixels_offset == offset)
 		{
 			long reordered_index = reordered_bitmap_index(tag_index);
 

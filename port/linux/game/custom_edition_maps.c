@@ -449,7 +449,7 @@ static struct bitmap_data *custom_edition_map_picture_read(
 				LEVEL_PICTURE_SHAPE_HEIGHT,
 				PICTURE_TEXTURE_SIZE,
 				PICTURE_TEXTURE_SIZE,
-				bitmap->base_address);
+				XBOX_POINTER(uint32_t, bitmap->base_address));
 			bitmap_rebuild(bitmap);
 		}
 		if (bitmap && !bitmap->hardware_format)
