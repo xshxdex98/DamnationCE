@@ -680,15 +680,17 @@ every layout used was then checked against the sample maps.
   crash the game can still do so, as an Xbox map could; debug builds also
   stop on data that Custom Edition's release build reads past unchecked, as
   with the animation overlays above, and other such data may turn up.
-- **Ogg Vorbis sounds do not play** (39 of `bloodgulch.map`'s sounds, among
-  them announcer and dialogue lines): a decoder, under a licence that fits a
-  CC0 repository, would be needed.
+- **Ogg Vorbis sounds** (39 of `bloodgulch.map`'s, among them announcer and
+  dialogue lines) are decoded when the map loads (stb_vorbis, public domain)
+  and encoded again as Xbox ADPCM in memory
+  (`port/linux/game/custom_edition_sounds.c`); one that cannot be decoded is
+  silenced, as all were before.
 - **Models of 44 nodes or more** cannot be drawn by this build's renderer:
   such maps are refused (`celer_exile_odst_v2.yelo`).
-- **Linear bitmaps whose rows are not a multiple of 64 bytes** are drawn with
-  the wrong row pitch: the texture cache gives the texture header the
-  unpadded pitch rounded down. They are logged; none is in the maps run (the
-  6 known are in `extinctionrevanepic2.map`).
+- **Linear bitmaps whose rows are not a multiple of 64 bytes** (the 6 known
+  are in `extinctionrevanepic2.map`) are drawn with their rows' padded
+  pitch: the texture header rounds it up, as the rows are padded
+  (`xbox_texture_cache.c`).
 - **Button prompts on replaced icon sheets.** HUD messages draw a button
   from sequence 0 to 3 of the HUD globals' icon bitmap, as the Xbox does;
   Halo PC names the key instead. `beavercreek_halo3.yelo` replaces the icon
@@ -705,13 +707,20 @@ every layout used was then checked against the sample maps.
 - **The texture cache** holds 44 MB; a map that draws more in a frame is
   drawn with default textures where they do not fit, and the game reports
   it (`YOU GOT STABBED`).
-- **Silenced sounds still log.** Playing a silenced Ogg Vorbis sound logs
-  `attempt to play a sound that was not a mono 22k compressed sound ...`,
-  which the game also prints on the screen, in the release build too.
-- **Scripts that use what this build does not have** are refused: of the
-  sample, `extinctionrevanepic2.map` calls OpenSauce's
-  `pp_set_effect_instance_active` (4 times), and needs a mod set anyway.
-  OpenSauce's other runtime features (`project_yellow`) do not exist here.
+- **Silenced sounds still log.** Playing a sound that could not be decoded
+  logs `attempt to play a sound that was not a mono 22k compressed sound
+  ...`, which the game also prints on the screen, in the release build too.
+- **Scripts that use what this build does not have.** A call of a function
+  this build lacks that gives nothing, a boolean or a number does nothing:
+  it becomes a constant of its type's default, logged by name
+  (`custom_edition_scripts.c`); `extinctionrevanepic2.map`'s four calls of
+  OpenSauce's `pp_set_effect_instance_active` are such. A call giving a
+  string, an object or a tag, and an engine global this build lacks, still
+  refuse the map. OpenSauce's other runtime features (`project_yellow`) do
+  not exist here.
+- **The map list** offers up to 1024 Custom Edition maps, whose file names
+  may be up to 56 characters (a name longer than 25 is the level
+  `levels\<name>`, which fits the game engine's 63).
 - **The conversions are one-way and in memory:** nothing is written to the
   map files.
 

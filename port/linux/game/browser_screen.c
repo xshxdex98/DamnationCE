@@ -437,9 +437,6 @@ void browser_screen_process(
 				if (!browser_screen.connecting && system_milliseconds() - browser_screen.opened_time > OPEN_SETTLE)
 					create_game();
 				break;
-			case _gamepad_binary_button_back:
-				set_status("Filters are next");
-				break;
 			case _gamepad_analog_button_left_trigger:
 			case _gamepad_analog_button_white:
 				browser_screen.sort = (short)((browser_screen.sort + NUMBER_OF_SORTS - 1) % NUMBER_OF_SORTS);
