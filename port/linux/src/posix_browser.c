@@ -52,7 +52,7 @@ platform.
 #include <stdlib.h>
 #include <string.h>
 
-#define BROWSER_USER_AGENT "chupathingyce-browser"
+#define BROWSER_USER_AGENT "damnationce-browser"
 #define TIMEOUT_MILLISECONDS 10000
 
 #ifndef _WIN32

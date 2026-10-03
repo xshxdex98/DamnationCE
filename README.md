@@ -1,132 +1,83 @@
-<p align="center"><img src="docs/icon-160.png" width="120" alt=""></p>
+<h1 align="center">DamnationCE</h1>
 
-<h1 align="center">ChupathingyCE</h1>
-
-<p align="center"><b>A community build of OpenCE: Halo: Combat Evolved on Windows, Mac, Linux and Android.</b></p>
+<p align="center"><b>A Halo: Combat Evolved client built on OpenCE, with its own menus and Halo Custom Edition maps out of the box.</b></p>
 
 <p align="center">
-<a href="https://github.com/ChupathingyCE/chupathingyce/releases/latest">Download</a> ·
-<a href="https://halo.milenko.org">Games online now</a> ·
-<a href="https://discord.gg/4BUm2FwuCB">Discord</a>
+<a href="https://github.com/xshxdex98/DamnationCE/releases/latest">Download</a> ·
+<a href="https://halo.milenko.org">Games online now</a>
 </p>
 
-> **Compatible with [OpenCE](https://github.com/cybersecurity/halo-ce-universal) build-76 through build-80 (network version 11).** Games hosted on older builds (network version 10) can't be joined; their hosts need to update.
-> Players on OpenCE and players on ChupathingyCE play together.
+> **Plays with [OpenCE](https://github.com/cybersecurity/halo-ce-universal) build-76 through build-82 (network version 11)** and with ChupathingyCE, both ways.
 
-ChupathingyCE is a community build of **OpenCE**, the port of the Halo: Combat
-Evolved decompilation to modern computers and phones. Our goal is a unified
-online experience, plus our own tweaks, on a project that's still in its
-infancy. We follow OpenCE closely, send our fixes back to it, and put out our
-own releases. Expect rough edges, and please report them.
+DamnationCE is a fork of **OpenCE**
+([cybersecurity/halo-ce-universal](https://github.com/cybersecurity/halo-ce-universal)),
+the port of the Halo: Combat Evolved decompilation to modern computers. It
+follows OpenCE's builds closely and adds its own menus, Custom Edition map
+support and synced AI on top. Its online features (Online Games, hosting,
+stats) come from ChupathingyCE, used with its authors' permission (see
+[Credits](#credits)).
 
-<p align="center"><img src="docs/screenshots/lobby.jpg" width="720" alt="A multiplayer lobby"></p>
+## What it adds
 
-## Features
+**Menus**
+- Two themes, switched from the main menu's **MENUS** button: **Glassed**, a
+  minimal look of plain text over the scene and clear glass behind what is
+  chosen, and **Vanilla**, the PC menus as they were
+- Left-hand main menu, with Campaign, Multiplayer and Menus columns
+- A map picker: **Vanilla** (the Xbox's 13 levels and Halo PC's 6) and
+  **Custom** categories, shown as a list with the map's picture beside it or as
+  a grid of cards (**Y** switches); used wherever a map is chosen
+- Its own Online Games screen: a card for each game, the chosen game's details
+  beside the list
+- The menu scene keeps running behind every screen
 
-**Online**
-- **Online Games**, a server list in the Multiplayer menu: join a game with **A**, or host one with **Y**
-- Games you host are listed for everyone, from any of our builds
-- Invite links (`halo://join/…`) to send to friends; opening one joins their game
-- Direct connections between players, with no port forwarding in most homes
-- Plays with OpenCE builds of the same network version, both ways
-- Dedicated servers anyone can run: a playlist of games, around the clock, with no window or player
+**Halo Custom Edition maps** (`docs/custom_edition_caches.md`)
+- Custom Edition and OpenSauce (`.yelo`) multiplayer maps load and run
+- Their Ogg Vorbis sounds play (announcer, dialogue, music)
+- Their scripts run; OpenSauce-only effect calls do nothing instead of
+  refusing the map
+- Their stock HUD is drawn with the port's high-res HUD where the layouts match
+- Models of up to 64 bones
+- Up to 1024 maps in the list, with names of up to 56 characters
 
-**Stats, on [halo.milenko.org](https://halo.milenko.org)**
-- A carnage report for every finished game, with medals
-- Service records and leaderboards, with confirmed players (your games count toward you, whatever name you use)
-- Accounts, made on the site or from the game, with an encrypted backup of your player identity
-- Listing a game hosted from an OpenCE build, by its invite link
-
-**The game**
-- The campaign, split screen and System Link, running natively (no emulator)
-- High-res HUD and text, and widescreen menus
-- Controller prompts for Xbox, PlayStation and Nintendo pads, and the keyboard
-- Updates itself: it checks for new releases when it starts, and asks first
-
-**Platforms**
-
-| | Windows | Mac | Linux | Android |
-| --- | --- | --- | --- | --- |
-| The game | ✅ | ✅ Apple silicon and Intel | ✅ | ✅ |
-| Online Games, hosting, stats | ✅ | ✅ | ✅ | ✅ |
-| Dedicated server | ✅ (tested in Wine) | Untested | ✅ (and Docker) | |
-| Updates itself | ✅ | Not yet | ✅ | ✅ |
-
-## Download
-
-Get the latest release from the [Releases page](https://github.com/ChupathingyCE/chupathingyce/releases/latest):
-
-| Platform | Download | Notes |
-| --- | --- | --- |
-| Windows | `chupathingyce-windows-release.zip` | Windows 10 or later. |
-| Linux | `chupathingyce-linux-release.zip` | Needs SDL3 (32-bit). See [port/linux/README.md](port/linux/README.md). |
-| Android | `chupathingyce-android-release.zip` | Android 9 or later, 64-bit. See [port/android/README.md](port/android/README.md). |
-| Mac | `chupathingyce-macos-release.zip` | macOS 13 or later, Apple silicon or Intel. |
-
-The game checks for new releases when it starts and asks before updating.
-
-We don't pay for code signing yet, so the first start needs one extra step:
-
-- **Windows** may warn about an unknown publisher: choose **More info → Run anyway**.
-- **Mac**: move ChupathingyCE to Applications and open it. If macOS won't open
-  it, go to **System Settings → Privacy & Security**, and choose **Open
-  Anyway** next to ChupathingyCE. You only do this once.
+**Multiplayer**
+- AI synced to every player in a game (no "ghost" AI)
 
 ## You need your own copy of Halo
 
-ChupathingyCE doesn't include the game's maps, sounds or art. You need an Xbox
-disc image (`.iso` or `.xiso`) of Halo: Combat Evolved. Any region works.
+DamnationCE doesn't include the game's maps, sounds or art. You need an Xbox
+disc image (`.iso` or `.xiso`) of Halo: Combat Evolved. The first time it
+starts, it asks for the image and copies the game's `maps` folder out of it.
 
-1. Start ChupathingyCE.
-2. The first time, it asks for your disc image. Pick it.
-3. It copies the game's `maps` folder out of the image (about 2 GB), then starts.
+### Custom Edition maps
 
-On Android, copy the disc image to your phone first. On a Mac, the maps,
-settings and saves go in `~/Library/Application Support/ChupathingyCE`.
+Put these from a Halo Custom Edition install's `maps` folder into the game's
+`maps` folder:
+
+- `bitmaps.map`, `sounds.map` and `loc.map`, which every Custom Edition map
+  draws its stock art, sounds and text from
+- the maps you want: Halo PC's own (`dangercanyon.map`, `deathisland.map`,
+  `gephyrophobia.map`, `icefields.map`, `infinity.map`, `timberland.map`) and
+  any custom ones
+
+A map's picture is `<name>.bmp` beside it and its description `<name>.txt`.
+To use an install where it is instead of copying, set `paths.custom_edition`
+in `config.toml`.
 
 ## Playing online
 
 | You want to | Do this |
 | --- | --- |
-| Join a game | **Multiplayer → Online Games**, pick a game, press **A**. Or press **Join** on [halo.milenko.org](https://halo.milenko.org). |
-| Host a game | **Multiplayer → Online Games → Y (Create Game)**, or host from System Link as usual. Your game is listed online by itself. |
-| Invite a friend | When you host, the game copies an invite link (`halo://join/…`). Send it; opening it joins your game. |
-| See your stats | Your service record is on [halo.milenko.org](https://halo.milenko.org), found by your name. |
-| Make an account | On [halo.milenko.org/profile](https://halo.milenko.org/profile), or press **Start** in Online Games to make one for the player you already are. |
-| List a game from an OpenCE build | Sign in on the site, open **Host a Game**, and paste your invite link. |
+| Join a game | **Multiplayer → Online Games**, pick a game, press **A** |
+| Host a game | **Multiplayer → Online Games → Y (Create Game)**, or host from LAN as usual |
+| Invite a friend | When you host, the game copies an invite link (`halo://join/…`) to send |
 
-Everything here plays with OpenCE builds of the same network version: they can
-join your games and you can join theirs. Stats and the server list need a
-ChupathingyCE host. Games hosted from OpenCE builds can still be listed by
-their host on the site (Host a Game).
-
-<p align="center">
-<img src="docs/screenshots/site-games.jpg" width="49%" alt="halo.milenko.org: games and recent games">
-<img src="docs/screenshots/site-medals.jpg" width="49%" alt="halo.milenko.org: medals">
-</p>
-
-## Run a server
-
-A dedicated server is a copy of the game with no player and no window, hosting
-a playlist of games and listing them on halo.milenko.org and in Online Games.
-You can run one on your own computer, with no port forwarding:
-[the setup guide](docs/dedicated-server.md) walks through it. For one that runs
-around the clock on a Linux server, see [server/README.md](server/README.md).
-
-## How ChupathingyCE relates to OpenCE
-
-- OpenCE ([cybersecurity/halo-ce-universal](https://github.com/cybersecurity/halo-ce-universal))
-  is where the port is made. ChupathingyCE merges its changes regularly.
-- We keep the same network version, so players of both play together. The line
-  at the top of this page says which OpenCE builds match this one.
-- Fixes to the shared game code go back to OpenCE as pull requests.
-- ChupathingyCE has its own version numbers (this is v0.5.0b) and its own
-  releases, so it doesn't change under you every few hours.
+The game list and stats are ChupathingyCE's service,
+[halo.milenko.org](https://halo.milenko.org).
 
 ## Building it yourself
 
-You need Python 3, [ninja](https://ninja-build.org/) and clang. The game
-supplies the Xbox SDK declarations it uses, so you don't need the SDK.
+You need Python 3, [ninja](https://ninja-build.org/) and clang.
 
 ```sh
 python3 configure.py
@@ -135,37 +86,33 @@ ninja            # the game for the computer you're on
 
 | Target | Result | Instructions |
 | --- | --- | --- |
-| `ninja macos` | `build/macos/ChupathingyCE.app` | [port/macos/README.md](port/macos/README.md) |
-| `ninja linux` | `build/linux/halo` | [port/linux/README.md](port/linux/README.md) |
 | `ninja windows` | `build/windows/halo.exe` | [port/windows/README.md](port/windows/README.md) |
+| `ninja linux` | `build/linux/halo` | [port/linux/README.md](port/linux/README.md) |
+| `ninja macos` | `build/macos/DamnationCE.app` | [port/macos/README.md](port/macos/README.md) |
 | `ninja android_apk` | the Android app | [port/android/README.md](port/android/README.md) |
 
-Useful `configure.py` options:
-
-| Option | What it does |
-| --- | --- |
-| `--release` | A release build, as players get. Without it, a failed check stops the game. |
-| `--portable` | A Linux or Windows build that runs on any x86-64 computer, to give to others. |
-| `--no-game-browser` | Leaves out the server list, stats and dedicated servers, as OpenCE's builds are. |
-| `--pgo=off`, `--lto=off` | Faster builds, without profile-guided or link-time optimisation. |
-
-The version being made is in `VERSION`. Releases are built and published by
-the project's release workflow; the builds on this repository's Actions page
-are for checking changes.
+`--release` makes a release build; `--pgo=off --lto=off` builds faster. The
+menus are XML and pictures in `port/assets/menus`
+([its README](port/assets/menus/README.md) explains the themes and the tools
+that draw them).
 
 ## Credits
 
 - The decompilation: [punpckhdq/halo](https://github.com/punpckhdq/halo) and
   [bnunu/halo-1](https://github.com/bnunu/halo-1), of the Xbox build 2342.
-- The port: [OpenCE](https://github.com/cybersecurity/halo-ce-universal) and
-  its contributors.
-- ChupathingyCE: [Milenko](https://github.com/MrMilenko) and contributors. The
-  icon is MrBruh's helmet, with tusks.
+- The port: [OpenCE](https://github.com/cybersecurity/halo-ce-universal) and its
+  contributors, which this is a fork of.
+- Online Games, hosting, invites, dedicated servers and stats:
+  [ChupathingyCE](https://github.com/ChupathingyCE/chupathingyce), by
+  [Milenko](https://github.com/MrMilenko) and contributors (CC0), used with
+  their permission, and its service halo.milenko.org.
+- Custom Edition map loading: [bnunu](https://github.com/bnunu/halo-ce-universal).
 - Fonts: [Noto Sans](https://fonts.google.com/noto) (SIL OFL) and
   [Kenney's Input Prompts](https://kenney.nl/assets/input-prompts) (CC0).
-- Libraries: SDL3, stb, Mbed TLS, miniupnpc, KCP, tomlc17, musl's maths, and
-  extract-xiso. Their licenses are beside them in `port/third_party`.
+- Libraries: SDL3, stb (and stb_vorbis), Mbed TLS, miniupnpc, KCP, tomlc17,
+  musl's maths, expat and extract-xiso. Their licenses are beside them in
+  `port/third_party`.
 
-Halo is a trademark of Microsoft. ChupathingyCE is a fan project, not made or
+Halo is a trademark of Microsoft. DamnationCE is a fan project, not made or
 endorsed by Microsoft, Bungie or 343 Industries, and includes none of the
 game's content. The code is released under [CC0](LICENSE.md).

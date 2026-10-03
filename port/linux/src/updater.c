@@ -5,7 +5,7 @@ The desktop ports' self-updater (Linux and Windows; the Android app updates
 itself in Java, port/android).
 
 A release's build (HALO_RELEASE_BUILD: built from the release's tag,
-v<version>, by ChupathingyCE's release workflow; tools/version.py) knows its
+v<version>, by DamnationCE's release workflow; tools/version.py) knows its
 version (HALO_VERSION, 0.5.0b); nightlies and other builds never look for
 updates. When update.auto in config.toml is true (the default), the game
 asks GitHub for the latest release when it starts, on a thread of its own:
@@ -13,7 +13,7 @@ the game starts meanwhile, and nothing happens if the release is not newer
 or cannot be reached. If it is newer, the game asks whether to update:
 
 - Yes: the release's build for this platform and configuration
-  (chupathingyce-<platform>-<release|debug>.zip) is downloaded next to the executable
+  (damnationce-<platform>-<release|debug>.zip) is downloaded next to the executable
   (into update.partial/) and unpacked, its files put in place of the running
   game's (which become <name>.old, deleted at the next start), and the new
   game started; this one quits.
@@ -56,8 +56,8 @@ macos_build.py; the Android app's version is its own, build.gradle) */
 #define HALO_BUILD_FLAVOR "release"
 #endif
 
-/* ChupathingyCE's releases */
-#define UPDATE_REPOSITORY "ChupathingyCE/chupathingyce"
+/* DamnationCE's releases */
+#define UPDATE_REPOSITORY "xshxdex98/DamnationCE"
 #ifdef _WIN32
 #define UPDATE_PLATFORM "windows"
 #define PATH_SEPARATOR "\\"
@@ -65,7 +65,7 @@ macos_build.py; the Android app's version is its own, build.gradle) */
 #define UPDATE_PLATFORM "linux"
 #define PATH_SEPARATOR "/"
 #endif
-#define UPDATE_ASSET "chupathingyce-" UPDATE_PLATFORM "-" HALO_BUILD_FLAVOR ".zip"
+#define UPDATE_ASSET "damnationce-" UPDATE_PLATFORM "-" HALO_BUILD_FLAVOR ".zip"
 #define UPDATE_DIRECTORY "update.partial"
 #define MAXIMUM_UPDATE_FILES 32
 
@@ -477,7 +477,7 @@ static int updater_download_zip(const char *zip_path, char *error, size_t error_
 		snprintf(error, error_size, "could not start the download");
 		return 0;
 	}
-	window = SDL_CreateWindow("ChupathingyCE", 640, 150, 0);
+	window = SDL_CreateWindow("DamnationCE", 640, 150, 0);
 	if (window)
 		renderer = SDL_CreateRenderer(window, SDL_SOFTWARE_RENDERER);
 	while (!finished)
@@ -576,7 +576,7 @@ static void updater_update(void)
 		char message[800];
 
 		snprintf(message, sizeof(message), "The update failed:\n\n%s", error);
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "ChupathingyCE", message, NULL);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DamnationCE", message, NULL);
 	}
 }
 
@@ -673,11 +673,11 @@ void updater_poll(SDL_Window *window)
 	if (fullscreen)
 		SDL_SetWindowFullscreen(window, false);
 	snprintf(message, sizeof(message),
-		"A new version of ChupathingyCE is out (%s; this is %s).\n\n"
+		"A new version of DamnationCE is out (%s; this is %s).\n\n"
 		"Do you want to update? The game will close and start the new version.",
 		updater_latest_version, HALO_VERSION);
 	{
-		SDL_MessageBoxData question = { SDL_MESSAGEBOX_INFORMATION, window, "ChupathingyCE: new version", message,
+		SDL_MessageBoxData question = { SDL_MESSAGEBOX_INFORMATION, window, "DamnationCE: new version", message,
 			3, question_buttons, NULL };
 
 		if (!SDL_ShowMessageBox(&question, &answer))
@@ -685,7 +685,7 @@ void updater_poll(SDL_Window *window)
 	}
 	if (answer == 2)
 	{
-		SDL_MessageBoxData confirm = { SDL_MESSAGEBOX_WARNING, window, "ChupathingyCE: new version",
+		SDL_MessageBoxData confirm = { SDL_MESSAGEBOX_WARNING, window, "DamnationCE: new version",
 			"Stop asking about new versions?\n\n"
 			"To ask again, set auto = true in the [update] section of config.toml.",
 			2, confirm_buttons, NULL };

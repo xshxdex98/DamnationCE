@@ -407,7 +407,7 @@ int platform_app_folder(char *path, unsigned long size)
 
 	if (!base || !strstr(base, ".app/Contents/") || !home || !*home)
 		return 0;
-	snprintf(path, (size_t)size, "%s/Library/Application Support/ChupathingyCE", home);
+	snprintf(path, (size_t)size, "%s/Library/Application Support/DamnationCE", home);
 	SDL_CreateDirectory(path);
 	return 1;
 #else

@@ -1,19 +1,28 @@
-# Contributing to ChupathingyCE
+# Contributing to DamnationCE
 
-ChupathingyCE is a community build of [OpenCE](https://github.com/cybersecurity/halo-ce-universal). Fixes that belong in OpenCE itself are best sent there; we merge OpenCE regularly.
+DamnationCE is a fork of [OpenCE](https://github.com/cybersecurity/halo-ce-universal).
+Fixes that belong in OpenCE itself are best sent there; this repository merges
+OpenCE's builds as they come out.
 
 ## Pull requests
 
-- **Open them against `ChupathingyCE/chupathingyce`'s `main`.** This repository is a GitHub fork, so GitHub's "New pull request" page suggests `cybersecurity/halo-ce-universal` first: change the base repository to ChupathingyCE. With the GitHub CLI, run `gh repo set-default ChupathingyCE/chupathingyce` once in your clone.
-- One change per pull request, with how you tested it (which platforms you built and ran).
-- The game protocol stays OpenCE's: don't change how games are joined or what's sent on the wire. New networked features go on ChupathingyCE's own channel, falling back silently when the other side is OpenCE.
-- The 32-bit builds must stay byte-identical unless the change is meant for them: `tools/port_neutrality_check.py` checks it.
-- Commit messages, pull requests and issues are public, and they're posted to the ChupathingyCE Discord.
+- **Open them against `xshxdex98/DamnationCE`'s `main`.** This repository is a
+  GitHub fork, so GitHub's "New pull request" page suggests
+  `cybersecurity/halo-ce-universal` first: change the base repository.
+- The game protocol stays OpenCE's: don't change how games are joined or what's
+  sent on the wire, so players of every compatible build keep playing together.
+- Keep changes to OpenCE's own files small and commented (`port:`), so its next
+  build still merges cleanly. Menus are data: change `port/assets/menus` and
+  the tools that draw it (`tools/shell_art.py`, `tools/shell_skin.py`), not
+  `port/assets/menus/ce`, which `tools/ce_menus.py` writes.
+- Commit messages, pull requests and issues are public.
 
 ## Bugs
 
-Use [the bug report form](https://github.com/ChupathingyCE/chupathingyce/issues/new?template=bug.yml), or #bug-reports on the [Discord](https://discord.gg/4BUm2FwuCB).
+Use [the bug report form](https://github.com/xshxdex98/DamnationCE/issues/new?template=bug.yml).
+The game's log is `debug.txt` beside it; attach it.
 
 ## Game files
 
-ChupathingyCE never provides game files. Don't commit, attach or link maps, disc images or other copyrighted game data.
+DamnationCE never provides game files. Don't commit, attach or link maps, disc
+images or other copyrighted game data.
