@@ -318,19 +318,28 @@ boolean game_time_reset_speed(
 	return changed;
 }
 
+/* port: the connection the clock keeps time by. In the main menu that is
+always this machine's own, whatever network game is being set up (System
+Link's list, Online Games, a lobby, a game being made): its scene is local,
+and the network's clocks only stalled it and then ran it in bursts. */
+static short game_time_connection(
+	void)
+{
+	/* (none between maps; global_scenario_get asserts there is one) */
+	if (global_scenario && global_scenario->type == _scenario_type_main_menu)
+		return _game_connection_local;
+	return game_connection();
+}
+
 /* whether a client's clock waits for the host's first game update, which
 brings the host's time (the host ticks only once every machine has
-loaded). port: never in the main menu, where a client only looks for games
-(System Link's list, Online Games, a lobby): the menus' scene runs on. */
+loaded) */
 boolean game_time_held(
 	void)
 {
 	struct network_game_client *client;
-	/* (none between maps; global_scenario_get asserts there is one) */
-	struct scenario *scenario = global_scenario;
 
-	if (game_connection() != _game_connection_network_client ||
-		(scenario && scenario->type == _scenario_type_main_menu))
+	if (game_time_connection() != _game_connection_network_client)
 		return FALSE;
 	client = global_network_game_client_get();
 	return client && !network_game_client_server_has_started_game(client);
@@ -350,7 +359,7 @@ void game_time_start(
 	game_time_globals->leftover_dt = 0;
 	game_time_globals->active = TRUE;
 
-	connection = game_connection();
+	connection = game_time_connection();
 
 	switch (connection)
 	{
@@ -398,7 +407,7 @@ void game_time_update(
 			real game_time;
 			real ticks_elapsed_real;
 
-			connection = game_connection();
+			connection = game_time_connection();
 			switch (connection)
 			{
 			case _game_connection_film_playback:
@@ -444,7 +453,7 @@ void game_time_update(
 				long maximum_possible_server_time;
 
 				final_local_time = game_time_globals->local_time + ticks_elapsed;
-				switch (game_connection())
+				switch (game_time_connection())
 				{
 				case _game_connection_local:
 					update_client_local_ticks(ticks_elapsed);
@@ -458,7 +467,7 @@ void game_time_update(
 				with its own input and the latest the host relayed, from the
 				host's first game update, which brings the host's time: the
 				host ticks only once every machine has loaded) */
-				if (game_connection() == _game_connection_network_client)
+				if (game_time_connection() == _game_connection_network_client)
 				{
 					maximum_possible_server_time = game_time_held() ?
 						game_time_globals->server_time : final_local_time;
