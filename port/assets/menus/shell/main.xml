@@ -14,7 +14,7 @@ of a 16:9 window.
 <menus root="shell/main">
 	<widget name="shell/panel" controller="1" width="346" height="480" bitmap="shell/panel">
 	</widget>
-	<widget name="shell/title" type="text" controller="1" width="200" height="34" text="HALCYON" font="ui\large_ui" color="#FFFFFFFF">
+	<widget name="shell/title" type="text" controller="1" width="200" height="34" text="DAMNATION" font="ui\large_ui" color="#FFFFFFFF">
 	</widget>
 	<widget name="shell/multiplayer_title" type="text" controller="1" width="200" height="16" text="MULTIPLAYER" font="ui\small_ui" color="#FF68CCFF">
 	</widget>
