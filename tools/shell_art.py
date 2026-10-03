@@ -46,10 +46,11 @@ def ramp(size, start, end, across=False):
     return image.point(lambda value: round(start + (end - start) * value / 255))
 
 
-def polygon(size, points, outline=0.0):
+def polygon(size, points, outline=0.0, scale=SCALE):
     """The polygon (in units of the 640x480 screen) as a mask of an image of
-    size (units): filled, or its outline that many units wide."""
-    factor = SCALE * SMOOTH
+    size (units), scale pixels to a unit: filled, or its outline that many
+    units wide."""
+    factor = scale * SMOOTH
     mask = Image.new("L", (size[0] * factor, size[1] * factor), 0)
     scaled = [(x * factor, y * factor) for x, y in points]
     draw = ImageDraw.Draw(mask)
@@ -57,7 +58,7 @@ def polygon(size, points, outline=0.0):
         draw.line(scaled + scaled[:1], fill=255, width=round(outline * factor), joint="curve")
     else:
         draw.polygon(scaled, fill=255)
-    return mask.resize((size[0] * SCALE, size[1] * SCALE), Image.Resampling.LANCZOS)
+    return mask.resize((size[0] * scale, size[1] * scale), Image.Resampling.LANCZOS)
 
 
 def paint(image, color, mask, strength=None):

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 The main menu: a column down the left of the screen, over the menus' scene.
-Multiplayer opens a second column in its place, with the ways to play one.
+Campaign and Multiplayer each open a column of their own in its place.
+The campaign's does what the PC version's menu does (main_menu/campaign_select).
 
 Each item opens a screen that already works: the PC version's campaign,
 settings and profile screens (ce/), the Xbox's own System Link, split screen
@@ -18,13 +19,15 @@ of a 16:9 window.
 	</widget>
 	<widget name="shell/multiplayer_title" type="text" controller="1" width="200" height="16" text="MULTIPLAYER" font="ui\small_ui" color="#FF68CCFF">
 	</widget>
+	<widget name="shell/campaign_title" type="text" controller="1" width="200" height="16" text="CAMPAIGN" font="ui\small_ui" color="#FF68CCFF">
+	</widget>
 	<widget name="shell/subtitle" type="text" controller="1" width="200" height="16" text="COMBAT EVOLVED" font="ui\small_ui" color="#FF68CCFF">
 	</widget>
 	<widget name="shell/rule" controller="1" width="168" height="2" bitmap="shell/rule">
 	</widget>
 
 	<widget name="shell/item_campaign" type="text" width="184" height="30" bitmap="shell/item" text="CAMPAIGN" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
-		<on event="a start" run="new game if no plyr profiles" label="load_campaign" open="main_menu/campaign_select/campaign_menu" branch="true"/>
+		<on event="a start" run="new game if no plyr profiles" label="load_campaign" open="shell/campaign" branch="true"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
 		<conditional widget="main_menu/new_campaign_creating_profile" if_failed="true"/>
 	</widget>
@@ -63,6 +66,18 @@ of a 16:9 window.
 		<on event="left_mouse" run="mouse emit accept event"/>
 	</widget>
 
+	<widget name="shell/item_continue" type="text" width="184" height="30" bitmap="shell/item" text="CONTINUE" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" run="campaign menu continue"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+	<widget name="shell/item_new_game" type="text" width="184" height="30" bitmap="shell/item" text="NEW GAME" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" open="main_menu/solo_level_select/solo_level_select_screen"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+	<widget name="shell/item_load_game" type="text" width="184" height="30" bitmap="shell/item" text="LOAD GAME" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" open="main_menu/campaign_select/load_level_select_screen"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
 	<widget name="shell/item_back" type="text" width="184" height="30" bitmap="shell/item" text="BACK" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
 		<on event="a start" back="true"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
@@ -76,6 +91,14 @@ of a 16:9 window.
 		<child widget="shell/item_settings" x="14" y="244"/>
 		<child widget="shell/item_profiles" x="14" y="278"/>
 		<child widget="shell/item_quit" x="14" y="312"/>
+	</widget>
+	<widget name="shell/campaign_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="shell/list_description">
+		<on event="created" run="campaign menu init" branch="true"/>
+		<conditional widget="main_menu/difficulty_select/difficulty_select_list_screen" if_failed="true"/>
+		<child widget="shell/item_continue" x="14" y="176"/>
+		<child widget="shell/item_new_game" x="14" y="210"/>
+		<child widget="shell/item_load_game" x="14" y="244"/>
+		<child widget="shell/item_back" x="14" y="292"/>
 	</widget>
 	<widget name="shell/multiplayer_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="shell/list_description">
 		<child widget="shell/item_online" x="14" y="176"/>
@@ -93,6 +116,16 @@ of a 16:9 window.
 		<child widget="shell/subtitle" x="31" y="112"/>
 		<child widget="shell/rule" x="30" y="134"/>
 		<child widget="shell/list"/>
+		<child widget="main_menu/build_number" x="30" y="452"/>
+	</widget>
+
+	<widget name="shell/campaign" width="640" height="480" flags="pass_unhandled_to_focused_child">
+		<on event="b back" back="true"/>
+		<child widget="shell/panel" x="-106"/>
+		<child widget="shell/title" x="30" y="78"/>
+		<child widget="shell/campaign_title" x="31" y="112"/>
+		<child widget="shell/rule" x="30" y="134"/>
+		<child widget="shell/campaign_list"/>
 		<child widget="main_menu/build_number" x="30" y="452"/>
 	</widget>
 
