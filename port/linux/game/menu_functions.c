@@ -80,6 +80,7 @@ void platform_request_quit(void);
 #ifdef HALO_GAME_BROWSER
 /* the game list's screen (browser_screen.c) */
 void browser_screen_open(void);
+boolean map_screen_open(void);
 #endif
 char const *pc_menu_function_name(long function_index);
 char const *pc_menu_game_data_input_name(long function_index);
@@ -3453,6 +3454,14 @@ boolean pc_menu_event_function_invoke(
 		else if (!strcmp(name, "port setup edit"))
 		{
 			return gametype_setup_edit();
+		}
+		else if (!strcmp(name, "port map select"))
+		{
+#ifdef HALO_GAME_BROWSER
+			return map_screen_open();
+#else
+			return FALSE;
+#endif
 		}
 		else if (!strcmp(name, "port online games"))
 		{

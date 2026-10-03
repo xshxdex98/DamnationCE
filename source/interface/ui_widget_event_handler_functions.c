@@ -5900,17 +5900,35 @@ short ui_widget_port_multiplayer_maps(
 	return 13;
 }
 
+/* the multiplayer levels: the Xbox's 13, then the Custom Edition maps in the
+maps folder (port/linux/game/custom_edition_maps.c, map_screen.c) */
+char **ui_widget_port_multiplayer_levels(
+	short *count,
+	short *xbox_count)
+{
+	*xbox_count = 13;
+	return custom_edition_maps_level_list(event_handler_functions.multiplayer_levels, 13, count);
+}
+
+boolean ui_widget_port_multiplayer_level_choose(
+	char const *map_name);
+
 /* the map chosen (as multiplayer_level_select), the server's if there is
 one; FALSE if this build cannot play it with others (said) */
 boolean ui_widget_port_multiplayer_map_choose(
 	short level_index)
 {
-	char const *map_name;
-	void *server = global_network_game_server_get();
-
 	if (level_index < 0 || level_index >= 13)
 		return FALSE;
-	map_name = event_handler_functions.multiplayer_levels[level_index];
+	return ui_widget_port_multiplayer_level_choose(event_handler_functions.multiplayer_levels[level_index]);
+}
+
+/* the same, by the level's name (an Xbox level or a Custom Edition map) */
+boolean ui_widget_port_multiplayer_level_choose(
+	char const *map_name)
+{
+	void *server = global_network_game_server_get();
+
 	{
 		char build[0x20];
 
@@ -5925,7 +5943,7 @@ boolean ui_widget_port_multiplayer_map_choose(
 	game_engine_override_map_name(map_name);
 	if (server)
 		network_game_server_change_map_name(server, map_name);
-	saved_game_file_remember_last_used_multiplayer_map(event_handler_functions.multiplayer_levels[level_index]);
+	saved_game_file_remember_last_used_multiplayer_map(map_name);
 	return TRUE;
 }
 
