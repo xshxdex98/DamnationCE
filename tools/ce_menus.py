@@ -562,7 +562,8 @@ def main() -> None:
     for folder, members in sorted(folders.items()):
         lines = ['<?xml version="1.0" encoding="UTF-8"?>',
                  f"<!-- The PC version's menus: ui\\shell\\{folder.replace('/', chr(92))} (tools/ce_menus.py) -->"]
-        lines.append("<menus>" if MAIN_MENU not in members else f"<menus{attributes([('root', our_name(MAIN_MENU))])}>")
+        # (the root is the left-hand main menu's, shell/main.xml; this one stays, unused)
+        lines.append("<menus>")
         for tag in members:
             lines += widget_xml(tag, widgets[tag], tags, functions, inputs, fonts, {})
         lines.append("</menus>")
@@ -659,6 +660,8 @@ def main() -> None:
     (MENUS / "UNWIRED.md").write_text("\n".join(report))
     files = sorted(path.relative_to(MENUS).as_posix() for path in MENUS.rglob("*.xml"))
     files += sorted(art.pngs)
+    # the left-hand menus' pictures (tools/shell_art.py)
+    files += sorted(path.relative_to(MENUS).as_posix() for path in (MENUS / "shell").rglob("*.png"))
     (MENUS / "menus.json").write_text(json.dumps({
         "comment": "The menus' files the game embeds (tools/ce_menus.py, tools/embed_assets.py).",
         "files": files,

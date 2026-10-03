@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+The main menu: a column down the left of the screen, over the menus' scene.
+
+Each item opens a screen that already works: the PC version's campaign,
+settings and profile screens (ce/), the Xbox's own System Link, split screen
+and game type screens (the map's tags), and Online Games, the game list
+(port online games).
+
+The panel begins 106 units left of the 4:3 screen, so it reaches the edge
+of a 16:9 window.
+-->
+<menus root="shell/main">
+	<widget name="shell/panel" controller="1" width="346" height="480" bitmap="shell/panel">
+	</widget>
+	<widget name="shell/title" type="text" controller="1" width="200" height="34" text="HALCYON" font="ui\large_ui" color="#FFFFFFFF">
+	</widget>
+	<widget name="shell/subtitle" type="text" controller="1" width="200" height="16" text="COMBAT EVOLVED" font="ui\small_ui" color="#FF68CCFF">
+	</widget>
+	<widget name="shell/rule" controller="1" width="168" height="2" bitmap="shell/rule">
+	</widget>
+
+	<widget name="shell/item_campaign" type="text" width="184" height="30" bitmap="shell/item" text="CAMPAIGN" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" run="new game if no plyr profiles" label="load_campaign" open="main_menu/campaign_select/campaign_menu" branch="true"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<conditional widget="main_menu/new_campaign_creating_profile" if_failed="true"/>
+	</widget>
+	<widget name="shell/item_online" type="text" width="184" height="30" bitmap="shell/item" text="ONLINE GAMES" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" run="port online games"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+	<widget name="shell/item_lan" type="text" width="184" height="30" bitmap="shell/item" text="LAN GAMES" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" run="error if no network connection" open="ui\shell\main_menu\multiplayer_type_select\connected\4way_profile_select\4way_start2join_screen"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+	<widget name="shell/item_split" type="text" width="184" height="30" bitmap="shell/item" text="SPLIT SCREEN" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" open="ui\shell\main_menu\multiplayer_type_select\split_screen\4way_profile_select\4way_start2join_screen"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+	<widget name="shell/item_gametypes" type="text" width="184" height="30" bitmap="shell/item" text="GAME TYPES" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" open="ui\shell\main_menu\settings_select\multiplayer_setup\playlist_select\gametype_select_screen"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+	<widget name="shell/item_settings" type="text" width="184" height="30" bitmap="shell/item" text="SETTINGS" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" run="profile set edit begin" label="settings" open="main_menu/settings_select/player_setup/player_profile_edit/player_profile_edit_screen" branch="true"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<conditional widget="main_menu/profile_manager/settings_creating_profile" if_failed="true"/>
+	</widget>
+	<widget name="shell/item_profiles" type="text" width="184" height="30" bitmap="shell/item" text="PROFILES" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" run="new game if no plyr profiles" open="main_menu/profile_manager/player_profile_manager" branch="true"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<conditional widget="main_menu/profile_manager/pm_entry_creating_profile" if_failed="true"/>
+	</widget>
+	<widget name="shell/item_quit" type="text" width="184" height="30" bitmap="shell/item" text="QUIT" font="ui\large_ui" color="#FF9FC4DC" text_x="16" text_y="5">
+		<on event="a start" open="main_menu/quit_select/quit_screen"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+
+	<widget name="shell/list_description" controller="1" left="-1" top="-1" width="1" height="1">
+	</widget>
+	<widget name="shell/list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="shell/list_description">
+		<child widget="shell/item_campaign" x="14" y="176"/>
+		<child widget="shell/item_online" x="14" y="210"/>
+		<child widget="shell/item_lan" x="14" y="244"/>
+		<child widget="shell/item_split" x="14" y="278"/>
+		<child widget="shell/item_gametypes" x="14" y="312"/>
+		<child widget="shell/item_settings" x="14" y="346"/>
+		<child widget="shell/item_profiles" x="14" y="380"/>
+		<child widget="shell/item_quit" x="14" y="414"/>
+	</widget>
+
+	<widget name="shell/main" width="640" height="480" flags="pass_unhandled_to_focused_child">
+		<on event="created" run="main menu intialize" label="ring_loop"/>
+		<on event="b back" open="main_menu/quit_select/quit_screen"/>
+		<child widget="shell/panel" x="-106"/>
+		<child widget="shell/title" x="30" y="78"/>
+		<child widget="shell/subtitle" x="31" y="112"/>
+		<child widget="shell/rule" x="30" y="134"/>
+		<child widget="shell/list"/>
+		<child widget="main_menu/build_number" x="30" y="452"/>
+	</widget>
+</menus>

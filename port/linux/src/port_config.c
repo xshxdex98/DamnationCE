@@ -107,7 +107,7 @@ static const struct config_setting config_settings[] =
 		"Draw the menus' and HUD's text with the fonts in port/assets/fonts\n"
 		"(Overpass) at the display's resolution, and the menus' titles from\n"
 		"port/assets/titles; false draws the maps' bitmap fonts and titles." },
-	{ "display.menus", _config_string, "\"xbox\"", "HALO_MENUS", _environment_value, _platform_all,
+	{ "display.menus", _config_string, "\"pc\"", "HALO_MENUS", _environment_value, _platform_all,
 		"The menus: \"xbox\" for the Xbox's (with Online Games), \"pc\" for the\n"
 		"PC version's main menu (port/assets/menus, and a menus folder here for\n"
 		"your own; not all of it is wired yet)." },
@@ -209,7 +209,7 @@ static const struct config_setting config_settings[] =
 	{ "game.language", _config_string, "\"\"", "HALO_LANGUAGE", _environment_value, _platform_all,
 		"The language the game asks the Xbox for: \"ja\", \"de\", \"fr\", \"es\" or \"it\";\n"
 		"empty for English. The game data decides what is translated." },
-	{ "game.custom_edition", _config_boolean, "false", "HALO_CUSTOM_EDITION", _environment_set_is_true, _platform_desktop,
+	{ "game.custom_edition", _config_boolean, "true", "HALO_CUSTOM_EDITION", _environment_set_is_true, _platform_desktop,
 		"Load and run Halo Custom Edition and OpenSauce (.yelo) maps, which are\n"
 		"otherwise refused. Experimental: docs/custom_edition_caches.md in the\n"
 		"source says what works." },
@@ -270,7 +270,7 @@ static const struct config_setting config_settings[] =
 		"The Discord application internet play invites go through while the\n"
 		"Discord desktop client runs; empty for none." },
 
-	{ "update.auto", _config_boolean, "true", "HALO_UPDATE_AUTO", _environment_value, _platform_all,
+	{ "update.auto", _config_boolean, "false", "HALO_UPDATE_AUTO", _environment_value, _platform_all,
 		"Look for a new version when the game starts, and offer to update to it;\n"
 		"false never looks (the game's \"Do not ask again\" writes false here)." },
 
