@@ -27,6 +27,9 @@ and the debug keyboard that the game's console reads.
 #include "browser.h"
 #endif
 
+/* this client's name: its windows' titles */
+#define CLIENT_NAME "DamnationCE"
+
 static SDL_Window *platform_window;
 static SDL_GLContext platform_gl_context;
 static SDL_ThreadID platform_event_thread;
@@ -104,7 +107,7 @@ BOOL platform_sdl_initialize(void)
 	one already running, and goes */
 	if (p2p_hand_off_invite())
 		exit(EXIT_SUCCESS);
-	SDL_SetHint(SDL_HINT_APP_NAME, "ChupathingyCE");
+	SDL_SetHint(SDL_HINT_APP_NAME, CLIENT_NAME);
 #ifdef HALO_ANDROID
 	/* landscape only; the back key arrives as a key event (xinput_sdl.c)
 	instead of closing the activity */
@@ -201,7 +204,7 @@ static BOOL data_extract(const char *image, const char *destination, char *error
 	/* (waited for through extraction.finished; the Windows port's threads
 	cannot be joined) */
 	pthread_detach(thread);
-	window = SDL_CreateWindow("ChupathingyCE", 640, 150, 0);
+	window = SDL_CreateWindow(CLIENT_NAME, 640, 150, 0);
 	if (window)
 	{
 		renderer = SDL_CreateRenderer(window, NULL);
@@ -324,7 +327,7 @@ BOOL platform_offer_game_data(const char *destination)
 		destination);
 	for (;;)
 	{
-		SDL_MessageBoxData question = { SDL_MESSAGEBOX_INFORMATION, NULL, "ChupathingyCE", message, 2, buttons, NULL };
+		SDL_MessageBoxData question = { SDL_MESSAGEBOX_INFORMATION, NULL, CLIENT_NAME, message, 2, buttons, NULL };
 		char image[1024];
 		char error[512];
 		int answer = 0;
@@ -344,7 +347,7 @@ BOOL platform_offer_game_data(const char *destination)
 			return TRUE;
 		}
 		platform_log("extraction failed: %s", error);
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "ChupathingyCE", error, NULL);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, CLIENT_NAME, error, NULL);
 	}
 }
 #endif
@@ -488,8 +491,8 @@ BOOL platform_video_initialize(unsigned long width, unsigned long height)
 	setenv("mesa_glthread", "true", 0);
 #endif
 
-	/* "ChupathingyCE 0.5.0b" */
-	snprintf(title, sizeof(title), "ChupathingyCE %s", updater_version());
+	/* "DamnationCE 0.5.0b" */
+	snprintf(title, sizeof(title), CLIENT_NAME " %s", updater_version());
 #ifdef HALO_ANDROID
 	platform_window = SDL_CreateWindow(title, (int)(width * scale), (int)(height * scale),
 		SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN);
