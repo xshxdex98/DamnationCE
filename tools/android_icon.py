@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Makes the Android app's launcher icon from its artwork,
 port/android/art/android-icon.png (an emblem on a solid background; drawn
-from port/art/icon.svg):
+by tools/app_icon.py):
 
     python tools/android_icon.py
 
