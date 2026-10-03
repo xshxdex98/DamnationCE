@@ -15,7 +15,8 @@ of a 16:9 window.
 <menus root="shell/main">
 	<widget name="shell/panel" controller="1" width="346" height="480" bitmap="shell/panel">
 	</widget>
-	<widget name="shell/title" type="text" controller="1" width="200" height="34" text="DAMNATION" font="ui\large_ui" color="#D0FFFFFF">
+	<widget name="shell/title" controller="1" width="330" height="48" bitmap="shell/title">
+		<data input="port title shine"/>
 	</widget>
 	<widget name="shell/multiplayer_title" type="text" controller="1" width="200" height="16" text="MULTIPLAYER" font="ui\small_ui" color="#FFB4B8BC">
 	</widget>
@@ -133,8 +134,8 @@ of a 16:9 window.
 		<on event="created" run="main menu intialize" label="ring_loop"/>
 		<on event="b back" open="main_menu/quit_select/quit_screen"/>
 		<child widget="shell/panel" x="-106"/>
-		<child widget="shell/title" x="22" y="118"/>
-		<child widget="shell/subtitle" x="23" y="150"/>
+		<child widget="shell/title" x="14" y="104"/>
+		<child widget="shell/subtitle" x="23" y="156"/>
 		<child widget="shell/rule" x="14" y="436"/>
 		<child widget="shell/list"/>
 		<child widget="main_menu/build_number" x="22" y="446"/>
@@ -143,8 +144,8 @@ of a 16:9 window.
 	<widget name="shell/campaign" width="640" height="480" flags="pass_unhandled_to_focused_child">
 		<on event="b back" back="true"/>
 		<child widget="shell/panel" x="-106"/>
-		<child widget="shell/title" x="22" y="118"/>
-		<child widget="shell/campaign_title" x="23" y="150"/>
+		<child widget="shell/title" x="14" y="104"/>
+		<child widget="shell/campaign_title" x="23" y="156"/>
 		<child widget="shell/rule" x="14" y="436"/>
 		<child widget="shell/campaign_list"/>
 		<child widget="main_menu/build_number" x="22" y="446"/>
@@ -153,8 +154,8 @@ of a 16:9 window.
 	<widget name="shell/themes" width="640" height="480" flags="pass_unhandled_to_focused_child">
 		<on event="b back" back="true"/>
 		<child widget="shell/panel" x="-106"/>
-		<child widget="shell/title" x="22" y="118"/>
-		<child widget="shell/themes_title" x="23" y="150"/>
+		<child widget="shell/title" x="14" y="104"/>
+		<child widget="shell/themes_title" x="23" y="156"/>
 		<child widget="shell/rule" x="14" y="436"/>
 		<child widget="shell/themes_list"/>
 		<child widget="main_menu/build_number" x="22" y="446"/>
@@ -163,8 +164,8 @@ of a 16:9 window.
 	<widget name="shell/multiplayer" width="640" height="480" flags="pass_unhandled_to_focused_child">
 		<on event="b back" back="true"/>
 		<child widget="shell/panel" x="-106"/>
-		<child widget="shell/title" x="22" y="118"/>
-		<child widget="shell/multiplayer_title" x="23" y="150"/>
+		<child widget="shell/title" x="14" y="104"/>
+		<child widget="shell/multiplayer_title" x="23" y="156"/>
 		<child widget="shell/rule" x="14" y="436"/>
 		<child widget="shell/multiplayer_list"/>
 		<child widget="main_menu/build_number" x="22" y="446"/>

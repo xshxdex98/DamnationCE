@@ -3662,6 +3662,21 @@ boolean pc_menu_event_function_invoke(
 	}
 }
 
+/* "port title shine": the title's frame (shell/bitmaps.xml): at rest (0),
+and every TITLE_SHINE_PERIOD a light sliding across it (1 on) over
+TITLE_SHINE_TIME */
+#define TITLE_SHINE_PERIOD 7000
+#define TITLE_SHINE_TIME 1100
+#define TITLE_SHINE_FRAMES 16
+
+static void title_shine(struct widget_instance *widget)
+{
+	unsigned long into_period = system_milliseconds() % TITLE_SHINE_PERIOD;
+
+	widget->animation.current_frame_index = into_period < TITLE_SHINE_TIME ?
+		(short)(1 + into_period * TITLE_SHINE_FRAMES / TITLE_SHINE_TIME) : 0;
+}
+
 void pc_menu_game_data_function_invoke(
 	struct widget_instance *widget,
 	long function)
@@ -3673,7 +3688,9 @@ void pc_menu_game_data_function_invoke(
 	/* (a text field whose screen has gone: let go of) */
 	if (text_field.row && system_milliseconds() - text_field_shown_time > 500)
 		text_field_end(FALSE);
-	if (!strcmp(name, "solo map list update"))
+	if (!strcmp(name, "port title shine"))
+		title_shine(widget);
+	else if (!strcmp(name, "solo map list update"))
 		level_list_update(widget);
 	else if (!strcmp(name, "mp map list update"))
 		map_list_update(widget);
