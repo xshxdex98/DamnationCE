@@ -34,13 +34,15 @@ HUD_ASSETS = Path("port/assets/hud")
 LAYOUT = HUD_ASSETS / "layout.json"
 TITLE_ASSETS = Path("port/assets/titles")
 TITLE_LIST = TITLE_ASSETS / "titles.json"
-# the maps' own menu pictures in this client's look (tools/shell_skin.py --maps)
-SKIN_ASSETS = Path("port/assets/menus/skin/xbox")
-SKIN_LIST = SKIN_ASSETS / "textures.json"
 FONT_ASSETS = Path("port/assets/fonts")
 FONT_LIST = FONT_ASSETS / "fonts.json"
 MENU_ASSETS = Path("port/assets/menus")
 MENU_LIST = MENU_ASSETS / "menus.json"
+# the menus' themes' layers (tools/shell_skin.py), and the maps' own menu
+# pictures in the Glassed theme (--maps), drawn only while it is chosen
+SKIN_FOLDER = MENU_ASSETS / "skin"
+SKIN_ASSETS = SKIN_FOLDER / "glassed" / "xbox"
+SKIN_LIST = SKIN_ASSETS / "textures.json"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 # the overlay's fonts (the game browser's; posix_ui_font.c), in its order
 UI_FONTS = Path("port/linux/ui/fonts")
@@ -57,28 +59,26 @@ def font_files() -> List[str]:
 
 
 def textures() -> List[tuple]:
-    """The textures: each one's folder, its entry in its list, and whether
-    it is a title."""
+    """The textures: each one's folder, its entry in its list, whether it is
+    a title, and whether it is the Glassed theme's."""
     result = []
-    for folder, listing, title in ((HUD_ASSETS, LAYOUT, False), (TITLE_ASSETS, TITLE_LIST, True),
-                                   (SKIN_ASSETS, SKIN_LIST, True)):
+    for folder, listing, title, glassed in ((HUD_ASSETS, LAYOUT, False, False), (TITLE_ASSETS, TITLE_LIST, True, False),
+                                            (SKIN_ASSETS, SKIN_LIST, True, True)):
         if (ROOT / listing).is_file():
-            result += [(folder, asset, title) for asset in json.loads((ROOT / listing).read_text())["assets"]]
+            result += [(folder, asset, title, glassed) for asset in json.loads((ROOT / listing).read_text())["assets"]]
     return result
 
 
 def menu_files() -> List[str]:
-    """The menus' files menus.json lists, relative to their folder."""
+    """The menus' files, relative to their folder: those menus.json lists,
+    then the themes' layers' (skin/<theme>/..., the game reading one in place
+    of the file it shadows while that theme is chosen; menu_files.c)."""
     if not (ROOT / MENU_LIST).is_file():
         return []
-    return json.loads((ROOT / MENU_LIST).read_text())["files"]
-
-
-def menu_file(name: str) -> Path:
-    """Where a menu file is read from: its copy under skin/, which
-    tools/shell_skin.py writes in this client's look, or else the file."""
-    skinned = MENU_ASSETS / "skin" / name
-    return skinned if (ROOT / skinned).is_file() else MENU_ASSETS / name
+    files = json.loads((ROOT / MENU_LIST).read_text())["files"]
+    layers = sorted(path.relative_to(ROOT / MENU_ASSETS).as_posix() for path in (ROOT / SKIN_FOLDER).rglob("*")
+                    if path.is_file() and path.suffix in (".xml", ".png") and "xbox" not in path.parts)
+    return files + layers
 
 
 def hud_asset_inputs() -> List[Path]:
@@ -86,8 +86,8 @@ def hud_asset_inputs() -> List[Path]:
     inputs = [listing for listing in (LAYOUT, TITLE_LIST, SKIN_LIST, FONT_LIST, MENU_LIST) if (ROOT / listing).is_file()]
     if not inputs:
         return []
-    return [*inputs, *(folder / f"{asset['name']}.png" for folder, asset, _ in textures()),
-            *(FONT_ASSETS / name for name in font_files()), *(menu_file(name) for name in menu_files())]
+    return [*inputs, *(folder / f"{asset['name']}.png" for folder, asset, _, _ in textures()),
+            *(FONT_ASSETS / name for name in font_files()), *(MENU_ASSETS / name for name in menu_files())]
 
 
 def hud_configure_inputs() -> List[Path]:
@@ -189,7 +189,7 @@ def main() -> None:
         "",
     ]
     table = []
-    for index, (folder, asset, title) in enumerate(textures()):
+    for index, (folder, asset, title, glassed) in enumerate(textures()):
         name = f"{asset['name']}.png"
         data = (ROOT / folder / name).read_bytes()
         width, height = png_size(data, name)
@@ -203,7 +203,7 @@ def main() -> None:
         tag = asset["tag"].replace("\\", "\\\\")
         coverage = int(any(cell["kind"] == "meter" for cell in asset.get("cells", [])))
         table.append(f'\t{{ "{tag}", {asset["bitmap"]}, {width}, {height}, 0x{asset["crc"]:08x}u, {coverage}, '
-                     f'{int(title)}, asset{index}, {len(data)} }},')
+                     f'{int(title)}, {int(glassed)}, asset{index}, {len(data)} }},')
     lines.append("const struct hud_hires_embedded hud_hires_embedded[] =")
     lines.append("{")
     lines.extend(table)
@@ -237,7 +237,7 @@ def main() -> None:
     lines.append("")
     menus = menu_files()
     for index, name in enumerate(menus):
-        data = (ROOT / menu_file(name)).read_bytes()
+        data = (ROOT / MENU_ASSETS / name).read_bytes()
         if name.endswith(".png"):
             png_size(data, name)
         lines.append(f"static const unsigned int menu{index}[] = {{")
@@ -247,7 +247,7 @@ def main() -> None:
     lines.append("const struct menu_file_embedded menu_files_embedded[] =")
     lines.append("{")
     for index, name in enumerate(menus):
-        size = (ROOT / menu_file(name)).stat().st_size
+        size = (ROOT / MENU_ASSETS / name).stat().st_size
         lines.append(f'\t{{ "{name}", menu{index}, {size} }},')
     if not menus:
         lines.append("\t{ 0 },")

@@ -69,7 +69,7 @@ long hud_hires_asset_fits(long asset, long width, long height)
 long hud_hires_override_find(unsigned long address, unsigned long width, unsigned long height,
 	unsigned long level0_size)
 {
-	static int hud_enabled, titles_enabled;
+	static int hud_enabled, titles_enabled, glassed;
 	static unsigned long read_at = (unsigned long)-1;
 	long asset;
 
@@ -78,13 +78,15 @@ long hud_hires_override_find(unsigned long address, unsigned long width, unsigne
 		read_at = config_changes();
 		hud_enabled = config_boolean("display.high_res_hud");
 		titles_enabled = config_boolean("display.high_res_text");
+		glassed = !strcmp(config_string("display.theme"), "glassed");
 	}
 	if (!hud_enabled && !titles_enabled)
 		return -1;
 	asset = hud_hires_asset_at(address, (long)width, (long)height);
 	if (asset < 0 || asset >= hud_hires_asset_count())
 		return -1;
-	if (!(hud_hires_embedded[asset].title ? titles_enabled : hud_enabled))
+	if (!(hud_hires_embedded[asset].title ? titles_enabled : hud_enabled) ||
+		(hud_hires_embedded[asset].glassed && !glassed))
 		return -1;
 #ifdef HALO_64BIT
 	/* (an Xbox address: the texture's pixels in the contiguous memory) */

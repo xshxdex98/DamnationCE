@@ -154,6 +154,8 @@ void game_connection_set(short connection);
 this machine's, as its Y makes one) */
 boolean ui_online_games_start_network(void);
 void ui_online_games_stop_network(void);
+/* (the platform layer: the menus' theme) */
+char const *config_string(char const *name);
 boolean ui_widget_online_games_create_game(void);
 
 static void utf8_name(unsigned short const *name, char *text, long size);
@@ -460,27 +462,48 @@ void browser_screen_process(
 
 /* ---------- drawing: the Online Games screen (the overlay, ui_overlay.c) */
 
-/* the screen's colors (0xRRGGBBAA), the menus' (tools/shell_skin.py): dark
-glass over the scene, hairlines, white for what is chosen */
+/* the screen's colors (0xRRGGBBAA) in the menus' themes (display.theme):
+Glassed's dark glass over the scene, hairlines and white for what is
+chosen, and Vanilla's blues on a screen of its own */
+struct browser_palette
+{
+	boolean glassed;
+	unsigned int backdrop, backdrop_bottom, rule, title, panel, panel_edge, panel_head, head, row_selected, row_rule;
+	unsigned int text, dim, label, prompt, connecting;
+	float radius;
+};
+static struct browser_palette const glassed_palette =
+{
+	TRUE, 0x06080C8C, 0x06080C8C, 0xFFFFFF5A, 0xFFFFFFD7, 0x06080C78, 0xFFFFFF46, 0xFFFFFF1A, 0xB4B8BCFF, 0xFFFFFF3E,
+	0xFFFFFF14, 0xD2D6DAFF, 0x8C9096FF, 0xA8ACB0FF, 0xD2D6DAFF, 0x06080CE6, 0.0f,
+};
+static struct browser_palette const vanilla_palette =
+{
+	FALSE, 0x0B1830FF, 0x03070FFF, 0x2A62C8FF, 0x3D8BFFFF, 0x081530F0, 0x2F6DD0FF, 0x123266FF, 0x7FB0FFFF, 0x2052B0FF,
+	0x16294AFF, 0xE6EEFCFF, 0x8FA6C8FF, 0x4AA3FFFF, 0x4AA3FFFF, 0x0A1A36F8, 6.0f,
+};
+/* the theme's, set as each frame is drawn */
+static struct browser_palette const *palette = &glassed_palette;
+
+#define COLOR_RULE (palette->rule)
+#define COLOR_TITLE (palette->title)
+#define COLOR_PANEL (palette->panel)
+#define COLOR_PANEL_EDGE (palette->panel_edge)
+#define COLOR_PANEL_HEAD (palette->panel_head)
+#define COLOR_HEAD (palette->head)
+#define COLOR_ROW_SELECTED (palette->row_selected)
+#define COLOR_ROW_RULE (palette->row_rule)
+#define COLOR_TEXT (palette->text)
+#define COLOR_DIM (palette->dim)
+#define COLOR_LABEL (palette->label)
+#define COLOR_PROMPT (palette->prompt)
+/* (the same in both) */
 enum
 {
-	COLOR_GLASS = 0x06080C8C,
-	COLOR_RULE = 0xFFFFFF5A,
-	COLOR_TITLE = 0xFFFFFFD7,
-	COLOR_PANEL = 0x06080C78,
-	COLOR_PANEL_EDGE = 0xFFFFFF46,
-	COLOR_PANEL_HEAD = 0xFFFFFF1A,
-	COLOR_HEAD = 0xB4B8BCFF,
-	COLOR_ROW_SELECTED = 0xFFFFFF3E,
-	COLOR_ROW_RULE = 0xFFFFFF14,
-	COLOR_TEXT = 0xD2D6DAFF,
-	COLOR_DIM = 0x8C9096FF,
-	COLOR_LABEL = 0xA8ACB0FF,
 	/* the roster's players of each team */
 	COLOR_RED_TEAM = 0xFF6B6BFF,
 	COLOR_BLUE_TEAM = 0x6BB0FFFF,
 	COLOR_CLOSED = 0xF08A4BFF,
-	COLOR_PROMPT = 0xD2D6DAFF,
 };
 
 /* the list's rows, columns and panels, in the 640x480 layout */
@@ -653,8 +676,18 @@ void browser_screen_render(
 		players += browser_screen.games[index].players;
 
 	/* the screen, its widescreen margins too */
-	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, COLOR_GLASS);
-	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
+	palette = strcmp(config_string("display.theme"), "vanilla") ? &glassed_palette : &vanilla_palette;
+	if (palette->glassed)
+	{
+		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
+		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
+	}
+	else
+	{
+		ui_overlay_gradient(-margin, 0, 640 + 2 * margin, 480, 0, palette->backdrop, palette->backdrop_bottom);
+		ui_overlay_gradient(-margin, 0, 640 + 2 * margin, 62, 0, 0x0A1A36FF, 0x050C1AFF);
+		ui_overlay_rect(-margin, 61.5f, 640 + 2 * margin, 1.0f, 0, COLOR_RULE);
+	}
 	ui_overlay_text(UI_FONT_BOLD, 30.0f, 37, 17, UI_ALIGN_LEFT, COLOR_TITLE, "ONLINE GAMES");
 
 	/* servers, players and the list it comes from, at the right */
@@ -669,8 +702,8 @@ void browser_screen_render(
 	ui_overlay_text(UI_FONT_REGULAR, 9.0f, x, 39, UI_ALIGN_RIGHT, COLOR_DIM, "SERVERS");
 
 	/* the list */
-	ui_overlay_rect(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD + ROWS_PER_PAGE * LIST_ROW + LIST_FOOT, 0, COLOR_PANEL);
-	ui_overlay_rect(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD, 0, COLOR_PANEL_HEAD);
+	ui_overlay_rect(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD + ROWS_PER_PAGE * LIST_ROW + LIST_FOOT, palette->radius, COLOR_PANEL);
+	ui_overlay_rect(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD, palette->radius, COLOR_PANEL_HEAD);
 	ui_overlay_text(UI_FONT_BOLD, 8.0f, COLUMN_NAME, LIST_Y + 6, UI_ALIGN_LEFT, COLOR_HEAD, "Server");
 	ui_overlay_text(UI_FONT_BOLD, 8.0f, COLUMN_MAP, LIST_Y + 6, UI_ALIGN_LEFT, COLOR_HEAD, "Map");
 	ui_overlay_text(UI_FONT_BOLD, 8.0f, COLUMN_TYPE, LIST_Y + 6, UI_ALIGN_LEFT, COLOR_HEAD, "Type");
@@ -700,7 +733,8 @@ void browser_screen_render(
 		{
 			/* (the chosen row: clear glass behind a tick, as a menu's item) */
 			ui_overlay_rect(LIST_X + 1, y, LIST_WIDTH - 2, LIST_ROW, 0, COLOR_ROW_SELECTED);
-			ui_overlay_rect(LIST_X + 1, y, 1.5f, LIST_ROW, 0, 0xFFFFFFFF);
+			if (palette->glassed)
+				ui_overlay_rect(LIST_X + 1, y, 1.5f, LIST_ROW, 0, 0xFFFFFFFF);
 		}
 		color = game->open ? COLOR_TEXT : COLOR_DIM;
 		utf8_name(game->name, name, sizeof(name));
@@ -721,12 +755,12 @@ void browser_screen_render(
 		snprintf(text, sizeof(text), "\xE2\x80\xB9   PAGE %d OF %d   \xE2\x80\xBA", page_first / ROWS_PER_PAGE + 1, page_count);
 		ui_overlay_text(UI_FONT_BOLD, 8.0f, LIST_X + LIST_WIDTH - 12, y + 5.5f, UI_ALIGN_RIGHT, COLOR_LABEL, text);
 	}
-	ui_overlay_outline(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD + ROWS_PER_PAGE * LIST_ROW + LIST_FOOT, 0, 0.75f,
+	ui_overlay_outline(LIST_X, LIST_Y, LIST_WIDTH, LIST_HEAD + ROWS_PER_PAGE * LIST_ROW + LIST_FOOT, palette->radius, 0.75f,
 		COLOR_PANEL_EDGE);
 
 	/* the selected game */
-	ui_overlay_rect(LIST_X, DETAIL_Y, LIST_WIDTH, DETAIL_HEIGHT, 0, COLOR_PANEL);
-	ui_overlay_outline(LIST_X, DETAIL_Y, LIST_WIDTH, DETAIL_HEIGHT, 0, 0.75f, COLOR_PANEL_EDGE);
+	ui_overlay_rect(LIST_X, DETAIL_Y, LIST_WIDTH, DETAIL_HEIGHT, palette->radius, COLOR_PANEL);
+	ui_overlay_outline(LIST_X, DETAIL_Y, LIST_WIDTH, DETAIL_HEIGHT, palette->radius, 0.75f, COLOR_PANEL_EDGE);
 	if (selected)
 	{
 		short map_frame = NUMBEROF(map_picture_order);
@@ -804,7 +838,10 @@ void browser_screen_render(
 	}
 
 	/* the buttons */
-	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
+	if (palette->glassed)
+		ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
+	else
+		ui_overlay_rect(-margin, 444, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
 	width = prompt_width(UI_BUTTON_A, "=JOIN") + prompt_width(UI_BUTTON_B, "=BACK") +
 		prompt_width(UI_BUTTON_X, "=REFRESH") + prompt_width(UI_BUTTON_Y, "=CREATE GAME") +
 		prompt_width(UI_BUTTON_BACK, "=FILTERS") +
@@ -824,8 +861,8 @@ void browser_screen_render(
 		long dots = (long)((system_milliseconds() - browser_screen.connecting_time) / 400 % 4);
 
 		snprintf(line, sizeof(line), "Connecting to %s%.*s", browser_screen.connecting_name, (int)dots, "...");
-		ui_overlay_rect(170, 200, 300, 64, 0, 0x06080CE6);
-		ui_overlay_outline(170, 200, 300, 64, 0, 0.75f, COLOR_PANEL_EDGE);
+		ui_overlay_rect(170, 200, 300, 64, palette->radius, palette->connecting);
+		ui_overlay_outline(170, 200, 300, 64, palette->radius, 0.75f, COLOR_PANEL_EDGE);
 		ui_overlay_text(UI_FONT_BOLD, 12.0f, 320, 212, UI_ALIGN_CENTER, 0xFFFFFFFF, line);
 		x = 320 - (ui_overlay_button_width(UI_BUTTON_B, 13.0f) + ui_overlay_text_width(UI_FONT_BOLD, 10.0f, "=CANCEL")) / 2;
 		x += ui_overlay_button(UI_BUTTON_B, 13.0f, x, 236, 0xFFFFFFFF) + 3;

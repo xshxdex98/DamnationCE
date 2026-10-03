@@ -7587,6 +7587,13 @@ void process_ui_widgets(
 		}
 		last_frame = now;
 	}
+	{
+		/* port: a menus theme chosen, put on before anything else of the frame
+		(port/linux/game/menu_tags.c) */
+		extern boolean pc_menus_theme_apply(void);
+
+		pc_menus_theme_apply();
+	}
 	widget_globals.current_system_milliseconds = system_milliseconds();
 	ui_widgets_process_mouse();
 	if (widget_globals.initialization_thread)

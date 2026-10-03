@@ -40,6 +40,11 @@ is let go in scenario_tags_unload, before the next map's tags load.
 /* the platform layer's (port/linux/src) */
 void platform_log(char const *format, ...);
 char const *config_string(char const *name);
+int config_write(char const *name, char const *value);
+void ui_widgets_close_all(void);
+void texture_cache_flush(void);
+struct widget_instance *ui_widget_load_by_name_or_tag(char const *name, long tag_index, struct widget_instance *parent,
+	short local_player_index, long invoking_widget_tag, long focused_child_parent_widget_tag, short focused_child_index);
 
 /* cache_files.c's (port) */
 void *cache_files_tag_instances(long *count);
@@ -329,6 +334,8 @@ static char const *const port_function_names[] =
 	"port setup edit",
 	"port online games",
 	"port map select",
+	"port theme glassed",
+	"port theme vanilla",
 	/* (the gametype editor's: the Xbox's walk their rows by place, which the
 	PC version's screens changed) */
 	"mp profile begin editing", "mp profile save changes", "request del playlist profile", "final del playlist profile",
@@ -1262,9 +1269,9 @@ static void menu_tags_release(void)
 	memset(&menu_tags, 0, sizeof(menu_tags));
 }
 
-/* the maps' own widgets' text colors (as 0xAARRGGBB), and the PC menus' for
-them (tools/shell_skin.py's TEXT_COLORS): every map has some (its pause
-menus, the split screen and lobby screens in ui.map) */
+/* the maps' own widgets' text colors (as 0xAARRGGBB), and the Glassed
+theme's for them (tools/shell_skin.py's TEXT_COLORS): every map has some
+(its pause menus, the split screen and lobby screens in ui.map) */
 static struct
 {
 	unsigned long map, ours;
@@ -1280,7 +1287,9 @@ static unsigned long argb_of(real_argb_color const *color)
 		((unsigned long)(color->green * 255.0f + 0.5f) << 8) | (unsigned long)(color->blue * 255.0f + 0.5f);
 }
 
-static void recolor_map_widgets(void)
+/* the map's widgets in the chosen theme's colors: the Glassed theme's, or
+back to their own */
+static void recolor_map_widgets(boolean glassed)
 {
 	struct tag_iterator iterator;
 	long tag_index;
@@ -1294,12 +1303,16 @@ static void recolor_map_widgets(void)
 
 		for (index = 0; index < NUMBEROF(text_colors); index++)
 		{
-			if (color != text_colors[index].map)
+			unsigned long from = glassed ? text_colors[index].map : text_colors[index].ours;
+			unsigned long to = glassed ? text_colors[index].ours : text_colors[index].map;
+
+			if (color != from)
 				continue;
-			definition->text_color.alpha = (real)(text_colors[index].ours >> 24) / 255.0f;
-			definition->text_color.red = (real)((text_colors[index].ours >> 16) & 0xFF) / 255.0f;
-			definition->text_color.green = (real)((text_colors[index].ours >> 8) & 0xFF) / 255.0f;
-			definition->text_color.blue = (real)(text_colors[index].ours & 0xFF) / 255.0f;
+			definition->text_color.alpha = (real)(to >> 24) / 255.0f;
+			definition->text_color.red = (real)((to >> 16) & 0xFF) / 255.0f;
+			definition->text_color.green = (real)((to >> 8) & 0xFF) / 255.0f;
+			definition->text_color.blue = (real)(to & 0xFF) / 255.0f;
+			break;
 		}
 	}
 }
@@ -1315,7 +1328,7 @@ void menu_tags_loaded(
 
 	if (strcmp(config_string("display.menus"), "pc"))
 		return;
-	recolor_map_widgets();
+	recolor_map_widgets(!strcmp(config_string("display.theme"), "glassed"));
 	if (strcmp(map_name, "ui"))
 		return;
 	menus = halo_menus_load();
@@ -1428,6 +1441,39 @@ void menu_tags_unloaded(
 {
 	if (menu_tags.loaded || menu_tags.block_count)
 		menu_tags_release();
+}
+
+/* the theme a menu chose ("port theme glassed"), to be put on at the start
+of the next frame: its menus are built anew, which deletes the widget that
+chose it */
+static char theme_chosen[16];
+
+void pc_menus_theme_choose(
+	char const *theme)
+{
+	if (strcmp(config_string("display.theme"), theme))
+	{
+		config_write("display.theme", theme);
+		snprintf(theme_chosen, sizeof(theme_chosen), "%s", theme);
+	}
+}
+
+/* (ui_widget.c, before the menus' frame) the theme chosen put on: every
+screen closed, the menus' tags built again in it, the textures drawn again
+(the maps' pictures are the Glassed theme's, hud_hires.c), and its main menu
+opened; FALSE when none was chosen */
+boolean pc_menus_theme_apply(
+	void)
+{
+	if (!theme_chosen[0])
+		return FALSE;
+	theme_chosen[0] = 0;
+	ui_widgets_close_all();
+	menu_tags_unloaded();
+	menu_tags_loaded("ui");
+	texture_cache_flush();
+	ui_widget_load_by_name_or_tag(pc_menus_root_name(), NONE, NULL, 0, NONE, NONE, NONE);
+	return TRUE;
 }
 
 char const *pc_menus_root_name(

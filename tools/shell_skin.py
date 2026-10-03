@@ -8,15 +8,19 @@ Those screens are built from a few shared pictures: the bars behind options
 and list items, the panes behind lists, the strip behind a whole screen, and
 each screen's header. This redraws them, each where the picture it replaces
 has its shape, and gives the screens' text the look's color. Nothing in ce/
-is changed: the new files go to port/assets/menus/skin, under the same
-paths, and tools/embed_assets.py embeds a file there in place of the one it
-shadows. Run it again after ce/ changes (tools/ce_menus.py).
+is changed: the new files go to port/assets/menus/skin/glassed, under the
+same paths, which the game reads in place of the ones they shadow while the
+menus' theme is Glassed (display.theme; menu_files.c). The Vanilla theme's
+layer, skin/vanilla, is the stock main menu with a MENUS button, which opens
+the choice of theme in both. Run it again after ce/ changes
+(tools/ce_menus.py).
 
 With --maps (a folder of the Xbox maps), the screens the maps hold
 themselves are redrawn too: the pause menus each map carries, and ui.map's
 split screen and lobby screens. Those are drawn in place of the maps'
-bitmaps, as the high-res HUD is (port/linux/src/hud_hires.c): skin/xbox
-holds the pictures and textures.json, which tools/embed_assets.py embeds.
+bitmaps, as the high-res HUD is (port/linux/src/hud_hires.c), while the theme
+is Glassed: skin/glassed/xbox holds the pictures and textures.json, which
+tools/embed_assets.py embeds.
 Needs Pillow and NumPy.
 """
 
@@ -38,7 +42,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from hud_assets import FORMATS, XboxMap, decode_bitmap, level0_size  # noqa: E402
 
 MENUS = Path(__file__).resolve().parent.parent / "port" / "assets" / "menus"
-SKIN = MENUS / "skin"
+SKIN = MENUS / "skin" / "glassed"
+VANILLA = MENUS / "skin" / "vanilla"
 
 GREEN = (150, 255, 180)     # the game list's third frame: a game to join
 VISIBLE = 8                 # alpha above which a texel is part of a picture's shape
@@ -97,6 +102,41 @@ CHILD_CHANGES = {
 HANDLER_ADDITIONS = {
     "main_menu/multiplayer_type_select/mp_map_select/mp_map_select_screen": [{"event": "created", "run": "port map select"}],
 }
+
+# the Vanilla theme's MENUS button, under the stock main menu's QUIT, and
+# the screen it opens; the Glassed theme's are in shell/main.xml
+VANILLA_MENUS_ITEM = """
+<widget name="main_menu/main_menu_item_menus" type="text" width="128" height="32" bitmap="bitmaps/text_button_background"
+ text="MENUS" font="ui\\large_ui" color="#FF2896FF" align="center" text_y="4">
+ <on event="a start" open="main_menu/themes_screen"/>
+ <on event="left_mouse" run="mouse emit accept event"/>
+</widget>"""
+VANILLA_THEMES_SCREEN = """
+<menus>
+<widget name="main_menu/themes_title" type="text" controller="1" width="300" height="34" text="MENUS"
+ font="ui\\large_ui" color="#FF2896FF" align="center"/>
+<widget name="main_menu/theme_glassed" type="text" width="128" height="32" bitmap="bitmaps/text_button_background"
+ text="GLASSED" font="ui\\large_ui" color="#FFFFFFFF" align="center" text_y="4">
+ <on event="a start" run="port theme glassed"/>
+ <on event="left_mouse" run="mouse emit accept event"/>
+</widget>
+<widget name="main_menu/theme_vanilla" type="text" width="128" height="32" bitmap="bitmaps/text_button_background"
+ text="VANILLA" font="ui\\large_ui" color="#FFFFFFFF" align="center" text_y="4">
+ <on event="a start" run="port theme vanilla"/>
+ <on event="left_mouse" run="mouse emit accept event"/>
+</widget>
+<widget name="main_menu/themes_list" type="column_list" width="640" height="480"
+ flags="pass_unhandled_to_focused_child up_down_tabs_items" description="main_menu/main_menu_list_ext_desc">
+ <child widget="main_menu/theme_glassed" x="256" y="230"/>
+ <child widget="main_menu/theme_vanilla" x="256" y="270"/>
+</widget>
+<widget name="main_menu/themes_screen" width="640" height="480" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/gradient">
+ <on event="b back" back="true"/>
+ <child widget="main_menu/halo_logo" y="28"/>
+ <child widget="main_menu/themes_title" x="170" y="190"/>
+ <child widget="main_menu/themes_list"/>
+</widget>
+</menus>"""
 
 # the screens' text colors, and the look's
 TEXT_COLORS = {"#FF2896FF": "#FFD2D6DA", "#FF0080FF": "#FFA8ACB0"}
@@ -266,6 +306,25 @@ def restyle(menus):
     return changed
 
 
+def vanilla_layer():
+    """skin/vanilla: the stock main menu, the main menu of this theme (root),
+    with a MENUS button under QUIT, and the screen it opens."""
+    if VANILLA.exists():
+        shutil.rmtree(VANILLA)
+    (VANILLA / "ce").mkdir(parents=True)
+    tree = ET.parse(MENUS / "ce" / "main_menu.xml")
+    menus = tree.getroot()
+    menus.set("root", "main_menu/main_menu")
+    menus.append(ET.fromstring(VANILLA_MENUS_ITEM.strip()))
+    for widget in ET.fromstring(VANILLA_THEMES_SCREEN.strip()):
+        menus.append(widget)
+    rows = next(widget for widget in menus.iter("widget") if widget.get("name") == "main_menu/main_menu_select_list")
+    rows.append(ET.Element("child", {"widget": "main_menu/main_menu_item_menus", "x": "256", "y": "431"}))
+    ET.indent(tree, space="\t")
+    tree.write(VANILLA / "ce" / "main_menu.xml", encoding="UTF-8", xml_declaration=True)
+    print("the Vanilla theme's layer")
+
+
 def skin_maps(folder):
     """Redraws the menu pictures of the Xbox maps in folder into skin/xbox, and
     lists them in its textures.json. (A picture is the same in every map
@@ -313,6 +372,7 @@ def main():
     arguments = parser.parse_args()
     if (SKIN / "ce").exists():
         shutil.rmtree(SKIN / "ce")
+    vanilla_layer()
     count = 0
     for bitmap in ET.parse(MENUS / "ce" / "bitmaps.xml").getroot().iter("bitmap"):
         for frame, element in enumerate(bitmap.iter("frame")):
