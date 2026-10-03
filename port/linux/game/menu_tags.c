@@ -949,6 +949,10 @@ static void *widget_build(long widget_index)
 	definition->bounds.x1 = (short)(source->left + (source->has_width ? source->width : 640));
 	definition->flags = flags_parse(source->flags, widget_flag_names, NUMBEROF(widget_flag_names),
 		source->file, source->line);
+	/* (these are the main menu's screens alone: pausing the game there only
+	stops the menus' scene and its sound behind them, as the PC version's
+	settings and map screens would) */
+	definition->flags &= ~FLAG(1); /* pause_game, widget_flag_names[1] */
 	definition->milliseconds_to_auto_close = source->auto_close;
 	definition->auto_close_fade_time = source->auto_close_fade;
 	reference_clear(&definition->background_bitmap, BITMAP_GROUP_TAG);
