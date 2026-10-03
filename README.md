@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/icon-160.png" width="120" alt=""></p>
+
 <h1 align="center">DamnationCE</h1>
 
 <p align="center"><b>A Halo: Combat Evolved client built on OpenCE, with its own menus and Halo Custom Edition maps out of the box.</b></p>
