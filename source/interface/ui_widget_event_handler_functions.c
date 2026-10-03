@@ -935,6 +935,7 @@ boolean playlist_profile_get_options(long playlist_profile_index, struct game_va
 #endif
 #include "text/unicode.h"
 #include "halo_menus.h" /* port: PC_MENU_FUNCTION_BASE */
+#include "custom_edition_maps.h"
 
 /* ---------- constants */
 
@@ -2948,6 +2949,12 @@ static boolean multiplayer_level_list_initialize(
 	char map_name[256];
 	struct ui_widget_definition *definition = ui_widget_definition_get(widget->definition_tag_index);
 	short level_count = 13;
+	/* the Xbox levels, then the Custom Edition maps in the maps folder
+	(port/linux/game/custom_edition_maps.c) */
+	char **levels = custom_edition_maps_level_list(
+		event_handler_functions.multiplayer_levels,
+		level_count,
+		&level_count);
 
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1228,
 		definition->type == 2,
@@ -2955,14 +2962,14 @@ static boolean multiplayer_level_list_initialize(
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1229,
 		definition->child_count == 3,
 		"expected 3 list items for 'multiplayer level list' widget");
-	widget->parameters.list.list_items = event_handler_functions.multiplayer_levels;
+	widget->parameters.list.list_items = levels;
 	widget->parameters.list.number_of_items = level_count;
 	if (saved_game_file_retrieve_last_used_multiplayer_map(map_name))
 	{
 		widget->parameters.list.selected_index = 0;
 		while (widget->parameters.list.selected_index < level_count &&
 			_stricmp(map_name,
-				event_handler_functions.multiplayer_levels[widget->parameters.list.selected_index]))
+				levels[widget->parameters.list.selected_index]))
 		{
 			widget->parameters.list.selected_index++;
 		}
@@ -5582,6 +5589,7 @@ static boolean multiplayer_level_select(
 	struct widget_instance *level_list;
 	struct ui_widget_definition *definition;
 	long level_index;
+	char **levels;
 
 	definition = ui_widget_definition_get(widget->definition_tag_index);
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1280,
@@ -5601,10 +5609,13 @@ static boolean multiplayer_level_select(
 		definition->child_count == 3,
 		"expected 3 list items for 'multiplayer level list' widget");
 	level_list = widget->child->child;
+	/* the levels the list offers: the Xbox levels, then the Custom Edition
+	maps (multiplayer_level_list_initialize) */
+	levels = level_list->parameters.list.list_items;
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1298,
-		level_list->parameters.list.selected_index >= 0 && level_list->parameters.list.selected_index < 13,
+		level_list->parameters.list.selected_index >= 0 && level_list->parameters.list.selected_index < level_list->parameters.list.number_of_items,
 		"invalid multiplayer level specified from 'multiplayer level list' list widget");
-	map_name = event_handler_functions.multiplayer_levels[level_list->parameters.list.selected_index];
+	map_name = levels[level_list->parameters.list.selected_index];
 	file = fopen("d:\\map_automation.txt", "r");
 	if (file)
 	{
@@ -5633,11 +5644,11 @@ static boolean multiplayer_level_select(
 		if (server)
 			network_game_server_change_map_name(server, map_name);
 	}
-	for (level_index = 0; level_index < 13; level_index++)
+	for (level_index = 0; level_index < level_list->parameters.list.number_of_items; level_index++)
 	{
-		if (!_stricmp(map_name, event_handler_functions.multiplayer_levels[level_index]))
+		if (!_stricmp(map_name, levels[level_index]))
 		{
-			saved_game_file_remember_last_used_multiplayer_map(event_handler_functions.multiplayer_levels[level_index]);
+			saved_game_file_remember_last_used_multiplayer_map(levels[level_index]);
 			break;
 		}
 	}

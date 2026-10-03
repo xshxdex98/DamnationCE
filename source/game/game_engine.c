@@ -6781,6 +6781,11 @@ static void game_engine_predict_resources(
 		0,
 		struct game_globals_multiplayer_information);
 
+	/* the cases below take the three multiplayer vehicles Xbox globals always
+	have; a Halo Custom Edition map can have fewer (beavercreek_halo3.yelo has
+	one), and then gets no vehicle predicted
+	(port/linux/game/custom_edition_cache.c) */
+	if (multiplayer_information->vehicles.count >= 3)
 	switch (global_variant.universal_variant.vehicle_set)
 	{
 	case _game_engine_vehicles_warthog:
@@ -7207,6 +7212,12 @@ long game_engine_remap_vehicle(
 {
 	long result = vehicle_definition_index;
 
+	/* a Halo Custom Edition map's vehicles are chosen by their placements,
+	and its scripts may create any (port/linux/game/custom_edition_objects.c) */
+	if (custom_edition_vehicles_by_placement())
+	{
+		return result;
+	}
 	if (game_engine)
 	{
 		struct game_globals *game_globals;
