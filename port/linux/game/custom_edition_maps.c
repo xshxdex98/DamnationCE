@@ -33,6 +33,7 @@ in lines of about 20 characters.
 #include "bitmaps/bitmaps.h"
 #include "bitmaps/bitmap_group.h"
 #include "cache/cache_files.h"
+#include "text/unicode.h"
 #include "bmp_files.h"
 #include "custom_edition_cache.h"
 #include "custom_edition_maps.h"
@@ -192,7 +193,7 @@ static void display_name_make(
 
 	if (index != NONE)
 	{
-		wcscpy(display_name, stock_maps[index].name);
+		ustrcpy(display_name, stock_maps[index].name);
 		return;
 	}
 
