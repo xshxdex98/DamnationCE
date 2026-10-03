@@ -139,50 +139,84 @@ static boolean file_path_exists(
 
 /* the file that holds the map `map_name` names: <maps>\<name>.map, or the
 OpenSauce <maps>\<name>.yelo when there is no .map */
-static boolean custom_edition_map_path(
-	char const *map_name,
+/* the maps folders looked in, in order: the game's, then the Custom Edition
+install's */
+static char const *maps_folder(
+	short index)
+{
+	return index == 0 ? cache_files_map_directory() : CUSTOM_EDITION_INSTALL_MAP_DIRECTORY;
+}
+#define NUMBER_OF_MAPS_FOLDERS 2
+
+/* whether <folder><name><extension>, made in path, exists */
+static boolean maps_folder_has(
+	char const *folder,
+	char const *name,
+	char const *extension,
 	char *path)
 {
-	char const *directory = cache_files_map_directory();
-	char const *name = tag_name_strip_path(map_name);
-
-	if (strlen(directory) + strlen(name) + strlen(OPENSAUCE_MAP_FILE_EXTENSION) >= MAP_PATH_SIZE)
+	if (strlen(folder) + strlen(name) + strlen(extension) >= MAP_PATH_SIZE)
 	{
 		return FALSE;
 	}
-	sprintf(path, "%s%s%s", directory, name, MAP_FILE_EXTENSION);
-	if (!file_path_exists(path))
-	{
-		sprintf(path, "%s%s%s", directory, name, OPENSAUCE_MAP_FILE_EXTENSION);
-	}
+	sprintf(path, "%s%s%s", folder, name, extension);
 
 	return file_path_exists(path);
 }
 
-/* A cache's resource map of `type`: <maps>\bitmaps.map and so on, or for an
-OpenSauce cache built with a mod set, <maps>\data_files\<mod>-bitmaps.map
-(the mod set file name is an assumption: docs/custom_edition_caches.md). */
+static boolean custom_edition_map_path(
+	char const *map_name,
+	char *path)
+{
+	char const *name = tag_name_strip_path(map_name);
+	short folder;
+
+	for (folder = 0; folder < NUMBER_OF_MAPS_FOLDERS; folder++)
+	{
+		if (maps_folder_has(maps_folder(folder), name, MAP_FILE_EXTENSION, path) ||
+			maps_folder_has(maps_folder(folder), name, OPENSAUCE_MAP_FILE_EXTENSION, path))
+		{
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+/* A cache's resource map of `type`: bitmaps.map and so on, or for an
+OpenSauce cache built with a mod set, data_files\<mod>-bitmaps.map (the mod
+set file name is an assumption: docs/custom_edition_caches.md), in the first
+maps folder that has it; the game's when none does, for the message. */
 static boolean custom_edition_resource_map_path(
 	struct cache_file_identity const *identity,
 	enum resource_map_type type,
 	char *path)
 {
-	char const *directory = cache_files_map_directory();
+	char name[MAP_PATH_SIZE];
 	char const *type_name = resource_map_type_describe(type);
+	short folder;
 
+	if (strlen(identity->opensauce.mod_name) + strlen(type_name) + 32 >= MAP_PATH_SIZE)
+	{
+		return FALSE;
+	}
 	if (identity->has_opensauce_header &&
 		TEST_FLAG(identity->opensauce.flags, _opensauce_cache_uses_mod_data_files_bit))
 	{
-		if (strlen(directory) + strlen(identity->opensauce.mod_name) + strlen(type_name) + 32 >= MAP_PATH_SIZE)
-		{
-			return FALSE;
-		}
-		sprintf(path, "%sdata_files\\%s-%s%s", directory, identity->opensauce.mod_name, type_name, MAP_FILE_EXTENSION);
+		sprintf(name, "data_files\\%s-%s", identity->opensauce.mod_name, type_name);
 	}
 	else
 	{
-		sprintf(path, "%s%s%s", directory, type_name, MAP_FILE_EXTENSION);
+		sprintf(name, "%s", type_name);
 	}
+	for (folder = 0; folder < NUMBER_OF_MAPS_FOLDERS; folder++)
+	{
+		if (maps_folder_has(maps_folder(folder), name, MAP_FILE_EXTENSION, path))
+		{
+			return TRUE;
+		}
+	}
+	sprintf(path, "%s%s%s", maps_folder(0), name, MAP_FILE_EXTENSION);
 
 	return TRUE;
 }

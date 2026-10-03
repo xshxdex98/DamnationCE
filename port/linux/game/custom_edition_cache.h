@@ -14,6 +14,13 @@ cache_file_formats.c.
 #ifndef __CUSTOM_EDITION_CACHE_H
 #define __CUSTOM_EDITION_CACHE_H
 
+/* ---------- constants */
+
+/* the Halo Custom Edition install's maps folder (the platform's h:\ drive,
+paths.custom_edition), looked in after the game's own for a Custom Edition
+map and its resource maps */
+#define CUSTOM_EDITION_INSTALL_MAP_DIRECTORY "h:\\maps\\"
+
 /* ---------- structures */
 
 struct cache_file_tag_header;
