@@ -77,6 +77,10 @@ their handlers open opens.
 /* the platform layer's (port/linux/src) */
 void platform_log(char const *format, ...);
 void platform_request_quit(void);
+#ifdef HALO_GAME_BROWSER
+/* the game list's screen (browser_screen.c) */
+void browser_screen_open(void);
+#endif
 char const *pc_menu_function_name(long function_index);
 char const *pc_menu_game_data_input_name(long function_index);
 void event_manager_post_button(short controller_index, short button_index);
@@ -3449,6 +3453,14 @@ boolean pc_menu_event_function_invoke(
 		else if (!strcmp(name, "port setup edit"))
 		{
 			return gametype_setup_edit();
+		}
+		else if (!strcmp(name, "port online games"))
+		{
+#ifdef HALO_GAME_BROWSER
+			browser_screen_open();
+#else
+			return FALSE;
+#endif
 		}
 		else if (!strcmp(name, "mp profile save changes"))
 		{

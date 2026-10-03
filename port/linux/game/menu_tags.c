@@ -326,6 +326,7 @@ static char const *const port_function_names[] =
 	"mp level select", "mp profiles list initialize", "mp profiles list dispose", "mp profile set for game",
 	"port lobby preview join",
 	"port setup edit",
+	"port online games",
 	/* (the gametype editor's: the Xbox's walk their rows by place, which the
 	PC version's screens changed) */
 	"mp profile begin editing", "mp profile save changes", "request del playlist profile", "final del playlist profile",

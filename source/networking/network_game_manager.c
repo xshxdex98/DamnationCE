@@ -486,7 +486,7 @@ boolean network_game_spawn_player(
 		and his units forget him */
 		if (player_data && player_data->valid && player->player_list_index < player_data->maximum_count)
 		{
-			struct player_datum *quitter = (struct player_datum *)((byte *)player_data->data +
+			struct player_datum *quitter = (struct player_datum *)((byte *)xbox_pointer(player_data->data) +
 				player_data->size * player->player_list_index);
 
 			/* (the host's choice stands: a client whose clock has not yet

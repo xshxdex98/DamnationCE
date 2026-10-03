@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- The PC version's menus: ui\shell\main_menu (tools/ce_menus.py) -->
-<menus root="main_menu/main_menu">
+<menus>
 	<widget name="main_menu/blueline" controller="1" width="192" height="2" bitmap="bitmaps/blue">
 	</widget>
 	<widget name="main_menu/build_number" type="text" controller="1" width="150" height="20" font="ui\small_ui" color="#FFFF8000">

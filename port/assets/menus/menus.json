@@ -47,11 +47,10 @@
   "ce/main_menu.settings_select.player_setup.player_profile_edit.xml",
   "ce/main_menu.solo_level_select.xml",
   "ce/main_menu.xml",
-  "ce/shell.xml",
-  "ce/strings.xml",
   "ce/port/main_menu/multiplayer_type_select/join_game/header_direct_link.png",
   "ce/port/main_menu/multiplayer_type_select/join_game/header_server_browser.png",
   "ce/port/main_menu/multiplayer_type_select/lobby/header_lobby.png",
+  "ce/shell.xml",
   "ce/shell/bitmaps/alert_bkd__0.png",
   "ce/shell/bitmaps/arrow_sm_down__0.png",
   "ce/shell/bitmaps/arrow_sm_down__1.png",
@@ -195,6 +194,13 @@
   "ce/shell/main_menu/settings_select/player_setup/player_profile_edit/profile_options__6.png",
   "ce/shell/main_menu/settings_select/player_setup/player_profile_edit/profile_options__8.png",
   "ce/shell/main_menu/settings_select/player_setup/player_profile_edit/video_settings/header_profile_video_settings__0.png",
-  "ce/shell/main_menu/solo_level_select/header_load_level__0.png"
+  "ce/shell/main_menu/solo_level_select/header_load_level__0.png",
+  "ce/strings.xml",
+  "shell/art/item_0.png",
+  "shell/art/item_1.png",
+  "shell/art/panel.png",
+  "shell/art/rule.png",
+  "shell/bitmaps.xml",
+  "shell/main.xml"
  ]
 }
