@@ -472,7 +472,13 @@ while after (players_coop_room_to_spawn). */
 static struct
 {
 	long spawnable_since[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
-} players_coop_start;
+	/* since when (the game time plus one) the dead have waited for a teammate
+	safe to respawn beside, 0 while nobody waits */
+	long respawn_wait_since;
+	/* since when each player's unit has been outside the structure BSP (the
+	game time plus one, 0 while inside), by absolute index */
+	long stranded_since[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
+} players_coop_state;
 
 /* port: where each player was at the last checkpoint, in network co-op
 (players_note_checkpoint) */
@@ -582,7 +588,7 @@ void players_initialize_for_new_map(
 	players_globals->respawn_failure = 0;
 	/* port: a new map has no network co-op checkpoint yet */
 	csmemset(&players_checkpoint, 0, sizeof(players_checkpoint));
-	csmemset(&players_coop_start, 0, sizeof(players_coop_start));
+	csmemset(&players_coop_state, 0, sizeof(players_coop_state));
 	data_make_valid(player_data);
 	data_make_valid(team_data);
 	csmemset(
@@ -2508,15 +2514,18 @@ boolean players_coop_waiting_to_start(
 		players_coop_extras_held();
 }
 
-/* how close a projectile, a grenade throw or a dying unit makes a teammate
-unsafe to respawn beside (world units) */
+/* how close an enemy's projectile makes a teammate unsafe to respawn
+beside (world units) */
 #define COOP_RESPAWN_DANGER_RADIUS 15.0f
 /* how often the respawn's safety test runs while someone is dead */
 #define COOP_RESPAWN_CHECK_TICKS (TICKS_PER_SECOND / 2)
+/* how long the dead wait for a safe teammate before they come back beside
+one that is at least on the ground */
+#define COOP_RESPAWN_FALLBACK_TICKS (10 * TICKS_PER_SECOND)
 
-/* whether something near the unit's position is dangerous: a projectile, a
-unit throwing a grenade, or one dying (any_unit_is_dangerous's tests, near
-this unit only) */
+/* whether a projectile no player fired (a grenade, a plasma bolt) is loose
+near the unit; the players' own fire, and needles stuck in a body, are not
+danger */
 static boolean players_coop_danger_near(
 	long unit_index)
 {
@@ -2525,20 +2534,11 @@ static boolean players_coop_danger_near(
 	struct object_iterator iterator;
 	struct object_datum *object;
 
-	object_iterator_new(&iterator, _object_mask_projectile | _object_mask_unit, 0);
+	object_iterator_new(&iterator, _object_mask_projectile, 0);
 	while ((object = object_iterator_next(&iterator)) != NULL)
 	{
-		struct unit_datum *unit;
-
-		if (distance_squared3d(center, &object->object.bounding_sphere_center) > radius_squared)
-			continue;
-		if (object->object.type == _object_type_projectile)
-			return TRUE;
-		unit = (struct unit_datum *)object;
-		if ((unit->unit.animation.state == _unit_state_throw_grenade &&
-				unit->unit.grenade_throw_state != _unit_grenade_throw_ending) ||
-			((unit->unit.animation.state == _unit_state_dying || unit->unit.animation.state == _unit_state_dying_airborne) &&
-				!TEST_FLAG(unit->unit.animation.flags, _unit_animation_ignore_translation_bit)))
+		if (object->object.owner_player_index == NONE && object->object.parent_object_index == NONE &&
+			distance_squared3d(center, &object->object.bounding_sphere_center) <= radius_squared)
 		{
 			return TRUE;
 		}
@@ -2547,53 +2547,90 @@ static boolean players_coop_danger_near(
 	return FALSE;
 }
 
-/* whether a living player's unit is safe to respawn beside: not in the air
-or a moving vehicle, no enemy attacking it, nothing dangerous near it */
-static boolean players_coop_unit_safe(
+/* whether the unit (or what it rides) is inside the structure BSP loaded:
+the campaign's scripts move only the second player along when they switch
+BSP, so in network co-op the others can be left outside it */
+static boolean players_coop_unit_in_structure(
+	long unit_index)
+{
+	return object_get(object_get_ultimate_parent(unit_index))->object.location.cluster_index != NONE;
+}
+
+/* whether a living player's unit has ground to respawn beside: inside the
+structure BSP, not in the air, nor in a moving vehicle */
+static boolean players_coop_unit_grounded(
 	long unit_index)
 {
 	long root_index = object_get_ultimate_parent(unit_index);
 
+	if (!players_coop_unit_in_structure(unit_index))
+		return FALSE;
 	if (root_index == unit_index)
 	{
 		struct biped_datum *biped = biped_try_and_get(unit_index);
 
-		if (biped && TEST_FLAG(biped->biped.flags, _biped_airborne_bit))
-			return FALSE;
+		return !biped || !TEST_FLAG(biped->biped.flags, _biped_airborne_bit);
 	}
 	else
 	{
 		struct players_vehicle_datum *vehicle = (struct players_vehicle_datum *)
 			object_try_and_get_and_verify_type(root_index, _object_mask_vehicle);
 
-		if (vehicle && vehicle->vehicle.unknown_state > 0)
-			return FALSE;
+		return !vehicle || vehicle->vehicle.unknown_state <= 0;
+	}
+}
+
+/* whether a living player's unit is safe to respawn beside: grounded, no
+enemy attacking it, no enemy projectile near it */
+static boolean players_coop_unit_safe(
+	long unit_index)
+{
+	return players_coop_unit_grounded(unit_index) && !ai_port_enemies_attacking_unit(unit_index) &&
+		!players_coop_danger_near(unit_index);
+}
+
+/* the unit of the first living player that `test` passes, or NONE */
+static long players_coop_unit_where(
+	boolean (*test)(long unit_index))
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		if (player->unit_index != NONE && test(player->unit_index))
+			return player->unit_index;
 	}
 
-	return !ai_port_enemies_attacking_unit(unit_index) && !players_coop_danger_near(unit_index);
+	return NONE;
 }
 
 /* Network co-op respawn: the dead come back beside the first teammate who
-is safe. The campaign's own test (players_respawn_coop) is map-wide (any
-projectile or enemy attack anywhere), which with many players spread out
-would almost never pass. Returns whether everyone waiting came back. */
+is safe, or after COOP_RESPAWN_FALLBACK_TICKS beside one at least on the
+ground, so a long fight can't keep them out. The campaign's own test
+(players_respawn_coop) is map-wide (any projectile or enemy attack
+anywhere), which with many players spread out would almost never pass.
+Returns whether everyone waiting came back. */
 static boolean players_respawn_network_coop(
 	void)
 {
 	struct data_iterator iterator;
 	struct player_datum *player;
-	long safe_unit_index = NONE;
+	long safe_unit_index;
 	boolean result = TRUE;
 
+	if (!players_coop_state.respawn_wait_since)
+		players_coop_state.respawn_wait_since = game_time_get() + 1;
 	/* (main.c asks every tick while someone is dead; the test walks the
-	map's units and projectiles, so twice a second is enough) */
+	map's projectiles, so twice a second is enough) */
 	if (game_time_get() % COOP_RESPAWN_CHECK_TICKS != 0)
 		return FALSE;
-	data_iterator_new(&iterator, player_data);
-	while (safe_unit_index == NONE && (player = data_iterator_next(&iterator)) != NULL)
+	safe_unit_index = players_coop_unit_where(players_coop_unit_safe);
+	if (safe_unit_index == NONE &&
+		game_time_get() + 1 - players_coop_state.respawn_wait_since >= COOP_RESPAWN_FALLBACK_TICKS)
 	{
-		if (player->unit_index != NONE && players_coop_unit_safe(player->unit_index))
-			safe_unit_index = player->unit_index;
+		safe_unit_index = players_coop_unit_where(players_coop_unit_grounded);
 	}
 	if (safe_unit_index == NONE)
 		return FALSE;
@@ -2611,6 +2648,8 @@ static boolean players_respawn_network_coop(
 			result = FALSE;
 		}
 	}
+	if (result)
+		players_coop_state.respawn_wait_since = 0;
 
 	return result;
 }
@@ -2626,7 +2665,7 @@ static long player_spawnable_beside(
 	long vehicle_index;
 	long driver_index;
 
-	if (player->unit_index == NONE || !player_input_enabled())
+	if (player->unit_index == NONE || !player_input_enabled() || !players_coop_unit_in_structure(player->unit_index))
 		return NONE;
 	vehicle_index = object_get_ultimate_parent(player->unit_index);
 	if (vehicle_index == player->unit_index)
@@ -2640,6 +2679,48 @@ static long player_spawnable_beside(
 do, so that they aren't put inside a vehicle it has only just left. */
 #define COOP_DISEMBARK_TICKS (4 * TICKS_PER_SECOND)
 
+/* How long a player on foot can be outside the structure BSP before it is
+brought beside a teammate inside it (a BSP switch settles in a tick or
+two; a moment longer tells a player left behind from one passing a seam). */
+#define COOP_STRANDED_TICKS TICKS_PER_SECOND
+
+/* Co-op host, each tick: a player on foot left outside the structure BSP
+for COOP_STRANDED_TICKS is brought beside a teammate who has ground inside
+it (players_coop_unit_grounded). */
+static void players_coop_rescue_stranded(
+	void)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+
+	if (!network_coop_active() || game_connection() != _game_connection_network_server)
+		return;
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		long *since = &players_coop_state.stranded_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
+		long teammate_index;
+
+		/* (one riding a vehicle goes where the vehicle goes) */
+		if (player->unit_index == NONE || players_coop_unit_in_structure(player->unit_index) ||
+			object_get_ultimate_parent(player->unit_index) != player->unit_index)
+		{
+			*since = 0;
+			continue;
+		}
+		if (*since == 0)
+			*since = game_time_get() + 1;
+		if (game_time_get() + 1 - *since < COOP_STRANDED_TICKS)
+			continue;
+		teammate_index = players_coop_unit_where(players_coop_unit_grounded);
+		if (teammate_index != NONE &&
+			player_teleport(iterator.datum_index, teammate_index, &object_get(teammate_index)->object.bounding_sphere_center))
+		{
+			*since = 0;
+		}
+	}
+}
+
 /* co-op, each tick: notes when each player became somewhere to spawn beside */
 static void players_coop_note_on_foot(
 	void)
@@ -2652,7 +2733,7 @@ static void players_coop_note_on_foot(
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
-		long *since = &players_coop_start.spawnable_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
+		long *since = &players_coop_state.spawnable_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
 
 		if (player_spawnable_beside(player) == NONE)
 			*since = 0;
@@ -2675,7 +2756,7 @@ static boolean players_coop_room_to_spawn(
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
-		long since = players_coop_start.spawnable_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
+		long since = players_coop_state.spawnable_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
 
 		if (player_spawnable_beside(player) != NONE && since != 0 && game_time_get() + 1 - since >= COOP_DISEMBARK_TICKS)
 			return TRUE;
@@ -4018,6 +4099,7 @@ void players_update_before_game(
 
 	profile_enter(PLAYERS_UPDATE_BEFORE_GAME_PROFILE);
 	players_coop_note_on_foot();
+	players_coop_rescue_stranded();
 	if (update_client_dequeue(actions) || players_idle_actions(actions))
 	{
 		data_iterator_new(&iterator, player_data);
