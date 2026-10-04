@@ -1765,7 +1765,6 @@ Xbox's networking, run by the engine's port entry points
 #define GAMETYPE_ROWS 10
 #define MAXIMUM_GAMETYPES 100
 #define BROWSER_ROWS 15
-#define LOBBY_ROWS 13
 #define TEXT_FIELD_LENGTH 128
 #define PLAYLIST_READ_ONLY_BIT 0x40000000UL
 /* (a key stroke's modifier, as input_xbox.c has them: shift, control) */
@@ -3197,13 +3196,68 @@ static void lobby_map_show(struct widget_instance *description, char const *map_
 		widget->parameters.text_box.string_list_index = map;
 }
 
-/* "port lobby update": the players' rows and the buttons. lobby_screen.c
-draws the lobby over them. */
+/* the list's rows: its first children, named list_item_N (the stock lobby
+has 11, Glassed's 13) */
+static short list_row_count(struct widget_instance *list)
+{
+	struct widget_instance *row;
+	short count = 0;
+
+	for (row = list->child; row && !strncmp(row->name, "list_item_", 10); row = row->next)
+		count++;
+	return count;
+}
+
+/* the stock lobby's panel (Vanilla): the map, and the game's details and
+countdown in one block of text. Glassed's lobby_screen.c draws its own. */
+static void lobby_panel_show(struct widget_instance *description, void *client, struct network_game *game,
+	short state)
+{
+	wchar_t text[LOBBY_TEXT_LENGTH];
+	short seconds;
+	char link[TEXT_FIELD_LENGTH];
+	wchar_t gametype[NUMBEROF(game->variant.human_readable_game_description) + 1];
+
+	visible_set(named(description, "lobby_right_item", 0), game != NULL && state >= _client_state_pregame);
+	if (!game || state < _client_state_pregame)
+	{
+		profile_name_show(description);
+		return;
+	}
+	lobby_map_show(description, game->map.name);
+	seconds = network_game_client_get_seconds_to_game_start(client);
+	ustrncpy(gametype, game->variant.human_readable_game_description, NUMBEROF(gametype) - 1);
+	gametype[NUMBEROF(gametype) - 1] = 0;
+	usnprintf(text, NUMBEROF(text) - 1, L"%s\r\n%s\r\n%d of %d players\r\n\r\n%s", gametype,
+		engine_names[PIN(game->variant.game_engine_index, 0, 5)], lobby_player_count, game->maximum_players,
+		seconds > 0 ? L"Starting in:" : game->machine_count < 2 ? L"Waiting for players" : L"");
+	text[NUMBEROF(text) - 1] = 0;
+	if (seconds > 0)
+	{
+		size_t length = ustrlen(text);
+
+		usnprintf(text + length, NUMBEROF(text) - 1 - length, L" %d", seconds);
+	}
+	if (global_network_game_server_get() && p2p_invite_link(link, sizeof(link)))
+	{
+		size_t length = ustrlen(text);
+
+		usnprintf(text + length, NUMBEROF(text) - 1 - length, L"\r\n\r\nInvite link copied:\r\npaste it to friends");
+	}
+	text[NUMBEROF(text) - 1] = 0;
+	text_set_length(named(description, "lobby_game_data", 0), text, LOBBY_TEXT_LENGTH);
+	profile_name_show(description);
+}
+
+/* "port lobby update": the players' rows and the buttons, and the stock
+lobby's panel (Glassed's lobby_screen.c draws over its own) */
 static void lobby_update(struct widget_instance *list)
 {
+	struct widget_instance *description = list->parameters.list.extended_description;
 	void *client = global_network_game_client_get();
 	struct network_game *game = client ? network_game_client_get_game(client) : NULL;
 	short state_data, state = client ? network_game_client_get_state(client, &state_data) : NONE;
+	short rows = list_row_count(list);
 	short index;
 
 	lobby_player_count = 0;
@@ -3212,13 +3266,15 @@ static void lobby_update(struct widget_instance *list)
 		if (network_player_is_valid(&game->players[index]))
 			lobby_players[lobby_player_count++] = &game->players[index];
 	}
-	list_scroll(list, &multiplayer.lobby_first, lobby_player_count, LOBBY_ROWS);
-	if (multiplayer.lobby_first > MAX(0, lobby_player_count - LOBBY_ROWS))
-		multiplayer.lobby_first = (short)MAX(0, lobby_player_count - LOBBY_ROWS);
-	rows_update(list, (short)MIN(lobby_player_count, LOBBY_ROWS), lobby_row_text);
+	list_scroll(list, &multiplayer.lobby_first, lobby_player_count, rows);
+	if (multiplayer.lobby_first > MAX(0, lobby_player_count - rows))
+		multiplayer.lobby_first = (short)MAX(0, lobby_player_count - rows);
+	rows_update(list, (short)MIN(lobby_player_count, rows), lobby_row_text);
 	visible_set(named(list, "lobby_button_team", 0), game && game->variant.universal_variant.teams);
 	/* (the buttons' focus, off Switch Team when it is hidden) */
 	focus_off_hidden(named(list, "lobby_button_bar", 0));
+	if (description && named(description, "lobby_game_data", 0))
+		lobby_panel_show(description, client, game, state);
 }
 
 /* lobby_screen.c: the lobby's players in the order the rows show them, and
@@ -3269,15 +3325,27 @@ static void preview_update(struct widget_instance *list)
 		wchar_t players[ROW_TEXT_LENGTH], machines[ROW_TEXT_LENGTH];
 
 		lobby_map_show(description, game->map_name);
-		usnprintf(players, NUMBEROF(players) - 1, L"%d / %d", game->player_count, game->maximum_player_count);
-		players[NUMBEROF(players) - 1] = 0;
-		usnprintf(machines, NUMBEROF(machines) - 1, L"%d", game->machine_count);
-		machines[NUMBEROF(machines) - 1] = 0;
-		values[0] = engine_names[PIN(game->engine_type, 0, 5)];
-		values[1] = players;
-		values[2] = machines;
-		values[3] = game->open ? L"Joinable" : L"Not joinable";
-		lobby_info_show(description, labels, values, NUMBEROF(labels));
+		if (named(description, "lobby_game_data", 0))
+		{
+			/* the stock panel (Vanilla): one block of text */
+			usnprintf(text, NUMBEROF(text) - 1, L"%s\r\n%d of %d players\r\non %d machines",
+				engine_names[PIN(game->engine_type, 0, 5)], game->player_count, game->maximum_player_count,
+				game->machine_count);
+			text[NUMBEROF(text) - 1] = 0;
+			text_set_length(named(description, "lobby_game_data", 0), text, LOBBY_TEXT_LENGTH);
+		}
+		else
+		{
+			usnprintf(players, NUMBEROF(players) - 1, L"%d / %d", game->player_count, game->maximum_player_count);
+			players[NUMBEROF(players) - 1] = 0;
+			usnprintf(machines, NUMBEROF(machines) - 1, L"%d", game->machine_count);
+			machines[NUMBEROF(machines) - 1] = 0;
+			values[0] = engine_names[PIN(game->engine_type, 0, 5)];
+			values[1] = players;
+			values[2] = machines;
+			values[3] = game->open ? L"Joinable" : L"Not joinable";
+			lobby_info_show(description, labels, values, NUMBEROF(labels));
+		}
 		ustrncpy(name, game->game_name, NUMBEROF(game->game_name));
 		name[NUMBEROF(game->game_name)] = 0;
 		/* (the text box does not wrap: lines of up to 28 characters) */

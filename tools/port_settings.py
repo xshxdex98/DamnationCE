@@ -679,29 +679,52 @@ SETUP_OPTION_SCREENS = [
 ]
 
 
-# The lobby is drawn by port/linux/game/lobby_screen.c over its widgets,
-# which are invisible (no pictures, clear text) but still update the lobby,
-# take the focus and catch the mouse. Their places match what it draws:
+# Glassed draws the lobby with port/linux/game/lobby_screen.c over invisible
+# widgets (no pictures, clear text) that still update it, take the focus and
+# catch the mouse. Their places match what it draws:
 LOBBY_ROW_LEFT, LOBBY_ROW_TOP, LOBBY_ROW_HEIGHT, LOBBY_ROW_WIDTH, LOBBY_ROWS = 24, 92, 24, 380, 13
 LOBBY_BUTTONS_TOP, LOBBY_BUTTON_WIDTH, LOBBY_BUTTON_HEIGHT = 448, 104, 22
 LOBBY_BUTTON_LEFTS = (288, 400, 512)
 CLEAR = "#00000000"
 # (the clear text still needs a font, or the game won't draw the widget and logs it every frame)
 SMALL_FONT = "ui\\small_ui"
+LOBBY_BUTTONS = (
+    ("team", "SWITCH TEAM", ['<on event="a" run="swap player team"/>', '<on event="start" run="swap player team"/>']),
+    ("start", "START NOW", ['<on event="a" run="net game speed start"/>',
+                            '<on event="start" run="net game speed start"/>']),
+    ("leave", "LEAVE", ['<on event="a" run="mouse emit back event"/>',
+                        '<on event="start" run="mouse emit back event"/>']))
+LOBBY_HANDLERS = ['<on event="created" run="net server accept conx"/>',
+                  '<on event="created" run="net server allow start"/>',
+                  '<on event="b" run="net game unjoin player" back="true"/>',
+                  '<on event="back" run="net game unjoin player" back="true"/>']
 
 
-def _lobby() -> list:
-    """the lobby the host's and the joining players wait in (the Xbox's
-    pregame's functions, which need no widget of theirs): up to the port's
-    128 players, scrolling; the buttons SWITCH TEAM, START NOW and LEAVE"""
-    base = f"{MT}/lobby"
+def _lobby_rows(base: str) -> list:
+    """the stock lobby's screen and its rows of players"""
+    lines = _widget(f"{base}/lobby_screen", [("width", 640), ("height", 480),
+                                             ("flags", "pass_unhandled_to_focused_child"),
+                                             ("bitmap", "bitmaps/gradient")],
+                    LOBBY_HANDLERS + ['<child widget="main_menu/new_select/sel_list_desc_bkd"/>',
+                                      f'<child widget="{base}/lobby_list"/>',
+                                      f'<child widget="{base}/header_lobby"/>'])
+    lines += _header(f"{base}/header_lobby", f"{base}/header_lobby")
+    rows = [f'<child widget="main_menu/new_select/list_item_{index}" x="20" y="{73 + 30 * index}"/>'
+            for index in range(11)]
+    lines += _widget(f"{base}/lobby_list", [("type", "column_list"), ("width", 640), ("height", 480),
+                                            ("flags", "pass_unhandled_to_focused_child up_down_tabs_children"),
+                                            ("description", f"{base}/lobby_desc")],
+                     ['<data input="net splitscreen prejoin players"/>', '<data input="port lobby update"/>',
+                      '<on event="left right" run="swap player team"/>', *rows,
+                      f'<child widget="{base}/lobby_button_bar" y="414"/>'])
+    return lines
+
+
+def _lobby_overlay_rows(base: str) -> list:
+    """the Glassed lobby's screen and its invisible rows, under lobby_screen.c's drawing"""
     lines = _widget(f"{base}/lobby_screen", [("width", 640), ("height", 480),
                                              ("flags", "pass_unhandled_to_focused_child")],
-                    ['<on event="created" run="net server accept conx"/>',
-                     '<on event="created" run="net server allow start"/>',
-                     '<on event="b" run="net game unjoin player" back="true"/>',
-                     '<on event="back" run="net game unjoin player" back="true"/>',
-                     f'<child widget="{base}/lobby_list"/>'])
+                    LOBBY_HANDLERS + [f'<child widget="{base}/lobby_list"/>'])
     lines += _header(f"{base}/header_lobby", f"{base}/header_lobby")
     rows = [f'<child widget="{base}/list_item_{index}" x="{LOBBY_ROW_LEFT}" '
             f'y="{LOBBY_ROW_TOP + LOBBY_ROW_HEIGHT * index}"/>' for index in range(LOBBY_ROWS)]
@@ -717,40 +740,71 @@ def _lobby() -> list:
                      ['<data input="net splitscreen prejoin players"/>', '<data input="port lobby update"/>',
                       '<on event="left right" run="swap player team"/>', *rows,
                       f'<child widget="{base}/lobby_button_bar" y="{LOBBY_BUTTONS_TOP}"/>'])
-    # the panel beside a game under way's preview (preview_screen)
+    return lines
+
+
+def _lobby_buttons(base: str, overlay: bool) -> list:
+    """SWITCH TEAM, START NOW and LEAVE: the stock buttons, or the Glassed lobby's invisible ones"""
+    if overlay:
+        lines = _widget(f"{base}/lobby_button_bar", [("type", "column_list"), ("width", 640),
+                                                     ("height", LOBBY_BUTTON_HEIGHT),
+                                                     ("flags", "pass_unhandled_to_focused_child left_right_tabs_items")],
+                        [f'<child widget="{base}/lobby_button_{key}" x="{left}"/>'
+                         for (key, _, _), left in zip(LOBBY_BUTTONS, LOBBY_BUTTON_LEFTS)])
+        for key, _, handlers in LOBBY_BUTTONS:
+            lines += _widget(f"{base}/lobby_button_{key}", [("type", "text"), ("width", LOBBY_BUTTON_WIDTH),
+                                                           ("height", LOBBY_BUTTON_HEIGHT), ("font", SMALL_FONT),
+                                                           ("color", CLEAR)],
+                             handlers + ['<on event="left_mouse" run="mouse emit accept event"/>'])
+        return lines
+    lines = _widget(f"{base}/lobby_button_bar", [("type", "column_list"), ("width", 640), ("height", 28),
+                                                 ("flags", "pass_unhandled_to_focused_child left_right_tabs_items")],
+                    [f'<child widget="{base}/lobby_button_{key}" x="{left}" y="1"/>'
+                     for (key, _, _), left in zip(LOBBY_BUTTONS, (250, 380, 510))])
+    for key, caption, handlers in LOBBY_BUTTONS:
+        lines += _widget(f"{base}/lobby_button_{key}", [("type", "text"), ("width", 128), ("height", 24),
+                                                       ("bitmap", "bitmaps/text_button_background"),
+                                                       ("text", caption), ("font", "ui\\small_ui"),
+                                                       ("color", "#FFFFFFFF"), ("align", "center"), ("text_y", 2)],
+                         handlers + ['<on event="left_mouse" run="mouse emit accept event"/>'])
+    return lines
+
+
+def _lobby(overlay: bool = False) -> list:
+    """the lobby the host's and the joining players wait in (the Xbox's
+    pregame's functions, which need no widget of theirs): up to the port's
+    128 players, scrolling; the game's map and gametype; the countdown.
+    overlay: Glassed's, which lobby_screen.c draws over invisible widgets."""
+    base = f"{MT}/lobby"
+    lines = _lobby_overlay_rows(base) if overlay else _lobby_rows(base)
     lines += _widget(f"{base}/lobby_desc", [("width", 640), ("height", 480)],
                      ['<child widget="main_menu/current_profile_name"/>',
                       f'<child widget="{base}/lobby_right_item" x="22" y="2"/>'])
+    details = ([f'<child widget="{base}/lobby_info_labels"/>', f'<child widget="{base}/lobby_info_values"/>']
+               if overlay else [f'<child widget="{base}/lobby_game_data"/>'])
     lines += _widget(f"{base}/lobby_right_item", [("controller", 1), ("left", 406), ("top", 75), ("width", 162),
                                                   ("height", 326),
                                                   ("bitmap", "bitmaps/spinner_list_3_wide_item_background")],
-                     [f'<child widget="{base}/lobby_map_pic"/>', f'<child widget="{base}/lobby_map_name"/>',
-                      f'<child widget="{base}/lobby_info_labels"/>', f'<child widget="{base}/lobby_info_values"/>'])
+                     [f'<child widget="{base}/lobby_map_pic"/>', f'<child widget="{base}/lobby_map_name"/>', *details])
     lines += _widget(f"{base}/lobby_map_pic", [("controller", 1), ("left", 419), ("top", 87), ("width", 140),
                                                ("height", 114), ("bitmap", "ui\\shell\\bitmaps\\mp_map_grafix")], [])
     lines += _widget(f"{base}/lobby_map_name", [("type", "text"), ("controller", 1), ("left", 417), ("top", 204),
                                                 ("width", 146), ("height", 43), ("string_list", "main_menu/mp_map_list"),
                                                 ("font", "ui\\large_ui"), ("color", "#FF2896FF")], [])
-    # the game's details: labels down the left, their values right-aligned beside them
-    lines += _widget(f"{base}/lobby_info_labels", [("type", "text"), ("controller", 1), ("left", 417), ("top", 252),
-                                                   ("width", 146), ("height", 80), ("font", "ui\\small_ui"),
-                                                   ("color", "#FF0080FF"), ("text_flags", "no_focus_test")], [])
-    lines += _widget(f"{base}/lobby_info_values", [("type", "text"), ("controller", 1), ("left", 417), ("top", 252),
-                                                   ("width", 146), ("height", 80), ("font", "ui\\small_ui"),
-                                                   ("color", "#FF2896FF"), ("align", "right"),
-                                                   ("text_flags", "no_focus_test")], [])
-    lines += _widget(f"{base}/lobby_button_bar", [("type", "column_list"), ("width", 640),
-                                                  ("height", LOBBY_BUTTON_HEIGHT),
-                                                  ("flags", "pass_unhandled_to_focused_child left_right_tabs_items")],
-                     [f'<child widget="{base}/lobby_button_{key}" x="{left}"/>'
-                      for key, left in zip(("team", "start", "leave"), LOBBY_BUTTON_LEFTS)])
-    for key, handlers in (
-        ("team", ['<on event="a" run="swap player team"/>', '<on event="start" run="swap player team"/>']),
-        ("start", ['<on event="a" run="net game speed start"/>', '<on event="start" run="net game speed start"/>']),
-        ("leave", ['<on event="a" run="mouse emit back event"/>', '<on event="start" run="mouse emit back event"/>'])):
-        lines += _widget(f"{base}/lobby_button_{key}", [("type", "text"), ("width", LOBBY_BUTTON_WIDTH),
-                                                       ("height", LOBBY_BUTTON_HEIGHT), ("font", SMALL_FONT), ("color", CLEAR)],
-                         handlers + ['<on event="left_mouse" run="mouse emit accept event"/>'])
+    if overlay:
+        # the game's details: labels down the left, their values right-aligned beside them
+        lines += _widget(f"{base}/lobby_info_labels", [("type", "text"), ("controller", 1), ("left", 417), ("top", 252),
+                                                       ("width", 146), ("height", 80), ("font", "ui\\small_ui"),
+                                                       ("color", "#FF0080FF"), ("text_flags", "no_focus_test")], [])
+        lines += _widget(f"{base}/lobby_info_values", [("type", "text"), ("controller", 1), ("left", 417), ("top", 252),
+                                                       ("width", 146), ("height", 80), ("font", "ui\\small_ui"),
+                                                       ("color", "#FF2896FF"), ("align", "right"),
+                                                       ("text_flags", "no_focus_test")], [])
+    else:
+        lines += _widget(f"{base}/lobby_game_data", [("type", "text"), ("controller", 1), ("left", 417), ("top", 250),
+                                                     ("width", 146), ("height", 144), ("font", "ui\\small_ui"),
+                                                     ("color", "#FF2896FF")], [])
+    lines += _lobby_buttons(base, overlay)
     # a game under way's lobby, before joining it (the browser's rows of
     # games in progress): what its advertisement tells, JOIN GAME
     lines += _widget(f"{base}/preview_screen", [("width", 640), ("height", 480),
@@ -881,6 +935,13 @@ def multiplayer_files() -> dict:
         f"{MT}/coop".replace("/", ".") + ".xml": head + _coop() + ["</menus>", ""],
         "main_menu/settings_select/multiplayer_setup/item_options_edit".replace("/", ".") + ".port.xml": head + _item_options_extras() + ["</menus>", ""],
     }
+
+
+def glassed_lobby_file() -> list:
+    """the Glassed layer's lobby, the overlay's form (tools/shell_skin.py)"""
+    head = ['<?xml version="1.0" encoding="UTF-8"?>',
+            "<!-- The port's multiplayer screens, in the PC version's style (tools/port_settings.py) -->", "<menus>"]
+    return head + _lobby(overlay=True) + ["</menus>", ""]
 
 
 REPLACED_FOLDERS = [f"{MT}/server_settings"]
