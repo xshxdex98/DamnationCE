@@ -95,6 +95,7 @@ symbols in this file:
 #include "cseries.h"
 #include "periodic_functions.h"
 #include "tag_files/tag_groups.h"
+#include "cseries/errors.h" /* port: unknown function types, logged */
 
 /* ---------- constants */
 
@@ -233,6 +234,18 @@ real periodic_function_evaluate(
 
 	if (function_type == _periodic_function_one)
 		return 1.0f;
+	/* port: a Custom Edition map's tag can hold a function type this build
+	doesn't know (a field its loader doesn't convert); drawn as "one" rather
+	than halting the game, and logged once */
+	if (function_type < 0 || function_type >= NUMBER_OF_PERIODIC_FUNCTIONS)
+	{
+		static boolean logged;
+
+		if (!logged)
+			error(_error_silent, "periodic function type %d is unknown; drawn as \"one\"", function_type);
+		logged = TRUE;
+		return 1.0f;
+	}
 
 	match_assert(
 		"c:\\halo\\SOURCE\\math\\periodic_functions.c",
@@ -286,6 +299,16 @@ real transition_function_evaluate(
 
 	if (function_type == _transition_function_linear)
 		return value;
+	/* port: as periodic_function_evaluate's: an unknown type is linear */
+	if (function_type < 0 || function_type >= NUMBER_OF_TRANSITION_FUNCTIONS)
+	{
+		static boolean logged;
+
+		if (!logged)
+			error(_error_silent, "transition function type %d is unknown; drawn as linear", function_type);
+		logged = TRUE;
+		return value;
+	}
 
 	match_assert(
 		"c:\\halo\\SOURCE\\math\\periodic_functions.c",
