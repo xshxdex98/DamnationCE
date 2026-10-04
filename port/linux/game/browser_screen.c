@@ -425,6 +425,7 @@ static void add_lobby_games(
 		for (index = 0; index < BROWSER_NAME_LENGTH && listing->name[index]; index++)
 			game->name[index] = (unsigned char)listing->name[index];
 		snprintf(game->map, sizeof(game->map), "%s", listing->map);
+		snprintf(game->gametype, sizeof(game->gametype), "%s", listing->gametype);
 		game->engine = listing->engine_type;
 		game->players = listing->player_count;
 		game->maximum_players = listing->maximum_player_count;
@@ -820,10 +821,11 @@ static char const *type_name(
 	char const *engine = game->engine >= 0 && game->engine < NUMBEROF(engine_names) && engine_names[game->engine][0] ?
 		engine_names[game->engine] : "Game";
 
-	/* no game engine on a campaign level means co-op */
+	/* no game engine on a campaign level means co-op; the host's description
+	adds the difficulty ("Co-op Heroic") */
 	if (!game->engine && known_map(game->map)->kind == MAP_CAMPAIGN)
 	{
-		snprintf(text, (size_t)size, "Co-op");
+		snprintf(text, (size_t)size, "%s", !strncmp(game->gametype, "Co-op", 5) ? game->gametype : "Co-op");
 		return text;
 	}
 

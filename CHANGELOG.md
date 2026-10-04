@@ -15,6 +15,9 @@
   waiting for the whole map to be quiet, which with many players could
   take minutes.
 - Fixed co-op checkpoints and the next level carrying over between games.
+- The lobby shows the right map name for campaign levels and Custom Edition
+  maps (it showed Battle Creek).
+- Co-op games in the server browser show their difficulty ("Co-op Heroic").
 - Co-op code no longer runs in the menus while a game is being set up. It
   used to stop the menu background's scripts for joining players.
 

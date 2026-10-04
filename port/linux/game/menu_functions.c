@@ -2991,34 +2991,28 @@ menus' lists, a Custom Edition map's its own (custom_edition_maps.c, by its
 display index, as the map picker shows it), else the unknown level's */
 #define UNKNOWN_MAP 19
 
+/* The lobby's map picture and name. The name widget draws its string list's
+entry at string_list_index every frame (ui_widget.c), so the map's index
+goes there: an Xbox level's, or a display index (a Custom Edition map, a
+campaign level), whose name text_group.c finds past the list's end. */
 static void lobby_map_show(struct widget_instance *description, char const *map_name)
 {
 	char const *const *names;
 	short last, count = ui_widget_port_multiplayer_maps(&names, &last), map = NONE, index;
 	short custom = custom_edition_maps_display_index(map_name);
 	struct widget_instance *widget;
-	wchar_t name[ROW_TEXT_LENGTH];
 
 	for (index = 0; index < count; index++)
 	{
 		if (!_stricmp(names[index], map_name))
 			map = index;
 	}
-	if (map == NONE && custom != NONE && custom_edition_maps_name(custom))
-	{
-		ustrncpy(name, custom_edition_maps_name(custom), ROW_TEXT_LENGTH - 1);
-		name[ROW_TEXT_LENGTH - 1] = 0;
-		map = custom;
-	}
-	else
-	{
-		if (map == NONE)
-			map = UNKNOWN_MAP;
-		string_get("pc\\main_menu\\mp_map_list", map, name);
-	}
+	if (map == NONE)
+		map = custom != NONE && custom_edition_maps_name(custom) ? custom : UNKNOWN_MAP;
 	if ((widget = named(description, "lobby_map_pic", 0)) != NULL)
 		widget->animation.current_frame_index = map;
-	text_set(named(description, "lobby_map_name", 0), name);
+	if ((widget = named(description, "lobby_map_name", 0)) != NULL)
+		widget->parameters.text_box.string_list_index = map;
 }
 
 /* "port lobby update" */
