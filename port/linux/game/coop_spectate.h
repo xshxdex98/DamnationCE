@@ -19,6 +19,11 @@ the player is alive or nobody else is */
 long coop_spectate_unit(
 	short local_player_index);
 
+/* whether a local player has nothing to look at: no unit of its own and
+no living teammate to watch (network_coop.c shows it the host's view) */
+boolean coop_spectate_nothing_to_watch(
+	short local_player_index);
+
 /* keeps the dead camera behind the watched unit as it turns */
 void coop_spectate_camera(
 	struct dead_camera *camera);

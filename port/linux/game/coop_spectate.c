@@ -118,6 +118,14 @@ long coop_spectate_unit(
 	return *watched != NONE ? player_get(*watched)->unit_index : NONE;
 }
 
+boolean coop_spectate_nothing_to_watch(
+	short local_player_index)
+{
+	long self = local_player_get_player_index(local_player_index);
+
+	return self != NONE && player_get(self)->unit_index == NONE && next_living_player(self, NONE) == NONE;
+}
+
 void coop_spectate_camera(
 	struct dead_camera *camera)
 {

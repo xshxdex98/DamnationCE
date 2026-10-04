@@ -77,6 +77,7 @@ index and tag, since the map placed them at the same index everywhere.
 #include "sound/game_sound.h"
 #include "sound/sound_definitions.h"
 #include "units/units.h"
+#include "coop_spectate.h"
 #include "network_coop.h"
 #include "network_distributed.h"
 
@@ -274,6 +275,8 @@ struct distributed_coop_skip_vote_message
 static struct
 {
 	boolean cinematic_started;
+	/* showing the host's camera to a player with nothing else to look at */
+	boolean following_host;
 	long heard_time;
 	long fade_start_time;
 } coop_presentation;
@@ -1229,10 +1232,14 @@ void network_coop_host_tick(
 void network_coop_client_tick(
 	void)
 {
-	if (coop_presentation.cinematic_started &&
-		game_time_get() - coop_presentation.heard_time > PRESENTATION_SILENCE_TICKS)
+	if (game_time_get() - coop_presentation.heard_time > PRESENTATION_SILENCE_TICKS)
 	{
 		client_cinematic_end();
+		if (coop_presentation.following_host)
+		{
+			coop_presentation.following_host = FALSE;
+			scripted_camera_enable(FALSE);
+		}
 	}
 	if (!network_coop_skip_offered())
 		skip_vote.voted = FALSE;
@@ -1400,16 +1407,27 @@ void network_coop_handle_presentation(
 		cinematic_start();
 		scripted_camera_enable(TRUE);
 		coop_presentation.cinematic_started = TRUE;
+		coop_presentation.following_host = FALSE;
 	}
 	else if (!cinematic)
 	{
 		client_cinematic_end();
 	}
-	if (coop_presentation.cinematic_started)
+	/* A player with no unit and no living teammate to watch (waiting for the
+	level's first checkpoint, with the host's unit unseen) would look out of
+	the world from a dead camera at the origin: it sees the host's view. */
+	if (!coop_presentation.cinematic_started &&
+		coop_spectate_nothing_to_watch(0) != coop_presentation.following_host)
+	{
+		coop_presentation.following_host = !coop_presentation.following_host;
+		scripted_camera_enable(coop_presentation.following_host);
+	}
+	if (coop_presentation.cinematic_started || coop_presentation.following_host)
 	{
 		real_vector3d forward, up;
 
-		cinematic_show_letterbox(TEST_FLAG(presentation->flags, _presentation_letterbox_bit));
+		if (coop_presentation.cinematic_started)
+			cinematic_show_letterbox(TEST_FLAG(presentation->flags, _presentation_letterbox_bit));
 		distributed_vector_unpack(&presentation->camera_forward, DISTRIBUTED_UNIT_SCALE, &forward);
 		distributed_vector_unpack(&presentation->camera_up, DISTRIBUTED_UNIT_SCALE, &up);
 		if (distributed_point_valid(&presentation->camera_position, UNIT_WORLD_BOUND) &&
