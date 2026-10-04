@@ -59,6 +59,11 @@ every game the server sets up */
 void network_game_server_port_set_settings(
 	wchar_t const *name,
 	long maximum_players);
+/* port: a co-op game's level won (main.c): the round ends for every machine
+as a multiplayer game's does, and the next is on next_map (the campaign's
+next level; NULL: the same) */
+void network_game_server_port_cooperative_won(
+	char const *next_map);
 /* port: a co-op game's settings, told the clients: its difficulty, and as
 many players as the build holds (Server Setup's choice is a PvP game's) */
 void network_game_server_port_set_cooperative(
