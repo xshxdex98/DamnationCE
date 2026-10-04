@@ -326,6 +326,11 @@ struct custom_edition_conversion_report
 	/* 1 when the multiplayer hint that a key shows the score was made to
 	name the Xbox button */
 	int32_t score_hint_converted;
+	/* widget event handlers that ran Halo PC's own functions, made to run
+	none, and 1 when the multiplayer pause menu was made the Xbox's resume
+	and quit */
+	int32_t widget_functions_cleared;
+	int32_t pause_menu_trimmed;
 	/* the tag of the problem, when there was one, else NONE (-1) */
 	int32_t problem_tag_index;
 };

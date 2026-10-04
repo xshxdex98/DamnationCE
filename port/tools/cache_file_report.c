@@ -329,6 +329,8 @@ static int report_custom_edition_cache(
 			printf("sounds_undecodable: %" PRId32 "\n", conversion.sounds_undecodable);
 			printf("hud_placements_rescaled: %" PRId32 "\n", conversion.hud_placements_rescaled);
 			printf("score_hint_converted: %" PRId32 "\n", conversion.score_hint_converted);
+			printf("widget_functions_cleared: %" PRId32 "\n", conversion.widget_functions_cleared);
+			printf("pause_menu_trimmed: %" PRId32 "\n", conversion.pause_menu_trimmed);
 			if (dump_path)
 			{
 				FILE *dump = fopen(dump_path, "wb");
