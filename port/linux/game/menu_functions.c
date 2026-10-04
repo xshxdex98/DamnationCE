@@ -1676,8 +1676,7 @@ Xbox's networking, run by the engine's port entry points
 #define KEY_MODIFIER_CONTROL_BIT 1
 #define LOBBY_NAME "pc\\main_menu\\multiplayer_type_select\\lobby\\lobby_screen"
 #define PREVIEW_NAME "pc\\main_menu\\multiplayer_type_select\\lobby\\preview_screen"
-/* the lobby's panel's lines (the gametype, the players, the countdown, the
-invite) */
+/* the lobby's panel's text: its details' labels and values, a line each */
 #define LOBBY_TEXT_LENGTH (ROW_TEXT_LENGTH * 4)
 
 enum
@@ -3007,16 +3006,53 @@ static short lobby_player_count;
 static void lobby_row_text(short row, wchar_t *text)
 {
 	struct network_player *player = lobby_players[multiplayer.lobby_first + row];
-	struct network_game *game = network_game_client_get_game(global_network_game_client_get());
-	wchar_t name[NUMBEROF(player->name) + 1];
 
-	ustrncpy(name, player->name, NUMBEROF(player->name));
-	name[NUMBEROF(player->name)] = 0;
-	if (game && game->variant.universal_variant.teams)
-		usnprintf(text, ROW_TEXT_LENGTH - 1, L"%s  (%s)", name, player->team_index ? L"BLUE" : L"RED");
-	else
-		usnprintf(text, ROW_TEXT_LENGTH - 1, L"%s", name);
-	text[ROW_TEXT_LENGTH - 1] = 0;
+	ustrncpy(text, player->name, NUMBEROF(player->name));
+	text[NUMBEROF(player->name)] = 0;
+}
+
+/* each player row's tags: YOU on this machine's players, and the team in
+its color in a team game */
+static void lobby_row_tags(struct widget_instance *list, boolean teams)
+{
+	short local_machine = network_game_client_get_local_machine_index();
+	struct widget_instance *row;
+	short index = 0;
+
+	for (row = list->child; row && !strncmp(row->name, "list_item_", 10); row = row->next, index++)
+	{
+		struct network_player const *player = row->visible ? lobby_players[multiplayer.lobby_first + index] : NULL;
+		struct widget_instance *red = named(row, "list_item_red", 0);
+		struct widget_instance *blue = named(row, "list_item_blue", 0);
+
+		text_set(named(row, "list_item_you", 0), player && player->machine_index == local_machine ? L"YOU" : L"");
+		visible_set(red, player && teams && !player->team_index);
+		visible_set(blue, player && teams && player->team_index);
+		text_set(red, L"RED");
+		text_set(blue, L"BLUE");
+	}
+}
+
+/* the lobby's panel's details: a label and a value a line */
+static void lobby_info_show(struct widget_instance *description, wchar_t const *const *labels,
+	wchar_t const *const *values, short count)
+{
+	wchar_t label_text[LOBBY_TEXT_LENGTH] = L"", value_text[LOBBY_TEXT_LENGTH] = L"";
+	short index;
+
+	for (index = 0; index < count; index++)
+	{
+		size_t label_length = ustrlen(label_text), value_length = ustrlen(value_text);
+
+		usnprintf(label_text + label_length, NUMBEROF(label_text) - 1 - label_length, L"%s%s",
+			index ? L"\r\n" : L"", labels[index]);
+		usnprintf(value_text + value_length, NUMBEROF(value_text) - 1 - value_length, L"%s%s",
+			index ? L"\r\n" : L"", values[index]);
+		label_text[NUMBEROF(label_text) - 1] = 0;
+		value_text[NUMBEROF(value_text) - 1] = 0;
+	}
+	text_set_length(named(description, "lobby_info_labels", 0), label_text, LOBBY_TEXT_LENGTH);
+	text_set_length(named(description, "lobby_info_values", 0), value_text, LOBBY_TEXT_LENGTH);
 }
 
 /* the lobby's panel's map: its picture and name */
@@ -3068,7 +3104,6 @@ static void lobby_update(struct widget_instance *list)
 	void *client = global_network_game_client_get();
 	struct network_game *game = client ? network_game_client_get_game(client) : NULL;
 	short state_data, state = client ? network_game_client_get_state(client, &state_data) : NONE;
-	wchar_t text[LOBBY_TEXT_LENGTH];
 	short index;
 
 	lobby_player_count = 0;
@@ -3081,6 +3116,7 @@ static void lobby_update(struct widget_instance *list)
 	if (multiplayer.lobby_first > MAX(0, lobby_player_count - LOBBY_ROWS))
 		multiplayer.lobby_first = (short)MAX(0, lobby_player_count - LOBBY_ROWS);
 	rows_update(list, (short)MIN(lobby_player_count, LOBBY_ROWS), lobby_row_text);
+	lobby_row_tags(list, game && game->variant.universal_variant.teams);
 	visible_set(named(list, "lobby_button_team", 0), game && game->variant.universal_variant.teams);
 	/* (the buttons' focus, off Switch Team when it is hidden) */
 	focus_off_hidden(named(list, "lobby_button_bar", 0));
@@ -3093,29 +3129,31 @@ static void lobby_update(struct widget_instance *list)
 	}
 	lobby_map_show(description, game->map.name);
 	{
-		char link[TEXT_FIELD_LENGTH];
+		boolean cooperative = game_cooperative(game);
+		wchar_t const *labels[] = { L"GAME", cooperative ? L"DIFFICULTY" : L"MODE", L"PLAYERS", L"STATUS" };
 		wchar_t gametype[NUMBEROF(game->variant.human_readable_game_description) + 1];
-
-		wchar_t kind[ROW_TEXT_LENGTH];
+		wchar_t kind[ROW_TEXT_LENGTH], players[ROW_TEXT_LENGTH];
+		wchar_t const *values[NUMBEROF(labels)];
+		char link[TEXT_FIELD_LENGTH];
 
 		ustrncpy(gametype, game->variant.human_readable_game_description, NUMBEROF(gametype) - 1);
 		gametype[NUMBEROF(gametype) - 1] = 0;
-		/* co-op shows the difficulty where PvP shows the game type */
-		if (game_cooperative(game))
+		if (cooperative)
 			string_get("pc\\main_menu\\player_profiles_select\\difficulty_names", game->difficulty, kind);
 		else
 			ustrncpy(kind, engine_names[PIN(game->variant.game_engine_index, 0, 5)], NUMBEROF(kind) - 1);
 		kind[NUMBEROF(kind) - 1] = 0;
-		usnprintf(text, NUMBEROF(text) - 1, L"%s\r\n%s\r\n%d of %d players\r\n\r\n%s", gametype,
-			kind, lobby_player_count, game->maximum_players, game->machine_count < 2 ? L"Waiting for players" : L"");
-		text[NUMBEROF(text) - 1] = 0;
-		if (global_network_game_server_get() && p2p_invite_link(link, sizeof(link)))
-		{
-			size_t length = ustrlen(text);
-
-			usnprintf(text + length, NUMBEROF(text) - 1 - length, L"\r\n\r\nInvite link copied:\r\npaste it to friends");
-		}
-		text_set_length(named(description, "lobby_game_data", 0), text, LOBBY_TEXT_LENGTH);
+		usnprintf(players, NUMBEROF(players) - 1, L"%d / %d", lobby_player_count, game->maximum_players);
+		players[NUMBEROF(players) - 1] = 0;
+		values[0] = gametype;
+		values[1] = kind;
+		values[2] = players;
+		values[3] = network_game_client_get_seconds_to_game_start(client) > 0 ? L"Starting" :
+			game->machine_count < 2 ? L"Waiting for players" : L"Ready";
+		lobby_info_show(description, labels, values, NUMBEROF(labels));
+		text_set(named(description, "lobby_note", 0),
+			global_network_game_server_get() && p2p_invite_link(link, sizeof(link)) ?
+			L"Invite link copied:\r\npaste it to friends" : L"");
 	}
 	profile_name_show(description);
 }
@@ -3154,11 +3192,21 @@ static void preview_update(struct widget_instance *list)
 	visible_set(named(description, "lobby_right_item", 0), valid);
 	if (valid)
 	{
+		wchar_t const *labels[] = { L"MODE", L"PLAYERS", L"MACHINES", L"STATUS" };
+		wchar_t const *values[NUMBEROF(labels)];
+		wchar_t players[ROW_TEXT_LENGTH], machines[ROW_TEXT_LENGTH];
+
 		lobby_map_show(description, game->map_name);
-		usnprintf(text, NUMBEROF(text) - 1, L"%s\r\n%d of %d players\r\non %d machines", engine_names[PIN(game->engine_type, 0, 5)],
-			game->player_count, game->maximum_player_count, game->machine_count);
-		text[NUMBEROF(text) - 1] = 0;
-		text_set_length(named(description, "lobby_game_data", 0), text, LOBBY_TEXT_LENGTH);
+		usnprintf(players, NUMBEROF(players) - 1, L"%d / %d", game->player_count, game->maximum_player_count);
+		players[NUMBEROF(players) - 1] = 0;
+		usnprintf(machines, NUMBEROF(machines) - 1, L"%d", game->machine_count);
+		machines[NUMBEROF(machines) - 1] = 0;
+		values[0] = engine_names[PIN(game->engine_type, 0, 5)];
+		values[1] = players;
+		values[2] = machines;
+		values[3] = game->open ? L"Joinable" : L"Not joinable";
+		lobby_info_show(description, labels, values, NUMBEROF(labels));
+		text_set(named(description, "lobby_note", 0), L"");
 		ustrncpy(name, game->game_name, NUMBEROF(game->game_name));
 		name[NUMBEROF(game->game_name)] = 0;
 		/* (the text box does not wrap: lines of up to 28 characters) */
