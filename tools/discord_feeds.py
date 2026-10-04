@@ -8,10 +8,10 @@
         DISCORD_SERVERS_MESSAGE  the message to edit; empty posts a new one
                                  and prints its ID, for the repository variable
 
-  discord_feeds.py release <tag> <notes file> <zip>...
-      A release and its changelog, as it is published (release.yml).
+  discord_feeds.py release <tag> <notes file>
+      A release's changelog as plain text, posted silently as it is
+      published (release.yml).
         DISCORD_RELEASES_WEBHOOK  the changelog channel's webhook URL
-        GITHUB_REPOSITORY         owner/name, for the release's links
 
 The server list is what the game's own server browser reads, one game a line,
 tab-separated: invite, name, map, engine, players, maximum players, open,
@@ -48,16 +48,17 @@ CAMPAIGN_MAPS = {
     "c40": "Two Betrayals", "d20": "Keyes", "d40": "The Maw",
 }
 
-# Discord's limits: 4096 characters an embed's description, 1024 a field's value
+# Discord's limits: 4096 characters an embed's description, 2000 a message's text
 DESCRIPTION_LENGTH = 4096
-FIELD_LENGTH = 1024
+MESSAGE_LENGTH = 2000
 
 COLOUR_LIVE = 0x3BA55D
 COLOUR_QUIET = 0x5865F2
 COLOUR_DOWN = 0xED4245
-COLOUR_RELEASE = 0x5865F2
-# (an embed's description holds 4096 characters)
-CHANGELOG_PART_LENGTH = 4000
+
+# a message's flags: no link previews, and no notification (as @silent)
+SUPPRESS_EMBEDS = 1 << 2
+SUPPRESS_NOTIFICATIONS = 1 << 12
 
 
 def request(url, method="GET", body=None):
@@ -172,10 +173,10 @@ def update_servers():
           f"DISCORD_SERVERS_MESSAGE to it.")
 
 
-def changelog_parts(notes, length=CHANGELOG_PART_LENGTH):
-    """the changelog in pieces an embed holds, split between lines"""
+def message_parts(text, length=MESSAGE_LENGTH):
+    """text in pieces a message holds, split between lines"""
     parts, part = [], ""
-    for line in notes.strip().splitlines(keepends=True):
+    for line in text.strip().splitlines(keepends=True):
         if part and len(part) + len(line) > length:
             parts.append(part)
             part = ""
@@ -183,29 +184,35 @@ def changelog_parts(notes, length=CHANGELOG_PART_LENGTH):
     return parts + [part] if part else parts
 
 
-def post_release(tag, notes_path, zips):
-    webhook = os.environ["DISCORD_RELEASES_WEBHOOK"]
-    page = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/releases/tag/{tag}"
-    with open(notes_path, encoding="utf-8") as notes:
-        parts = changelog_parts(notes.read())
-    downloads = "\n".join(f"[{os.path.basename(path)}]({page.replace('/tag/', '/download/')}/{os.path.basename(path)})"
-                          for path in zips)
+def unwrap(markdown):
+    """CHANGELOG.md's paragraphs and list items each on one line, as Discord
+    keeps the file's line breaks rather than flowing the text"""
+    lines = []
+    for line in markdown.splitlines():
+        text = line.strip()
+        starts_block = not text or text.startswith(("- ", "* ", "#")) or text.split(" ", 1)[0].rstrip(".").isdigit()
+        if lines and lines[-1] and not starts_block:
+            lines[-1] += " " + text
+        else:
+            lines.append(line.rstrip())
+    return "\n".join(lines)
 
-    # (a long changelog goes on in further messages, the downloads after its end)
-    for index, part in enumerate(parts):
-        embed = {"description": part, "color": COLOUR_RELEASE}
-        if index == 0:
-            embed.update(title=f"DamnationCE {tag}", url=page)
-        if index == len(parts) - 1 and downloads:
-            embed["fields"] = [{"name": "Downloads", "value": clip(downloads, FIELD_LENGTH), "inline": False}]
-        request(webhook, "POST", {"embeds": [embed], "allowed_mentions": {"parse": []}})
+
+def post_release(tag, notes_path):
+    webhook = os.environ["DISCORD_RELEASES_WEBHOOK"]
+    with open(notes_path, encoding="utf-8") as notes:
+        text = f"**DamnationCE {tag}**\n" + unwrap(notes.read())
+    # (a long changelog goes on in further messages)
+    for part in message_parts(text):
+        request(webhook, "POST", {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS,
+                                  "allowed_mentions": {"parse": []}})
 
 
 def main():
     if sys.argv[1:2] == ["servers"]:
         update_servers()
-    elif sys.argv[1:2] == ["release"] and len(sys.argv) >= 4:
-        post_release(sys.argv[2], sys.argv[3], sys.argv[4:])
+    elif sys.argv[1:2] == ["release"] and len(sys.argv) == 4:
+        post_release(sys.argv[2], sys.argv[3])
     else:
         sys.exit(__doc__)
 

@@ -79,5 +79,5 @@ jobs:
           DISCORD_RELEASES_WEBHOOK: ${{ secrets.DISCORD_RELEASES_WEBHOOK }}
         run: |
           if [ -n "$DISCORD_RELEASES_WEBHOOK" ]; then
-            python3 tools/discord_feeds.py release "$GITHUB_REF_NAME" notes.md release/*.zip
+            python3 tools/discord_feeds.py release "$GITHUB_REF_NAME" notes.md
           fi
