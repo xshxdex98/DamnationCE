@@ -1,5 +1,80 @@
 # Changelog
 
+## 0.2.3
+
+### Co-op
+
+- Everyone in the game, including players who join late, sees cutscenes
+  live through the host's camera. This fixes the pink screen joining
+  players got.
+- Cutscene effects show for everyone: full-screen blur, filters and static,
+  effects the scripts play, and objects the scripts attach, also for players
+  who join late.
+- Scenery and machines the scripts move are where the host has them, and
+  objects that change their look do so for everyone, also for players who
+  join late.
+- Vehicles nobody drives, like the Pelicans on The Silent Cartographer,
+  move smoothly instead of jittering.
+- When a level starts with everyone riding in, the other players watch a
+  teammate in their seat and spawn beside them four seconds after they are
+  on foot.
+- A player with nothing to watch sees the host's view.
+- The host counts everyone's votes to skip a cutscene. The vote opens once
+  the cutscene's checkpoint is saved.
+- Start opens the campaign's pause menu.
+- Split-screen co-op, from OpenCE.
+- Fixed a crash when the level Halo starts: a teleport that finds no room
+  for a player now leaves them where they spawned.
+- The respawn safety check runs twice a second, which is lighter on the
+  host.
+
+### AI and netcode
+
+- Enemies and allies melee, leap, fire in bursts, speak, panic and animate
+  as they do on the host.
+- Shields flare on every machine when they are shot.
+- Units have the host's colors (no more blue Elite on one screen and red on
+  another).
+- Flinches and death animations are the ones the host picked.
+- A second copy of the game on the host's computer gets the host's game
+  state, instead of a purple screen.
+
+### Menus
+
+- Online Games lists games in sortable columns. Backing out of Create Game
+  returns to it.
+- The lobby is drawn in the server browser's style: a column per team,
+  player tags, the game's details, and a large start countdown.
+- The Vanilla theme uses the stock menus again. Co-op or PvP, and stock or
+  Custom Edition maps, are steps in the Map screen's own list, and campaign
+  level pictures fit their frames.
+- The pause menu has Settings and End Game. Quitting from it with the mouse
+  or keyboard no longer crashes.
+- The server browser outlines the selected row, and players who quit are
+  left off the scoreboard.
+- Fixed a crash when switching themes.
+
+### Gameplay, from OpenCE
+
+- In multiplayer, walking over a second weapon picks it up and readies it,
+  as in the campaign.
+- No unarmed grenades or melee from vehicle seats.
+- Enemy names show within the motion sensor's range, with a setting.
+- The shotgun's ammo meter is left-aligned.
+
+### Custom Edition maps
+
+- Protected maps load.
+- Their pause menu has Settings.
+- Sounds set louder than full volume play at the right loudness.
+- Fixed crashes from some particle effects and unknown function types.
+
+### Networking
+
+- LAN searches are answered directly, and every packet keeps the port it
+  came from, so LAN games show up and can be joined.
+- Builds of main offer each newer build as an update.
+
 ## 0.2.2
 
 ### Crash fixes
