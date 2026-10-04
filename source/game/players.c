@@ -944,7 +944,9 @@ boolean any_player_is_dead(
 		player_data);
 	while ((player = (struct player_datum *)data_iterator_next(&iterator)) != NULL)
 	{
-		if (player->unit_index == NONE)
+		/* port: not a co-op player waiting for the first checkpoint, or the
+		checkpoint that lets them in could never be saved */
+		if (player->unit_index == NONE && !players_coop_waiting_to_start(iterator.datum_index))
 			return TRUE;
 	}
 
