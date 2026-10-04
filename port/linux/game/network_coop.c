@@ -1112,6 +1112,7 @@ void network_coop_new_game(
 	csmemset(&host_devices, 0, sizeof(host_devices));
 	csmemset(&client_devices, 0, sizeof(client_devices));
 	csmemset(client_names_differing, 0, sizeof(client_names_differing));
+	csmemset(host_sent_transforms, 0, sizeof(host_sent_transforms));
 	skip_vote_clear();
 	skip_vote.offered = FALSE;
 	skip_vote.voters = 0;
