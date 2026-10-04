@@ -9,6 +9,10 @@ TAG_GROUPS.C
 #include "byte_swapping.h"
 #include "tag_groups.h"
 
+/* port: port/linux/game/custom_edition_cache.c and cache_files.c */
+boolean custom_edition_cache_tags_loaded(void);
+boolean tag_index_is_group(long tag_index, long group_tag);
+
 /* ---------- public code */
 
 long verify_tag_reference(
@@ -17,6 +21,10 @@ long verify_tag_reference(
 	long index;
 
 	match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3055, reference);
+	/* port: a protected Custom Edition map has its tag names replaced and
+	its references' names emptied, so a reference is taken by its index */
+	if (custom_edition_cache_tags_loaded())
+		return tag_index_is_group(reference->index, reference->group_tag) ? reference->index : NONE;
 #ifdef HALO_64BIT
 	index = tag_loaded(reference->group_tag, TAG_REFERENCE_NAME(reference));
 #else
