@@ -2138,9 +2138,10 @@ static boolean player_teleport_internal(
 	else
 	{
 		error(2, "couldn't teleport player into a valid location");
-		/* port: a network co-op player of another machine has no local
-		player to pseudo-kill (the Xbox's halted): it stays where it spawned */
-		if (player->local_player_index != NONE)
+		/* port: only split screen pseudo-kills (its respawn gives the unit back
+		as the local player's, which a network game can't). In a network game
+		the player stays where it is; the Xbox halted for another machine's. */
+		if (player->local_player_index != NONE && game_connection() == _game_connection_local)
 			player_pseudo_kill(player_index, source_unit_index);
 	}
 
