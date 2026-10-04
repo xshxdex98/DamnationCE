@@ -200,7 +200,10 @@ struct distributed_coop_presentation
 	short timer_x;
 	short timer_y;
 	short timer_corner;
-	word pad;
+	/* whether the scripts have the host's camera (camera_control): else a
+	cutscene leaves it with the player, and a client spectates */
+	byte camera_scripted;
+	byte pad;
 	/* the object the camera films (camera_object_get) and the camera's
 	offset from it: a client puts its camera by its own copy, which its
 	timing may have a tick from the host's */
@@ -350,8 +353,9 @@ struct distributed_coop_skip_vote_message
 static struct
 {
 	boolean cinematic_started;
-	/* showing the host's camera to a player with nothing else to look at */
-	boolean following_host;
+	/* looking through the host's camera: its scripted cutscene camera, or
+	its view for a player with nothing else to look at */
+	boolean host_camera;
 	long heard_time;
 	long fade_start_time;
 } coop_presentation;
@@ -977,6 +981,7 @@ static void host_presentation(
 	else
 		presentation->camera_object_index = NONE;
 
+	presentation->camera_scripted = (byte)(*director_camera_scripted != FALSE);
 	SET_FLAG(presentation->flags, _presentation_skippable_bit, skip_vote.offered);
 	presentation->skip_votes = (byte)MIN(skip_vote.votes, 255);
 	presentation->skip_voters = (byte)MIN(skip_vote.voters, 255);
@@ -1002,8 +1007,17 @@ static void client_cinematic_end(
 	if (!coop_presentation.cinematic_started)
 		return;
 	coop_presentation.cinematic_started = FALSE;
-	director_script_camera(FALSE);
 	cinematic_stop();
+}
+
+/* client: looks through the host's camera, or with its own */
+static void client_host_camera_set(
+	boolean host_camera)
+{
+	if (coop_presentation.host_camera == host_camera)
+		return;
+	coop_presentation.host_camera = host_camera;
+	director_script_camera(host_camera);
 }
 
 static void client_apply_hud(
@@ -1625,11 +1639,7 @@ void network_coop_client_tick(
 	if (game_time_get() - coop_presentation.heard_time > PRESENTATION_SILENCE_TICKS)
 	{
 		client_cinematic_end();
-		if (coop_presentation.following_host)
-		{
-			coop_presentation.following_host = FALSE;
-			director_script_camera(FALSE);
-		}
+		client_host_camera_set(FALSE);
 	}
 	if (!network_coop_skip_offered())
 		skip_vote.voted = FALSE;
@@ -1872,29 +1882,24 @@ void network_coop_handle_presentation(
 	if (cinematic && !coop_presentation.cinematic_started && !cinematic_in_progress())
 	{
 		cinematic_start();
-		director_script_camera(TRUE);
 		coop_presentation.cinematic_started = TRUE;
-		coop_presentation.following_host = FALSE;
 	}
 	else if (!cinematic)
 	{
 		client_cinematic_end();
 	}
-	/* A player with no unit and no living teammate to watch (waiting for the
-	level's first checkpoint, with the host's unit unseen) would look out of
-	the world from a dead camera at the origin: it sees the host's view. */
-	if (!coop_presentation.cinematic_started &&
-		coop_spectate_nothing_to_watch(0) != coop_presentation.following_host)
-	{
-		coop_presentation.following_host = !coop_presentation.following_host;
-		director_script_camera(coop_presentation.following_host);
-	}
-	if (coop_presentation.cinematic_started || coop_presentation.following_host)
+	/* The host's camera when its scripts film the cutscene. A cutscene that
+	leaves the camera with the player (riding a Pelican) is spectated. A
+	player with no unit and no living teammate to watch would look out of the
+	world from a dead camera at the origin, so it sees the host's view too. */
+	client_host_camera_set((coop_presentation.cinematic_started && presentation->camera_scripted) ||
+		coop_spectate_nothing_to_watch(0));
+	if (coop_presentation.cinematic_started)
+		cinematic_show_letterbox(TEST_FLAG(presentation->flags, _presentation_letterbox_bit));
+	if (coop_presentation.host_camera)
 	{
 		real_vector3d forward, up;
 
-		if (coop_presentation.cinematic_started)
-			cinematic_show_letterbox(TEST_FLAG(presentation->flags, _presentation_letterbox_bit));
 		distributed_vector_unpack(&presentation->camera_forward, DISTRIBUTED_UNIT_SCALE, &forward);
 		distributed_vector_unpack(&presentation->camera_up, DISTRIBUTED_UNIT_SCALE, &up);
 		real_point3d position = presentation->camera_position;
