@@ -702,6 +702,12 @@ boolean cache_files_map_plays_multiplayer(
 	build[0] = 0;
 	if (!map_name || !map_name[0])
 		return TRUE;
+	/* port: a Halo Custom Edition map is converted for this build as it
+	loads (port/linux/game/custom_edition_cache.c): its header's build is
+	Halo PC's, not one to check, and reading it here as an Xbox cache's
+	only logged that it was refused */
+	if (custom_edition_cache_playable(tag_name_strip_path(map_name)))
+		return TRUE;
 	snprintf(path, sizeof(path), "%s%s.map", cache_files_map_directory(), tag_name_strip_path(map_name));
 	file = CreateFileA(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
 	if (file != INVALID_HANDLE_VALUE)

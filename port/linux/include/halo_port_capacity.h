@@ -39,10 +39,13 @@ The texture cache holds the textures being drawn in 16 KB pages, 22 MB of
 them on the Xbox, which Xbox maps were made to fit. Halo Custom Edition maps
 were made for Halo PC, which has no such bound: a frame of
 beavercreek_halo3.yelo draws more than 22 MB of textures, and a texture that
-does not fit is drawn as the default one. The native builds' cache is twice
-the Xbox's; with that map loaded 52 MB of the memory window were free. */
+does not fit is drawn as the default one ("YOU GOT STABBED" in debug.txt).
+foundation@ce's Reach grenade alone is a 5.3 MB texture, which a 44 MB
+cache could not place among the others. The native builds' cache is 64 MB;
+with a 44 MB one and beavercreek_halo3.yelo loaded, 52 MB of the memory
+window were free, so about 32 MB are left. */
 
-#define HALO_PORT_TEXTURE_CACHE_PAGE_COUNT 0xB00 /* (0x580) */
+#define HALO_PORT_TEXTURE_CACHE_PAGE_COUNT 0x1000 /* (0x580) */
 #define HALO_PORT_TEXTURE_CACHE_SIZE (HALO_PORT_TEXTURE_CACHE_PAGE_COUNT*0x4000) /* (0x1600000) */
 
 /* ---------- objects */

@@ -704,7 +704,7 @@ every layout used was then checked against the sample maps.
 - **Channel orders are per texture.** The multipurpose maps and meters also
   drawn another way keep Halo PC's channels (above); only the uses found in
   model shaders and HUD interfaces are looked at.
-- **The texture cache** holds 44 MB; a map that draws more in a frame is
+- **The texture cache** holds 64 MB; a map that draws more in a frame is
   drawn with default textures where they do not fit, and the game reports
   it (`YOU GOT STABBED`).
 - **Silenced sounds still log.** Playing a sound that could not be decoded
