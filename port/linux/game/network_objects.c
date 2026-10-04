@@ -332,11 +332,14 @@ static struct
 } objects_host_inventories[MAXIMUM_TRACKED_OBJECTS];
 /* ... each client machine, found once a tick: where its players' living
 units are, those units, and the vehicles they drive (with the player's
-absolute index) */
+absolute index); and where every player's living unit is, for a machine
+with none (dead or joining, it watches one of them) */
 static struct
 {
 	short count;
 	long indices[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
+	short player_unit_count;
+	real_point3d player_unit_origins[MAXIMUM_TRACKED_PLAYERS];
 	struct
 	{
 		short unit_count;
@@ -1208,8 +1211,24 @@ static void distributed_host_find_viewers(
 {
 	short machine_number;
 
+	struct data_iterator iterator;
+	struct player_datum *player;
+
 	objects_host_viewers.count = distributed_client_machines(objects_host_viewers.indices,
 		HALO_PORT_MAXIMUM_NETWORK_MACHINES);
+	objects_host_viewers.player_unit_count = 0;
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL &&
+		objects_host_viewers.player_unit_count < MAXIMUM_TRACKED_PLAYERS)
+	{
+		long unit_index = distributed_living_unit(player);
+
+		if (unit_index != NONE)
+		{
+			object_get_origin(unit_index,
+				&objects_host_viewers.player_unit_origins[objects_host_viewers.player_unit_count++]);
+		}
+	}
 	for (machine_number = 0; machine_number < objects_host_viewers.count; machine_number++)
 	{
 		long *player_list = machine_get_player_list(objects_host_viewers.indices[machine_number]);
@@ -1241,19 +1260,31 @@ static void distributed_host_find_viewers(
 	}
 }
 
-/* how often (ticks) the host sends that client machine an object where it
-is, moving: by its nearest player; every tick to one with none in the
-world (dead, it watches anyone) */
+/* How often (ticks) the host sends that client machine an object where it
+is, moving: by its nearest player. A machine with none in the world (dead
+or joining) watches one of the others, so by the nearest of every player:
+sending it every moving object every tick, as before, flooded it on a
+campaign level and threw everything it saw out of step. */
 static short distributed_host_object_period(
 	short machine_number,
 	real_point3d const *position)
 {
+	short count = objects_host_viewers.machines[machine_number].unit_count;
+	real_point3d const *origins = objects_host_viewers.machines[machine_number].origins;
 	real nearest = -1.0f;
 	short index;
 
-	for (index = 0; index < objects_host_viewers.machines[machine_number].unit_count; index++)
+	if (!count)
 	{
-		real_point3d const *origin = &objects_host_viewers.machines[machine_number].origins[index];
+		count = objects_host_viewers.player_unit_count;
+		origins = objects_host_viewers.player_unit_origins;
+	}
+	/* (nobody in the world at all: what is left moving matters little) */
+	if (!count)
+		return MAXIMUM_OBJECT_PERIOD_TICKS;
+	for (index = 0; index < count; index++)
+	{
+		real_point3d const *origin = &origins[index];
 		real dx = position->x - origin->x;
 		real dy = position->y - origin->y;
 		real dz = position->z - origin->z;
