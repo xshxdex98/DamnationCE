@@ -1,7 +1,7 @@
 /*
 NETWORK_COOP.C
 
-What a co-op game's host shows its players, on every machine
+What a co-op game's host shows and plays its players, on every machine
 (port/linux/NETCODE.md). A network game on a campaign map, which no game
 engine runs, is co-op, and only its host runs the map's scripts (game.c):
 the cinematics they start, the camera they move and the screen fades they
@@ -12,17 +12,24 @@ fade. A client starts the cinematic as the host did (its players' input off,
 the letterbox), sees through the host's camera until it ends, and fades as
 the host faded. A client that hears nothing for a while ends the cinematic
 it started, rather than keep its players still for good.
+
+The sounds the scripts play (game_sound.c: dialogue, music, ambience) go to
+the clients too, each in a few ticks' messages in case one is lost, with a
+number a client plays each once by.
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
+#include "cache/cache_files.h"
 #include "camera/camera_scripting.h"
 #include "camera/observer.h"
 #include "cutscene/cinematics.h"
 #include "effects/player_effects.h"
 #include "game/game.h"
 #include "game/game_engine.h"
+#include "sound/game_sound.h"
+#include "sound/sound_definitions.h"
 #include "network_distributed.h"
 
 /* ---------- constants */
@@ -33,6 +40,9 @@ enum
 	PRESENTATION_SILENCE_TICKS = 2 * TICKS_PER_SECOND,
 	/* the field of view, in radians, as a word */
 	FIELD_OF_VIEW_SCALE = 10000,
+	/* the scripts' sounds kept to send, and in how many ticks' messages each goes */
+	MAXIMUM_QUEUED_SOUNDS = 32,
+	SOUND_SENDS = 3,
 };
 
 /* struct distributed_coop_presentation flags */
@@ -67,6 +77,23 @@ struct distributed_coop_presentation_message
 	struct distributed_coop_presentation presentation;
 };
 
+/* a sound the host's scripts played (network_coop_note_sound's kinds) */
+struct distributed_coop_sound
+{
+	byte kind;
+	byte pad;
+	word number;
+	long definition_index;
+	long object_index;
+	real scale;
+};
+
+struct distributed_coop_sounds_message
+{
+	struct distributed_message_header header;
+	struct distributed_coop_sound sounds[MAXIMUM_QUEUED_SOUNDS];
+};
+
 /* ---------- globals */
 
 /* (a client) the cinematic it started for the host's, when it last heard,
@@ -78,12 +105,42 @@ static struct
 	long fade_start_time;
 } coop_presentation;
 
+/* (the host) the scripts' sounds not yet sent SOUND_SENDS times, and the
+next one's number; (a client) the number of the last played */
+static struct
+{
+	struct distributed_coop_sound sounds[MAXIMUM_QUEUED_SOUNDS];
+	short sends[MAXIMUM_QUEUED_SOUNDS];
+	short count;
+	word next_number;
+	word played_number;
+	boolean played_any;
+} coop_sounds;
+
 /* ---------- private code */
 
 static boolean coop_game(
 	void)
 {
 	return !game_engine_running();
+}
+
+/* whether a tag index the host sent is a tag of the group */
+static boolean tag_of_group(
+	long tag_index,
+	unsigned long group_tag)
+{
+	struct tag_iterator iterator;
+	long index;
+
+	tag_iterator_new(&iterator, group_tag);
+	while ((index = tag_iterator_next(&iterator)) != NONE)
+	{
+		if (index == tag_index)
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 static void client_cinematic_end(
@@ -102,6 +159,32 @@ void network_coop_new_game(
 	void)
 {
 	csmemset(&coop_presentation, 0, sizeof(coop_presentation));
+	csmemset(&coop_sounds, 0, sizeof(coop_sounds));
+}
+
+/* (the host) a sound its scripts played (game_sound.c), for its clients */
+void network_coop_note_sound(
+	short kind,
+	long definition_index,
+	long object_index,
+	real scale)
+{
+	struct distributed_coop_sound *sound;
+
+	if (game_connection() != _game_connection_network_server || !coop_game() ||
+		coop_sounds.count == MAXIMUM_QUEUED_SOUNDS)
+	{
+		return;
+	}
+	sound = &coop_sounds.sounds[coop_sounds.count];
+	sound->kind = (byte)kind;
+	sound->pad = 0;
+	sound->number = ++coop_sounds.next_number;
+	sound->definition_index = definition_index;
+	sound->object_index = object_index;
+	sound->scale = scale;
+	coop_sounds.sends[coop_sounds.count] = 0;
+	coop_sounds.count++;
 }
 
 /* (the host, after each tick) its presentation, to every client */
@@ -137,6 +220,26 @@ void network_coop_host_tick(
 			(word)PIN(camera->field_of_view * FIELD_OF_VIEW_SCALE + 0.5f, 1, UNSIGNED_SHORT_MAX);
 	}
 	distributed_send(&message, _distributed_message_coop_presentation, 1, (word)sizeof(message), _distributed_to_clients);
+
+	/* the scripts' sounds, each in SOUND_SENDS ticks' messages */
+	if (coop_sounds.count)
+	{
+		struct distributed_coop_sounds_message sounds;
+		short index;
+
+		csmemcpy(sounds.sounds, coop_sounds.sounds, coop_sounds.count * sizeof(sounds.sounds[0]));
+		distributed_send(&sounds, _distributed_message_coop_sounds, coop_sounds.count,
+			(word)(sizeof(sounds.header) + coop_sounds.count * sizeof(sounds.sounds[0])), _distributed_to_clients);
+		for (index = 0; index < coop_sounds.count; index++)
+		{
+			if (++coop_sounds.sends[index] < SOUND_SENDS)
+				continue;
+			coop_sounds.sounds[index] = coop_sounds.sounds[coop_sounds.count - 1];
+			coop_sounds.sends[index] = coop_sounds.sends[coop_sounds.count - 1];
+			coop_sounds.count--;
+			index--;
+		}
+	}
 }
 
 /* (a client, after each tick) the cinematic it started ended if the host
@@ -155,6 +258,54 @@ word network_coop_presentation_entry_size(
 	void)
 {
 	return sizeof(struct distributed_coop_presentation);
+}
+
+word network_coop_sound_entry_size(
+	void)
+{
+	return sizeof(struct distributed_coop_sound);
+}
+
+/* (a client) the host's scripts' sounds, each played once, in their order */
+void network_coop_handle_sounds(
+	void const *entries,
+	short count)
+{
+	struct distributed_coop_sound const *sounds = entries;
+	short index;
+
+	if (!coop_game())
+		return;
+	for (index = 0; index < count; index++)
+	{
+		struct distributed_coop_sound const *sound = &sounds[index];
+		long object_index = sound->object_index != NONE && network_objects_client_has(sound->object_index) ?
+			sound->object_index : NONE;
+		real scale = PIN(sound->scale, 0.0f, 1.0f);
+
+		/* (a number not after the last played is one already played) */
+		if (coop_sounds.played_any && (short)(sound->number - coop_sounds.played_number) <= 0)
+			continue;
+		coop_sounds.played_number = sound->number;
+		coop_sounds.played_any = TRUE;
+		switch (sound->kind)
+		{
+		case _coop_sound_impulse:
+			if (tag_of_group(sound->definition_index, SOUND_DEFINITION_TAG))
+				scripted_sound_new(sound->definition_index, object_index, scale);
+			break;
+		case _coop_sound_looping_start:
+			if (tag_of_group(sound->definition_index, LOOPING_SOUND_DEFINITION_TAG))
+				scripted_looping_sound_start(sound->definition_index, object_index, scale);
+			break;
+		case _coop_sound_looping_stop:
+			if (tag_of_group(sound->definition_index, LOOPING_SOUND_DEFINITION_TAG))
+				scripted_looping_sound_stop(sound->definition_index);
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 /* (a client) the host's presentation, shown here */
