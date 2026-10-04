@@ -76,9 +76,8 @@ def parse_games(text):
         if len(fields) < 8 or len(fields[0]) != 64:
             continue
         game = {"name": fields[1], "map": fields[2], "engine": int(fields[3]), "players": int(fields[4]),
-                "maximum_players": int(fields[5]), "open": fields[6] != "0", "score_limit": 0, "teams": False}
+                "maximum_players": int(fields[5]), "open": fields[6] != "0", "teams": False}
         if len(fields) >= 11:
-            game["score_limit"] = int(fields[9] or 0)
             game["teams"] = fields[10] != "0"
         games.append(game)
     return games
