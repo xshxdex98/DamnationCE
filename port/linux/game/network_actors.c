@@ -40,8 +40,9 @@ unit the same way it kills a player's.
 
 enum
 {
-	/* AI units tracked at once */
-	MAXIMUM_NETWORK_ACTORS = 128,
+	/* AI units tracked at once: every actor (actors.h allows 256) and the
+	units the cutscenes' recorded animations drive */
+	MAXIMUM_NETWORK_ACTORS = 288,
 	MAXIMUM_ENTRIES_PER_MESSAGE = 64,
 	/* A client keeps applying a control for this long after the host last
 	sent one. After that the unit is left alone: the actor let go of it, or
@@ -421,9 +422,12 @@ void network_actors_note_impulse(
 	actor = host_actor_for(unit_index);
 	if (!actor)
 		return;
+	/* (never 0, which a client's new entry has as played) */
+	if (++host_impulse_number == 0)
+		host_impulse_number = 1;
 	actor->impulse = animation_impulse;
 	actor->impulse_sends = IMPULSE_REPEAT_TICKS;
-	actor->impulse_number = ++host_impulse_number;
+	actor->impulse_number = host_impulse_number;
 	actor->impulse_aligned = alignment_vector != NULL;
 	if (alignment_vector)
 		actor->impulse_alignment = *alignment_vector;
