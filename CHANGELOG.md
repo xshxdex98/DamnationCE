@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2
+
+- Fixed a crash about four seconds into setting up any network game (LAN or
+  internet, co-op or PvP), for example while picking a map. It came in with
+  0.2.0.
+
 ## 0.2.1
 
 Finishes co-op. Host and players all need 0.2.1; it doesn't mix with 0.2.0
