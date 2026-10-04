@@ -205,7 +205,8 @@ changed:
   as shader type 7, so its water, glass, meter and plasma shaders are types
   8 to 11 where this build has 7 to 10 (and would draw a Custom Edition glass
   shader as meter, and so on, unnoticed). Every shader gets this build's
-  number; a shader whose type is not its group's is refused.
+  number for its group; a type field saying otherwise (as map protection
+  leaves them) is counted and given the group's.
 - **Transparent chicago extended shaders** (`scex`) become transparent
   chicago shaders (`schi`): the two layouts agree up to the maps, of which
   `scex` has two sets, for four and for two texture stages; the four-stage
@@ -355,7 +356,8 @@ silences them.
   present, absent, and substituted; resource maps of each type; the `--maps`
   option.
 - Conversion: every shader group's type; chicago extended shaders with and
-  without four-stage maps; a shader with another group's type (refused);
+  without four-stage maps; a shader with another group's type (given its
+  group's);
   bitmaps and sound permutations naming their own tags; sound header fields
   taken from `sounds.map`; an Ogg Vorbis sound made unplayable; upgraded
   script nodes reduced, stock ones kept, too many refused; animation overlays
