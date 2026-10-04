@@ -2,7 +2,7 @@
 windows_build.py, macos_build.py; port/android/app/build.gradle reads the
 same):
 
-  - VERSION, in the repository's root, is the version being made: 0.5.0b.
+  - VERSION, in the repository's root, is the version being made.
   - A release is built by GitHub Actions from its tag, v<VERSION>
     (tools/ci_build.py gives HALO_VERSION, and HALO_RELEASE_BUILD=1, the
     only builds whose self-updater looks for newer releases).

@@ -6,8 +6,8 @@ name: Release
 #
 # The tag must be VERSION's. build.yml makes the release builds, versioned
 # and zipped as the game's updater names them, and this publishes them as
-# the tag's release ("DamnationCE v0.1.0"), with notes from the commits
-# since the last one.
+# the tag's release ("DamnationCE v0.1.0"). The release notes are that
+# version's section of CHANGELOG.md, which must exist.
 on:
   push:
     tags: ["v*"]
@@ -46,6 +46,19 @@ jobs:
     needs: [version, build]
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Release notes
+        run: |
+          version="${{ needs.version.outputs.version }}"
+          # the lines between "## <version>" and the next "## " heading
+          awk -v heading="## $version" '$0 == heading { found = 1; next } found && /^## / { exit } found' \
+            CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::CHANGELOG.md has no section for $version"
+            exit 1
+          fi
+
       - uses: actions/download-artifact@v4
         with:
           pattern: damnationce-*-release-zip
@@ -58,4 +71,4 @@ jobs:
         run: |
           ls -l release
           gh release create "$GITHUB_REF_NAME" release/*.zip --repo "$GITHUB_REPOSITORY" \
-            --title "DamnationCE $GITHUB_REF_NAME" --generate-notes
+            --title "DamnationCE $GITHUB_REF_NAME" --notes-file notes.md
