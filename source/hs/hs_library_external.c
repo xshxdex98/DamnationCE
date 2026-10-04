@@ -168,8 +168,11 @@ void hs_print(
 {
 	/* port: the text is printed as an argument, not used as the format: the
 	Xbox passed it as the format, so a '%' in a map's script read arguments
-	that were never passed */
-	terminal_printf(global_real_argb_green, "%s", message);
+	that were never passed. A scenario script's print is the game's chatter,
+	which the Xbox never showed: on screen as config.toml's game.console_log
+	says; print typed at the console, always. */
+	if (terminal_shows(terminal_command_running ? _terminal_message_serious : _terminal_message_chatter))
+		terminal_printf(global_real_argb_green, "%s", message);
 
 	return;
 }

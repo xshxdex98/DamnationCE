@@ -281,6 +281,7 @@ symbols in this file:
 #include "saved games/game_state.h"
 #include "text/draw_string.h"
 #include "cseries/errors.h"
+#include "interface/terminal.h"
 #include "main/console.h"
 #include "game/game.h"
 #ifdef HALO_64BIT
@@ -2140,8 +2141,10 @@ void hs_evaluate_inspect(
 		if (hs_type_inspectors[expression->type])
 		{
 			hs_type_inspectors[expression->type](expression->type, *value, string);
-			/* port: printed as an argument, not used as the format (see hs_print) */
-			console_printf(FALSE, "%s", string);
+			/* port: printed as an argument, not used as the format, and as
+			chatter (see hs_print) */
+			if (terminal_shows(terminal_command_running ? _terminal_message_serious : _terminal_message_chatter))
+				console_printf(FALSE, "%s", string);
 		}
 
 		hs_return(thread_index, 0);
