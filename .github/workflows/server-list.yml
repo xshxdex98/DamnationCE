@@ -29,8 +29,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: tools/discord_feeds.py
+          sparse-checkout: |
+            tools/discord_feeds.py
+            tools/discord_card.py
+            port/assets/fonts/Rajdhani-*.ttf
           sparse-checkout-cone-mode: false
+
+      # (Pillow draws the list's card)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install --quiet pillow
 
       - name: Update
         env:
