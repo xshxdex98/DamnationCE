@@ -210,6 +210,10 @@ never 0, which any object at the index matches) */
 boolean distributed_real_valid(real value);
 boolean distributed_point_valid(real_point3d const *point, real bound);
 boolean distributed_object_index_valid(long object_index);
+/* whether a tag index from the host really is a tag of that group */
+boolean distributed_tag_of_group(long tag_index, unsigned long group_tag);
+/* the graph's animation, if a graph tag and animation index from the host are valid */
+struct animation *distributed_graph_animation(long animation_graph_index, short animation_index);
 /* ... an orientation's two axes (unpacked): TRUE when they are one long
 and about square, then made exactly so */
 boolean distributed_axes_make_valid(real_vector3d *forward, real_vector3d *up);

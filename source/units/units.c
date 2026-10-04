@@ -697,6 +697,10 @@ symbols in this file:
 units go to the clients' copies (port/linux/game/network_actors.c) */
 void network_actors_note_control(long unit_index, struct unit_control_data const *control_data);
 void network_actors_note_impulse(long unit_index, short animation_impulse, real_vector2d const *alignment_vector);
+void network_actors_note_melee(long unit_index, real_vector2d const *alignment_vector);
+void network_actors_note_leap(long unit_index, real_vector2d const *alignment_vector);
+void network_actors_note_user_animation(long unit_index, long animation_graph_index, short animation_index,
+	boolean interpolate);
 
 /* ---------- constants */
 
@@ -4047,6 +4051,11 @@ boolean unit_start_user_animation(
 						animation_started = TRUE;
 						network_coop_note_unit_animation(unit_index, animation_graph_index, animation_index,
 							interpolate);
+						if (unit->unit.player_index == NONE)
+						{
+							network_actors_note_user_animation(unit_index, animation_graph_index, animation_index,
+								interpolate);
+						}
 					}
 				}
 			}
@@ -4210,6 +4219,9 @@ boolean unit_melee_attack_begin(
 				else
 				{
 					unit->unit.melee_attack_state = 1;
+					/* port: the AI's swing, played on the clients too */
+					if (unit->unit.player_index == NONE)
+						network_actors_note_melee(unit_index, alignment_vector);
 				}
 				result = TRUE;
 			}
@@ -4263,6 +4275,9 @@ boolean unit_leap_begin(
 				{
 					unit_align_facing(unit_index, alignment_vector);
 				}
+				/* port: the AI's leap, played on the clients too */
+				if (unit->unit.player_index == NONE)
+					network_actors_note_leap(unit_index, alignment_vector);
 
 				result = TRUE;
 			}

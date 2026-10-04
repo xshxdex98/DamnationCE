@@ -53,6 +53,8 @@ machine (their datum identifiers need not be).
 
 #include "cseries.h"
 #include "cseries/errors.h"
+#include "cache/cache_files.h"
+#include "models/model_animation_definitions.h"
 #include "game/game.h"
 #include "game/game_globals.h"
 #include "game/players.h"
@@ -665,6 +667,40 @@ boolean distributed_point_valid(
 	real bound)
 {
 	return fabsf(point->x) <= bound && fabsf(point->y) <= bound && fabsf(point->z) <= bound;
+}
+
+/* whether a tag index from the host really is a tag of that group */
+boolean distributed_tag_of_group(
+	long tag_index,
+	unsigned long group_tag)
+{
+	struct tag_iterator iterator;
+	long index;
+
+	tag_iterator_new(&iterator, group_tag);
+	while ((index = tag_iterator_next(&iterator)) != NONE)
+	{
+		if (index == tag_index)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/* the graph's animation, if the graph tag and index are valid */
+struct animation *distributed_graph_animation(
+	long animation_graph_index,
+	short animation_index)
+{
+	struct animation_graph *graph;
+
+	if (!distributed_tag_of_group(animation_graph_index, ANIMATION_GRAPH_TAG))
+		return NULL;
+	graph = animation_graph_definition_get(animation_graph_index);
+	if (animation_index < 0 || animation_index >= graph->animations.count)
+		return NULL;
+
+	return TAG_BLOCK_GET_ELEMENT(&graph->animations, animation_index, struct animation);
 }
 
 boolean distributed_object_index_valid(
