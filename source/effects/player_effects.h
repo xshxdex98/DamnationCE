@@ -56,7 +56,7 @@ void player_effect_screen_fade_out(
 	real green,
 	real blue,
 	short ticks);
-/* port: the screen fade, as a co-op game's host tells its clients */
+/* port: screen fade sync for network co-op */
 void player_effect_port_screen_fade_get(
 	real_rgb_color *color,
 	short *ticks,

@@ -1,28 +1,26 @@
 /*
 NETWORK_ACTORS.C
 
-The host's actors' units on every machine (port/linux/NETCODE.md).
+AI sync (port/linux/NETCODE.md).
 
-Only the host runs the AI (game.c skips ai_update on a client): its actors
-decide where their units go, what they face and shoot at, and give it to
-the units as a player's input is, through unit_control. A client has the
-units (network_objects.c), but until now nothing drove them: they stood
-where the host's corrections put them, never aiming, firing or animating.
+Only the host runs the AI (game.c skips ai_update on clients). An actor
+drives its unit the way a player does, through unit_control. The clients
+have the units (network_objects.c); this file makes them move like the
+host's.
 
-Each tick the host notes the control every actor gives its unit (the hook
-in unit_control), and sends each client those units' controls with their
-state (where they are, what they ride, their shields and health), those
-near the client's players every tick and the others less often, as it
-sends the moving objects. A client gives each unit the latest control it
-has for it, each tick, where the host would have run its actor: the unit
-then moves, aims, fires, throws and melees here as it does on the host,
-through the same code that drives a remote player's unit from the input
-the host relays, and the host's state corrects what drifts. Animation
-impulses (a dive, a leap, a vault) are told with a number that counts
-them, so a client plays each once however many times it hears of it.
+Each tick the host records the control every actor gave its unit (a hook
+in unit_control) and sends it to each client along with the unit's state:
+position, seat, shields and health. Units near a client's players are sent
+every tick, others less often. Each tick a client feeds the latest control
+into unit_control, the same path that drives a remote player's unit, so
+the unit walks, aims, fires, throws and melees as it does on the host. The
+state corrects any drift.
 
-Deaths need nothing here: the host's damage kills a client's copy as it
-kills a player's (network_damage.c).
+Animation impulses (dives, leaps, vaults) are numbered, so a client plays
+each once however many times it receives it.
+
+Deaths need nothing here: network_damage.c kills a client's copy of an AI
+unit the same way it kills a player's.
 */
 
 /* ---------- headers */
@@ -42,17 +40,16 @@ kills a player's (network_damage.c).
 
 enum
 {
-	/* units the host's actors drive at once */
+	/* AI units tracked at once */
 	MAXIMUM_NETWORK_ACTORS = 128,
 	MAXIMUM_ENTRIES_PER_MESSAGE = 64,
-	/* a control is held this long after the host last sent it; past that
-	the unit is left to stand (the host's actor let it go, or the host is
-	silent) */
+	/* A client keeps applying a control for this long after the host last
+	sent one. After that the unit is left alone: the actor let go of it, or
+	the host went quiet. */
 	CONTROL_HELD_TICKS = 2 * TICKS_PER_SECOND,
-	/* an impulse goes in this many of the unit's entries after it happens,
-	in case one is lost */
+	/* an impulse is repeated in this many entries, in case one is lost */
 	IMPULSE_REPEAT_TICKS = 3,
-	/* unit_start_animation_impulse's impulses (units.c, which keeps the count) */
+	/* the number of unit_start_animation_impulse impulses (private to units.c) */
 	NUMBER_OF_UNIT_ANIMATION_IMPULSES = 14,
 	NO_IMPULSE = 0xFF,
 };
@@ -66,11 +63,11 @@ enum
 	_distributed_actor_shield_over_charging_bit,
 	_distributed_actor_camouflaged_bit,
 	_distributed_actor_super_camouflaged_bit,
-	/* the impulse aligns the unit's facing (impulse_alignment) */
+	/* the impulse turns the unit to impulse_alignment */
 	_distributed_actor_impulse_aligned_bit,
 };
 
-/* a unit's facing, aiming and looking vectors travel as yaw and pitch */
+/* facing, aiming and looking vectors are sent as yaw and pitch */
 enum
 {
 	_angle_yaw,
@@ -80,15 +77,15 @@ enum
 
 /* ---------- structures */
 
-/* the host's control of an actor's unit, and the unit's state as the tick
-left it (what struct distributed_unit_state has of a player's) */
+/* an AI unit's control and state at the end of the host's tick (like
+struct distributed_unit_state for players) */
 struct distributed_actor_state
 {
 	long unit_index;
 	long vehicle_index;
 	short seat_index;
 	byte flags;
-	/* counts the unit's animation impulses; NO_IMPULSE for none this entry */
+	/* the impulse's sequence number; impulse is NO_IMPULSE when there is none */
 	byte impulse_number;
 	byte impulse;
 	byte animation_state;
@@ -115,15 +112,14 @@ struct distributed_actor_state_message
 	struct distributed_actor_state states[MAXIMUM_ENTRIES_PER_MESSAGE];
 };
 
-/* (the host) what an actor gave its unit this tick */
+/* host: what an actor gave its unit this tick */
 struct host_actor
 {
 	long unit_index;
-	/* given a control since the last send (the tick's control is noted in
-	game_tick, and sent after it, once the game's time has moved on) */
+	/* got a control since the last send (noted during game_tick, sent after it) */
 	boolean noted;
 	struct unit_control_data control;
-	/* the latest impulse, the entries it goes in yet, and its number */
+	/* the latest impulse, how many more entries carry it, and its number */
 	short impulse;
 	short impulse_sends;
 	byte impulse_number;
@@ -131,13 +127,13 @@ struct host_actor
 	real_vector2d impulse_alignment;
 };
 
-/* (a client) the host's latest word on an actor's unit */
+/* client: the latest the host sent about an AI unit */
 struct client_actor
 {
 	long unit_index;
 	long received_time;
 	struct unit_control_data control;
-	/* the impulse to play, and the number of the last played */
+	/* the impulse to play, and the number of the last one played */
 	short impulse;
 	byte impulse_number;
 	byte played_impulse_number;
@@ -150,8 +146,8 @@ struct client_actor
 
 static struct host_actor host_actors[MAXIMUM_NETWORK_ACTORS];
 static short host_actor_count;
-/* (the host) numbers the impulses of every unit: an entry forgotten and
-made again keeps clear of the number a client last played for the unit */
+/* host: one counter for every unit's impulses, so a unit that drops out of
+the table and comes back can't repeat the number a client last played */
 static byte host_impulse_number;
 
 static struct client_actor client_actors[MAXIMUM_NETWORK_ACTORS];
@@ -179,7 +175,7 @@ static void angles_unpack(
 	vector->k = (real)sin(pitch);
 }
 
-/* a unit's entry in a table, or a free one added for it, or NULL */
+/* the unit's entry, adding one if needed; NULL if the table is full */
 static struct host_actor *host_actor_for(
 	long unit_index)
 {
@@ -216,8 +212,7 @@ static struct client_actor *client_actor_for(
 	return &client_actors[client_actor_count++];
 }
 
-/* whether the unit is still one the host's actors drive: there, alive, no
-player's */
+/* whether the unit exists, is alive, and isn't a player's */
 static boolean actor_unit_valid(
 	long unit_index)
 {
@@ -229,7 +224,7 @@ static boolean actor_unit_valid(
 	return !TEST_FLAG(unit->object.damage_flags, _object_dead_bit) && unit->unit.player_index == NONE;
 }
 
-/* (the host) the entry sent of an actor's unit */
+/* host: builds the entry to send for an AI unit */
 static void actor_state_from_unit(
 	struct host_actor const *actor,
 	struct distributed_actor_state *state)
@@ -287,8 +282,8 @@ static void actor_state_from_unit(
 	distributed_vector_pack(&unit->object.up, DISTRIBUTED_UNIT_SCALE, &state->up);
 }
 
-/* (a client) the entry's control and state, given to its unit; FALSE for
-an entry that says something no unit can be given */
+/* Client: stores the entry's control and applies its state to the unit.
+Returns FALSE for an entry with invalid values. */
 static boolean actor_state_apply(
 	struct distributed_actor_state const *state,
 	long now)
@@ -319,7 +314,7 @@ static boolean actor_state_apply(
 	if (!actor)
 		return TRUE;
 
-	/* the control, for the ticks until the next */
+	/* the control, applied every tick until the next entry */
 	actor->received_time = now;
 	actor->control.animation_state = (char)state->animation_state;
 	actor->control.aiming_speed = (char)state->aiming_speed;
@@ -345,8 +340,8 @@ static boolean actor_state_apply(
 		actor->impulse_alignment.j = (real)sin(yaw);
 	}
 
-	/* the state: the seat, the shields and health, the camouflage, and
-	where it is (a rider is where its vehicle is) */
+	/* the state: seat, shields and health, camouflage, and position (a
+	unit in a vehicle goes where the vehicle goes) */
 	unit = unit_get(state->unit_index);
 	if (TEST_FLAG(state->flags, _distributed_actor_rides_bit))
 	{
@@ -397,7 +392,7 @@ void network_actors_new_game(
 	client_actor_count = 0;
 }
 
-/* (the host) an actor's unit was given this control (unit_control) */
+/* host: unit_control calls this when an actor drives its unit */
 void network_actors_note_control(
 	long unit_index,
 	struct unit_control_data const *control_data)
@@ -413,8 +408,7 @@ void network_actors_note_control(
 	actor->control = *control_data;
 }
 
-/* (the host) an actor's unit began this animation impulse
-(unit_start_animation_impulse) */
+/* host: unit_start_animation_impulse calls this for an AI unit */
 void network_actors_note_impulse(
 	long unit_index,
 	short animation_impulse,
@@ -435,11 +429,10 @@ void network_actors_note_impulse(
 		actor->impulse_alignment = *alignment_vector;
 }
 
-/* (the host, after each tick) to each client the units its actors drove
-this tick: those near the client's players every tick, the others less
-often, and any with a fresh impulse in each of its next
-IMPULSE_REPEAT_TICKS ticks. A unit no actor drove this tick is
-forgotten. */
+/* Host, after each tick: sends each client the AI units driven this tick.
+Units near the client's players go every tick, others less often, and a
+unit with a fresh impulse goes in each of the next IMPULSE_REPEAT_TICKS
+ticks. A unit no actor drove this tick is dropped from the table. */
 void network_actors_host_tick(
 	void)
 {
@@ -500,7 +493,7 @@ word network_actors_entry_size(
 	return sizeof(struct distributed_actor_state);
 }
 
-/* (a client) the host's word on its actors' units */
+/* client: entries from the host */
 void network_actors_handle_states(
 	void const *entries,
 	short count)
@@ -513,8 +506,8 @@ void network_actors_handle_states(
 		actor_state_apply(&states[index], now);
 }
 
-/* (a client, in its tick where the host runs its actors) each actor's unit
-given the control the host last sent for it */
+/* Client: called at the point in the tick where the host runs the AI.
+Drives each AI unit with the last control the host sent. */
 void network_actors_drive(
 	void)
 {

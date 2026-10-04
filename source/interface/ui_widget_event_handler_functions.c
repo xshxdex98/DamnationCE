@@ -5982,10 +5982,10 @@ short ui_widget_port_gametypes(
 	return (short)count;
 }
 
-/* port: a co-op game (port/linux/game/map_screen.c): the campaign map (the
-campaign's level, or a Custom Edition campaign map), at the difficulty, the
-server's, with a gametype no game engine runs (a network game on a campaign
-map is co-op: game.c, players.c); FALSE without a server or such a map */
+/* port: sets up the server for co-op (port/linux/game/map_screen.c): the
+campaign map (stock or Custom Edition), the difficulty, and a gametype
+with no game engine, which is what makes a network game co-op (game.c,
+players.c). Returns FALSE without a server or a valid map. */
 boolean ui_widget_port_cooperative_level_choose(
 	char const *map_name,
 	short difficulty)

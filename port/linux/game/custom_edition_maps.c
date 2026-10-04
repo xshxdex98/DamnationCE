@@ -1,27 +1,27 @@
 /*
 CUSTOM_EDITION_MAPS.C
 
-The Halo Custom Edition maps in the multiplayer menus
-(custom_edition_maps.h).
+Lists Custom Edition maps for the menus (custom_edition_maps.h).
 
-The maps are the Custom Edition caches of multiplayer scenarios in the maps
-folder, then in the Halo Custom Edition install's (custom_edition_cache.h), OpenSauce's ".yelo" maps among them (custom_edition_cache_multiplayer),
-looked for whenever the level list opens. A map is offered under its file's
-name, as the level levels\test\<name>\<name> as the Xbox levels are named:
-the cache file loader finds a map by the last part of its level name. The
-game engine keeps a level name in 63 characters, so a map whose name is
-longer than 25 characters is the level levels\<name>, and one longer than
-56 is left out, as is a map named as one of the Xbox levels, which that
-level already offers.
+Whenever the level list opens, the maps folder and then the Halo Custom
+Edition install's maps folder are scanned for CE caches (.map, and
+OpenSauce's .yelo). Multiplayer maps join the level list; campaign maps
+(solo scenarios) are kept apart for co-op. The stock campaign levels get
+display indices here too, so the menus can show them the same way.
 
-A map's picture is the Windows bitmap <name>.bmp beside it (in its folder), when there is one
-(bmp_files.c): the middle of it with the shape of the menus' level pictures,
-in a texture of its own that is drawn over the whole picture widget. A map
-without one shows the unknown level's picture. A picture is read the first
-time it is drawn, and let go when the maps are looked for again. A map's
-description is the text file <name>.txt beside it, when there is one, with
-its lines as they are written, as the Xbox levels' descriptions are written
-in lines of about 20 characters.
+A map's level name is levels\test\<name>\<name>, like the Xbox levels;
+the cache loader finds a map by the last part. The game engine keeps 63
+characters of a level name, so a name over 25 characters becomes
+levels\<name>, and one over 56 is skipped. A map named like an Xbox level
+is skipped too, since that level is already listed.
+
+Each map can have, beside it in its folder:
+- <name>.bmp, its picture (bmp_files.c). The middle is cropped to the
+  menus' picture shape. It is read the first time it is drawn, and freed
+  when the maps are rescanned. Without one, the unknown level's picture
+  is shown.
+- <name>.txt, its description, line by line (the Xbox descriptions use
+  lines of about 20 characters).
 */
 
 /* ---------- headers */
@@ -46,28 +46,25 @@ in lines of about 20 characters.
 /* ---------- constants */
 
 #define MAXIMUM_CUSTOM_EDITION_MAPS 1024
-/* the Custom Edition campaign maps (co-op games'), and their display indices */
+/* Custom Edition campaign maps, for co-op */
 #define MAXIMUM_CUSTOM_EDITION_CAMPAIGNS 256
 #define FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX 0x5000
-/* room for the level list's Xbox levels
-(ui_widget_event_handler_functions.c offers 13) */
+/* room for the level list's Xbox levels (ui_widget_event_handler_functions.c has 13) */
 #define MAXIMUM_XBOX_LEVELS 16
 
-/* levels\test\<name>\<name> in the 63 characters the game engine's stage
-keeps of a level name (game_engine.c, struct game_engine_stage), or for a
-longer name levels\<name> */
+/* Level names. The game engine keeps 63 characters of one (game_engine.c,
+struct game_engine_stage), so long map names use the short form. */
 #define LEVEL_NAME_FORMAT "levels\\test\\%s\\%s"
 #define LONG_LEVEL_NAME_FORMAT "levels\\%s"
 #define LONGEST_LEVEL_NAME_FORMAT_NAME 25
 #define MAXIMUM_MAP_NAME_LENGTH 56
 
-/* The maps' display indices: beyond every string and frame of the menus'
-tags (the level names are 15 strings, the level pictures 14 frames). */
+/* Display indices for CE multiplayer maps, clear of every string and frame
+index in the menus' tags (15 level names, 14 level pictures). */
 #define FIRST_DISPLAY_INDEX 0x4000
 
-/* The campaign's levels, as the multiplayer menus show a co-op game's: their
-own display indices, below the Custom Edition maps', their names, and their
-pictures the campaign menus' (a frame each, in the levels' order). */
+/* The stock campaign levels, for co-op: their display indices, names, and
+pictures (the campaign menu's, one frame per level in order). */
 #define FIRST_CAMPAIGN_DISPLAY_INDEX 0x3000
 #define CAMPAIGN_LEVEL_PICTURES_TAG_NAME "ui\\shell\\bitmaps\\sp_levels"
 static wchar_t campaign_level_names[NUMBER_OF_SINGLE_PLAYER_LEVELS][32] =
@@ -77,9 +74,9 @@ static wchar_t campaign_level_names[NUMBER_OF_SINGLE_PLAYER_LEVELS][32] =
 };
 static wchar_t campaign_level_description[] = L"A campaign level, played co-op";
 
-/* the level pictures, their shape (the level list's are 140 by 114 of the
-menus' 640 by 480, the lobby's 139 by 113) and their frame of an unknown
-level (ui_widget_game_data_input_functions.c) */
+/* The level pictures tag, the picture shape (140x114 in the menus' 640x480;
+the lobby's is 139x113), and the unknown level's frame
+(ui_widget_game_data_input_functions.c). */
 #define LEVEL_PICTURES_TAG_NAME "ui\\shell\\bitmaps\\mp_map_grafix"
 #define LEVEL_PICTURE_SHAPE_WIDTH 140
 #define LEVEL_PICTURE_SHAPE_HEIGHT 114
@@ -88,13 +85,11 @@ level (ui_widget_game_data_input_functions.c) */
 #define PICTURE_EXTENSION ".bmp"
 /* a 4K screenshot is 25 MB as a bmp file */
 #define MAXIMUM_PICTURE_FILE_BYTES 0x04000000L
-/* the width and height of a picture's texture: about twice the menus'
-level pictures */
+/* picture textures are square, about twice the menus' picture size */
 #define PICTURE_TEXTURE_SIZE 256
 
 #define DESCRIPTION_EXTENSION ".txt"
-/* the bytes of a description file read, and the characters of it kept: the
-menus' descriptions are a few short lines */
+/* descriptions are a few short lines */
 #define MAXIMUM_DESCRIPTION_FILE_BYTES 1024
 #define MAXIMUM_DESCRIPTION_LENGTH 127
 
@@ -108,7 +103,7 @@ enum
 
 struct custom_edition_map
 {
-	/* the name of its file, without the extension, and the maps folder it is in */
+	/* file name without extension, and the folder it was found in */
 	char name[MAXIMUM_MAP_NAME_LENGTH + 1];
 	char folder[32];
 	/* saved_game_file_remember_last_used_multiplayer_map writes
@@ -125,10 +120,10 @@ struct custom_edition_maps_globals
 	boolean looked_for;
 	short map_count;
 	struct custom_edition_map maps[MAXIMUM_CUSTOM_EDITION_MAPS];
-	/* the campaign maps, which no level list offers */
+	/* campaign maps, kept out of the level list */
 	short campaign_count;
 	struct custom_edition_map campaigns[MAXIMUM_CUSTOM_EDITION_CAMPAIGNS];
-	/* the latest level list: its Xbox levels, then the maps' level names */
+	/* the latest level list: the Xbox levels, then the CE maps */
 	short xbox_level_count;
 	char *levels[MAXIMUM_XBOX_LEVELS + MAXIMUM_CUSTOM_EDITION_MAPS];
 };
@@ -137,8 +132,8 @@ struct custom_edition_maps_globals
 
 static struct custom_edition_maps_globals custom_edition_maps_globals;
 
-/* Halo PC's own multiplayer maps, which the Xbox did not have, and their
-names in its menus (its ui.map's mp_map_list) */
+/* Halo PC's own multiplayer maps (not on the Xbox), with their menu names
+from ui.map's mp_map_list. They are listed as VANILLA. */
 static struct
 {
 	char const *file;
@@ -149,8 +144,7 @@ static struct
 	{ "infinity", L"Infinity" }, { "timberland", L"Timberland" }, { "gephyrophobia", L"Gephyrophobia" },
 };
 
-/* the description of a map without a description file, in the manner of
-the Xbox levels' */
+/* for a map without a description file */
 static wchar_t const default_description[] = L"Halo Custom\r\nEdition map";
 
 /* ---------- private code */
@@ -163,7 +157,8 @@ static void custom_edition_maps_forget(
 
 	for (map_index = 0; map_index < globals->map_count; map_index++)
 	{
-		bitmap_delete(globals->maps[map_index].picture);
+		if (globals->maps[map_index].picture)
+			bitmap_delete(globals->maps[map_index].picture);
 	}
 	for (map_index = 0; map_index < globals->campaign_count; map_index++)
 	{
@@ -193,8 +188,7 @@ static boolean xbox_level_named(
 	return FALSE;
 }
 
-/* the file name as the menus show it: "beavercreek_halo3" as
-"Beavercreek Halo3" */
+/* the map's index in stock_maps, or NONE */
 static short stock_map_index(
 	char const *name)
 {
@@ -208,8 +202,9 @@ static short stock_map_index(
 	return NONE;
 }
 
-/* a map's name in the menus: Halo PC's for its own maps, else its file's,
-words split at underscores and capitalized */
+/* A map's menu name: Halo PC's name for its own maps, otherwise the file
+name with underscores as spaces and words capitalized ("beavercreek_halo3"
+becomes "Beavercreek Halo3"). */
 static void display_name_make(
 	char const *name,
 	wchar_t *display_name)
@@ -243,11 +238,9 @@ static void display_name_make(
 	return;
 }
 
-/* Reads the description of `map` from the text file <name>.txt beside it:
-its lines, ended as the menus' strings end theirs, with tabs as spaces, each
-character beyond printable ASCII as a '?', and at most
-MAXIMUM_DESCRIPTION_LENGTH characters. A map without one, or with an empty
-one, has the default description. */
+/* Reads <name>.txt into map->description: line ends become \r\n (as in the
+menus' strings), tabs become spaces, and non-ASCII characters become '?'.
+A missing or empty file gives the default description. */
 static void custom_edition_map_description_read(
 	struct custom_edition_map *map)
 {
@@ -293,7 +286,7 @@ static void custom_edition_map_description_read(
 		}
 		else if (character >= 0xC0)
 		{
-			/* the first byte of a character UTF-8 writes in several */
+			/* the lead byte of a multi-byte UTF-8 character */
 			map->description[length++] = '?';
 		}
 	}
@@ -314,9 +307,9 @@ static void custom_edition_map_description_read(
 	return;
 }
 
-/* Adds the map the file `name`.`extension` of the maps folder holds, when it
-is a Custom Edition multiplayer map not added yet (as a .map and a .yelo of
-one name are, which the loader reads the .map of). */
+/* Adds the file `name`.`extension` from `folder` if it is a CE map that
+isn't listed yet. A .map and a .yelo with the same name count once (the
+loader reads the .map). */
 static void custom_edition_map_add(
 	char const *folder,
 	char const *name,
@@ -349,7 +342,7 @@ static void custom_edition_map_add(
 	{
 		return;
 	}
-	/* (a campaign map, for co-op games, else a multiplayer one, else neither) */
+	/* campaign maps go to co-op; anything that isn't multiplayer either is skipped */
 	campaign = custom_edition_cache_campaign(name);
 	if (!campaign && !custom_edition_cache_multiplayer(name))
 	{
@@ -431,7 +424,7 @@ static void custom_edition_maps_look_for(
 		return;
 	}
 
-	/* (the game's folder first: a map in both is the game's) */
+	/* the game's own folder first, so its copy wins */
 	for (folder_index = 0; folder_index < NUMBEROF(folders); folder_index++)
 	{
 		file_reference_create_from_path(&directory, folders[folder_index], TRUE);
@@ -451,8 +444,8 @@ static void custom_edition_maps_look_for(
 	return;
 }
 
-/* The picture of `map` as a texture, or NULL when it has none that can be
-shown (which is logged). */
+/* Loads the map's picture as a texture. Returns NULL if it has none, or if
+it can't be shown (logged). */
 static struct bitmap_data *custom_edition_map_picture_read(
 	struct custom_edition_map const *map)
 {
@@ -475,7 +468,7 @@ static struct bitmap_data *custom_edition_map_picture_read(
 		size <= MAXIMUM_PICTURE_FILE_BYTES &&
 		fseek(stream, 0, SEEK_SET) == 0)
 	{
-		/* one more byte, so that an empty file is not a failed allocation */
+		/* +1 so an empty file doesn't look like a failed allocation */
 		file = malloc((size_t)size + 1);
 		if (file && fread(file, 1, (size_t)size, stream) != (size_t)size)
 		{
@@ -521,7 +514,7 @@ static struct bitmap_data *custom_edition_map_picture_read(
 	return bitmap;
 }
 
-/* the map shown with `display_index`, or NULL */
+/* the CE map with this display index, or NULL */
 static struct custom_edition_map *custom_edition_map_get(
 	short display_index)
 {
@@ -534,7 +527,7 @@ static struct custom_edition_map *custom_edition_map_get(
 	return map_index >= 0 && map_index < globals->map_count ? &globals->maps[map_index] : NULL;
 }
 
-/* the campaign level shown with `display_index`, or NONE */
+/* the stock campaign level with this display index, or NONE */
 static short campaign_level_get(
 	short display_index)
 {
@@ -543,8 +536,8 @@ static short campaign_level_get(
 	return level >= 0 && level < NUMBER_OF_SINGLE_PLAYER_LEVELS ? level : NONE;
 }
 
-/* the campaign level a level name names (by its file's name: levels\a10\a10
-names the first), or NONE */
+/* the stock campaign level a level name refers to (levels\a10\a10 is the
+first), or NONE */
 static short campaign_level_from_name(
 	char const *level_name)
 {

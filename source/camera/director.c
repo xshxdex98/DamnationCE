@@ -714,9 +714,8 @@ static void director_choose_camera_game(
 			director_choose_game_perspective(local_player_index, initialize);
 			if (use_dead_camera)
 			{
-				/* port: a dead player of a co-op game over the network
-				watches a living teammate (port/linux/game/coop_spectate.c);
-				with none, its own body as the campaign's does */
+				/* port: a dead network co-op player watches a living teammate
+				(port/linux/game/coop_spectate.c), or its own body if nobody is alive */
 				long watched_unit_index = coop_spectating() ? coop_spectate_unit(local_player_index) : NONE;
 
 				if (director->camera_proc != (director_camera_update_proc)dead_camera_update ||

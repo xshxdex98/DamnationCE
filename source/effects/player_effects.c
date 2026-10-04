@@ -458,9 +458,9 @@ void player_effect_screen_fade_out(
 	return;
 }
 
-/* port: the screen fade as a co-op game's host tells its clients
-(port/linux/game/network_coop.c): its color, length, whether it fades out,
-and the game time it began */
+/* port: read and set the screen fade, so a co-op host can send it to its
+clients (port/linux/game/network_coop.c): color, length, direction, and
+the game time it started */
 void player_effect_port_screen_fade_get(
 	real_rgb_color *color,
 	short *ticks,

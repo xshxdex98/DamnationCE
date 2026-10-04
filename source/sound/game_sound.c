@@ -512,8 +512,8 @@ long unspatialized_impulse_sound_new(
 		0);
 }
 
-/* port: the sounds a co-op game's host's scripts play go to its clients
-(port/linux/game/network_coop.c; the kinds are network_distributed.h's) */
+/* port: a co-op host sends its scripts' sounds to its clients
+(port/linux/game/network_coop.c; the kinds are in network_distributed.h) */
 enum
 {
 	_coop_sound_impulse,
@@ -768,7 +768,7 @@ void scripted_looping_sound_start(
 	{
 		definition = looping_sound_definition_get(sound_index);
 		scripted_looping_sound_stop(sound_index);
-		/* (after the stop just above, which a client hears first too) */
+		/* after the stop above, so clients get them in the same order */
 		network_coop_note_sound(_coop_sound_looping_start, sound_index, source_object_index, gain);
 		match_assert(
 			"c:\\halo\\SOURCE\\sound\\game_sound.c",

@@ -2929,9 +2929,9 @@ static void distributed_send_pings(
 	}
 }
 
-/* co-op (a campaign map, no game engine): the host's structure BSP, which
-a client switches to (its own trigger volumes switch it no more, players.c);
-sent this often, so a client that lost one or joined since has it soon */
+/* Co-op: the host's structure BSP. Clients switch BSP only when told
+(their own trigger volumes don't, players.c). It is resent regularly so a
+client that lost a message or joined late catches up. */
 #define STRUCTURE_BSP_INTERVAL_TICKS (TICKS_PER_SECOND / 2)
 
 struct distributed_structure_bsp
