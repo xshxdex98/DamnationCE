@@ -107,16 +107,19 @@ them either way. */
 boolean custom_edition_reordered_bitmaps_find(
 	byte *tag_cache,
 	unsigned long loaded_bytes);
-/* Decodes every Ogg Vorbis sound permutation of a tag cache
-custom_edition_cache_load filled, whose resource offsets are combined, and
-encodes it again as Xbox ADPCM in memory: the permutation becomes an Xbox
-ADPCM one whose samples are at decoded_offset and on in the combined offset
-space, where custom_edition_sounds_read serves them. A sound that cannot be
-decoded is silenced. custom_edition_sounds_dispose lets the samples go. */
+/* Decodes every sound permutation of a tag cache custom_edition_cache_load
+filled (its resource offsets combined) that this build would not play: Ogg
+Vorbis, uncompressed, or mono at 44 kHz. Each is encoded again in memory as
+Xbox ADPCM in a format this build plays, its samples at decoded_offset and
+on in the combined offset space, where custom_edition_sounds_read serves
+them, up to decoded_limit bytes of them. A sound that cannot be converted,
+or would go past the limit, is silenced. custom_edition_sounds_dispose lets
+the samples go. */
 boolean custom_edition_sounds_decode(
 	byte *tag_cache,
 	unsigned long loaded_bytes,
-	long decoded_offset);
+	long decoded_offset,
+	unsigned long decoded_limit);
 boolean custom_edition_sounds_read(
 	long offset,
 	long size,
