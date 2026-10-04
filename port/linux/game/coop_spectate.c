@@ -1,12 +1,11 @@
 /*
 COOP_SPECTATE.C
 
-A dead player of a co-op game over the network (a campaign map, which no
-game engine runs) watches the living until it comes back (players.c: beside
-a teammate once it is safe). The campaign's own dead camera watches the
-body, then whoever it picks in turn; here it follows a living teammate
-instead, from behind as it turns, and A (the keyboard's jump) moves it to the
-next. The HUD says whom it is watching (hud.c).
+Spectating in network co-op. A dead player watches a living teammate
+until they respawn (players.c respawns them beside a teammate once it is
+safe). The campaign's dead camera would watch the body; instead this
+follows a teammate from behind, and A (jump on the keyboard) switches to
+the next one. director.c and hud.c call in here.
 */
 
 #include "cseries.h"
@@ -29,24 +28,24 @@ next. The HUD says whom it is watching (hud.c).
 
 /* ---------- constants */
 
-/* the camera: how far behind the watched unit, how far above it looks
-down (radians), and how quickly it turns after it (of the way a frame) */
+/* camera distance behind the unit, pitch (radians), and how much of the
+turn toward the unit's facing it makes each frame */
 #define SPECTATE_DISTANCE 3.5f
 #define SPECTATE_PITCH -0.3f
 #define SPECTATE_TURN 0.15f
 
 /* ---------- globals */
 
-/* the player each local player watches, or NONE */
+/* the player each local player is watching, or NONE */
 static long coop_spectate_watched[MAXIMUM_LOCAL_PLAYERS] = { NONE, NONE, NONE, NONE };
 
-/* (input_abstraction.c: for how many ticks the keyboard's jump key is held) */
+/* input_abstraction.c: how many ticks the keyboard's jump key has been held */
 byte input_abstraction_port_accept(short controller_index);
 
 /* ---------- private code */
 
-/* the next player after `after` (NONE: from the first) who has a unit, other
-than `self`, or NONE */
+/* The next living player after `after` (or the first, if `after` is NONE),
+skipping `self` and wrapping around. NONE if nobody else is alive. */
 static long next_living_player(long self, long after)
 {
 	struct data_iterator iterator;
@@ -73,7 +72,7 @@ static long next_living_player(long self, long after)
 	return first;
 }
 
-/* whether A, or the keyboard's jump, went down on this frame */
+/* whether A or the keyboard's jump was pressed this frame */
 static boolean next_pressed(short controller_index)
 {
 	struct gamepad_state const *gamepad;
@@ -104,7 +103,7 @@ long coop_spectate_unit(
 	if (self == NONE)
 		return NONE;
 	player = player_get(self);
-	/* (alive again: the next death starts from whoever it watched) */
+	/* alive: keep `watched`, so the next death starts on the same teammate */
 	if (player->unit_index != NONE)
 		return NONE;
 	if (*watched == NONE || !player_try_and_get(*watched) || player_get(*watched)->unit_index == NONE ||
@@ -124,7 +123,7 @@ void coop_spectate_camera(
 
 	if (!unit)
 		return;
-	/* (behind it: the camera's facing is the unit's, turned to a little at a time) */
+	/* ease the camera round behind the unit */
 	yaw = (real)atan2(unit->object.forward.j, unit->object.forward.i);
 	turn = yaw - camera->facing.yaw;
 	while (turn > _pi)
@@ -157,7 +156,7 @@ void coop_spectate_draw(
 	bounds = render.camera.window_bounds;
 	bounds.y0 = (short)(bounds.y1 - 3 * height - 24);
 	bounds.y1 = (short)(bounds.y1 - 24);
-	/* (centred: 2) */
+	/* 2: centred */
 	draw_string_set_draw_mode(font_index, NONE, 2, 0, &color);
 	rasterizer_draw_unicode_string(&bounds, NULL, NULL, 0, text);
 }

@@ -1,7 +1,8 @@
 /*
 OVERLAY_SCREENS.C
 
-What the screens the overlay draws over the menus share (overlay_screens.h).
+Helpers shared by the screens drawn over the menus with the overlay
+(overlay_screens.h).
 */
 
 #ifdef HALO_GAME_BROWSER
@@ -24,20 +25,18 @@ What the screens the overlay draws over the menus share (overlay_screens.h).
 
 enum
 {
-	/* a held direction moves again after this long, and then this often */
+	/* a held direction repeats after this many milliseconds, then this often */
 	REPEAT_DELAY = 350,
 	REPEAT_PERIOD = 90,
 
-	/* the prompts' buttons and words, and the foot of the screen they are on */
-	PROMPT_BUTTON_SIZE = 15,
-	PROMPT_TEXT_SIZE = 12,
-	PROMPT_Y = 455,
-	PROMPT_GAP = 20,
+	BUTTON_GAP = 8,
+	BUTTON_PADDING = 10,
+	BUTTON_TEXT_SIZE = 10,
 };
 
-/* the menus' level pictures: one frame for each Xbox level, in the game's
-order of them (ui_widget_event_handler_functions.c), then the unknown
-level's; the picture fills each frame's top left */
+/* The menus' level pictures: one frame per Xbox level, in the game's level
+order (ui_widget_event_handler_functions.c), then one for unknown levels.
+Each picture fills the top left 140x114 of its frame. */
 #define LEVEL_PICTURES "ui\\shell\\bitmaps\\mp_map_grafix"
 #define LEVEL_PICTURE_WIDTH 140
 #define LEVEL_PICTURE_HEIGHT 114
@@ -102,23 +101,72 @@ void overlay_utf8(
 	out[used] = 0;
 }
 
-float overlay_prompt(
-	int button,
-	char const *words,
-	float x,
-	unsigned int color)
+static float button_width(
+	char const *label)
 {
-	x += ui_overlay_button(button, PROMPT_BUTTON_SIZE, x, PROMPT_Y, 0xFFFFFFFF) + 3.0f;
-	return x + ui_overlay_text(UI_FONT_BOLD, PROMPT_TEXT_SIZE, x, PROMPT_Y + 1.5f, UI_ALIGN_LEFT, color, words) +
-		PROMPT_GAP;
+	return BUTTON_PADDING + ui_overlay_text_width(UI_FONT_BOLD, BUTTON_TEXT_SIZE, label) + BUTTON_PADDING;
 }
 
-float overlay_prompt_width(
-	int button,
-	char const *words)
+float overlay_buttons_width(
+	char const *const *labels,
+	short count)
 {
-	return ui_overlay_button_width(button, PROMPT_BUTTON_SIZE) + 3.0f +
-		ui_overlay_text_width(UI_FONT_BOLD, PROMPT_TEXT_SIZE, words) + PROMPT_GAP;
+	float width = 0.0f;
+	short index;
+
+	for (index = 0; index < count; index++)
+		width += button_width(labels[index]) + (index ? BUTTON_GAP : 0);
+
+	return width;
+}
+
+void overlay_buttons_draw(
+	char const *const *labels,
+	short count,
+	float x,
+	float y,
+	short hovered,
+	unsigned long disabled,
+	struct overlay_button_colors const *colors)
+{
+	short index;
+
+	for (index = 0; index < count; index++)
+	{
+		float width = button_width(labels[index]);
+		boolean usable = !TEST_FLAG(disabled, index);
+		boolean lit = usable && index == hovered;
+
+		ui_overlay_rect(x, y, width, OVERLAY_BUTTON_HEIGHT, colors->radius, lit ? colors->fill_lit : colors->fill);
+		ui_overlay_outline(x, y, width, OVERLAY_BUTTON_HEIGHT, colors->radius, 0.75f, colors->edge);
+		ui_overlay_text(UI_FONT_BOLD, BUTTON_TEXT_SIZE, x + width / 2, y + 5, UI_ALIGN_CENTER,
+			!usable ? colors->text_disabled : lit ? colors->text_lit : colors->text, labels[index]);
+		x += width + BUTTON_GAP;
+	}
+}
+
+short overlay_button_at(
+	char const *const *labels,
+	short count,
+	float x,
+	float y,
+	short point_x,
+	short point_y)
+{
+	short index;
+
+	if (point_y < y || point_y >= y + OVERLAY_BUTTON_HEIGHT)
+		return NONE;
+	for (index = 0; index < count; index++)
+	{
+		float width = button_width(labels[index]);
+
+		if (point_x >= x && point_x < x + width)
+			return index;
+		x += width + BUTTON_GAP;
+	}
+
+	return NONE;
 }
 
 short overlay_map_display_index(
@@ -156,10 +204,9 @@ void overlay_map_picture(
 	draw_quad(&bounds, 0xFF0A0C10);
 	if (pictures == NONE)
 		return;
-	/* (a Custom Edition map's own picture, drawn over the whole place; one
-	without has the unknown level's frame. One of the campaign's own levels
-	is a frame of the campaign menus' pictures, which fills its top left as
-	the level pictures' frames do) */
+	/* A Custom Edition map's own picture fills the whole rectangle. A map
+	without one gets the unknown level's frame. A stock campaign level gets
+	its frame from the campaign menu's pictures, cropped like the rest. */
 	bitmap = custom_edition_maps_picture(pictures, &frame);
 	if (bitmap && custom_edition_maps_campaign_level(display_index) == NONE)
 	{

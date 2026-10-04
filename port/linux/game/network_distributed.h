@@ -78,9 +78,9 @@ enum
 	_distributed_message_coop_presentation,
 	/* co-op: the sounds the host's scripts played (network_coop.c) */
 	_distributed_message_coop_sounds,
-	/* co-op: the host's device groups' values (network_coop.c) */
+	/* co-op: device group state (network_coop.c) */
 	_distributed_message_coop_device_groups,
-	/* co-op: which named objects the host has (network_coop.c) */
+	/* co-op: which named objects exist on the host (network_coop.c) */
 	_distributed_message_coop_object_names,
 
 	NUMBER_OF_DISTRIBUTED_MESSAGES
@@ -257,7 +257,7 @@ word network_coop_sound_entry_size(void);
 /* (a client) the host's scripts' sounds, played here */
 void network_coop_handle_sounds(void const *entries, short count);
 word network_coop_device_group_entry_size(void);
-/* (a client) the host's device groups, and named objects, made so here */
+/* client: apply the host's device groups and named objects */
 void network_coop_handle_device_groups(void const *entries, short count);
 word network_coop_object_names_entry_size(void);
 void network_coop_handle_object_names(void const *entries);

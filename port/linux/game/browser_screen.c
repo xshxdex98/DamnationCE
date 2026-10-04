@@ -1,30 +1,26 @@
 /*
 BROWSER_SCREEN.C
 
-The in-game server browser (configure.py
---game-browser): every game on the game list (port/linux/src/browser.c),
-on a screen of its own over the menus, as the game's virtual keyboard is
-(interface/virtual_keyboard.c): drawn and driven by code, not a widget of
-the user interface's tags.
+The Online Games server browser (built with configure.py --game-browser).
+Like the virtual keyboard (interface/virtual_keyboard.c), it is a screen
+drawn and driven by code over the menus, not built from widget tags. The
+Multiplayer menu's ONLINE GAMES opens it (interface/ui_widget.c).
 
-X on the System Link screen opens it (ui_widget.c; the list screen marks
-when it is up, ui_widget_game_data_input_functions.c). Up and down pick a
-game and left and right turn the page; everything else is clicked: a game
-(joined through its invite, as a web page's Join or an invite link would),
-the buttons along the foot (JOIN, CREATE GAME, REFRESH, SORT, PROFILE, BACK)
-and the header's sort tabs. Escape (B) alone goes back without a click.
-Once the invite's host answers, its game shows in the System Link list through the tunnel, to be
-picked there as any.
+It lists the games from two sources that share invite codes: the game list
+(port/linux/src/browser.c) and the internet lobby (port/linux/src/p2p_lobby.c).
+A game in both is shown once.
 
-The games are the game list's (port/linux/src/browser.c) and the public
-games of internet play's server browser (port/linux/src/p2p_lobby.c),
-which share their invites: a game both list shows once, and either is
-joined the same way.
+Controls: arrow keys pick a game (left and right turn the page), A or Enter
+joins it, and Escape (B) goes back. Everything else is clicked: a game, the
+buttons along the bottom (JOIN, CREATE GAME, REFRESH, SORT, PROFILE, BACK)
+and the sort tabs in the header.
 
-A game on a Custom Edition map shows the map's name and picture when this
-machine has the map (custom_edition_maps.c), and is marked CE; one on a map
-this machine lacks says so, and is not joined: its host's map would only
-fail to load here.
+Joining opens a tunnel to the host through the invite; once the host's game
+is advertised through it, we join and open its lobby (wait_for_host).
+
+A game on a Custom Edition map shows that map's name and picture if this
+machine has it, marked CE. If the map is missing, the game says so and
+can't be joined, since the map would fail to load.
 */
 
 #ifdef HALO_GAME_BROWSER
@@ -59,29 +55,29 @@ fail to load here.
 
 enum
 {
-	/* the games shown at a time (left and right turn the page) */
 	ROWS_PER_PAGE = 7,
+	/* milliseconds a status message stays up */
 	STATUS_DURATION = 6000,
-	/* a picked game's host answers this soon, or it is given up on */
+	/* give up on a host that hasn't answered after this many milliseconds */
 	CONNECT_TIMEOUT = 15000,
-	/* the screen takes no A this soon after it opens */
+	/* ignore picks this many milliseconds after opening (the menu's own A) */
 	OPEN_SETTLE = 600,
-	/* the games' maps looked up while the screen is up (known_map) */
+	/* the cache of map lookups (known_map) */
 	MAXIMUM_KNOWN_MAPS = 64,
 };
 
-/* (p2p.c's invite links: this, then the invite the game list has) */
+/* p2p.c's invite links are this prefix followed by the invite code */
 #define INVITE_LINK_PREFIX "halo://join/"
 
-/* the kinds of map a game is on (known_map) */
+/* known_map.kind */
 enum
 {
 	MAP_XBOX,
-	/* a Custom Edition map this machine has (Halo PC's own among them) */
+	/* a Custom Edition map this machine has (Halo PC's own maps included) */
 	MAP_CUSTOM_EDITION,
-	/* a campaign level: a co-op game's (custom_edition_maps.h) */
+	/* a campaign level, so a co-op game (custom_edition_maps.h) */
 	MAP_CAMPAIGN,
-	/* any other: named by its file, here when the maps folder has it */
+	/* anything else, shown by file name */
 	MAP_OTHER,
 };
 
@@ -92,13 +88,13 @@ enum
 	_ui_audio_feedback_cursor,
 };
 
-/* the game's engines, short (as players say them) to fit the column */
+/* game engine names, short enough for the list */
 static char const *const engine_names[] =
 {
 	"", "CTF", "Slayer", "Oddball", "King", "Race",
 };
 
-/* the multiplayer maps' names in the menus */
+/* the Xbox multiplayer maps' display names */
 static char const *const map_names[][2] =
 {
 	{ "beavercreek", "Battle Creek" }, { "bloodgulch", "Blood Gulch" }, { "boardingaction", "Boarding Action" },
@@ -107,8 +103,6 @@ static char const *const map_names[][2] =
 	{ "putput", "Chiron TL-34" }, { "ratrace", "Rat Race" }, { "sidewinder", "Sidewinder" }, { "wizard", "Wizard" },
 };
 
-
-/* the list's orders (LT and RT, or the shoulders, step through them) */
 enum
 {
 	SORT_PLAYERS,
@@ -121,8 +115,7 @@ enum
 
 /* ---------- structures */
 
-/* a game's map as this machine knows it: its kind, its name in the menus,
-and whether it is here to be played */
+/* a game's map as this machine sees it */
 struct known_map
 {
 	char path[BROWSER_MAP_LENGTH];
@@ -142,19 +135,19 @@ static struct
 	char status[96];
 	unsigned long status_time;
 	short sort;
-	/* a game picked: its invite, while its host's game is waited for */
+	/* waiting for a picked game's host to answer */
 	boolean connecting;
 	char connecting_invite[BROWSER_INVITE_LENGTH + 1];
 	char connecting_name[64];
 	unsigned long connecting_time;
-	/* when the screen opened (the menu's A that opened it picks nothing) */
 	unsigned long opened_time;
 	struct overlay_repeat repeat;
-	/* (the games are fetched every frame: their maps are looked up once) */
+	/* the games are fetched every frame, so map lookups are cached */
 	struct known_map known_maps[MAXIMUM_KNOWN_MAPS];
 	short known_map_count;
-	/* the button the mouse is over, or NONE, and whether it is over the connecting box's CANCEL */
+	/* the bar button under the mouse, or NONE */
 	short button_hovered;
+	/* whether the mouse is over the connecting box's CANCEL */
 	boolean cancel_hovered;
 } browser_screen;
 
@@ -168,7 +161,7 @@ static void set_status(
 	browser_screen.status_time = system_milliseconds();
 }
 
-/* a map's file's name: the last part of its path (levels\test\<name>\<name>) */
+/* the last part of a map path such as levels\test\<name>\<name> */
 static char const *map_file_name(
 	char const *path)
 {
@@ -183,9 +176,8 @@ static char const *map_file_name(
 	return base;
 }
 
-/* a game's map, looked up the first time while the screen is up: an Xbox
-map's name, a Custom Edition map's (when this machine has it), else its
-file's, with whether the maps folder has that file */
+/* Looks up a game's map (cached): its display name, its kind, and whether
+this machine has it. */
 static struct known_map const *known_map(
 	char const *path)
 {
@@ -202,7 +194,7 @@ static struct known_map const *known_map(
 		if (!strcmp(browser_screen.known_maps[index].path, path))
 			return &browser_screen.known_maps[index];
 	}
-	/* (a list of more maps than are kept starts over) */
+	/* cache full: start over */
 	if (browser_screen.known_map_count == MAXIMUM_KNOWN_MAPS)
 		browser_screen.known_map_count = 0;
 	map = &browser_screen.known_maps[browser_screen.known_map_count++];
@@ -235,27 +227,25 @@ static struct known_map const *known_map(
 	return map;
 }
 
-/* (network_client_manager.c: the game whose host's identifier the invite
-starts with, joined once it is advertised) */
+/* network_client_manager.c: joins the game whose host the invite names,
+once it is advertised. >0 joined, <0 can't join, 0 not yet. */
 long network_game_client_join_invite_host(char const *invite);
 boolean create_global_network_game_client(void);
 void game_connection_set(short connection);
-/* (interface/: the network, as System Link's list starts it, and a game of
-this machine's, as its Y makes one) */
+/* interface/ */
 boolean ui_online_games_start_network(void);
 void ui_online_games_stop_network(void);
-/* (the platform layer: the menus' theme) */
-char const *config_string(char const *name);
 boolean ui_widget_online_games_create_game(void);
-/* (menu_functions.c: hosting for the internet, as Create Game > Internet) */
+/* the platform layer */
+char const *config_string(char const *name);
+/* menu_functions.c: host an internet game, as Create Game > Internet does */
 void pc_menu_host_internet(void);
 
-/* the first player in the game to be joined or made, with the profile
-System Link's Start would pick: the one last used, else the first saved.
-(A profile's index is the saved game files' (saved_game_files.c), its valid
-bit set: 0 is none, and player_profile_get made of it a profile named for
-whichever saved file came first, a game type on a new install.) None saved,
-the player keeps the profile it has */
+/* Signs in local player 1 with the profile System Link's Start would pick:
+the last used, else the first saved. A profile index needs its valid bit
+(saved_game_files.c); without it player_profile_get would return a profile
+named after whatever saved file came first. With no profiles saved, the
+player keeps the profile it has. */
 static void join_first_player(
 	void)
 {
@@ -278,8 +268,7 @@ static void join_first_player(
 	}
 }
 
-/* the screen gone (a game joined or made, or B): the server browser stops
-gathering public games */
+/* closes the screen and stops polling the internet lobby */
 static void close_screen(
 	void)
 {
@@ -287,8 +276,8 @@ static void close_screen(
 	p2p_lobby_browse(FALSE);
 }
 
-/* a game picked: its invite joined (the tunnel to its host), then its game
-joined once advertised through it (browser_screen_process) */
+/* Starts joining the selected game: opens the tunnel through its invite.
+wait_for_host finishes the join. */
 static void join_selected(
 	void)
 {
@@ -311,8 +300,7 @@ static void join_selected(
 		set_status(text);
 		return;
 	}
-	/* a network client searching, as System Link's (the advertisement comes
-	to it: browser_screen_open started it) */
+	/* a network client listening for the host's advertisement, as System Link has */
 	if (!global_network_game_client_get())
 	{
 		if (!create_global_network_game_client())
@@ -335,8 +323,7 @@ static void join_selected(
 	browser_screen.connecting_time = system_milliseconds();
 }
 
-/* the picked game's host: its game joined once it is advertised, and its
-lobby opened */
+/* joins the picked game once its host advertises it, and opens its lobby */
 static void wait_for_host(
 	void)
 {
@@ -386,7 +373,7 @@ static long compare_games(
 {
 	long order;
 
-	/* (closed games last, whatever the order) */
+	/* closed games always go last */
 	if (a->open != b->open)
 		return a->open ? -1 : 1;
 	switch (browser_screen.sort)
@@ -396,7 +383,7 @@ static long compare_games(
 	{
 		char a_name[sizeof(((struct known_map *)0)->name)];
 
-		/* (a's name kept: looking b up may reuse a's entry) */
+		/* copy a's name: looking up b can evict a's cache entry */
 		csstrcpy(a_name, known_map(a->map)->name);
 		order = strcmp(a_name, known_map(b->map)->name);
 		break;
@@ -407,9 +394,8 @@ static long compare_games(
 	return order ? order : compare_names(a->name, b->name);
 }
 
-/* the server browser's public games after the game list's, as games of
-it: they share invites (a game both list is kept once) and are joined the
-same way (browser_join) */
+/* Appends the internet lobby's games that aren't already listed. Both
+sources use the same invite codes, so a game in both is kept once. */
 static void add_lobby_games(
 	void)
 {
@@ -435,7 +421,7 @@ static void add_lobby_games(
 		game = &browser_screen.games[browser_screen.count++];
 		csmemset(game, 0, sizeof(*game));
 		csstrcpy(game->invite, invite);
-		/* (the listing's name is ASCII) */
+		/* lobby names are ASCII */
 		for (index = 0; index < BROWSER_NAME_LENGTH && listing->name[index]; index++)
 			game->name[index] = (unsigned char)listing->name[index];
 		snprintf(game->map, sizeof(game->map), "%s", listing->map);
@@ -447,8 +433,7 @@ static void add_lobby_games(
 	}
 }
 
-/* the game list's games and the server browser's, in the screen's order;
-the selection stays on its game */
+/* refetches and sorts the games, keeping the same game selected */
 static void fetch_games(
 	void)
 {
@@ -461,7 +446,7 @@ static void fetch_games(
 	invite[sizeof(invite) - 1] = 0;
 	browser_screen.count = (short)browser_get_games(browser_screen.games, BROWSER_MAXIMUM_GAMES);
 	add_lobby_games();
-	/* (insertion: a few dozen games) */
+	/* insertion sort: there are only a few dozen games */
 	for (index = 1; index < browser_screen.count; index++)
 	{
 		struct browser_game game = browser_screen.games[index];
@@ -477,7 +462,7 @@ static void fetch_games(
 	}
 }
 
-/* B: back to the menu, the search for games ended */
+/* back to the menu, with the network search stopped */
 static void leave(
 	void)
 {
@@ -493,7 +478,7 @@ boolean browser_screen_active(
 	return browser_screen.active;
 }
 
-/* the screen opened (the Multiplayer menu's ONLINE GAMES, interface/ui_widget.c) */
+/* the Multiplayer menu's ONLINE GAMES (interface/ui_widget.c) */
 void browser_screen_open(
 	void)
 {
@@ -503,20 +488,18 @@ void browser_screen_open(
 	browser_screen.button_hovered = NONE;
 	browser_screen.connecting = FALSE;
 	browser_screen.opened_time = system_milliseconds();
-	/* (maps may have been added since it was last up) */
+	/* maps may have been added since last time */
 	browser_screen.known_map_count = 0;
 	p2p_lobby_browse(TRUE);
-	/* (the menu's A, still queued, is not a pick) */
+	/* drop the menu's A that opened us, still queued */
 	event_manager_flush();
-	/* the network searching, as System Link's list starts it: a game left
-	behind (a lobby backed out of) ended */
+	/* start listening as System Link does, ending any game left behind */
 	if (!ui_online_games_start_network())
 		set_status("Could not start the network.");
 	fetch_games();
 }
 
-/* Y: a game of this machine's, as System Link's Y makes one (the new game's
-map chosen next; once it starts, the game list lists it) */
+/* hosts a new internet game; the map picker opens next */
 static void create_game(
 	void)
 {
@@ -528,7 +511,7 @@ static void create_game(
 		set_status("Could not create a game.");
 }
 
-/* ---------- the screen's actions: its buttons' */
+/* ---------- actions */
 
 static boolean settled(void)
 {
@@ -566,7 +549,7 @@ static void action_profile(void)
 	set_status("Opening your profile in the web browser");
 }
 
-/* (while a host is waited for: the wait given up) */
+/* while connecting, cancels the join */
 static void action_back(void)
 {
 	if (browser_screen.connecting)
@@ -605,6 +588,7 @@ void browser_screen_process(
 			case _gamepad_binary_button_dpad_down: move = 1; break;
 			case _gamepad_binary_button_dpad_left: move = -ROWS_PER_PAGE; break;
 			case _gamepad_binary_button_dpad_right: move = ROWS_PER_PAGE; break;
+			case _gamepad_analog_button_a: action_join(); break;
 			case _gamepad_analog_button_b: action_back(); break;
 			default: break;
 			}
@@ -617,15 +601,13 @@ void browser_screen_process(
 	}
 	if (browser_screen.selected >= browser_screen.count)
 		browser_screen.selected = (short)MAX(0, browser_screen.count - 1);
-	/* (the widgets behind take nothing while the browser is up) */
+	/* the menus behind get no input while this is open */
 	event_manager_flush();
 }
 
-/* ---------- drawing: the Online Games screen (the overlay, ui_overlay.c) */
+/* ---------- drawing */
 
-/* the screen's colors (0xRRGGBBAA) in the menus' themes (display.theme):
-Glassed's dark glass over the scene, hairlines and white for what is
-chosen, and Vanilla's blues on a screen of its own */
+/* colors (0xRRGGBBAA) for each theme (display.theme) */
 struct browser_palette
 {
 	boolean glassed;
@@ -643,7 +625,7 @@ static struct browser_palette const vanilla_palette =
 	FALSE, 0x0B1830FF, 0x03070FFF, 0x2A62C8FF, 0x3D8BFFFF, 0x081530F0, 0x2F6DD0FF, 0x123266FF, 0x7FB0FFFF, 0x2052B0FF,
 	0x16294AFF, 0xE6EEFCFF, 0x8FA6C8FF, 0x4AA3FFFF, 0x4AA3FFFF, 0x0A1A36F8, 6.0f,
 };
-/* the theme's, set as each frame is drawn */
+/* set from the theme each frame */
 static struct browser_palette const *palette = &glassed_palette;
 
 #define COLOR_RULE (palette->rule)
@@ -658,33 +640,28 @@ static struct browser_palette const *palette = &glassed_palette;
 #define COLOR_DIM (palette->dim)
 #define COLOR_LABEL (palette->label)
 #define COLOR_PROMPT (palette->prompt)
-/* (the same in both) */
+/* the same in both themes */
 enum
 {
-	/* the roster's players of each team */
+	/* roster names by team */
 	COLOR_RED_TEAM = 0xFF6B6BFF,
 	COLOR_BLUE_TEAM = 0x6BB0FFFF,
 	COLOR_CLOSED = 0xF08A4BFF,
 };
 
-/* the layout, in the menus' 640x480: a card for each game down the left,
-the chosen game's column at the right */
+/* the layout, in the menus' 640x480: game cards down the left, the selected
+game's details on the right */
 enum
 {
-	/* (the glass: from under the title to over the buttons, as the other screens') */
 	GLASS_TOP = 66, GLASS_BOTTOM = 446,
-	/* the cards: a picture of the map, the name over its map and rules, and
-	how full it is */
 	LIST_X = 37, LIST_Y = 78, LIST_WIDTH = 368, CARD_HEIGHT = 44,
 	CARD_PICTURE_WIDTH = 42, CARD_PICTURE_HEIGHT = 34, FULLNESS_WIDTH = 56,
-	/* the chosen game */
 	DETAIL_X = 420, DETAIL_Y = 78, DETAIL_WIDTH = 183, DETAIL_PICTURE_HEIGHT = 149,
 	ROSTER_COLUMNS = 2, ROSTER_ROWS = 8,
-	/* the sort tabs, at the header's right */
 	TABS_RIGHT = 603, TABS_Y = 44,
 };
 
-/* the row of the list at a point of the 640x480 layout, or NONE */
+/* the card row at a point of the 640x480 layout, or NONE */
 static short row_at(
 	short x,
 	short y)
@@ -696,79 +673,64 @@ static short row_at(
 	return row;
 }
 
-/* the mouse: the row under it is the selected one, a click there joins it,
-and the wheel moves the selection */
-/* the buttons along the foot, each its action (the sort's label is its order's) */
-struct browser_button
+/* the button bar, in this order */
+enum
 {
-	char const *label;
-	void (*action)(void);
+	BUTTON_JOIN,
+	BUTTON_CREATE,
+	BUTTON_REFRESH,
+	BUTTON_SORT,
+	BUTTON_PROFILE,
+	BUTTON_BACK,
+	NUMBER_OF_BUTTONS
 };
-static struct browser_button const browser_buttons[] =
+static void (*const button_actions[NUMBER_OF_BUTTONS])(void) =
 {
-	{ "JOIN", action_join },
-	{ "CREATE GAME", action_create },
-	{ "REFRESH", action_refresh },
-	{ NULL, action_sort_next },
-	{ "PROFILE", action_profile },
-	{ "BACK", action_back },
+	action_join, action_create, action_refresh, action_sort_next, action_profile, action_back,
 };
 
 enum
 {
-	BUTTON_Y = 450, BUTTON_HEIGHT = 22, BUTTON_GAP = 8, BUTTON_PADDING = 10, BUTTON_TEXT_SIZE = 10,
-	/* the connecting box's CANCEL */
-	CANCEL_WIDTH = 80, CANCEL_X = 320 - CANCEL_WIDTH / 2, CANCEL_Y = 234,
+	/* the connecting box's CANCEL button */
+	CANCEL_Y = 234,
 };
 
 static char const *const sort_names[NUMBER_OF_SORTS] = { "PLAYERS", "NAME", "MAP", "TYPE" };
+static char const *const cancel_label[] = { "CANCEL" };
 
-static void button_label(short index, char *label, long size)
+/* the bar's labels; SORT shows the current order */
+struct button_labels
 {
-	if (browser_buttons[index].label)
-		snprintf(label, (size_t)size, "%s", browser_buttons[index].label);
-	else
-		snprintf(label, (size_t)size, "SORT: %s", sort_names[browser_screen.sort]);
+	char const *labels[NUMBER_OF_BUTTONS];
+	char sort[32];
+};
+
+static void button_labels_get(struct button_labels *buttons)
+{
+	snprintf(buttons->sort, sizeof(buttons->sort), "SORT: %s", sort_names[browser_screen.sort]);
+	buttons->labels[BUTTON_JOIN] = "JOIN";
+	buttons->labels[BUTTON_CREATE] = "CREATE GAME";
+	buttons->labels[BUTTON_REFRESH] = "REFRESH";
+	buttons->labels[BUTTON_SORT] = buttons->sort;
+	buttons->labels[BUTTON_PROFILE] = "PROFILE";
+	buttons->labels[BUTTON_BACK] = "BACK";
 }
 
-static float button_width(short index)
+/* the bar's left edge: at the left in Glassed, centred in Vanilla */
+static float buttons_left(struct button_labels const *buttons)
 {
-	char label[32];
-
-	button_label(index, label, sizeof(label));
-	return BUTTON_PADDING + ui_overlay_text_width(UI_FONT_BOLD, BUTTON_TEXT_SIZE, label) + BUTTON_PADDING;
+	return palette->glassed ? (float)LIST_X : 320.0f - overlay_buttons_width(buttons->labels, NUMBER_OF_BUTTONS) / 2;
 }
 
-/* where the buttons begin: at the left, or (Vanilla) centred */
-static float buttons_left(boolean centred)
+static float cancel_left(void)
 {
-	float width = -BUTTON_GAP;
-	short index;
-
-	if (!centred)
-		return LIST_X;
-	for (index = 0; index < NUMBEROF(browser_buttons); index++)
-		width += button_width(index) + BUTTON_GAP;
-	return 320 - width / 2;
+	return 320.0f - overlay_buttons_width(cancel_label, 1) / 2;
 }
 
-/* the button at a point of the 640x480 layout, or NONE */
-static short button_at(boolean centred, short x, short y)
+/* while connecting, only BACK works */
+static unsigned long buttons_disabled(void)
 {
-	float left = buttons_left(centred);
-	short index;
-
-	if (y < BUTTON_Y || y >= BUTTON_Y + BUTTON_HEIGHT)
-		return NONE;
-	for (index = 0; index < NUMBEROF(browser_buttons); index++)
-	{
-		float width = button_width(index);
-
-		if (x >= left && x < left + width)
-			return index;
-		left += width + BUTTON_GAP;
-	}
-	return NONE;
+	return browser_screen.connecting ? ~FLAG(BUTTON_BACK) : 0;
 }
 
 /* the header's sort tab at a point, or NONE (laid out as render_header draws them) */
@@ -790,44 +752,38 @@ static short sort_tab_at(short x, short y)
 	return NONE;
 }
 
-/* whether a point of the 640x480 layout is on the connecting box's CANCEL */
-static boolean cancel_at(short x, short y)
-{
-	return x >= CANCEL_X && x < CANCEL_X + CANCEL_WIDTH && y >= CANCEL_Y && y < CANCEL_Y + BUTTON_HEIGHT;
-}
-
-static boolean theme_vanilla(void)
-{
-	return !strcmp(config_string("display.theme"), "vanilla");
-}
-
+/* The mouse: hovering a card selects it and clicking joins it; the wheel
+moves the selection; the buttons and sort tabs are clicked. */
 void browser_screen_pointer(
 	struct halo_ui_pointer const *pointer)
 {
 	short page_first = (short)(browser_screen.selected - browser_screen.selected % ROWS_PER_PAGE);
-	boolean centred = theme_vanilla();
+	struct button_labels buttons;
 	short row;
 
+	button_labels_get(&buttons);
 	if (pointer->moved)
 	{
-		browser_screen.button_hovered = button_at(centred, pointer->x, pointer->y);
-		browser_screen.cancel_hovered = cancel_at(pointer->x, pointer->y);
+		browser_screen.button_hovered = overlay_button_at(buttons.labels, NUMBER_OF_BUTTONS, buttons_left(&buttons),
+			OVERLAY_BUTTON_Y, pointer->x, pointer->y);
+		browser_screen.cancel_hovered = overlay_button_at(cancel_label, 1, cancel_left(), CANCEL_Y,
+			pointer->x, pointer->y) != NONE;
 	}
 	if (pointer->left_clicks)
 	{
-		short button = button_at(centred, pointer->click_x, pointer->click_y);
+		short button = overlay_button_at(buttons.labels, NUMBER_OF_BUTTONS, buttons_left(&buttons), OVERLAY_BUTTON_Y,
+			pointer->click_x, pointer->click_y);
 		short sort = sort_tab_at(pointer->click_x, pointer->click_y);
 
-		if (browser_screen.connecting && cancel_at(pointer->click_x, pointer->click_y))
+		if (browser_screen.connecting &&
+			overlay_button_at(cancel_label, 1, cancel_left(), CANCEL_Y, pointer->click_x, pointer->click_y) != NONE)
 		{
 			action_back();
 			return;
 		}
-
-		/* (while a host is waited for, BACK alone: the wait given up) */
-		if (button != NONE && (!browser_screen.connecting || browser_buttons[button].action == action_back))
+		if (button != NONE && !TEST_FLAG(buttons_disabled(), button))
 		{
-			browser_buttons[button].action();
+			button_actions[button]();
 			return;
 		}
 		if (sort != NONE && !browser_screen.connecting)
@@ -864,19 +820,19 @@ static char const *type_name(
 	char const *engine = game->engine >= 0 && game->engine < NUMBEROF(engine_names) && engine_names[game->engine][0] ?
 		engine_names[game->engine] : "Game";
 
-	/* (a game no game engine runs, on a campaign level, is co-op) */
+	/* no game engine on a campaign level means co-op */
 	if (!game->engine && known_map(game->map)->kind == MAP_CAMPAIGN)
 	{
 		snprintf(text, (size_t)size, "Co-op");
 		return text;
 	}
 
-	/* (Capture the Flag is played in teams alone) */
+	/* CTF is always a team game, so it gets no "Team" prefix */
 	snprintf(text, (size_t)size, "%s%s", game->teams && game->engine != 1 ? "Team " : "", engine);
 	return text;
 }
 
-/* a game's map's picture, edged */
+/* a map picture with an outline */
 static void map_picture(
 	char const *map,
 	float x,
@@ -888,8 +844,8 @@ static void map_picture(
 	ui_overlay_outline(x, y, width, height, 0, 0.75f, COLOR_PANEL_EDGE);
 }
 
-/* the header: the title, how many are playing, and the sort tabs (the
-order shown bright and underlined) */
+/* the title, the game and player counts, and the sort tabs (the current
+order bright and underlined) */
 static void render_header(
 	long players)
 {
@@ -914,8 +870,7 @@ static void render_header(
 	}
 }
 
-/* a game's card: its map's picture, its name over its map and rules, and how
-full it is, as a number over a bar */
+/* a game's card: map picture, name, map and rules, and a fullness bar */
 static void render_card(
 	struct browser_game const *game,
 	float y,
@@ -949,8 +904,8 @@ static void render_card(
 		game->open ? COLOR_TEXT : COLOR_CLOSED);
 }
 
-/* the chosen game's column: its map, its settings and who is in it (the
-host's roster, when it sends one; the last place says how many more) */
+/* The selected game's details: map, settings, and the roster if the host
+shares one (the last slot says how many more there are). */
 static void render_details(
 	struct browser_game const *game)
 {
@@ -1023,7 +978,9 @@ void browser_screen_render(
 	short page_first, page_count, row;
 	long players = 0, index;
 	char text[64];
-	float x, margin = (float)((halo_screen_width() - 640) / 2 + 2);
+	float margin = (float)((halo_screen_width() - 640) / 2 + 2);
+	struct overlay_button_colors colors;
+	struct button_labels buttons;
 	struct browser_game const *selected = browser_screen.count ? &browser_screen.games[browser_screen.selected] : NULL;
 
 	if (!ui_overlay_available())
@@ -1031,8 +988,7 @@ void browser_screen_render(
 	for (index = 0; index < browser_screen.count; index++)
 		players += browser_screen.games[index].players;
 
-	/* the screen, its widescreen margins too: Glassed's glass over the
-	scene, or Vanilla's screen of its own */
+	/* Glassed darkens a band over the scene; Vanilla covers the screen */
 	palette = strcmp(config_string("display.theme"), "vanilla") ? &glassed_palette : &vanilla_palette;
 	if (palette->glassed)
 	{
@@ -1046,7 +1002,6 @@ void browser_screen_render(
 	}
 	render_header(players);
 
-	/* the cards */
 	page_first = (short)(browser_screen.selected - browser_screen.selected % ROWS_PER_PAGE);
 	page_count = (short)MAX(1, (browser_screen.count + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE);
 	if (!palette->glassed)
@@ -1070,22 +1025,17 @@ void browser_screen_render(
 	}
 	render_details(selected);
 
-	/* the buttons, the one the mouse is over lit */
 	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
-	x = buttons_left(!palette->glassed);
-	for (index = 0; index < NUMBEROF(browser_buttons); index++)
-	{
-		char label[32];
-		float width = button_width(index);
-		boolean lit = index == browser_screen.button_hovered;
-		boolean usable = !browser_screen.connecting || browser_buttons[index].action == action_back;
-
-		button_label(index, label, sizeof(label));
-		ui_overlay_rect(x, BUTTON_Y, width, BUTTON_HEIGHT, palette->radius, lit && usable ? COLOR_ROW_SELECTED : COLOR_PANEL);
-		ui_overlay_outline(x, BUTTON_Y, width, BUTTON_HEIGHT, palette->radius, 0.75f, COLOR_PANEL_EDGE);
-		ui_overlay_text(UI_FONT_BOLD, BUTTON_TEXT_SIZE, x + width / 2, BUTTON_Y + 5, UI_ALIGN_CENTER, usable ? (lit ? COLOR_TITLE : COLOR_PROMPT) : COLOR_DIM, label);
-		x += width + BUTTON_GAP;
-	}
+	colors.fill = COLOR_PANEL;
+	colors.fill_lit = COLOR_ROW_SELECTED;
+	colors.edge = COLOR_PANEL_EDGE;
+	colors.text = COLOR_PROMPT;
+	colors.text_lit = COLOR_TITLE;
+	colors.text_disabled = COLOR_DIM;
+	colors.radius = palette->radius;
+	button_labels_get(&buttons);
+	overlay_buttons_draw(buttons.labels, NUMBER_OF_BUTTONS, buttons_left(&buttons), OVERLAY_BUTTON_Y,
+		browser_screen.button_hovered, buttons_disabled(), &colors);
 
 	if (browser_screen.connecting)
 	{
@@ -1096,11 +1046,8 @@ void browser_screen_render(
 		ui_overlay_rect(170, 200, 300, 64, palette->radius, palette->connecting);
 		ui_overlay_outline(170, 200, 300, 64, palette->radius, 0.75f, COLOR_PANEL_EDGE);
 		ui_overlay_text(UI_FONT_BOLD, 12.0f, 320, 212, UI_ALIGN_CENTER, 0xFFFFFFFF, line);
-		ui_overlay_rect(CANCEL_X, CANCEL_Y, CANCEL_WIDTH, BUTTON_HEIGHT, palette->radius,
-			browser_screen.cancel_hovered ? COLOR_ROW_SELECTED : COLOR_PANEL);
-		ui_overlay_outline(CANCEL_X, CANCEL_Y, CANCEL_WIDTH, BUTTON_HEIGHT, palette->radius, 0.75f, COLOR_PANEL_EDGE);
-		ui_overlay_text(UI_FONT_BOLD, BUTTON_TEXT_SIZE, 320, CANCEL_Y + 5, UI_ALIGN_CENTER,
-			browser_screen.cancel_hovered ? COLOR_TITLE : COLOR_PROMPT, "CANCEL");
+		overlay_buttons_draw(cancel_label, 1, cancel_left(), CANCEL_Y, browser_screen.cancel_hovered ? 0 : NONE, 0,
+			&colors);
 	}
 	else if (browser_screen.status[0] && system_milliseconds() - browser_screen.status_time < STATUS_DURATION)
 		ui_overlay_text(UI_FONT_BOLD, 9.0f, TABS_RIGHT, TABS_Y + 20, UI_ALIGN_RIGHT, COLOR_CLOSED, browser_screen.status);

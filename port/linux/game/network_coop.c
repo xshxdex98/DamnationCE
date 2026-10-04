@@ -1,39 +1,34 @@
 /*
 NETWORK_COOP.C
 
-What a co-op game's host shows and plays its players, on every machine
-(port/linux/NETCODE.md). A network game on a campaign map, which no game
-engine runs, is co-op, and only its host runs the map's scripts (game.c):
-the cinematics they start, the camera they move and the screen fades they
-make are the host's alone. Each tick the host sends its clients those: whether
-a cinematic is in progress and its letterbox shown, where its camera is and
-looks (whatever moves it: a camera point, an animation), and its screen
-fade. A client starts the cinematic as the host did (its players' input off,
-the letterbox), sees through the host's camera until it ends, and fades as
-the host faded. A client that hears nothing for a while ends the cinematic
-it started, rather than keep its players still for good.
+Campaign co-op over the network (port/linux/NETCODE.md).
 
-The sounds the scripts play (game_sound.c: dialogue, music, ambience) go to
-the clients too, each in a few ticks' messages in case one is lost, with a
-number a client plays each once by.
+A network game on a campaign map, with no game engine running, is co-op.
+Only the host runs the map's scripts (game.c), so anything the scripts do
+that the clients need to see is sent from here:
 
-The devices (doors, elevators, switches, lights) are the host's: what moves
-or powers them is a device group's value (devices.c), which the scripts, a
-door a unit walks up to and a switch a player uses (relayed to the host)
-set on the host alone; a client sets none itself. The host sends each
-group's value when it changes, in a few ticks' messages, and a few of them
-every tick besides, round them all, for a client that missed one or has
-just joined. A group is named by its index if it is one of the scenario's
-(the same everywhere), else by the device it is its own of: the device's
-name, or its index and tag (the map placed it at the same index
-everywhere). A client's devices move to the value as the host's did, or are
-put straight there where the host's were (a script's immediate set).
-
-The objects the scripts create and destroy by name (scenery and devices:
-network_objects.c sends the rest) are the host's too: twice a second it
-sends which named objects it has, and a client that has seen the same
-difference twice running, on the same structure BSP, creates or deletes its
-own to match.
+- Presentation, every tick: whether a cinematic is playing, the letterbox,
+  the camera, and the screen fade. A client starts and stops its own
+  cinematic to match, and looks through the host's camera meanwhile. If the
+  host goes quiet for two seconds, the client ends the cinematic so its
+  players aren't stuck.
+- Script sounds (dialogue, music, ambience; hooked in game_sound.c). Each is
+  sent in three ticks' messages in case one is lost, and numbered so a
+  client plays each exactly once.
+- Devices (doors, elevators, switches, lights). A device moves toward its
+  device group's value (devices.c). On a client nothing sets those values
+  but this file: doors a player walks up to and switches a player uses are
+  decided by the host (the player's action is relayed to it). The host
+  sends a group's value for three ticks when it changes, plus a few groups
+  every tick in rotation, so a client that lost a message or joined late
+  catches up. A scenario group is identified by its index, which is the
+  same on every machine. A device's own group is identified by the device:
+  its name, or its object index and tag.
+- Named objects (scenery and devices) the scripts create or destroy.
+  network_objects.c already handles units, vehicles, weapons and equipment.
+  Twice a second the host sends which object names currently exist. A
+  client that sees the same difference twice in a row, on the same BSP,
+  creates or deletes its copy.
 */
 
 /* ---------- headers */
@@ -60,33 +55,36 @@ own to match.
 
 enum
 {
-	/* a client's cinematic ended after this long without word of it */
+	/* a client ends the cinematic after this long without hearing from the host */
 	PRESENTATION_SILENCE_TICKS = 2 * TICKS_PER_SECOND,
-	/* the field of view, in radians, as a word */
+	/* the field of view (radians) is sent as a word, scaled by this */
 	FIELD_OF_VIEW_SCALE = 10000,
-	/* the scripts' sounds kept to send, and in how many ticks' messages each goes */
+
 	MAXIMUM_QUEUED_SOUNDS = 32,
+	/* each script sound is sent in this many ticks' messages */
 	SOUND_SENDS = 3,
-	/* the device groups a map has at most (devices.c's), a change of one
-	sent in this many ticks' messages, and how many each tick has besides */
+
+	/* the size of devices.c's device group array */
 	MAXIMUM_DEVICE_GROUPS = 1024,
+	/* a changed group is sent in this many ticks' messages */
 	DEVICE_GROUP_SENDS = 3,
+	/* unchanged groups sent each tick, in rotation */
 	DEVICE_GROUP_REFRESHES_PER_TICK = 8,
-	/* how often the host sends which named objects it has */
+
 	OBJECT_NAMES_INTERVAL_TICKS = TICKS_PER_SECOND / 2,
 	OBJECT_NAME_BYTES = MAXIMUM_OBJECT_NAMES_PER_SCENARIO / 8,
-	/* the objects network_objects.c makes the host's everywhere */
+	/* the types network_objects.c syncs; the object names sync skips them */
 	NETWORKED_OBJECT_TYPES = _object_mask_biped | _object_mask_vehicle | _object_mask_weapon | _object_mask_equipment,
 };
 
-/* struct distributed_coop_device_group roles: which of its device's groups */
+/* which of a device's two groups an entry is */
 enum
 {
 	_device_group_role_power,
 	_device_group_role_position,
 };
 
-/* struct distributed_coop_presentation flags */
+/* distributed_coop_presentation.flags */
 enum
 {
 	_presentation_cinematic_bit = 0,
@@ -101,9 +99,9 @@ struct distributed_coop_presentation
 	byte flags;
 	byte fade_color[3];
 	short fade_ticks;
-	/* ticks since the fade began (as far as a short counts) */
+	/* ticks since the fade began, capped at SHORT_MAX */
 	short fade_elapsed;
-	/* the game time the host's fade began: a new value is a new fade */
+	/* the host's game time when the fade began; a new value means a new fade */
 	long fade_start_time;
 	real_point3d camera_position;
 	struct distributed_vector camera_forward;
@@ -118,9 +116,9 @@ struct distributed_coop_presentation_message
 	struct distributed_coop_presentation presentation;
 };
 
-/* a sound the host's scripts played (network_coop_note_sound's kinds) */
 struct distributed_coop_sound
 {
+	/* _coop_sound_impulse, _looping_start or _looping_stop */
 	byte kind;
 	byte pad;
 	word number;
@@ -135,8 +133,9 @@ struct distributed_coop_sounds_message
 	struct distributed_coop_sound sounds[MAXIMUM_QUEUED_SOUNDS];
 };
 
-/* a device group's value: one of the scenario's (group_index), or a device's
-own (group_index NONE: the device by its name, else its index and tag) */
+/* A device group's state. group_index is set for a scenario group. For a
+device's own group it is NONE, and the device is found by name_index, or
+(unnamed) by object_index and definition_index. */
 struct distributed_coop_device_group
 {
 	short group_index;
@@ -145,9 +144,9 @@ struct distributed_coop_device_group
 	long definition_index;
 	byte role;
 	byte flags;
-	/* how many times the host's devices were put straight there (a byte's worth) */
+	/* counts the host's immediate sets (wraps at 256) */
 	byte snaps;
-	/* whether it is sent as a change (not one of those sent round them all) */
+	/* sent because it changed, rather than in the rotation */
 	byte changed;
 	real value;
 };
@@ -158,7 +157,7 @@ struct distributed_coop_device_groups_message
 	struct distributed_coop_device_group groups[MAXIMUM_DEVICE_GROUPS];
 };
 
-/* which of the scenario's object names the host has an object of */
+/* one bit per scenario object name: whether the host has that object */
 struct distributed_coop_object_names
 {
 	short structure_bsp_index;
@@ -174,8 +173,7 @@ struct distributed_coop_object_names_message
 
 /* ---------- globals */
 
-/* (a client) the cinematic it started for the host's, when it last heard,
-and the host's fade it last made */
+/* client: the cinematic it started to match the host's */
 static struct
 {
 	boolean cinematic_started;
@@ -183,8 +181,7 @@ static struct
 	long fade_start_time;
 } coop_presentation;
 
-/* (the host) the scripts' sounds not yet sent SOUND_SENDS times, and the
-next one's number; (a client) the number of the last played */
+/* host: sounds still to be sent; client: the last one played */
 static struct
 {
 	struct distributed_coop_sound sounds[MAXIMUM_QUEUED_SOUNDS];
@@ -195,30 +192,31 @@ static struct
 	boolean played_any;
 } coop_sounds;
 
-/* (the host) each of its device groups as last sent, by the group's index
-here, the ticks' messages a change is still to go in, and the next to go
-round; how many times each group's devices were put straight there. (A
-client) the snaps of each of its groups it has seen. */
+/* host: each device group as last sent, indexed by group */
 static struct
 {
-	boolean noted;
+	/* false until the first tick, which records the map's starting state */
+	boolean started;
 	real values[MAXIMUM_DEVICE_GROUPS];
 	byte flags[MAXIMUM_DEVICE_GROUPS];
-	byte sent_snaps[MAXIMUM_DEVICE_GROUPS];
-	byte sends[MAXIMUM_DEVICE_GROUPS];
 	byte snaps[MAXIMUM_DEVICE_GROUPS];
-	boolean seen[MAXIMUM_DEVICE_GROUPS];
+	/* ticks this group is still to be sent as a change */
+	byte sends[MAXIMUM_DEVICE_GROUPS];
+	/* immediate sets so far (devices.c calls network_coop_note_device_snap) */
+	byte snap_counts[MAXIMUM_DEVICE_GROUPS];
 	short refresh_next;
-} coop_devices;
+	struct distributed_coop_device_groups_message message;
+} host_devices;
 
-/* (a client) the named objects it had differ from the host's last time */
+/* client: the host's snap count last seen for each of its groups */
 static struct
 {
-	byte differing[OBJECT_NAME_BYTES];
-} coop_object_names;
+	byte snaps[MAXIMUM_DEVICE_GROUPS];
+	boolean seen[MAXIMUM_DEVICE_GROUPS];
+} client_devices;
 
-/* (the host) this tick's device groups to send */
-static struct distributed_coop_device_groups_message coop_device_groups_message;
+/* client: the object names that differed from the host's last time */
+static byte client_names_differing[OBJECT_NAME_BYTES];
 
 /* ---------- private code */
 
@@ -228,7 +226,7 @@ static boolean coop_game(
 	return !game_engine_running();
 }
 
-/* whether a tag index the host sent is a tag of the group */
+/* whether a tag index from the host really is a tag of that group */
 static boolean tag_of_group(
 	long tag_index,
 	unsigned long group_tag)
@@ -246,8 +244,7 @@ static boolean tag_of_group(
 	return FALSE;
 }
 
-/* whether the object is a player's unit or holds one (hs_library_external.c's
-test, which deletes no player's) */
+/* whether the object is a player's unit or carries one (scripts never delete those) */
 static boolean object_holds_player(
 	long object_index)
 {
@@ -265,7 +262,7 @@ static boolean object_holds_player(
 	return FALSE;
 }
 
-/* the named object's type, or NONE (a name no object has) */
+/* the object type a scenario object name refers to, or NONE */
 static short object_name_type(
 	short name_index)
 {
@@ -277,9 +274,9 @@ static short object_name_type(
 	return TAG_BLOCK_GET_ELEMENT(&scenario->object_names, name_index, struct scenario_object_name)->runtime_object_type;
 }
 
-/* (the host) a device group as sent: its value, flags and snaps; returns
-whether it is one to send */
-static boolean device_group_entry(
+/* Fills in the group's value, flags and snap count. Returns FALSE if the
+group doesn't exist. */
+static boolean device_group_state(
 	short group_index,
 	struct distributed_coop_device_group *entry)
 {
@@ -292,14 +289,14 @@ static boolean device_group_entry(
 		return FALSE;
 	}
 	entry->flags = (byte)flags;
-	entry->snaps = coop_devices.snaps[group_index];
+	entry->snaps = host_devices.snap_counts[group_index];
 	entry->changed = FALSE;
 
 	return TRUE;
 }
 
-/* (the host) every device group, the scenario's then the devices' own, in
-the message; returns how many */
+/* Host: lists every device group, scenario groups first, then each device's
+own groups. group_indices gets each entry's group index. Returns the count. */
 static short device_group_entries(
 	struct distributed_coop_device_group *entries,
 	short *group_indices)
@@ -318,62 +315,54 @@ static short device_group_entries(
 		entry->object_index = NONE;
 		entry->definition_index = NONE;
 		entry->role = _device_group_role_power;
-		if (device_group_entry(group_index, entry))
+		if (device_group_state(group_index, entry))
 			group_indices[count++] = group_index;
 	}
 	object_iterator_new(&iterator, _object_mask_device, 0);
 	while ((device = object_iterator_next(&iterator)) != NULL)
 	{
-		short roles[2];
+		short groups[2];
 		short role;
 
-		roles[_device_group_role_power] = device->device.power_group_index;
-		roles[_device_group_role_position] = device->device.position_group_index;
-		for (role = 0; role < NUMBEROF(roles) && count < MAXIMUM_DEVICE_GROUPS; role++)
+		groups[_device_group_role_power] = device->device.power_group_index;
+		groups[_device_group_role_position] = device->device.position_group_index;
+		for (role = 0; role < NUMBEROF(groups) && count < MAXIMUM_DEVICE_GROUPS; role++)
 		{
 			struct distributed_coop_device_group *entry = &entries[count];
 			real value;
 			word flags;
 			boolean runtime;
 
-			/* (the scenario's groups are sent by their index, above) */
-			if (!device_group_network_get(roles[role], &value, &flags, &runtime) || !runtime)
+			/* scenario groups were listed above */
+			if (!device_group_network_get(groups[role], &value, &flags, &runtime) || !runtime)
 				continue;
 			entry->group_index = NONE;
 			entry->name_index = device->object.name_index;
 			entry->object_index = iterator.index;
 			entry->definition_index = device->definition_index;
 			entry->role = (byte)role;
-			if (device_group_entry(roles[role], entry))
-				group_indices[count++] = roles[role];
+			if (device_group_state(groups[role], entry))
+				group_indices[count++] = groups[role];
 		}
 	}
 
 	return count;
 }
 
-/* (a client) the group of its own a host's entry names, or NONE */
-static short device_group_find(
+/* Client: finds the local device that a host entry names. An unnamed device
+sits at the same object index on every machine; if its salt differs here,
+matching the absolute index is enough (the tag check below still applies). */
+static struct device_datum *device_find(
 	struct distributed_coop_device_group const *entry)
 {
 	struct device_datum *device;
 	long object_index;
-	real value;
-	word flags;
-	boolean runtime;
-	short group_index;
 
-	if (entry->group_index != NONE)
-	{
-		group_index = entry->group_index;
-		return group_index >= 0 && group_index < global_scenario_get()->device_groups.count &&
-			device_group_network_get(group_index, &value, &flags, &runtime) && !runtime ? group_index : NONE;
-	}
 	object_index = entry->name_index != NONE ? object_index_from_name_index(entry->name_index) : entry->object_index;
-	device = object_index != NONE ? object_try_and_get_and_verify_type(object_index, _object_mask_device) : NULL;
-	/* (an unnamed one is at the host's index; should its identifier differ
-	here, the device at that index alone will do) */
-	if (!device && entry->name_index == NONE && object_index != NONE)
+	if (object_index == NONE)
+		return NULL;
+	device = object_try_and_get_and_verify_type(object_index, _object_mask_device);
+	if (!device && entry->name_index == NONE)
 	{
 		struct object_iterator iterator;
 		struct device_datum *candidate;
@@ -388,8 +377,31 @@ static short device_group_find(
 	if (!device || device->definition_index != entry->definition_index ||
 		(entry->name_index == NONE && device->object.name_index != NONE))
 	{
-		return NONE;
+		return NULL;
 	}
+
+	return device;
+}
+
+/* client: the local group a host entry refers to, or NONE */
+static short device_group_find(
+	struct distributed_coop_device_group const *entry)
+{
+	struct device_datum *device;
+	real value;
+	word flags;
+	boolean runtime;
+	short group_index;
+
+	if (entry->group_index != NONE)
+	{
+		group_index = entry->group_index;
+		return group_index >= 0 && group_index < global_scenario_get()->device_groups.count &&
+			device_group_network_get(group_index, &value, &flags, &runtime) && !runtime ? group_index : NONE;
+	}
+	device = device_find(entry);
+	if (!device)
+		return NONE;
 	switch (entry->role)
 	{
 	case _device_group_role_power: group_index = device->device.power_group_index; break;
@@ -401,51 +413,50 @@ static short device_group_find(
 		device_group_network_get(group_index, &value, &flags, &runtime) && runtime ? group_index : NONE;
 }
 
-/* (the host) its device groups that changed, and a few more round them all */
+/* host: sends the groups that changed, plus the next few in the rotation */
 static void host_send_device_groups(
 	void)
 {
 	static short group_indices[MAXIMUM_DEVICE_GROUPS];
-	struct distributed_coop_device_group *entries = coop_device_groups_message.groups;
+	struct distributed_coop_device_group *entries = host_devices.message.groups;
 	short count = device_group_entries(entries, group_indices);
 	short index, sent = 0;
 
-	if (coop_devices.refresh_next >= count)
-		coop_devices.refresh_next = 0;
+	if (host_devices.refresh_next >= count)
+		host_devices.refresh_next = 0;
 	for (index = 0; index < count; index++)
 	{
 		struct distributed_coop_device_group *entry = &entries[index];
 		short group_index = group_indices[index];
-		short refresh = (short)((index - coop_devices.refresh_next + count) % count);
+		short rotation = (short)((index - host_devices.refresh_next + count) % count);
 
-		/* (the map's groups as it loaded them are every machine's: none sent) */
-		if (!coop_devices.noted ||
-			entry->value != coop_devices.values[group_index] ||
-			entry->flags != coop_devices.flags[group_index] ||
-			entry->snaps != coop_devices.sent_snaps[group_index])
+		if (!host_devices.started ||
+			entry->value != host_devices.values[group_index] ||
+			entry->flags != host_devices.flags[group_index] ||
+			entry->snaps != host_devices.snaps[group_index])
 		{
-			coop_devices.values[group_index] = entry->value;
-			coop_devices.flags[group_index] = entry->flags;
-			coop_devices.sent_snaps[group_index] = entry->snaps;
-			coop_devices.sends[group_index] = coop_devices.noted ? DEVICE_GROUP_SENDS : 0;
+			host_devices.values[group_index] = entry->value;
+			host_devices.flags[group_index] = entry->flags;
+			host_devices.snaps[group_index] = entry->snaps;
+			/* clients loaded the same map, so the starting state isn't sent */
+			host_devices.sends[group_index] = host_devices.started ? DEVICE_GROUP_SENDS : 0;
 		}
-		entry->changed = coop_devices.sends[group_index] != 0;
+		entry->changed = host_devices.sends[group_index] != 0;
 		if (entry->changed)
-			coop_devices.sends[group_index]--;
-		else if (refresh >= DEVICE_GROUP_REFRESHES_PER_TICK)
+			host_devices.sends[group_index]--;
+		else if (rotation >= DEVICE_GROUP_REFRESHES_PER_TICK)
 			continue;
 		entries[sent++] = *entry;
 	}
-	coop_devices.noted = TRUE;
-	coop_devices.refresh_next = count ? (short)((coop_devices.refresh_next + DEVICE_GROUP_REFRESHES_PER_TICK) % count) : 0;
+	host_devices.started = TRUE;
+	host_devices.refresh_next = count ? (short)((host_devices.refresh_next + DEVICE_GROUP_REFRESHES_PER_TICK) % count) : 0;
 	if (sent)
 	{
-		distributed_send(&coop_device_groups_message, _distributed_message_coop_device_groups, sent,
-			(word)(sizeof(coop_device_groups_message.header) + sent * sizeof(entries[0])), _distributed_to_clients);
+		distributed_send(&host_devices.message, _distributed_message_coop_device_groups, sent,
+			(word)(sizeof(host_devices.message.header) + sent * sizeof(entries[0])), _distributed_to_clients);
 	}
 }
 
-/* (the host) which named objects it has */
 static void host_send_object_names(
 	void)
 {
@@ -462,6 +473,29 @@ static void host_send_object_names(
 			names->present[name_index / 8] |= (byte)(1 << (name_index % 8));
 	}
 	distributed_send(&message, _distributed_message_coop_object_names, 1, (word)sizeof(message), _distributed_to_clients);
+}
+
+static void host_send_sounds(
+	void)
+{
+	struct distributed_coop_sounds_message message;
+	short index;
+
+	if (!coop_sounds.count)
+		return;
+	csmemcpy(message.sounds, coop_sounds.sounds, coop_sounds.count * sizeof(message.sounds[0]));
+	distributed_send(&message, _distributed_message_coop_sounds, coop_sounds.count,
+		(word)(sizeof(message.header) + coop_sounds.count * sizeof(message.sounds[0])), _distributed_to_clients);
+	/* drop the ones sent SOUND_SENDS times, moving the last into the gap */
+	for (index = 0; index < coop_sounds.count; index++)
+	{
+		if (++coop_sounds.sends[index] < SOUND_SENDS)
+			continue;
+		coop_sounds.sounds[index] = coop_sounds.sounds[coop_sounds.count - 1];
+		coop_sounds.sends[index] = coop_sounds.sends[coop_sounds.count - 1];
+		coop_sounds.count--;
+		index--;
+	}
 }
 
 static void client_cinematic_end(
@@ -481,30 +515,31 @@ void network_coop_new_game(
 {
 	csmemset(&coop_presentation, 0, sizeof(coop_presentation));
 	csmemset(&coop_sounds, 0, sizeof(coop_sounds));
-	csmemset(&coop_devices, 0, sizeof(coop_devices));
-	csmemset(&coop_object_names, 0, sizeof(coop_object_names));
+	csmemset(&host_devices, 0, sizeof(host_devices));
+	csmemset(&client_devices, 0, sizeof(client_devices));
+	csmemset(client_names_differing, 0, sizeof(client_names_differing));
 }
 
-/* whether this machine's devices are the host's (a co-op client's), which
-devices.c then sets no value of itself */
+/* Whether this machine is a co-op client, whose devices only the host
+moves. devices.c and players.c check this. */
 boolean network_coop_devices_remote(
 	void)
 {
 	return game_connection() == _game_connection_network_client && coop_game();
 }
 
-/* (the host) a device group's devices put straight at its value (devices.c) */
+/* host: devices.c calls this when a group's devices are set immediately */
 void network_coop_note_device_snap(
 	short group_index)
 {
 	if (game_connection() == _game_connection_network_server && coop_game() &&
 		group_index >= 0 && group_index < MAXIMUM_DEVICE_GROUPS)
 	{
-		coop_devices.snaps[group_index]++;
+		host_devices.snap_counts[group_index]++;
 	}
 }
 
-/* (the host) a sound its scripts played (game_sound.c), for its clients */
+/* host: game_sound.c calls this for each sound the scripts play */
 void network_coop_note_sound(
 	short kind,
 	long definition_index,
@@ -529,7 +564,7 @@ void network_coop_note_sound(
 	coop_sounds.count++;
 }
 
-/* (the host, after each tick) its presentation, to every client */
+/* host, after each tick */
 void network_coop_host_tick(
 	void)
 {
@@ -565,30 +600,10 @@ void network_coop_host_tick(
 	host_send_device_groups();
 	if (game_time_get() % OBJECT_NAMES_INTERVAL_TICKS == 0)
 		host_send_object_names();
-
-	/* the scripts' sounds, each in SOUND_SENDS ticks' messages */
-	if (coop_sounds.count)
-	{
-		struct distributed_coop_sounds_message sounds;
-		short index;
-
-		csmemcpy(sounds.sounds, coop_sounds.sounds, coop_sounds.count * sizeof(sounds.sounds[0]));
-		distributed_send(&sounds, _distributed_message_coop_sounds, coop_sounds.count,
-			(word)(sizeof(sounds.header) + coop_sounds.count * sizeof(sounds.sounds[0])), _distributed_to_clients);
-		for (index = 0; index < coop_sounds.count; index++)
-		{
-			if (++coop_sounds.sends[index] < SOUND_SENDS)
-				continue;
-			coop_sounds.sounds[index] = coop_sounds.sounds[coop_sounds.count - 1];
-			coop_sounds.sends[index] = coop_sounds.sends[coop_sounds.count - 1];
-			coop_sounds.count--;
-			index--;
-		}
-	}
+	host_send_sounds();
 }
 
-/* (a client, after each tick) the cinematic it started ended if the host
-has gone quiet */
+/* client, after each tick */
 void network_coop_client_tick(
 	void)
 {
@@ -623,7 +638,6 @@ word network_coop_object_names_entry_size(
 	return sizeof(struct distributed_coop_object_names);
 }
 
-/* (a client) the host's device groups' values, its own set to them */
 void network_coop_handle_device_groups(
 	void const *entries,
 	short count)
@@ -644,21 +658,21 @@ void network_coop_handle_device_groups(
 		if (group_index == NONE || !device_group_network_get(group_index, &here, &flags, &runtime))
 			continue;
 		value = PIN(entry->value, 0.0f, 1.0f);
-		/* (put straight there as the host's were, or where a group sent round
-		them all is not as the host has it: a client that missed its change,
-		or has just joined; a change moves there) */
-		snap = (coop_devices.seen[group_index] && entry->snaps != coop_devices.snaps[group_index]) ||
+		/* Jump straight to the value when the host did, or when a rotation
+		entry disagrees with us (we missed the change, or joined late).
+		A change entry animates, as it did on the host. */
+		snap = (client_devices.seen[group_index] && entry->snaps != client_devices.snaps[group_index]) ||
 			(!entry->changed && value != here);
 		if (snap || value != here || entry->flags != (byte)flags)
 			device_group_network_set(group_index, value, entry->flags, snap);
-		coop_devices.snaps[group_index] = entry->snaps;
-		coop_devices.seen[group_index] = TRUE;
+		client_devices.snaps[group_index] = entry->snaps;
+		client_devices.seen[group_index] = TRUE;
 	}
 }
 
-/* (a client) the host's named objects: each it has that the host had not,
-and lacks that the host had, the last two times on the same structure BSP,
-deleted or created (scenery and devices: network_objects.c has the rest) */
+/* Client: creates or deletes named scenery and devices to match the host.
+A difference must show up twice in a row, on the same BSP, so a message
+that crosses a BSP switch or a script's create can't cause a false one. */
 void network_coop_handle_object_names(
 	void const *entries)
 {
@@ -670,36 +684,37 @@ void network_coop_handle_object_names(
 	if (names->structure_bsp_index != global_structure_bsp_index_get() ||
 		names->name_count != MIN(global_scenario_get()->object_names.count, MAXIMUM_OBJECT_NAMES_PER_SCENARIO))
 	{
-		csmemset(&coop_object_names, 0, sizeof(coop_object_names));
+		csmemset(client_names_differing, 0, sizeof(client_names_differing));
 		return;
 	}
 	for (name_index = 0; name_index < names->name_count; name_index++)
 	{
+		byte *differing = &client_names_differing[name_index / 8];
 		byte bit = (byte)(1 << (name_index % 8));
-		boolean there = TEST_FLAG(names->present[name_index / 8], name_index % 8);
+		boolean host_has = (names->present[name_index / 8] & bit) != 0;
 		long object_index = object_index_from_name_index(name_index);
 		short type = object_name_type(name_index);
 
 		if (type < 0 || type >= NUMBER_OF_OBJECT_TYPES || TEST_FLAG(NETWORKED_OBJECT_TYPES, type) ||
-			there == (object_index != NONE))
+			host_has == (object_index != NONE))
 		{
-			coop_object_names.differing[name_index / 8] &= (byte)~bit;
+			*differing &= (byte)~bit;
 			continue;
 		}
-		if (!(coop_object_names.differing[name_index / 8] & bit))
+		if (!(*differing & bit))
 		{
-			coop_object_names.differing[name_index / 8] |= bit;
+			*differing |= bit;
 			continue;
 		}
-		coop_object_names.differing[name_index / 8] &= (byte)~bit;
-		if (there)
+		*differing &= (byte)~bit;
+		if (host_has)
 			object_new_by_name(name_index);
 		else if (!object_holds_player(object_index))
 			object_delete(object_index);
 	}
 }
 
-/* (a client) the host's scripts' sounds, each played once, in their order */
+/* client: plays each script sound once, in order */
 void network_coop_handle_sounds(
 	void const *entries,
 	short count)
@@ -716,7 +731,7 @@ void network_coop_handle_sounds(
 			sound->object_index : NONE;
 		real scale = PIN(sound->scale, 0.0f, 1.0f);
 
-		/* (a number not after the last played is one already played) */
+		/* already played (the comparison handles the number wrapping) */
 		if (coop_sounds.played_any && (short)(sound->number - coop_sounds.played_number) <= 0)
 			continue;
 		coop_sounds.played_number = sound->number;
@@ -741,7 +756,6 @@ void network_coop_handle_sounds(
 	}
 }
 
-/* (a client) the host's presentation, shown here */
 void network_coop_handle_presentation(
 	void const *entries)
 {
@@ -752,7 +766,6 @@ void network_coop_handle_presentation(
 		return;
 	coop_presentation.heard_time = game_time_get();
 
-	/* the cinematic: started, seen through the host's camera, ended */
 	if (cinematic && !coop_presentation.cinematic_started && !cinematic_in_progress())
 	{
 		cinematic_start();
@@ -778,7 +791,7 @@ void network_coop_handle_presentation(
 		}
 	}
 
-	/* the fade, once for each the host makes, begun as long ago as the host's */
+	/* start each new fade, backdated to when the host started it */
 	if (presentation->fade_start_time != coop_presentation.fade_start_time)
 	{
 		real_rgb_color color;

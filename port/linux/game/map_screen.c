@@ -1,36 +1,37 @@
 /*
 MAP_SCREEN.C
 
-The map picker of a game being set up (configure.py --game-browser, as the
-overlay it draws on): a screen of its own over the menus, drawn and driven
-by code as Online Games is (browser_screen.c), in place of the PC menus' map
-list, in either theme (display.theme: Glassed's glass over the scene, or
-Vanilla's blues).
+The map picker used when setting up a game. It replaces the PC menus' map
+list with a screen drawn by code over the menus (like Online Games,
+browser_screen.c), in either theme (display.theme: Glassed or Vanilla).
 
-Hosting a game over the network, it opens on its kinds: COOPERATIVE, the
-campaign with every player in it (a network game on a campaign map, which no
-game engine runs: game.c, players.c), and PVP. COOPERATIVE opens its modes,
-CAMPAIGN alone for now; CAMPAIGN opens VANILLA (the campaign's levels) and
-CUSTOM (the Custom Edition campaign maps in the maps folder), each its
-levels, at the difficulty X steps through, and A on one makes it the game's
-(ui_widget_port_cooperative_level_choose) and opens Server Setup (its name,
-players and listing; then the lobby, as a PvP game's). PVP opens two
-categories, VANILLA (the Xbox's 13 levels and Halo PC's own six) and CUSTOM
-(the other Custom Edition maps in the maps folder, custom_edition_maps.c); a
-category opens its maps, and A on one picks it, as the PC menus' list does,
-and opens the game types that follow it. Y turns a list of levels or maps
-between a list, with the chosen one's picture and description beside it,
-and a grid of cards, each picture over its name. B goes back a step. Every
-time it opens it starts again from its first step.
+The steps, when hosting a network game:
 
-It opens over two screens. The PC menus' Map screen runs "port map select"
-as it is made: a map picked there is chosen as its list would choose it,
-and the game types after it open. The Xbox's map list (Online Games' Create
-Game, split screen, a game's next map) opens it as it is made
-(multiplayer_level_list_initialize): a map picked there becomes the list's
-choice, and the list is given an A, so whatever it does next it does; a co-op
-level opens Server Setup in its place. B on its first step leaves the screen
-under it too.
+	CREATE GAME:  COOPERATIVE | PVP
+	COOPERATIVE:  CAMPAIGN (more modes, such as Firefight, can go here)
+	CAMPAIGN:     VANILLA (the stock levels) | CUSTOM (Custom Edition
+	              campaign maps in the maps folder)
+	  a level:    picking one sets up the co-op game
+	              (ui_widget_port_cooperative_level_choose) and opens
+	              Server Setup, then the lobby
+	PVP:          VANILLA (the Xbox's 13 levels and Halo PC's six) | CUSTOM
+	  a map:      picking one chooses it as the PC list would, then the
+	              game types screen opens
+
+Split screen, and picking a game's next map, start at the PvP categories.
+The screen always starts again from its first step when it opens.
+
+Lists can be shown as rows (with the selected map's picture and
+description beside them) or as a grid of pictures. Arrow keys move, A or
+Enter picks, and Escape (B) goes back a step. Everything else is a button
+along the bottom: BACK, the list/grid view, and the campaign difficulty.
+
+It opens in one of two ways:
+- The PC menus' Map screen runs the "port map select" handler.
+- The Xbox map list (Online Games' Create Game, split screen, next map)
+  opens it from multiplayer_level_list_initialize. A map picked here
+  becomes the list's selection, and an A press is posted to the list so it
+  carries on as usual. A co-op level opens Server Setup instead.
 */
 
 #ifdef HALO_GAME_BROWSER
@@ -64,31 +65,26 @@ under it too.
 
 enum
 {
-	/* (event_manager_post_button's buttons) */
+	/* event_manager_post_button's index for A */
 	BUTTON_A = 0,
 
-	/* the screen takes no A this soon after it opens */
+	/* ignore picks this many milliseconds after opening (the menu's own A) */
 	OPEN_SETTLE = 600,
 
 	NUMBER_OF_CATEGORIES = 2,
-	/* (the Xbox's 13 and custom_edition_maps.c's most) */
+	/* the Xbox's levels plus custom_edition_maps.c's maximum */
 	MAXIMUM_LEVELS = 16 + 1024,
+
+	MAXIMUM_BUTTONS = 3,
 };
 
-/* the screen's steps */
 enum
 {
-	/* (hosting over the network) COOPERATIVE or PVP */
 	STEP_KINDS,
-	/* (COOPERATIVE) its modes */
 	STEP_COOPERATIVE_MODES,
-	/* (CAMPAIGN) VANILLA or CUSTOM */
 	STEP_CAMPAIGN_CATEGORIES,
-	/* (a campaign category) its levels */
 	STEP_CAMPAIGN_LEVELS,
-	/* (PVP, or the Xbox's map list) VANILLA or CUSTOM */
 	STEP_CATEGORIES,
-	/* (a category) its maps */
 	STEP_MAPS,
 };
 
@@ -102,20 +98,19 @@ enum
 enum
 {
 	GLASS_TOP = 66, GLASS_BOTTOM = 446,
-	/* the steps' rows, and a list's: down the left */
+	/* rows down the left */
 	ROW_X = 37, ROW_Y = 80, ROW_WIDTH = 300, ROW_HEIGHT = 22, LIST_ROWS = 15,
-	/* the chosen level or map, or a row's description, at the right */
+	/* the selected entry's picture and description on the right */
 	PREVIEW_X = 362, PREVIEW_Y = 80, PREVIEW_WIDTH = 240, PREVIEW_HEIGHT = 196,
-	/* the grid's cards */
 	GRID_X = 37, GRID_Y = 80, GRID_COLUMNS = 4, GRID_ROWS = 3, CARD_WIDTH = 132, CARD_PICTURE = 107,
 	CARD_HEIGHT = 124, CARD_GAP_X = 13, CARD_GAP_Y = 0,
 };
 
-/* the Xbox levels' descriptions and names, in the game's order of them
-(ui_widget_event_handler_functions.c), and the screens opened next */
 #define LEVEL_DESCRIPTIONS "pc\\main_menu\\multiplayer_type_select\\mp_map_select\\map_data"
 #define GAMETYPES_SCREEN "pc\\main_menu\\multiplayer_type_select\\connected\\gametype_select_screen_wrapper"
 #define SERVER_SETUP_SCREEN "pc\\main_menu\\multiplayer_type_select\\server_settings\\server_settings_screen"
+
+/* in the game's level order (ui_widget_event_handler_functions.c) */
 static char const *const xbox_level_names[] =
 {
 	"Battle Creek", "Sidewinder", "Damnation", "Rat Race", "Prisoner", "Hang 'Em High", "Chill Out",
@@ -124,8 +119,7 @@ static char const *const xbox_level_names[] =
 static char const *const category_names[NUMBER_OF_CATEGORIES] = { "VANILLA", "CUSTOM" };
 static char const *const difficulty_names[NUMBER_OF_GAME_DIFFICULTY_LEVELS] = { "EASY", "NORMAL", "HEROIC", "LEGENDARY" };
 
-/* the rows of the kinds' and the cooperative modes' steps, with what each
-is, shown beside them */
+/* a row of the first two steps, with the description shown beside it */
 struct step_row
 {
 	char const *name;
@@ -141,23 +135,24 @@ static struct step_row const cooperative_rows[] =
 	{ "CAMPAIGN", "The campaign's levels, with\nevery player in the game." },
 };
 
-/* the screen's colors (0xRRGGBBAA) in the menus' themes (browser_screen.c's
-palettes): Glassed's dark glass, hairlines and white for what is chosen,
-and Vanilla's blues on a screen of its own */
+/* colors (0xRRGGBBAA), matching browser_screen.c's palettes */
 struct map_palette
 {
 	boolean glassed;
-	unsigned int backdrop, backdrop_bottom, rule, title, chosen, tick, text, dim, edge;
+	unsigned int backdrop, backdrop_bottom, rule, title, chosen, tick, text, dim, edge, panel;
+	float radius;
 };
 static struct map_palette const glassed_palette =
 {
 	TRUE, 0x06080C8C, 0x06080C8C, 0xFFFFFF5A, 0xFFFFFFD7, 0xFFFFFF3E, 0xFFFFFFFF, 0xD2D6DAFF, 0x8C9096FF, 0xFFFFFF46,
+	0x06080C78, 0.0f,
 };
 static struct map_palette const vanilla_palette =
 {
 	FALSE, 0x0B1830FF, 0x03070FFF, 0x2A62C8FF, 0x3D8BFFFF, 0x2052B0FF, 0x7FB0FFFF, 0xE6EEFCFF, 0x8FA6C8FF, 0x2F6DD0FF,
+	0x081530F0, 6.0f,
 };
-/* the theme's, set as each frame is drawn */
+/* set from the theme each frame */
 static struct map_palette const *palette = &glassed_palette;
 
 #define COLOR_RULE (palette->rule)
@@ -168,8 +163,7 @@ static struct map_palette const *palette = &glassed_palette;
 #define COLOR_DIM (palette->dim)
 #define COLOR_EDGE (palette->edge)
 
-/* (interface/: the multiplayer levels, the map chosen as the PC menus'
-list chooses it, a co-op game's level, and the screens opened and left) */
+/* interface/ and the platform layer */
 char **ui_widget_port_multiplayer_levels(short *count, short *xbox_count);
 boolean ui_widget_port_multiplayer_level_choose(char const *map_name);
 boolean ui_widget_port_cooperative_level_choose(char const *map_name, short difficulty);
@@ -180,12 +174,21 @@ void ui_widget_port_go_back_from_top(void);
 
 /* ---------- structures */
 
-/* a level or map of a list: its index in the multiplayer level list (a
-map; NONE for a campaign level), and its display index (custom_edition_maps.h) */
+/* A list entry. level is its index in the multiplayer level list (NONE for
+a campaign level); display is its display index (custom_edition_maps.h). */
 struct map_entry
 {
 	short level;
 	short display;
+};
+
+/* the button bar for the current step */
+struct button_bar
+{
+	char const *labels[MAXIMUM_BUTTONS];
+	void (*actions[MAXIMUM_BUTTONS])(void);
+	short count;
+	char difficulty_label[32];
 };
 
 /* ---------- globals */
@@ -195,33 +198,33 @@ static struct
 	boolean active;
 	short step;
 	short view;
-	/* the shown list's levels or maps */
+	/* the levels or maps of the open list */
 	struct map_entry entries[MAXIMUM_LEVELS];
 	short count;
 	short selected;
 	short first;
-	/* the row chosen on each step of rows, kept while a later step is open */
+	/* the selected row of each step, kept while a later step is open */
 	short kind_selected;
 	short cooperative_selected;
 	short campaign_category_selected;
 	short category_selected;
-	/* the open category, and the campaign's difficulty */
+	/* the open PvP category */
 	short category;
 	short difficulty;
-	/* hosting over the network: the kinds come first */
+	/* hosting a network game: starts at COOPERATIVE | PVP */
 	boolean hosting;
 	char **level_names;
 	short level_count;
-	/* the Xbox's map list it is open over, which picks, or NULL */
+	/* the Xbox map list this was opened over, or NULL */
 	struct widget_instance *xbox_list;
 	short xbox_count;
 	unsigned long opened_time;
 	struct overlay_repeat repeat;
+	short button_hovered;
 } map_screen = { FALSE, STEP_CATEGORIES, VIEW_LIST };
 
 /* ---------- private code */
 
-/* a string, 0-terminated, as UTF-8 */
 static void utf8_of(wchar_t const *text, char *out, long size)
 {
 	overlay_utf8(text, size, out, size);
@@ -232,7 +235,6 @@ static boolean step_is_list(void)
 	return map_screen.step == STEP_CAMPAIGN_LEVELS || map_screen.step == STEP_MAPS;
 }
 
-/* a step of rows: its rows' count, and the one chosen */
 static short step_row_count(void)
 {
 	switch (map_screen.step)
@@ -254,7 +256,7 @@ static short *step_row_selected(void)
 	}
 }
 
-/* a level's or map's name in the menus, and its description (empty if none) */
+/* an entry's display name and description (empty if it has none) */
 static void entry_text(struct map_entry const *entry, char *name, char *description, long size)
 {
 	description[0] = 0;
@@ -273,13 +275,13 @@ static void entry_text(struct map_entry const *entry, char *name, char *descript
 	utf8_of(custom_edition_maps_description(entry->display), description, size);
 }
 
-/* whether a level is one of the stock ones: the Xbox's, or Halo PC's own */
+/* whether a multiplayer level is stock (the Xbox's or Halo PC's own) */
 static boolean level_vanilla(short level)
 {
 	return level < map_screen.xbox_count || custom_edition_maps_stock(custom_edition_maps_level_display_index(level));
 }
 
-/* the level list's levels in a category: the stock ones, or the rest */
+/* the multiplayer levels in a PvP category; returns the count */
 static short category_levels(short category, struct map_entry *entries)
 {
 	short count = 0, level;
@@ -296,22 +298,8 @@ static short category_levels(short category, struct map_entry *entries)
 	return count;
 }
 
-static void list_open(short step)
-{
-	map_screen.step = step;
-	map_screen.selected = 0;
-	map_screen.first = 0;
-}
-
-static void category_open(short category)
-{
-	map_screen.category = category;
-	map_screen.count = category_levels(category, map_screen.entries);
-	list_open(STEP_MAPS);
-}
-
-/* the campaign levels of a category: the campaign's (VANILLA), or the Custom
-Edition campaign maps (CUSTOM) */
+/* the campaign levels in a category (stock or custom); entries may be NULL
+to just count them */
 static short campaign_levels(short category, struct map_entry *entries)
 {
 	short displays[MAXIMUM_LEVELS];
@@ -333,10 +321,11 @@ static short campaign_levels(short category, struct map_entry *entries)
 	return count;
 }
 
-static void campaign_open(short category)
+static void list_open(short step)
 {
-	map_screen.count = campaign_levels(category, map_screen.entries);
-	list_open(STEP_CAMPAIGN_LEVELS);
+	map_screen.step = step;
+	map_screen.selected = 0;
+	map_screen.first = 0;
 }
 
 static short page_size(void)
@@ -344,7 +333,7 @@ static short page_size(void)
 	return map_screen.view == VIEW_GRID ? GRID_COLUMNS * GRID_ROWS : LIST_ROWS;
 }
 
-/* the first row or card shown, keeping the selection on the page */
+/* scrolls so the selection is on screen */
 static void keep_in_view(void)
 {
 	short page = page_size();
@@ -376,10 +365,13 @@ static void pick(void)
 		map_screen.step = STEP_CAMPAIGN_CATEGORIES;
 		return;
 	case STEP_CAMPAIGN_CATEGORIES:
-		campaign_open(map_screen.campaign_category_selected);
+		map_screen.count = campaign_levels(map_screen.campaign_category_selected, map_screen.entries);
+		list_open(STEP_CAMPAIGN_LEVELS);
 		return;
 	case STEP_CATEGORIES:
-		category_open(map_screen.category_selected);
+		map_screen.category = map_screen.category_selected;
+		map_screen.count = category_levels(map_screen.category, map_screen.entries);
+		list_open(STEP_MAPS);
 		return;
 	case STEP_CAMPAIGN_LEVELS:
 		if (!map_screen.count ||
@@ -388,8 +380,7 @@ static void pick(void)
 		{
 			return;
 		}
-		/* (the Xbox's list, if it is open over one, picks nothing: Server Setup
-		takes its place) */
+		/* Server Setup replaces the Xbox list, which picks nothing */
 		map_screen.active = FALSE;
 		map_screen.xbox_list = NULL;
 		ui_widget_port_open_from_top(SERVER_SETUP_SCREEN);
@@ -405,7 +396,7 @@ static void pick(void)
 	map_screen.active = FALSE;
 	if (map_screen.xbox_list)
 	{
-		/* (the list's A: its own "multiplayer level select", and what it opens) */
+		/* select it in the Xbox list and press A there, so the list goes on as usual */
 		map_screen.xbox_list->parameters.list.selected_index = map_screen.entries[map_screen.selected].level;
 		map_screen.xbox_list = NULL;
 		event_manager_post_button(0, BUTTON_A);
@@ -442,8 +433,46 @@ static void back(void)
 	}
 }
 
-/* a move: up and down by one (a grid's row), left and right a grid's card
-or a list's page */
+static void toggle_view(void)
+{
+	map_screen.view = (short)(map_screen.view == VIEW_LIST ? VIEW_GRID : VIEW_LIST);
+	map_screen.first = 0;
+	keep_in_view();
+}
+
+static void next_difficulty(void)
+{
+	map_screen.difficulty = (short)((map_screen.difficulty + 1) % NUMBER_OF_GAME_DIFFICULTY_LEVELS);
+}
+
+/* the buttons the current step offers */
+static void step_buttons(struct button_bar *bar)
+{
+	bar->count = 0;
+	bar->labels[bar->count] = "BACK";
+	bar->actions[bar->count++] = back;
+	if (step_is_list())
+	{
+		bar->labels[bar->count] = map_screen.view == VIEW_LIST ? "GRID VIEW" : "LIST VIEW";
+		bar->actions[bar->count++] = toggle_view;
+	}
+	if (map_screen.step == STEP_CAMPAIGN_LEVELS)
+	{
+		snprintf(bar->difficulty_label, sizeof(bar->difficulty_label), "DIFFICULTY: %s",
+			difficulty_names[map_screen.difficulty]);
+		bar->labels[bar->count] = bar->difficulty_label;
+		bar->actions[bar->count++] = next_difficulty;
+	}
+}
+
+/* the bar's left edge: at the left in Glassed, centred in Vanilla */
+static float buttons_left(struct button_bar const *bar)
+{
+	return palette->glassed ? (float)ROW_X : 320.0f - overlay_buttons_width(bar->labels, bar->count) / 2;
+}
+
+/* Arrow keys: up and down move one row (or one grid row); left and right
+move one card in the grid, or a page in a list. */
 static void move(short dx, short dy)
 {
 	short *selected = step_is_list() ? &map_screen.selected : step_row_selected();
@@ -460,8 +489,7 @@ static void move(short dx, short dy)
 	keep_in_view();
 }
 
-/* the row or card at a point of the 640x480 layout (its index in what is
-shown), or NONE */
+/* the row or card index at a point of the 640x480 layout, or NONE */
 static short item_at(short x, short y)
 {
 	if (!step_is_list() || map_screen.view == VIEW_LIST)
@@ -492,7 +520,7 @@ static void chosen_row(float x, float y, float width, float height)
 	ui_overlay_rect(x, y, 1.5f, height, 0, COLOR_TICK);
 }
 
-/* lines of text, as written, down from y */
+/* draws newline-separated text downward from y (modifies text) */
 static void render_lines(char *text, float x, float y, float size, unsigned int color)
 {
 	char *line = text;
@@ -509,7 +537,6 @@ static void render_lines(char *text, float x, float y, float size, unsigned int 
 	}
 }
 
-/* the kinds' or the cooperative modes' rows, the chosen one's description beside them */
 static void render_step_rows(struct step_row const *rows, short count, short selected)
 {
 	char description[128];
@@ -529,7 +556,7 @@ static void render_step_rows(struct step_row const *rows, short count, short sel
 	render_lines(description, PREVIEW_X, PREVIEW_Y + 24, 11.0f, COLOR_DIM);
 }
 
-/* VANILLA and CUSTOM, with how many each has, and what to do for an empty CUSTOM */
+/* VANILLA and CUSTOM with their counts, and a hint when CUSTOM is empty */
 static void render_categories(short const *counts, short selected, char const *custom_hint)
 {
 	short category;
@@ -570,7 +597,6 @@ static void render_list(void)
 	}
 	if (!map_screen.count)
 		return;
-	/* the chosen level or map, at the right */
 	chosen = &map_screen.entries[map_screen.selected];
 	overlay_map_picture(chosen->display, PREVIEW_X, PREVIEW_Y, PREVIEW_WIDTH, PREVIEW_HEIGHT);
 	ui_overlay_outline(PREVIEW_X, PREVIEW_Y, PREVIEW_WIDTH, PREVIEW_HEIGHT, 0, 0.75f, COLOR_EDGE);
@@ -624,8 +650,8 @@ boolean map_screen_active(void)
 	return map_screen.active;
 }
 
-/* "port map select": opened over the Map screen, from its first step; FALSE
-(its own list then) without the overlay */
+/* Opens the picker at its first step ("port map select"). Returns FALSE
+without the overlay, and the PC menus' own list is used instead. */
 boolean map_screen_open(void)
 {
 	if (!ui_overlay_available())
@@ -635,7 +661,7 @@ boolean map_screen_open(void)
 	map_screen.active = TRUE;
 	map_screen.opened_time = system_milliseconds();
 	map_screen.repeat.held = FALSE;
-	/* (a game set up before, backed out of, is not where this one starts) */
+	map_screen.button_hovered = NONE;
 	map_screen.hosting = global_network_game_server_get() != NULL && !network_game_is_splitscreen_local();
 	map_screen.step = map_screen.hosting ? STEP_KINDS : STEP_CATEGORIES;
 	map_screen.kind_selected = 0;
@@ -645,15 +671,12 @@ boolean map_screen_open(void)
 	map_screen.selected = 0;
 	map_screen.first = 0;
 	map_screen.difficulty = (short)PIN(main_get_difficulty(), 0, NUMBER_OF_GAME_DIFFICULTY_LEVELS - 1);
-	/* (the menu's A, still queued, is not a pick) */
+	/* drop the menu's A that opened us, still queued */
 	event_manager_flush();
 	return TRUE;
 }
 
-/* (multiplayer_level_list_initialize) the Xbox's map list made: this opened
-over it, to pick through it; from its first step, as over the Map screen
-(Online Games' Create Game opens that list: the kinds; split screen: the
-categories) */
+/* multiplayer_level_list_initialize: opens the picker over the Xbox map list */
 boolean map_screen_open_over_list(struct widget_instance *list)
 {
 	if (!map_screen_open())
@@ -662,14 +685,32 @@ boolean map_screen_open_over_list(struct widget_instance *list)
 	return TRUE;
 }
 
-/* the mouse: what is under it is chosen, a click picks it, the wheel moves
-and the right button goes back */
+/* The mouse: hovering selects, clicking picks or presses a button, and the
+wheel scrolls. */
 void map_screen_pointer(struct halo_ui_pointer const *pointer)
 {
 	short *selected = step_is_list() ? &map_screen.selected : step_row_selected();
 	short count = step_is_list() ? map_screen.count : step_row_count();
+	struct button_bar bar;
 	short item;
 
+	step_buttons(&bar);
+	if (pointer->moved)
+	{
+		map_screen.button_hovered = overlay_button_at(bar.labels, bar.count, buttons_left(&bar), OVERLAY_BUTTON_Y,
+			pointer->x, pointer->y);
+	}
+	if (pointer->left_clicks)
+	{
+		short button = overlay_button_at(bar.labels, bar.count, buttons_left(&bar), OVERLAY_BUTTON_Y,
+			pointer->click_x, pointer->click_y);
+
+		if (button != NONE)
+		{
+			bar.actions[button]();
+			return;
+		}
+	}
 	if (pointer->wheel_steps)
 		move(0, (short)(pointer->wheel_steps > 0 ? -1 : 1));
 	item = pointer->moved ? item_at(pointer->x, pointer->y) : NONE;
@@ -681,8 +722,6 @@ void map_screen_pointer(struct halo_ui_pointer const *pointer)
 		*selected = item;
 		pick();
 	}
-	if (pointer->right_clicks)
-		back();
 }
 
 void map_screen_process(void)
@@ -705,33 +744,16 @@ void map_screen_process(void)
 			case _gamepad_binary_button_dpad_down: dy = 1; break;
 			case _gamepad_binary_button_dpad_left: dx = -1; break;
 			case _gamepad_binary_button_dpad_right: dx = 1; break;
-			case _gamepad_analog_button_a:
-			case _gamepad_binary_button_start:
-				pick();
-				break;
-			case _gamepad_analog_button_x:
-				if (map_screen.step == STEP_CAMPAIGN_LEVELS)
-					map_screen.difficulty = (short)((map_screen.difficulty + 1) % NUMBER_OF_GAME_DIFFICULTY_LEVELS);
-				break;
-			case _gamepad_analog_button_y:
-				if (step_is_list())
-				{
-					map_screen.view = (short)(map_screen.view == VIEW_LIST ? VIEW_GRID : VIEW_LIST);
-					map_screen.first = 0;
-					keep_in_view();
-				}
-				break;
-			case _gamepad_analog_button_b:
-				back();
-				break;
+			case _gamepad_analog_button_a: pick(); break;
+			case _gamepad_analog_button_b: back(); break;
 			default: break;
 			}
 		}
 	}
 	if (overlay_repeat_step(&map_screen.repeat, dx || dy))
 		move(dx, dy);
-	/* (the widgets behind take nothing while this is up; once a map is
-	picked, the A given to the Xbox's list goes through) */
+	/* The menus behind get no input while this is open. Once a map is
+	picked, the A posted to the Xbox list must get through. */
 	if (map_screen.active)
 		event_manager_flush();
 }
@@ -739,13 +761,13 @@ void map_screen_process(void)
 void map_screen_render(void)
 {
 	float margin = (float)((halo_screen_width() - 640) / 2 + 2);
-	float x;
+	struct overlay_button_colors colors;
+	struct button_bar bar;
 
 	if (!ui_overlay_available())
 		return;
-	/* the screen, its widescreen margins too: Glassed's glass over the
-	scene, or Vanilla's screen of its own */
 	palette = strcmp(config_string("display.theme"), "vanilla") ? &glassed_palette : &vanilla_palette;
+	/* Glassed darkens a band over the scene; Vanilla covers the screen */
 	if (palette->glassed)
 		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
 	else
@@ -753,13 +775,6 @@ void map_screen_render(void)
 	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
 	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
 	ui_overlay_text(UI_FONT_BOLD, 30.0f, 37, 17, UI_ALIGN_LEFT, COLOR_TITLE, step_title());
-	if (map_screen.step == STEP_CAMPAIGN_LEVELS)
-	{
-		char text[32];
-
-		snprintf(text, sizeof(text), "DIFFICULTY: %s", difficulty_names[map_screen.difficulty]);
-		ui_overlay_text(UI_FONT_BOLD, 13.0f, 603, 30, UI_ALIGN_RIGHT, COLOR_TEXT, text);
-	}
 
 	switch (map_screen.step)
 	{
@@ -798,13 +813,16 @@ void map_screen_render(void)
 		break;
 	}
 
-	x = 37;
-	x = overlay_prompt(UI_BUTTON_A, "=SELECT", x, COLOR_TEXT);
-	x = overlay_prompt(UI_BUTTON_B, "=BACK", x, COLOR_TEXT);
-	if (step_is_list())
-		x = overlay_prompt(UI_BUTTON_Y, map_screen.view == VIEW_LIST ? "=GRID VIEW" : "=LIST VIEW", x, COLOR_TEXT);
-	if (map_screen.step == STEP_CAMPAIGN_LEVELS)
-		overlay_prompt(UI_BUTTON_X, "=DIFFICULTY", x, COLOR_TEXT);
+	step_buttons(&bar);
+	colors.fill = palette->panel;
+	colors.fill_lit = COLOR_CHOSEN;
+	colors.edge = COLOR_EDGE;
+	colors.text = COLOR_TEXT;
+	colors.text_lit = COLOR_TITLE;
+	colors.text_disabled = COLOR_DIM;
+	colors.radius = palette->radius;
+	overlay_buttons_draw(bar.labels, bar.count, buttons_left(&bar), OVERLAY_BUTTON_Y, map_screen.button_hovered, 0,
+		&colors);
 }
 
 #endif
