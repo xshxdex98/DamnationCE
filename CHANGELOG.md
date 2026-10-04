@@ -24,7 +24,7 @@
   the selected game's details at the right edge.
 - Server browser notices (missing maps, refreshing) and full or closed games
   are shown in teal, and notices sit under the game list instead of over the
-  header.
+  header. The main menu's version number is teal too.
 - The Glassed theme's text is now set in Rajdhani, a free font in the style of
   Conduit. Vanilla keeps its fonts.
 - Co-op code no longer runs in the menus while a game is being set up. It

@@ -78,6 +78,9 @@ PICTURE_SCALE = 3
 
 # the screens' text colors, and the look's
 TEXT_COLORS = {"#FF2896FF": "#FFD2D6DA", "#FF0080FF": "#FFA8ACB0"}
+# the version number's color in both themes, the teal of the server browser's
+# notices (port/linux/game/browser_screen.c, COLOR_NOTICE)
+VERSION_COLOR = "#FF3CC8C0"
 
 # The selection lists' rows (eight screens share them: profiles, saved
 # games, levels, maps, the lobby, game types, playlists, colors) are this
@@ -96,6 +99,7 @@ WIDGET_CHANGES = {
     # (the scroll buttons: an arrow in the middle of the row, on no bar of their own)
     "main_menu/new_select/scroll_up_button": {"width": str(SELECTION_ROW_WIDTH - 40), "bitmap": None},
     "main_menu/new_select/scroll_down_button": {"width": str(SELECTION_ROW_WIDTH - 40), "bitmap": None},
+    "main_menu/build_number": {"color": VERSION_COLOR},
 }
 # where a widget's children are: (parent, child) -> attributes
 CHILD_CHANGES = {
@@ -362,6 +366,9 @@ def vanilla_layer():
     tree = ET.parse(MENUS / "ce" / "main_menu.xml")
     menus = tree.getroot()
     menus.set("root", "main_menu/main_menu")
+    for widget in menus.iter("widget"):
+        if widget.get("name") == "main_menu/build_number":
+            widget.set("color", VERSION_COLOR)
     menus.append(ET.fromstring(VANILLA_MENUS_ITEM.strip()))
     for widget in ET.fromstring(VANILLA_THEMES_SCREEN.strip()):
         menus.append(widget)
