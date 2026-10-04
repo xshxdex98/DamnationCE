@@ -15,9 +15,7 @@ DamnationCE is a fork of **OpenCE**
 ([cybersecurity/halo-ce-universal](https://github.com/cybersecurity/halo-ce-universal)),
 the port of the Halo: Combat Evolved decompilation to modern computers. It
 follows OpenCE's builds closely and adds its own menus, Custom Edition map
-support and synced AI on top. Its online features (Online Games, hosting,
-stats) come from ChupathingyCE, used with its authors' permission (see
-[Credits](#credits)).
+support and synced AI on top.
 
 ## What it adds
 
