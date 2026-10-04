@@ -133,6 +133,7 @@ enum
 	_coop_event_unit_animation,
 	_coop_event_scenery_animation,
 	_coop_event_effect,
+	_coop_event_attach,
 };
 
 /* distributed_coop_event.type of an effect: at a cutscene flag (value), or on
@@ -141,6 +142,13 @@ enum
 {
 	_coop_effect_at_flag,
 	_coop_effect_on_marker,
+};
+
+/* distributed_coop_event.type of an attach event */
+enum
+{
+	_coop_attach,
+	_coop_detach,
 };
 
 /* which of a device's two groups an entry is */
@@ -1099,6 +1107,52 @@ static void client_apply_effect(
 	}
 }
 
+/* the name of a marker of the object's model by its index there; "" (the
+object's origin) for NONE or one it lacks */
+static char const *object_marker_name(
+	long object_index,
+	short marker_index)
+{
+	long model_index = object_definition_get(object_get(object_index)->definition_index)->object.model.index;
+	struct model *model = model_index != NONE ? model_definition_get(model_index) : NULL;
+
+	if (!model || marker_index < 0 || marker_index >= model->markers.count)
+		return "";
+	return TAG_BLOCK_GET_ELEMENT(&model->markers, marker_index, struct model_marker)->name;
+}
+
+/* the index of a marker of the object's model by its name, NONE for "" or
+one it lacks */
+static short object_marker_index(
+	long object_index,
+	char const *marker_name)
+{
+	long model_index = object_definition_get(object_get(object_index)->definition_index)->object.model.index;
+
+	return model_index != NONE && marker_name && marker_name[0] ? model_find_marker(model_index, marker_name) : NONE;
+}
+
+/* An attach or a detach. The parent is object_index, name_index and
+definition_index; the child is target, with its definition in tag_index and
+its name index in reals[0]; value and frame are the parent's and the child's
+markers. */
+static void client_apply_attach(
+	struct distributed_coop_event const *event)
+{
+	long parent_index = object_find(event->name_index, event->object_index, event->definition_index, _object_mask_all);
+	long child_index = object_find((short)event->reals[0], event->target, event->tag_index, _object_mask_all);
+
+	if (parent_index == NONE || child_index == NONE || parent_index == child_index)
+		return;
+	if (event->type == _coop_detach)
+		objects_scripting_detach(parent_index, child_index);
+	else
+	{
+		objects_scripting_attach(parent_index, object_marker_name(parent_index, event->value), child_index,
+			object_marker_name(child_index, event->frame));
+	}
+}
+
 static void client_apply_event(
 	struct distributed_coop_event const *event)
 {
@@ -1128,6 +1182,9 @@ static void client_apply_event(
 		break;
 	case _coop_event_effect:
 		client_apply_effect(event);
+		break;
+	case _coop_event_attach:
+		client_apply_attach(event);
 		break;
 	default:
 		break;
@@ -1329,6 +1386,47 @@ void network_coop_note_scenery_animation(
 	event->tag_index = animation_graph_index;
 	event->value = animation_index;
 	event->frame = frame_index;
+}
+
+/* an attach (marker names given) or a detach (NULL names) */
+static void note_attach(
+	byte type,
+	long parent_index,
+	char const *parent_marker_name,
+	long child_index,
+	char const *child_marker_name)
+{
+	struct object_datum *parent = object_try_and_get(parent_index);
+	struct object_datum *child = object_try_and_get(child_index);
+	struct distributed_coop_event *event;
+
+	if (!parent || !child || !(event = event_new(_coop_event_attach)))
+		return;
+	event->type = type;
+	event->object_index = parent_index;
+	event->name_index = parent->object.name_index;
+	event->definition_index = parent->definition_index;
+	event->target = child_index;
+	event->tag_index = child->definition_index;
+	event->reals[0] = child->object.name_index;
+	event->value = object_marker_index(parent_index, parent_marker_name);
+	event->frame = object_marker_index(child_index, child_marker_name);
+}
+
+void network_coop_note_attach(
+	long parent_index,
+	char const *parent_marker_name,
+	long child_index,
+	char const *child_marker_name)
+{
+	note_attach(_coop_attach, parent_index, parent_marker_name, child_index, child_marker_name);
+}
+
+void network_coop_note_detach(
+	long parent_index,
+	long child_index)
+{
+	note_attach(_coop_detach, parent_index, NULL, child_index, NULL);
 }
 
 void network_coop_note_effect(
