@@ -69,6 +69,10 @@ void network_coop_note_unit_animation_frame(long unit_index, short frame_index);
 /* the scripts' effects (hs_library_external.c): at a cutscene flag, or on an
 object's marker */
 void network_coop_note_effect(long effect_definition_index, short cutscene_flag_index);
+/* the scripts' objects_attach and objects_detach (objects.c) */
+void network_coop_note_attach(long parent_index, char const *parent_marker_name, long child_index,
+	char const *child_marker_name);
+void network_coop_note_detach(long parent_index, long child_index);
 void network_coop_note_object_effect(long effect_definition_index, long object_index, char const *marker_name);
 void network_coop_note_scenery_animation(long object_index, long animation_graph_index, short animation_index,
 	short frame_index);
