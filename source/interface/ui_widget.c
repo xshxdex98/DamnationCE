@@ -4133,9 +4133,21 @@ struct widget_instance *ui_widget_load_by_name_or_tag(
 		379,
 		(widget_stack>=0) && (widget_stack<MAXIMUM_GAMEPADS));
 	/* port: the PC menus' own screen in place of the Xbox's it stands for
-	(the pregame lobby), whoever asks for it by name */
+	(the pregame lobby), whoever asks for it, by name or by tag (a button's) */
 	if (tag_index == NONE)
+	{
 		tag_index = tag_loaded(UI_WIDGET_DEFINITION_TAG, pc_menus_screen(name));
+	}
+	else
+	{
+		char const *tag_name = tag_get_name(tag_index);
+		char const *replacement = tag_name ? pc_menus_screen(tag_name) : NULL;
+		long replacement_index = replacement && replacement != tag_name ?
+			tag_loaded(UI_WIDGET_DEFINITION_TAG, replacement) : NONE;
+
+		if (replacement_index != NONE)
+			tag_index = replacement_index;
+	}
 	if (tag_index != NONE)
 	{
 		definition = ui_widget_definition_get(tag_index);
