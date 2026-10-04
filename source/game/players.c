@@ -2498,6 +2498,8 @@ boolean players_coop_waiting_to_start(
 /* how close a projectile, a grenade throw or a dying unit makes a teammate
 unsafe to respawn beside (world units) */
 #define COOP_RESPAWN_DANGER_RADIUS 15.0f
+/* how often the respawn's safety test runs while someone is dead */
+#define COOP_RESPAWN_CHECK_TICKS (TICKS_PER_SECOND / 2)
 
 /* whether something near the unit's position is dangerous: a projectile, a
 unit throwing a grenade, or one dying (any_unit_is_dangerous's tests, near
@@ -2570,6 +2572,10 @@ static boolean players_respawn_network_coop(
 	long safe_unit_index = NONE;
 	boolean result = TRUE;
 
+	/* (main.c asks every tick while someone is dead; the test walks the
+	map's units and projectiles, so twice a second is enough) */
+	if (game_time_get() % COOP_RESPAWN_CHECK_TICKS != 0)
+		return FALSE;
 	data_iterator_new(&iterator, player_data);
 	while (safe_unit_index == NONE && (player = data_iterator_next(&iterator)) != NULL)
 	{
