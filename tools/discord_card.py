@@ -21,13 +21,13 @@ SHADE = (6, 8, 12)
 GREEN = (150, 255, 180)
 
 WIDTH, HEIGHT = 1600, 1000
-MARGIN = 44
-HEADER_HEIGHT = 130
-FOOTER_HEIGHT = 70
+MARGIN = 36
+HEADER_HEIGHT = 140
+FOOTER_HEIGHT = 80
 COLUMNS = 2
-COLUMN_GAP = 28
-ROWS_PER_COLUMN = 7
-THUMBNAIL = (112, 84)
+COLUMN_GAP = 24
+ROWS_PER_COLUMN = 5
+THUMBNAIL = (144, 108)
 
 
 def font(weight, size):
@@ -108,17 +108,18 @@ def draw_game(card, game, box, thumbnail, map_name, mode_name):
     if thumbnail:
         card.picture(cover(thumbnail, THUMBNAIL), (picture_left, picture_top))
 
-    count_font, name_font, detail_font = font("Bold", 46), font("Bold", 40), font("SemiBold", 32)
+    # the name's line shares its width with the count; the map and mode have the whole row's
+    count_font, name_font, detail_font = font("Bold", 58), font("Bold", 54), font("SemiBold", 42)
     count = f"{game['players']}/{game['maximum_players']}"
-    middle = (top + bottom) // 2
-    draw.text((right - 24, middle), count, font=count_font, anchor="rm",
-              fill=GREEN + (240,) if joinable else WHITE + (120,))
+    baseline = (top + bottom) // 2 - 6
     text_left = picture_left + THUMBNAIL[0] + 22
-    text_width = right - 24 - draw.textlength(count, font=count_font) - 24 - text_left
-    draw.text((text_left, middle - 4), fit(draw, game["name"], name_font, text_width), font=name_font,
+    draw.text((right - 24, baseline), count, font=count_font, anchor="rs",
+              fill=GREEN + (240,) if joinable else WHITE + (120,))
+    name_width = right - 24 - draw.textlength(count, font=count_font) - 24 - text_left
+    draw.text((text_left, baseline), fit(draw, game["name"], name_font, name_width), font=name_font,
               fill=WHITE + (240,), anchor="ls")
     details = f"{map_name(game['map'])}  ·  {mode_name(game)}"
-    draw.text((text_left, middle + 6), fit(draw, details, detail_font, text_width), font=detail_font,
+    draw.text((text_left, baseline + 14), fit(draw, details, detail_font, right - 24 - text_left), font=detail_font,
               fill=WHITE + (175,), anchor="lt")
 
 
@@ -135,11 +136,11 @@ def server_card(games, map_name, mode_name, map_art, user_agent):
     players = sum(game["players"] for game in active)
 
     # the heading
-    draw.text((MARGIN, HEADER_HEIGHT // 2), spaced("OpenCE") + "   " + spaced("Servers"), font=font("Bold", 62),
+    draw.text((MARGIN, HEADER_HEIGHT // 2), spaced("OpenCE") + "   " + spaced("Servers"), font=font("Bold", 76),
               fill=WHITE + (235,), anchor="lm")
     summary = (f"{players} {'PLAYER' if players == 1 else 'PLAYERS'}  ·  "
                f"{len(active)} {'SERVER' if len(active) == 1 else 'SERVERS'}")
-    draw.text((WIDTH - MARGIN, HEADER_HEIGHT // 2), summary, font=font("SemiBold", 38), fill=WHITE + (180,),
+    draw.text((WIDTH - MARGIN, HEADER_HEIGHT // 2), summary, font=font("SemiBold", 46), fill=WHITE + (180,),
               anchor="rm")
 
     # the games' pane of dark glass, a column of rows each side
@@ -157,7 +158,7 @@ def server_card(games, map_name, mode_name, map_art, user_agent):
         if path not in thumbnails:
             thumbnails[path] = fetch_art(path, user_agent)
         draw_game(card, game, (x, y + 4, x + column_width, y + row_height - 4), thumbnails[path], map_name, mode_name)
-    message_font = font("SemiBold", 36)
+    message_font = font("SemiBold", 46)
     if not active:
         draw.text(((left + right) // 2, (top + bottom) // 2), spaced("No games right now"), font=message_font,
                   fill=WHITE + (150,), anchor="mm")
@@ -168,7 +169,7 @@ def server_card(games, map_name, mode_name, map_art, user_agent):
                   anchor="mm")
 
     # the empty games, and how to join
-    footer_font = font("SemiBold", 28)
+    footer_font = font("SemiBold", 36)
     join = spaced("Join in game")
     join_width = draw.textlength(join, font=footer_font)
     middle = HEIGHT - FOOTER_HEIGHT // 2
