@@ -24,11 +24,12 @@ time it opens it starts again from its first step.
 
 It opens over two screens. The PC menus' Map screen runs "port map select"
 as it is made: a map picked there is chosen as its list would choose it,
-and the game types after it open. The Xbox's map list (split screen, a
-game's next map) opens it as it is made (multiplayer_level_list_initialize),
-on its categories: a map picked there becomes the list's choice, and the list
-is given an A, so whatever it does next it does. B on its first step leaves
-the screen under it too.
+and the game types after it open. The Xbox's map list (Online Games' Create
+Game, split screen, a game's next map) opens it as it is made
+(multiplayer_level_list_initialize): a map picked there becomes the list's
+choice, and the list is given an A, so whatever it does next it does; a co-op
+level opens Server Setup in its place. B on its first step leaves the screen
+under it too.
 */
 
 #ifdef HALO_GAME_BROWSER
@@ -362,7 +363,10 @@ static void pick(void)
 		{
 			return;
 		}
+		/* (the Xbox's list, if it is open over one, picks nothing: Server Setup
+		takes its place) */
 		map_screen.active = FALSE;
+		map_screen.xbox_list = NULL;
 		ui_widget_port_open_from_top(SERVER_SETUP_SCREEN);
 		return;
 	default:
@@ -618,14 +622,14 @@ boolean map_screen_open(void)
 }
 
 /* (multiplayer_level_list_initialize) the Xbox's map list made: this opened
-over it, on its categories, to pick through it */
+over it, to pick through it; from its first step, as over the Map screen
+(Online Games' Create Game opens that list: the kinds; split screen: the
+categories) */
 boolean map_screen_open_over_list(struct widget_instance *list)
 {
 	if (!map_screen_open())
 		return FALSE;
 	map_screen.xbox_list = list;
-	map_screen.hosting = FALSE;
-	map_screen.step = STEP_CATEGORIES;
 	return TRUE;
 }
 
