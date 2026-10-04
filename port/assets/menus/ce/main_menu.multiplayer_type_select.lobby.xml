@@ -49,7 +49,7 @@
 	<widget name="main_menu/multiplayer_type_select/lobby/list_item_12" controller="1" width="380" height="23">
 		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text"/>
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_text" type="text" controller="1" width="380" height="23" color="#00000000" text_flags="no_focus_test">
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_text" type="text" controller="1" width="380" height="23" font="ui\small_ui" color="#00000000" text_flags="no_focus_test">
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/lobby/lobby_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children">
 		<data input="net splitscreen prejoin players"/>
@@ -93,17 +93,17 @@
 		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_start" x="400"/>
 		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_leave" x="512"/>
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_team" type="text" width="104" height="22" color="#00000000">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_team" type="text" width="104" height="22" font="ui\small_ui" color="#00000000">
 		<on event="a" run="swap player team"/>
 		<on event="start" run="swap player team"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_start" type="text" width="104" height="22" color="#00000000">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_start" type="text" width="104" height="22" font="ui\small_ui" color="#00000000">
 		<on event="a" run="net game speed start"/>
 		<on event="start" run="net game speed start"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_leave" type="text" width="104" height="22" color="#00000000">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_leave" type="text" width="104" height="22" font="ui\small_ui" color="#00000000">
 		<on event="a" run="mouse emit back event"/>
 		<on event="start" run="mouse emit back event"/>
 		<on event="left_mouse" run="mouse emit accept event"/>

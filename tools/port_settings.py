@@ -680,6 +680,8 @@ LOBBY_ROW_LEFT, LOBBY_ROW_TOP, LOBBY_ROW_HEIGHT, LOBBY_ROW_WIDTH, LOBBY_ROWS = 2
 LOBBY_BUTTONS_TOP, LOBBY_BUTTON_WIDTH, LOBBY_BUTTON_HEIGHT = 448, 104, 22
 LOBBY_BUTTON_LEFTS = (288, 400, 512)
 CLEAR = "#00000000"
+# (the clear text still needs a font, or the game won't draw the widget and logs it every frame)
+SMALL_FONT = "ui\\small_ui"
 
 
 def _lobby() -> list:
@@ -702,7 +704,7 @@ def _lobby() -> list:
                                                        ("height", LOBBY_ROW_HEIGHT - 1)],
                          [f'<child widget="{base}/list_item_text"/>'])
     lines += _widget(f"{base}/list_item_text", [("type", "text"), ("controller", 1), ("width", LOBBY_ROW_WIDTH),
-                                                ("height", LOBBY_ROW_HEIGHT - 1), ("color", CLEAR),
+                                                ("height", LOBBY_ROW_HEIGHT - 1), ("font", SMALL_FONT), ("color", CLEAR),
                                                 ("text_flags", "no_focus_test")], [])
     lines += _widget(f"{base}/lobby_list", [("type", "column_list"), ("width", 640), ("height", 480),
                                             ("flags", "pass_unhandled_to_focused_child up_down_tabs_children")],
@@ -741,7 +743,7 @@ def _lobby() -> list:
         ("start", ['<on event="a" run="net game speed start"/>', '<on event="start" run="net game speed start"/>']),
         ("leave", ['<on event="a" run="mouse emit back event"/>', '<on event="start" run="mouse emit back event"/>'])):
         lines += _widget(f"{base}/lobby_button_{key}", [("type", "text"), ("width", LOBBY_BUTTON_WIDTH),
-                                                       ("height", LOBBY_BUTTON_HEIGHT), ("color", CLEAR)],
+                                                       ("height", LOBBY_BUTTON_HEIGHT), ("font", SMALL_FONT), ("color", CLEAR)],
                          handlers + ['<on event="left_mouse" run="mouse emit accept event"/>'])
     # a game under way's lobby, before joining it (the browser's rows of
     # games in progress): what its advertisement tells, JOIN GAME
