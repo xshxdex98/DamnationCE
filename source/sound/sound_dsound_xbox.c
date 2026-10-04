@@ -2397,21 +2397,16 @@ static void dsound_channel_set_properties(
 	boolean gain_only)
 {
 	struct sound_channel *channel= channel_get(channel_index);
-#ifdef HALO_64BIT
+	/* port: a Custom Edition map's sound can be louder than a channel plays
+	(foundation's Reach sniper rifle fire has a gain modifier of 1.5); played
+	at full gain, as Halo PC does, rather than halting */
 	real prop_gain = PIN(properties->gain, 0.f, 1.f);
 	real gain= dsound_globals.pause_gain*prop_gain;
-#else
-	real gain= dsound_globals.pause_gain*properties->gain;
-#endif
 
 	match_assert(
 		"c:\\halo\\SOURCE\\sound\\sound_dsound_xbox.c",
 		980,
-#ifdef HALO_64BIT
 		prop_gain>=0.f && prop_gain<=1.f);
-#else
-		properties->gain>=0.f && properties->gain<=1.f);
-#endif
 	match_assert(
 		"c:\\halo\\SOURCE\\sound\\sound_dsound_xbox.c",
 		981,
