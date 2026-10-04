@@ -179,6 +179,7 @@ struct game_options;
 #include "structures/structures.h"
 #include "units/units.h"
 #include "units/vehicles.h"
+#include "network_coop.h" /* port: port/linux/game/network_coop.c */
 #ifdef HALO_64BIT
 #include "rasterizer/common/rasterizer_common.h"
 #endif
@@ -347,7 +348,7 @@ void game_tick(
 	/* port: in network co-op only the host runs the scripts. A client running
 	them would place the map's actors and objects a second time and make
 	decisions that belong to the host. */
-	if (!network_game_distributed_client() || game_engine_running())
+	if (!(network_game_distributed_client() && network_coop_active()))
 		hs_update();
 	recorded_animations_update();
 	objects_update();
