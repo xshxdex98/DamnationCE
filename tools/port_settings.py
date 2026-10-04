@@ -461,6 +461,7 @@ TITLES = {
     f"{MT}/join_game/header_direct_link": "DIRECT LINK",
     f"{MT}/lobby/header_lobby": "GAME LOBBY",
     f"{MT}/coop/header_player_2": "PLAYER 2 PROFILE",
+    f"{MT}/lobby/header_add_player": "ADD PLAYER",
 }
 
 
@@ -679,72 +680,106 @@ SETUP_OPTION_SCREENS = [
 ]
 
 
-# Glassed draws the lobby with port/linux/game/lobby_screen.c over invisible
-# widgets (no pictures, clear text) that still update it, take the focus and
-# catch the mouse. Their places match what it draws:
+# The lobby. Vanilla's is the stock widgets. Glassed draws its own with
+# port/linux/game/lobby_screen.c over invisible widgets (no pictures, clear
+# text) that still update it, take the focus and catch the mouse, in the
+# places it draws them:
 LOBBY_ROW_LEFT, LOBBY_ROW_TOP, LOBBY_ROW_HEIGHT, LOBBY_ROW_WIDTH, LOBBY_ROWS = 24, 92, 24, 380, 13
 LOBBY_BUTTONS_TOP, LOBBY_BUTTON_WIDTH, LOBBY_BUTTON_HEIGHT = 448, 104, 22
-LOBBY_BUTTON_LEFTS = (288, 400, 512)
+LOBBY_BUTTON_LEFTS = (176, 288, 400, 512)
 CLEAR = "#00000000"
 # (the clear text still needs a font, or the game won't draw the widget and logs it every frame)
 SMALL_FONT = "ui\\small_ui"
+# (SWITCH TEAM first: hidden in a game without teams, which moves the focus
+# to the first shown, START NOW; at the end it traps none)
 LOBBY_BUTTONS = (
     ("team", "SWITCH TEAM", ['<on event="a" run="swap player team"/>', '<on event="start" run="swap player team"/>']),
     ("start", "START NOW", ['<on event="a" run="net game speed start"/>',
                             '<on event="start" run="net game speed start"/>']),
+    ("add", "ADD PLAYER", ['<on event="a" run="port lobby add player"/>',
+                           '<on event="start" run="port lobby add player"/>']),
     ("leave", "LEAVE", ['<on event="a" run="mouse emit back event"/>',
                         '<on event="start" run="mouse emit back event"/>']))
-LOBBY_HANDLERS = ['<on event="created" run="net server accept conx"/>',
-                  '<on event="created" run="net server allow start"/>',
-                  '<on event="b" run="net game unjoin player" back="true"/>',
-                  '<on event="back" run="net game unjoin player" back="true"/>']
+
+
+def _lobby_handlers(base: str) -> list:
+    """the lobby screen's: the server taking players and starting, and split
+    screen (another controller's START joins, choosing its profile; its B
+    leaves alone: menu_functions.c's lobby_join)"""
+    return ['<on event="created" run="port lobby open"/>',
+            '<on event="created" run="net server accept conx"/>',
+            '<on event="created" run="net server allow start"/>',
+            '<on event="b" run="port lobby leave" back="true"/>',
+            '<on event="back" run="port lobby leave" back="true"/>',
+            f'<on event="start" run="port lobby join" open="{base}/player_profile_screen" branch="true"/>']
 
 
 def _lobby_rows(base: str) -> list:
-    """the stock lobby's screen and its rows of players"""
+    """the stock lobby's screen, its rows of players and its line on how
+    another player joins"""
     lines = _widget(f"{base}/lobby_screen", [("width", 640), ("height", 480),
                                              ("flags", "pass_unhandled_to_focused_child"),
                                              ("bitmap", "bitmaps/gradient")],
-                    LOBBY_HANDLERS + ['<child widget="main_menu/new_select/sel_list_desc_bkd"/>',
-                                      f'<child widget="{base}/lobby_list"/>',
-                                      f'<child widget="{base}/header_lobby"/>'])
+                    _lobby_handlers(base) + ['<child widget="main_menu/new_select/sel_list_desc_bkd"/>',
+                                             f'<child widget="{base}/lobby_list"/>',
+                                             f'<child widget="{base}/header_lobby"/>',
+                                             f'<child widget="{base}/lobby_join_help"/>'])
     lines += _header(f"{base}/header_lobby", f"{base}/header_lobby")
-    rows = [f'<child widget="main_menu/new_select/list_item_{index}" x="20" y="{73 + 30 * index}"/>'
-            for index in range(11)]
+    lines += _widget(f"{base}/lobby_join_help", [("type", "text"), ("controller", 1), ("left", 355), ("top", 446),
+                                                 ("width", 275), ("height", 24), ("font", "ui\\small_ui"),
+                                                 ("color", "#FF2896FF"), ("align", "right"), ("text_y", 5),
+                                                 ("text_flags", "no_focus_test")], [])
+    # (its rows: any controller's left and right switch its own player's team,
+    # on the rows only, so that they move along the buttons)
+    rows = [f'<child widget="{base}/list_item_{index}" x="20" y="{73 + 30 * index}"/>' for index in range(11)]
     lines += _widget(f"{base}/lobby_list", [("type", "column_list"), ("width", 640), ("height", 480),
                                             ("flags", "pass_unhandled_to_focused_child up_down_tabs_children"),
                                             ("description", f"{base}/lobby_desc")],
                      ['<data input="net splitscreen prejoin players"/>', '<data input="port lobby update"/>',
-                      '<on event="left right" run="swap player team"/>', *rows,
+                      *rows,
                       f'<child widget="{base}/lobby_button_bar" y="414"/>'])
+    for index in range(11):
+        lines += _widget(f"{base}/list_item_{index}",
+                         [("width", 390), ("height", 28),
+                          ("bitmap", "bitmaps/sel_list_item_bkd_top" if index == 0 else "bitmaps/sel_list_item_bkd"),
+                          ("font", "ui\\large_ui"), ("color", "#FF2896FF"), ("align", "center"), ("text_y", 3)],
+                         ['<on event="left right" run="swap player team"/>',
+                          '<child widget="main_menu/new_select/list_item_text" x="25"/>',
+                          '<child widget="main_menu/new_select/list_item_arrows"/>'])
     return lines
 
 
 def _lobby_overlay_rows(base: str) -> list:
-    """the Glassed lobby's screen and its invisible rows, under lobby_screen.c's drawing"""
+    """the Glassed lobby's screen and its invisible rows and line on joining,
+    under lobby_screen.c's drawing"""
     lines = _widget(f"{base}/lobby_screen", [("width", 640), ("height", 480),
                                              ("flags", "pass_unhandled_to_focused_child")],
-                    LOBBY_HANDLERS + [f'<child widget="{base}/lobby_list"/>'])
+                    _lobby_handlers(base) + [f'<child widget="{base}/lobby_list"/>',
+                                             f'<child widget="{base}/lobby_join_help"/>'])
     lines += _header(f"{base}/header_lobby", f"{base}/header_lobby")
+    lines += _widget(f"{base}/lobby_join_help", [("type", "text"), ("controller", 1), ("width", 1), ("height", 1),
+                                                 ("font", SMALL_FONT), ("color", CLEAR),
+                                                 ("text_flags", "no_focus_test")], [])
     rows = [f'<child widget="{base}/list_item_{index}" x="{LOBBY_ROW_LEFT}" '
             f'y="{LOBBY_ROW_TOP + LOBBY_ROW_HEIGHT * index}"/>' for index in range(LOBBY_ROWS)]
     for index in range(LOBBY_ROWS):
         lines += _widget(f"{base}/list_item_{index}", [("controller", 1), ("width", LOBBY_ROW_WIDTH),
                                                        ("height", LOBBY_ROW_HEIGHT - 1)],
-                         [f'<child widget="{base}/list_item_text"/>'])
+                         ['<on event="left right" run="swap player team"/>',
+                          f'<child widget="{base}/list_item_text"/>'])
     lines += _widget(f"{base}/list_item_text", [("type", "text"), ("controller", 1), ("width", LOBBY_ROW_WIDTH),
                                                 ("height", LOBBY_ROW_HEIGHT - 1), ("font", SMALL_FONT), ("color", CLEAR),
                                                 ("text_flags", "no_focus_test")], [])
     lines += _widget(f"{base}/lobby_list", [("type", "column_list"), ("width", 640), ("height", 480),
                                             ("flags", "pass_unhandled_to_focused_child up_down_tabs_children")],
                      ['<data input="net splitscreen prejoin players"/>', '<data input="port lobby update"/>',
-                      '<on event="left right" run="swap player team"/>', *rows,
-                      f'<child widget="{base}/lobby_button_bar" y="{LOBBY_BUTTONS_TOP}"/>'])
+                      *rows, f'<child widget="{base}/lobby_button_bar" y="{LOBBY_BUTTONS_TOP}"/>'])
     return lines
 
 
 def _lobby_buttons(base: str, overlay: bool) -> list:
-    """SWITCH TEAM, START NOW and LEAVE: the stock buttons, or the Glassed lobby's invisible ones"""
+    """SWITCH TEAM, START NOW, ADD PLAYER and LEAVE: the stock buttons, or the
+    Glassed lobby's invisible ones"""
     if overlay:
         lines = _widget(f"{base}/lobby_button_bar", [("type", "column_list"), ("width", 640),
                                                      ("height", LOBBY_BUTTON_HEIGHT),
@@ -760,7 +795,7 @@ def _lobby_buttons(base: str, overlay: bool) -> list:
     lines = _widget(f"{base}/lobby_button_bar", [("type", "column_list"), ("width", 640), ("height", 28),
                                                  ("flags", "pass_unhandled_to_focused_child left_right_tabs_items")],
                     [f'<child widget="{base}/lobby_button_{key}" x="{left}" y="1"/>'
-                     for (key, _, _), left in zip(LOBBY_BUTTONS, (250, 380, 510))])
+                     for (key, _, _), left in zip(LOBBY_BUTTONS, (120, 250, 380, 510))])
     for key, caption, handlers in LOBBY_BUTTONS:
         lines += _widget(f"{base}/lobby_button_{key}", [("type", "text"), ("width", 128), ("height", 24),
                                                        ("bitmap", "bitmaps/text_button_background"),
@@ -805,6 +840,32 @@ def _lobby(overlay: bool = False) -> list:
                                                      ("width", 146), ("height", 144), ("font", "ui\\small_ui"),
                                                      ("color", "#FF2896FF")], [])
     lines += _lobby_buttons(base, overlay)
+    # a split screen player's profile, chosen as they join the lobby (any
+    # controller's presses: Co-op's rows; the host's countdown waits)
+    lines += _widget(f"{base}/player_profile_screen", [("width", 640), ("height", 480),
+                                                       ("flags", "pass_unhandled_to_focused_child"),
+                                                       ("bitmap", "bitmaps/gradient")],
+                     ['<on event="created" run="net server defer start"/>',
+                      '<child widget="main_menu/new_select/sel_list_desc_bkd"/>',
+                      f'<child widget="{base}/player_profile_list"/>',
+                      f'<child widget="{base}/header_add_player"/>',
+                      f'<child widget="{base}/player_profile_help" x="20" y="416"/>'])
+    lines += _header(f"{base}/header_add_player", f"{base}/header_add_player")
+    lines += _widget(f"{base}/player_profile_list",
+                     [("type", "column_list"), ("width", 640), ("height", 480),
+                      ("flags", "pass_unhandled_to_focused_child up_down_tabs_children"),
+                      ("description", "main_menu/profile_manager/player_profile_extended_desc")],
+                     ['<data input="3wide player profile list update"/>',
+                      '<on event="created" run="port lobby player list initialize"/>',
+                      '<on event="deleted" run="player profile list dispose"/>',
+                      '<on event="custom_activation" run="port lobby player choose" back="true" branch="true"/>',
+                      *[f'<child widget="{MT}/coop/list_item_{index}" x="20" y="{73 + 30 * index}"/>'
+                        for index in range(11)],
+                      f'<child widget="{MT}/coop/player_2_button_bar" y="414"/>'])
+    lines += _widget(f"{base}/player_profile_help", [("type", "text"), ("width", 350), ("height", 24),
+                                                     ("text", "The new player's profile."),
+                                                     ("font", "ui\\small_ui"), ("color", "#FF2896FF"), ("text_y", 5),
+                                                     ("text_flags", "no_focus_test")], [])
     # a game under way's lobby, before joining it (the browser's rows of
     # games in progress): what its advertisement tells, JOIN GAME
     lines += _widget(f"{base}/preview_screen", [("width", 640), ("height", 480),
