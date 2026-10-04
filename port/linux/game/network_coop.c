@@ -899,15 +899,16 @@ void network_coop_handle_screen_effect(
 	short count)
 {
 	struct rasterizer_screen_effect_port_state state;
-	real const *reals = (real const *)&state.filter_desaturation_tint;
+	/* (every field from the tint on is a real: rasterizer_cinematics.h) */
+	real const *reals = &state.filter_desaturation_tint.red;
+	short real_count = (short)((sizeof(state) -
+		offsetof(struct rasterizer_screen_effect_port_state, filter_desaturation_tint)) / sizeof(real));
 	short index;
 
 	if (!coop_client() || count != 1)
 		return;
 	csmemcpy(&state, entries, sizeof(state));
-	/* (its reals, from the tint to the end) */
-	for (index = 0; index < (short)((sizeof(state) - offsetof(struct rasterizer_screen_effect_port_state,
-		filter_desaturation_tint)) / sizeof(real)); index++)
+	for (index = 0; index < real_count; index++)
 	{
 		if (!distributed_real_valid(reals[index]))
 			return;
@@ -1637,22 +1638,23 @@ static short host_attachment_find(
 static void host_send_attachments(
 	void)
 {
-	short index;
+	short index = 0;
 
 	if (game_time_get() % OBJECT_REFRESH_TICKS != 0)
 		return;
-	for (index = 0; index < host_attachment_count; index++)
+	while (index < host_attachment_count)
 	{
 		struct object_datum *child = object_try_and_get(host_attachments[index].child_index);
 
 		/* (gone, or moved on to another parent: forgotten) */
 		if (!child || child->object.parent_object_index != host_attachments[index].parent_index)
 		{
-			host_attachments[index--] = host_attachments[--host_attachment_count];
+			host_attachments[index] = host_attachments[--host_attachment_count];
 			continue;
 		}
 		send_attach(_coop_attach, host_attachments[index].parent_index, host_attachments[index].parent_marker_index,
 			host_attachments[index].child_index, host_attachments[index].child_marker_index);
+		index++;
 	}
 }
 
@@ -1662,33 +1664,38 @@ void network_coop_note_attach(
 	long child_index,
 	char const *child_marker_name)
 {
-	short parent_marker_index, child_marker_index, index;
+	short parent_marker_index, child_marker_index;
+	short index;
 
-	if (!object_try_and_get(parent_index) || !object_try_and_get(child_index))
+	if (!coop_host() || !object_try_and_get(parent_index) || !object_try_and_get(child_index))
 		return;
 	parent_marker_index = object_marker_index(parent_index, parent_marker_name);
 	child_marker_index = object_marker_index(child_index, child_marker_name);
 	send_attach(_coop_attach, parent_index, parent_marker_index, child_index, child_marker_index);
 
 	index = host_attachment_find(child_index);
-	if (index == NONE && coop_host() && host_attachment_count < MAXIMUM_ATTACHMENTS)
-		index = host_attachment_count++;
-	if (index != NONE)
+	if (index == NONE)
 	{
-		host_attachments[index].parent_index = parent_index;
-		host_attachments[index].child_index = child_index;
-		host_attachments[index].parent_marker_index = parent_marker_index;
-		host_attachments[index].child_marker_index = child_marker_index;
+		if (host_attachment_count == MAXIMUM_ATTACHMENTS)
+			return;
+		index = host_attachment_count++;
 	}
+	host_attachments[index].parent_index = parent_index;
+	host_attachments[index].child_index = child_index;
+	host_attachments[index].parent_marker_index = parent_marker_index;
+	host_attachments[index].child_marker_index = child_marker_index;
 }
 
 void network_coop_note_detach(
 	long parent_index,
 	long child_index)
 {
-	short index = host_attachment_find(child_index);
+	short index;
 
+	if (!coop_host())
+		return;
 	send_attach(_coop_detach, parent_index, NONE, child_index, NONE);
+	index = host_attachment_find(child_index);
 	if (index != NONE)
 		host_attachments[index] = host_attachments[--host_attachment_count];
 }
