@@ -1083,6 +1083,31 @@ static void distributed_host_update_objects(
 	}
 }
 
+/* The order a client that has just loaded is told of the host's objects
+in, so it has first what it needs first: the players' units (whom it may
+spectate), the vehicles they and the AI ride, the other units, then
+everything else. */
+enum
+{
+	_send_rank_player_unit,
+	_send_rank_vehicle,
+	_send_rank_unit,
+	_send_rank_other,
+	NUMBER_OF_SEND_RANKS
+};
+
+static short distributed_object_send_rank(
+	long object_index)
+{
+	struct object_datum *object = object_get(object_index);
+
+	if (object->object.type == _object_type_vehicle)
+		return _send_rank_vehicle;
+	if (object_try_and_get_and_verify_type(object_index, _object_mask_unit))
+		return unit_get(object_index)->unit.player_index != NONE ? _send_rank_player_unit : _send_rank_unit;
+	return _send_rank_other;
+}
+
 /* a client has loaded the game: every object the host has, to it alone,
 and word that that is all of them; asked again, only the word (they are on
 their way ahead of it), unless it failed to make one since it last asked
@@ -1095,6 +1120,7 @@ void network_objects_client_asked(
 	short count = 0;
 	short limit = MIN(MAXIMUM_ENTRIES_PER_MESSAGE, RELIABLE_ENTRIES(struct distributed_object_change));
 	long absolute_index;
+	short rank;
 	long *player_list;
 
 	if (machine_index < 0 || machine_index >= HALO_PORT_MAXIMUM_NETWORK_MACHINES)
@@ -1122,14 +1148,22 @@ void network_objects_client_asked(
 		/* (what every unit carries, with the next of them) */
 		objects_host_inventories[absolute_index].checksum = 0;
 		objects_host_inventories[absolute_index].weapons_checksum = 0;
-		if (objects_host_told[absolute_index] == NONE)
-			continue;
-		distributed_change_from_object(objects_host_told[absolute_index], &message.changes[count]);
-		if (++count == limit)
+	}
+	for (rank = 0; rank < NUMBER_OF_SEND_RANKS; rank++)
+	{
+		for (absolute_index = 0; absolute_index < objects_host_told_count; absolute_index++)
 		{
-			distributed_send_to_machine_reliably(machine_index, &message, _distributed_message_object_changes, count,
-				(word)(sizeof(message.header) + count * sizeof(struct distributed_object_change)));
-			count = 0;
+			long object_index = objects_host_told[absolute_index];
+
+			if (object_index == NONE || distributed_object_send_rank(object_index) != rank)
+				continue;
+			distributed_change_from_object(object_index, &message.changes[count]);
+			if (++count == limit)
+			{
+				distributed_send_to_machine_reliably(machine_index, &message, _distributed_message_object_changes, count,
+					(word)(sizeof(message.header) + count * sizeof(struct distributed_object_change)));
+				count = 0;
+			}
 		}
 	}
 	if (count)

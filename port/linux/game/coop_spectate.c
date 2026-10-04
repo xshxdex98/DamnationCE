@@ -87,16 +87,24 @@ static long next_living_player(long self, long after)
 	return first;
 }
 
-/* whether A or the keyboard's jump was pressed this frame */
+/* Whether A or the keyboard's jump was pressed since the last call: once a
+press, however many frames it is held (the buttons count ticks, and a tick
+can span several frames, which would switch twice). */
 static boolean next_pressed(short controller_index)
 {
+	static boolean held[MAXIMUM_GAMEPADS];
 	struct gamepad_state const *gamepad;
+	boolean down;
+	boolean pressed;
 
 	if (controller_index < 0 || controller_index >= MAXIMUM_GAMEPADS)
 		return FALSE;
 	gamepad = input_get_gamepad_state(controller_index);
-	return (gamepad && gamepad->buttons[FIRST_GAMEPAD_ANALOG_BUTTON + _gamepad_analog_button_a] == 1) ||
-		input_abstraction_port_accept(controller_index) == 1;
+	down = (gamepad && gamepad->buttons[FIRST_GAMEPAD_ANALOG_BUTTON + _gamepad_analog_button_a] > 0) ||
+		input_abstraction_port_accept(controller_index) > 0;
+	pressed = down && !held[controller_index];
+	held[controller_index] = down;
+	return pressed;
 }
 
 /* whether the unit rides in a vehicle it isn't driving */
@@ -124,14 +132,17 @@ long coop_spectate_unit(
 	long *watched = &coop_spectate_watched[local_player_index];
 	struct player_datum *player;
 
+	boolean next;
+
 	if (self == NONE)
 		return NONE;
 	player = player_get(self);
+	/* (every frame, so a press is counted once) */
+	next = next_pressed(player->network_player_data.controller_index);
 	/* alive: keep `watched`, so the next death starts on the same teammate */
 	if (player->unit_index != NONE)
 		return NONE;
-	if (*watched == NONE || !player_try_and_get(*watched) || player_get(*watched)->unit_index == NONE ||
-		next_pressed(player->network_player_data.controller_index))
+	if (*watched == NONE || !player_try_and_get(*watched) || player_get(*watched)->unit_index == NONE || next)
 	{
 		*watched = next_living_player(self, *watched);
 	}
@@ -211,8 +222,13 @@ void coop_spectate_draw(
 	wchar_t text[96];
 	wchar_t const *hint;
 
+	/* (none to watch yet, joining: the host's view, from behind, network_coop.c) */
 	if (watched == NONE || !player_try_and_get(watched))
+	{
+		if (coop_spectate_nothing_to_watch(local_player_index))
+			draw_bottom_text(L"JOINING THE GAME\r\nYou spawn beside a teammate once it is safe");
 		return;
+	}
 	if (!players_coop_waiting_to_start(local_player_get_player_index(local_player_index)))
 		hint = L"You come back beside them once it is safe";
 	else
