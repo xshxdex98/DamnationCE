@@ -472,6 +472,9 @@ static struct
 {
 	boolean released;
 	long quiet_ticks;
+	/* when each player got out of the vehicle it rode (the game time plus
+	one; 0 while it rides one or has no unit), by absolute index */
+	long on_foot_since[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
 } players_coop_start;
 
 /* port: where each player was at the last checkpoint, in network co-op
@@ -2652,9 +2655,34 @@ static boolean player_on_foot(
 	return player->unit_index != NONE && object_get_ultimate_parent(player->unit_index) == player->unit_index;
 }
 
+/* how long a teammate has been out of its vehicle before the others spawn
+beside it, so they aren't put inside the vehicle it left */
+#define COOP_DISEMBARK_TICKS (4 * TICKS_PER_SECOND)
+
+/* co-op, each tick: notes when each player got out of its vehicle */
+static void players_coop_note_on_foot(
+	void)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+
+	if (!network_coop_active())
+		return;
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		long *since = &players_coop_start.on_foot_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
+
+		if (!player_on_foot(player))
+			*since = 0;
+		else if (*since == 0)
+			*since = game_time_get() + 1;
+	}
+}
+
 /* Co-op host: whether a new player has somewhere to go: beside a teammate
-on foot. While every teammate rides a vehicle (Silent Cartographer's
-Pelican) the others spectate, and spawn once someone gets out. */
+that has been on foot for COOP_DISEMBARK_TICKS. While every teammate rides
+a vehicle (Silent Cartographer's Pelican) the others spectate. */
 static boolean players_coop_room_to_spawn(
 	void)
 {
@@ -2664,7 +2692,9 @@ static boolean players_coop_room_to_spawn(
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
-		if (player_on_foot(player))
+		long since = players_coop_start.on_foot_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
+
+		if (player_on_foot(player) && since != 0 && game_time_get() + 1 - since >= COOP_DISEMBARK_TICKS)
 			return TRUE;
 	}
 
@@ -4006,6 +4036,7 @@ void players_update_before_game(
 
 	profile_enter(PLAYERS_UPDATE_BEFORE_GAME_PROFILE);
 	players_coop_start_update();
+	players_coop_note_on_foot();
 	if (update_client_dequeue(actions) || players_idle_actions(actions))
 	{
 		data_iterator_new(&iterator, player_data);
