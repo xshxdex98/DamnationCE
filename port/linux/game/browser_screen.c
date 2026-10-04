@@ -77,6 +77,8 @@ enum
 	MAP_XBOX,
 	/* a Custom Edition map this machine has (Halo PC's own among them) */
 	MAP_CUSTOM_EDITION,
+	/* a campaign level: a co-op game's (custom_edition_maps.h) */
+	MAP_CAMPAIGN,
 	/* any other: named by its file, here when the maps folder has it */
 	MAP_OTHER,
 };
@@ -216,7 +218,7 @@ static struct known_map const *known_map(
 	display_name = display_index != NONE ? custom_edition_maps_name(display_index) : NULL;
 	if (display_name)
 	{
-		map->kind = MAP_CUSTOM_EDITION;
+		map->kind = custom_edition_maps_campaign(display_index) ? MAP_CAMPAIGN : MAP_CUSTOM_EDITION;
 		overlay_utf8((unsigned short const *)display_name, sizeof(map->name), map->name, sizeof(map->name));
 		return map;
 	}
@@ -710,6 +712,13 @@ static char const *type_name(
 	char const *engine = game->engine >= 0 && game->engine < NUMBEROF(engine_names) && engine_names[game->engine][0] ?
 		engine_names[game->engine] : "Game";
 
+	/* (a game no game engine runs, on a campaign level, is co-op) */
+	if (!game->engine && known_map(game->map)->kind == MAP_CAMPAIGN)
+	{
+		snprintf(text, (size_t)size, "Co-op");
+		return text;
+	}
+
 	/* (Capture the Flag is played in teams alone) */
 	snprintf(text, (size_t)size, "%s%s", game->teams && game->engine != 1 ? "Team " : "", engine);
 	return text;
@@ -812,7 +821,8 @@ static void render_details(
 	if (known_map(game->map)->kind != MAP_XBOX)
 	{
 		DETAIL_LINE("Map", !known_map(game->map)->installed ? "Not installed" :
-			known_map(game->map)->kind == MAP_CUSTOM_EDITION ? "Custom Edition" : "Custom");
+			known_map(game->map)->kind == MAP_CUSTOM_EDITION ? "Custom Edition" :
+			known_map(game->map)->kind == MAP_CAMPAIGN ? "Campaign" : "Custom");
 	}
 	DETAIL_LINE("Rules", type_name(game, text, sizeof(text)));
 	if (game->score_limit)
