@@ -3,7 +3,7 @@
   discord_feeds.py servers
       The live server list: the game list server's games as one message,
       edited in place (.github/workflows/server-list.yml, every five
-      minutes).
+      minutes), the list drawn as a picture (discord_card.py).
         DISCORD_SERVERS_WEBHOOK  the server tracker channel's webhook URL
         DISCORD_SERVERS_MESSAGE  the message to edit; empty posts a new one
                                  and prints its ID, for the repository variable
@@ -25,6 +25,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import uuid
 
 LIST_URL = "https://halo.milenko.org/v1/games.txt"
 SITE_URL = "https://halo.milenko.org"
@@ -48,8 +49,7 @@ CAMPAIGN_MAPS = {
     "c40": "Two Betrayals", "d20": "Keyes", "d40": "The Maw",
 }
 
-# Discord's limits: 4096 characters an embed's description, 2000 a message's text
-DESCRIPTION_LENGTH = 4096
+# (Discord's limit on a message's text)
 MESSAGE_LENGTH = 2000
 
 COLOUR_LIVE = 0x3BA55D
@@ -61,10 +61,21 @@ SUPPRESS_EMBEDS = 1 << 2
 SUPPRESS_NOTIFICATIONS = 1 << 12
 
 
-def request(url, method="GET", body=None):
-    data = json.dumps(body).encode() if body is not None else None
+def request(url, method="GET", body=None, files=()):
+    """body as JSON, or with files ((name, PNG bytes) pairs) as Discord's
+    multipart form"""
     headers = {"User-Agent": USER_AGENT}
-    if data:
+    data = json.dumps(body).encode() if body is not None else None
+    if files:
+        boundary = uuid.uuid4().hex
+        parts = [('name="payload_json"', "application/json", data)]
+        parts += [(f'name="files[{index}]"; filename="{name}"', "image/png", content)
+                  for index, (name, content) in enumerate(files)]
+        data = b"".join(f"--{boundary}\r\nContent-Disposition: form-data; {disposition}\r\n"
+                        f"Content-Type: {kind}\r\n\r\n".encode() + content + b"\r\n"
+                        for disposition, kind, content in parts) + f"--{boundary}--\r\n".encode()
+        headers["Content-Type"] = f"multipart/form-data; boundary={boundary}"
+    elif data:
         headers["Content-Type"] = "application/json"
     with urllib.request.urlopen(urllib.request.Request(url, data, headers, method=method), timeout=20) as response:
         return response.read().decode("utf-8")
@@ -90,13 +101,28 @@ def map_file(path):
     return file, source
 
 
+def tidy_map_file(file):
+    """a map file's name made readable: words apart, each begun with a capital"""
+    return " ".join(word[:1].upper() + word[1:] for word in file.replace("-", "_").replace(".", "_").split("_") if word)
+
+
 def map_name(path):
     file, source = map_file(path)
     if source == "ce":
-        return CE_MAPS.get(file, file) + " (PC)"
+        return (CE_MAPS.get(file) or tidy_map_file(file)) + " (PC)"
     if source == "md":
-        return file + " (MD)"
-    return CAMPAIGN_MAPS.get(file) or XBOX_MAPS.get(file) or file
+        return tidy_map_file(file) + " (MD)"
+    return CAMPAIGN_MAPS.get(file) or XBOX_MAPS.get(file) or tidy_map_file(file)
+
+
+def map_art(path):
+    """a map's picture on the list server's site, as the site picks it"""
+    file, source = map_file(path)
+    if source == "ce":
+        return f"maps/ce/{file if file in CE_MAPS else 'unknown'}.jpg"
+    if source == "md":
+        return "maps/ce/unknown.jpg"
+    return f"maps/{file if file in XBOX_MAPS else 'unknown'}.jpg"
 
 
 def mode_name(game):
@@ -107,68 +133,52 @@ def mode_name(game):
     return "Team " + name if game["teams"] and game["engine"] != 1 else name
 
 
-def escape(text):
-    for mark in "\\*_~`|>":
-        text = text.replace(mark, "\\" + mark)
-    return text
-
-
-def clip(text, length):
-    return text if len(text) <= length else text[:length - 1] + "…"
-
-
-def game_line(game, count_width):
-    """a game on one line: how many are playing, then its server's name, map
-    and mode"""
-    count = f"{game['players']}/{game['maximum_players']}".rjust(count_width)
-    details = [map_name(game["map"]), mode_name(game)] + ([] if game["open"] else ["closed"])
-    return f"`{count}` **{escape(game['name'])}** · " + " · ".join(details)
-
-
 def servers_embed(games, error=None):
-    """the list as an embed: a line for each game with players in it,
-    busiest first, then the empty ones' names in small print; games is None
-    while the list server can't be reached"""
+    """the list's embed: how many are playing and when it was drawn, over
+    the card of its games; games is None while the list server can't be
+    reached"""
     updated = f"-# Updated <t:{int(time.time())}:R>"
-    embed = {"title": "OpenCE Servers", "url": SITE_URL, "footer": {"text": "Join from the server browser in game"}}
+    embed = {"title": "OpenCE Servers", "url": SITE_URL}
     if games is None:
         embed["color"] = COLOUR_DOWN
         embed["description"] = f"The server list can't be reached right now ({error}).\n{updated}"
         return embed
-
-    active = sorted((game for game in games if game["players"] > 0), key=lambda game: -game["players"])
-    empty = [game for game in games if game["players"] == 0]
-    players = sum(game["players"] for game in active)
-    count_width = max((len(f"{game['players']}/{game['maximum_players']}") for game in active), default=0)
-    lines = [f"**{players}** {'player' if players == 1 else 'players'} on "
-             f"**{len(active)}** {'server' if len(active) == 1 else 'servers'}", updated, ""]
-    lines += [game_line(game, count_width) for game in active]
-    if empty:
-        lines += ["", "-# Empty: " + ", ".join(escape(game["name"]) for game in empty)]
-    embed["color"] = COLOUR_LIVE if active else COLOUR_QUIET
-    embed["description"] = clip("\n".join(lines), DESCRIPTION_LENGTH)
+    players = sum(game["players"] for game in games)
+    servers = sum(1 for game in games if game["players"] > 0)
+    embed["color"] = COLOUR_LIVE if players else COLOUR_QUIET
+    embed["description"] = (f"**{players}** {'player' if players == 1 else 'players'} on "
+                            f"**{servers}** {'server' if servers == 1 else 'servers'}\n{updated}")
+    embed["image"] = {"url": "attachment://servers.png"}
     return embed
 
 
 def update_servers():
+    # (here, not at the top: the card needs Pillow, which a release's post goes without)
+    import discord_card
+
     webhook = os.environ["DISCORD_SERVERS_WEBHOOK"]
     message_id = os.environ.get("DISCORD_SERVERS_MESSAGE", "")
     try:
-        embed = servers_embed(parse_games(request(LIST_URL)))
+        games = parse_games(request(LIST_URL))
+        embed = servers_embed(games)
+        files = [("servers.png", discord_card.server_card(games, map_name, mode_name, map_art, USER_AGENT))]
     except (urllib.error.URLError, TimeoutError) as error:
         embed = servers_embed(None, error=type(error).__name__)
-    body = {"embeds": [embed], "allowed_mentions": {"parse": []}}
+        files = []
+    # (the attachments listed replace the message's last ones)
+    body = {"embeds": [embed], "attachments": [{"id": index, "filename": name} for index, (name, _) in enumerate(files)],
+            "allowed_mentions": {"parse": []}}
 
     if message_id:
         try:
-            request(f"{webhook}/messages/{message_id}", "PATCH", body)
+            request(f"{webhook}/messages/{message_id}", "PATCH", body, files)
         except urllib.error.HTTPError as error:
             if error.code != 404:
                 raise
             sys.exit(f"The server list's message {message_id} is gone: clear DISCORD_SERVERS_MESSAGE and run "
                      "the workflow by hand to post a new one.")
         return
-    message = json.loads(request(f"{webhook}?wait=true", "POST", body))
+    message = json.loads(request(f"{webhook}?wait=true", "POST", body, files))
     print(f"Posted the server list as message {message['id']}: set the repository variable "
           f"DISCORD_SERVERS_MESSAGE to it.")
 
