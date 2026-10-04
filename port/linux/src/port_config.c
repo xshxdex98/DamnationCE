@@ -355,6 +355,9 @@ static const struct config_setting config_settings[] =
 		"Log the renderer's draw counts once a second." },
 	{ "debug.gpu_trace_frame", _config_integer, "-1", "HALO_GPU_TRACE", _environment_value, _platform_all,
 		"Log every draw of this frame; -1 none." },
+	{ "debug.gpu_trace_heavy", _config_boolean, "false", "HALO_GPU_TRACE_HEAVY", _environment_set_is_true, _platform_all,
+		"Log what a frame of many draws draws: its draws grouped by their\n"
+		"texture's bitmap, the first such frame and then at most every 30 seconds." },
 	{ "debug.gpu_trace_constants", _config_boolean, "false", "HALO_GPU_TRACE_CONSTANTS", _environment_set_is_true, _platform_all,
 		"With gpu_trace_frame, also the vertex shader constants." },
 	{ "debug.gpu_skip_vertex_shaders", _config_string, "\"\"", "HALO_GPU_SKIP_VS", _environment_value, _platform_all,

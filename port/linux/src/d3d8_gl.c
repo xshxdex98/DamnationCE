@@ -436,6 +436,7 @@ static struct
 	const char *skip_vertex_shaders;
 	const char *dump_shaders;
 	BOOL statistics;
+	BOOL trace_heavy;
 } debug_settings;
 
 /* ---------- GL state cache
@@ -1017,6 +1018,7 @@ static void gl_initialize(void)
 	debug_settings.dump_shaders = *config_string("debug.gpu_dump_shaders") ?
 		config_string("debug.gpu_dump_shaders") : NULL;
 	debug_settings.statistics = config_boolean("debug.gpu_stats");
+	debug_settings.trace_heavy = config_boolean("debug.gpu_trace_heavy");
 	xgpu_gl_state_invalidate();
 	device.gl_ready = TRUE;
 }
@@ -2799,6 +2801,120 @@ static struct program_entry *prepare_draw(BOOL immediate)
 	return entry;
 }
 
+/* ---------- a frame of many draws (debug.gpu_trace_heavy)
+
+Each frame's draws are counted by their kind, vertex shader and first
+texture; a frame of HEAVY_FRAME_DRAWS or more has its largest groups
+logged, each with the bitmap tag its texture's pixels are of, to tell what
+makes a view slow to draw. */
+
+#define HEAVY_FRAME_DRAWS 600
+#define HEAVY_GROUP_COUNT 96
+#define HEAVY_GROUPS_LOGGED 24
+#define HEAVY_REPORT_INTERVAL_FRAMES (30 * 60)
+
+/* (hud_hires_tags.c) */
+const char *bitmap_tag_name_at(unsigned long address);
+
+struct heavy_group
+{
+	const char *kind;
+	unsigned long vertex_shader;
+	/* the first texture's data (a physical address), 0 for none */
+	DWORD texture;
+	unsigned long draws, vertices;
+};
+
+static struct
+{
+	struct heavy_group groups[HEAVY_GROUP_COUNT];
+	unsigned long group_count;
+	/* draws past the last group kept */
+	unsigned long others;
+	unsigned long draws;
+	unsigned long reported_frame;
+	BOOL reported;
+} heavy_frame;
+
+static void heavy_frame_note(const char *kind, unsigned long vertices)
+{
+	struct vertex_shader_object *program = current_program();
+	unsigned long vertex_shader = program ? program->id : 0;
+	DWORD texture = 0;
+	unsigned long index;
+	int stage;
+
+	for (stage = 0; stage < D3DTSS_MAXSTAGES && !texture; stage++)
+	{
+		if (device.textures[stage] && ((D3D__RenderState[D3DRS_PSTEXTUREMODES] >> (5 * stage)) & 0x1f))
+			texture = device.textures[stage]->Data;
+	}
+	heavy_frame.draws++;
+	for (index = 0; index < heavy_frame.group_count; index++)
+	{
+		struct heavy_group *group = &heavy_frame.groups[index];
+
+		if (group->kind == kind && group->vertex_shader == vertex_shader && group->texture == texture)
+		{
+			group->draws++;
+			group->vertices += vertices;
+			return;
+		}
+	}
+	if (heavy_frame.group_count == HEAVY_GROUP_COUNT)
+	{
+		heavy_frame.others++;
+		return;
+	}
+	heavy_frame.groups[heavy_frame.group_count].kind = kind;
+	heavy_frame.groups[heavy_frame.group_count].vertex_shader = vertex_shader;
+	heavy_frame.groups[heavy_frame.group_count].texture = texture;
+	heavy_frame.groups[heavy_frame.group_count].draws = 1;
+	heavy_frame.groups[heavy_frame.group_count].vertices = vertices;
+	heavy_frame.group_count++;
+}
+
+static int heavy_group_compare(const void *a, const void *b)
+{
+	unsigned long a_draws = ((const struct heavy_group *)a)->draws;
+	unsigned long b_draws = ((const struct heavy_group *)b)->draws;
+
+	return a_draws < b_draws ? 1 : a_draws > b_draws ? -1 : 0;
+}
+
+/* (at each present) the frame's groups logged if it drew many, then forgotten */
+static void heavy_frame_end(void)
+{
+	if (heavy_frame.draws >= HEAVY_FRAME_DRAWS &&
+		(!heavy_frame.reported || device.frame - heavy_frame.reported_frame >= HEAVY_REPORT_INTERVAL_FRAMES))
+	{
+		unsigned long index;
+
+		qsort(heavy_frame.groups, heavy_frame.group_count, sizeof(heavy_frame.groups[0]), heavy_group_compare);
+		platform_log("heavy frame %lu: %lu draws in %lu groups (%lu draws in no group kept); the largest:",
+			device.frame, heavy_frame.draws, heavy_frame.group_count, heavy_frame.others);
+		for (index = 0; index < heavy_frame.group_count && index < HEAVY_GROUPS_LOGGED; index++)
+		{
+			const struct heavy_group *group = &heavy_frame.groups[index];
+#ifdef HALO_64BIT
+			unsigned long address = group->texture ? (unsigned int)group->texture | PLATFORM_CONTIGUOUS_BASE : 0;
+#else
+			unsigned long address = group->texture ? (unsigned long)PLATFORM_PHYSICAL_TO_VIRTUAL(group->texture) : 0;
+#endif
+			const char *name = address ? bitmap_tag_name_at(address) : NULL;
+
+			platform_log("    %4lu %-9s draws, %6lu vertices, vertex shader %lu, texture %s",
+				group->draws, group->kind, group->vertices, group->vertex_shader,
+				name ? name : group->texture ? "(not a bitmap tag's)" : "none");
+		}
+		heavy_frame.reported = TRUE;
+		heavy_frame.reported_frame = device.frame;
+	}
+	heavy_frame.group_count = 0;
+	heavy_frame.others = 0;
+	heavy_frame.draws = 0;
+}
+
 /* ---------- tracing (debug.gpu_trace_frame) */
 
 static BOOL trace_frame(void)
@@ -2815,6 +2931,8 @@ static void trace_draw(const char *kind, D3DPRIMITIVETYPE type, unsigned long co
 	struct vertex_shader_object *program = current_program();
 	DWORD *rs = D3D__RenderState;
 
+	if (debug_settings.trace_heavy)
+		heavy_frame_note(kind, count);
 	if (!trace_frame())
 		return;
 	platform_log("%s type %d count %lu vs %lu (decl %lu) vp %lu,%lu %lux%lu z%.2f-%.2f zen %lu zw %lu zf %lx blend %lu %lx/%lx cull %lx cw %08lx tm %05lx cc %lx fin %08lx/%08lx at %lu/%lx",
@@ -3817,6 +3935,8 @@ void WINAPI D3DDevice_Present(CONST RECT *source_rectangle, CONST RECT *destinat
 		device.index_offset = INDEX_BUFFER_SIZE;
 #endif
 	}
+	if (debug_settings.trace_heavy)
+		heavy_frame_end();
 	device.frame++;
 	stats.presents++;
 	if (debug_settings.statistics)

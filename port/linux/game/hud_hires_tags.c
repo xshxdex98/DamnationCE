@@ -17,6 +17,8 @@ reused for another bitmap, or a map unloaded, is a write, which asks again.
 #include "bitmaps/bitmap_group.h"
 #include "bitmaps/bitmap_group_lookup.h"
 #include "tag_files/tag_groups.h"
+#include "tag_files/tag_files.h"
+#include "cache/cache_files.h"
 
 /* the platform layer's (port/linux/src) */
 void platform_log(char const *format, ...);
@@ -164,4 +166,30 @@ long hud_hires_asset_after(
 	}
 
 	return NONE;
+}
+
+/* the bitmap tag whose pixels the texture cache holds at `address` (its
+base_address), by name; NULL for none (debug.gpu_trace_heavy, d3d8_gl.c) */
+char const *bitmap_tag_name_at(
+	unsigned long address)
+{
+	struct tag_iterator iterator;
+	long tag_index;
+
+	tag_iterator_new(&iterator, BITMAP_GROUP_TAG);
+	while ((tag_index = tag_iterator_next(&iterator)) != NONE)
+	{
+		struct bitmap_group *group = bitmap_group_get(tag_index);
+		long index;
+
+		for (index = 0; index < group->bitmaps.count; index++)
+		{
+			struct bitmap_data *bitmap = TAG_BLOCK_GET_ELEMENT(&group->bitmaps, index, struct bitmap_data);
+
+			if (bitmap->cache_block_index != NONE && (unsigned long)bitmap->base_address == address)
+				return tag_get_name(tag_index);
+		}
+	}
+
+	return NULL;
 }
