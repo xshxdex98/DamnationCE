@@ -1926,10 +1926,10 @@ static boolean multiplayer_player(short controller)
 	return ui_widget_port_multiplayer_player(controller, player_ui_get_active_player_profile_index(0));
 }
 
-/* the game about to be hosted reached from the internet or not, as its mode
-says: an internet one has an invite (and Discord), and is in the server
-browser if PUBLIC (Server Setup's LISTING, which a new game starts with as
-network.host_public says) */
+/* Whether the game about to be hosted is an internet game (with an invite
+link and Discord presence) or LAN. An internet game is listed in the server
+browser when Server Setup's LISTING is PUBLIC (network.host_public sets the
+default). */
 static void multiplayer_hosting_begin(void)
 {
 	p2p_set_hosting_allowed(multiplayer.mode == _multiplayer_mode_host_internet);
@@ -1949,8 +1949,8 @@ static boolean multiplayer_host(struct widget_instance *widget, struct event_rec
 	return ui_widget_port_host(widget, event, widget_deleted);
 }
 
-/* Online Games' Create Game (browser_screen.c): an internet game, as Create
-Game > Internet hosts one */
+/* Online Games' CREATE GAME (browser_screen.c) hosts an internet game, as
+Create Game > Internet does. */
 void pc_menu_host_internet(void)
 {
 	multiplayer.mode = _multiplayer_mode_host_internet;
@@ -2156,15 +2156,15 @@ static void game_name_done(char const *text)
 	multiplayer.game_name[index] = 0;
 }
 
-/* whether a network game is co-op: a campaign level, with a gametype no game
-engine runs (ui_widget_port_cooperative_level_choose) */
+/* Whether a network game is co-op: a campaign level with no game engine
+(set up by ui_widget_port_cooperative_level_choose). */
 static boolean game_cooperative(struct network_game const *game)
 {
 	return game && !game->variant.game_engine_index &&
 		custom_edition_maps_campaign(custom_edition_maps_display_index(game->map.name));
 }
 
-/* ... the game this machine hosts */
+/* the same, for the game this machine is hosting */
 static boolean hosting_cooperative(void)
 {
 	void *server = global_network_game_server_get();
@@ -2172,7 +2172,7 @@ static boolean hosting_cooperative(void)
 	return server && game_cooperative(network_game_server_get_game(server));
 }
 
-/* Server Setup's rows of a PvP game's gametype, which a co-op game has none of */
+/* Server Setup's gametype rows, which co-op hides */
 static char const *const server_settings_gametype_rows[] =
 {
 	"op_game_type", "op_player_options", "op_item_options", "op_vehicle_options", "op_indicator_options",
@@ -2186,8 +2186,8 @@ static boolean server_settings_initialize(struct widget_instance *list)
 {
 	struct widget_instance *spinner = named(list, "max_players_spinner", 0);
 
-	/* (a co-op game has no gametype to edit, and as many players as the
-	build holds unless told fewer) */
+	/* co-op has no gametype to edit, and allows the build's maximum players
+	unless set lower */
 	if (hosting_cooperative())
 		multiplayer.maximum_players_index = NUMBEROF(maximum_players) - 1;
 	else
@@ -2300,7 +2300,7 @@ static boolean server_start(void)
 		text_field_end(TRUE);
 	network_game_server_port_set_settings(multiplayer.game_name,
 		maximum_players[PIN(multiplayer.maximum_players_index, 0, NUMBEROF(maximum_players) - 1)]);
-	/* (the gametype as Server Setup's options left it; a co-op game's is its own) */
+	/* apply Server Setup's gametype options (co-op keeps its own) */
 	if (hosting_cooperative())
 		gametype_setup_end();
 	else if (!gametype_setup_apply())
@@ -3060,7 +3060,7 @@ static void lobby_update(struct widget_instance *list)
 
 		ustrncpy(gametype, game->variant.human_readable_game_description, NUMBEROF(gametype) - 1);
 		gametype[NUMBEROF(gametype) - 1] = 0;
-		/* (a co-op game's difficulty where a PvP game's engine is) */
+		/* co-op shows the difficulty where PvP shows the game type */
 		if (game_cooperative(game))
 			string_get("pc\\main_menu\\player_profiles_select\\difficulty_names", game->difficulty, kind);
 		else

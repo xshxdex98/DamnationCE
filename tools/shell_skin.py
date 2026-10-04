@@ -103,7 +103,7 @@ CHILD_CHANGES = {
     ("main_menu/new_select/scroll_up_button", "main_menu/new_select/scroll_up_arrow"): {"x": "152"},
     ("main_menu/new_select/scroll_down_button", "main_menu/new_select/scroll_down_arrow"): {"x": "152"},
 }
-# handlers added to widgets, in both themes: the Map screen opens the map
+# extra event handlers, in both themes: the Map screen opens the map
 # picker (port/linux/game/map_screen.c) over its own list
 HANDLER_ADDITIONS = {
     "main_menu/multiplayer_type_select/mp_map_select/mp_map_select_screen": [{"event": "created", "run": "port map select"}],
@@ -288,7 +288,7 @@ def enlarged(pixels, scale):
 
 
 def add_handlers(widget):
-    """Gives a widget its HANDLER_ADDITIONS, after its own; whether it had any."""
+    """Appends the widget's HANDLER_ADDITIONS after its own handlers. Returns True if it had any."""
     additions = HANDLER_ADDITIONS.get(widget.get("name"), [])
     for attributes in additions:
         handlers = widget.findall("on")
@@ -368,7 +368,7 @@ def vanilla_layer():
     rows = next(widget for widget in menus.iter("widget") if widget.get("name") == "main_menu/main_menu_select_list")
     rows.append(ET.Element("child", {"widget": "main_menu/main_menu_item_menus", "x": "256", "y": "431"}))
     write_xml(tree, VANILLA / "ce" / "main_menu.xml")
-    # the screens with handlers added (the Map screen's map picker), as they are
+    # copy the screens that get extra handlers (the Map screen) into the Vanilla layer
     screens = 0
     for file in sorted((MENUS / "ce").glob("*.xml")):
         tree = ET.parse(file)

@@ -1392,7 +1392,7 @@ void hud_draw_screen(
 		/* port: players' names above their heads, in multiplayer */
 		if (game_engine_running() && !cinematic_in_progress())
 			hud_draw_player_names();
-		/* port: whom a dead player of a co-op game over the network watches */
+		/* port: who a dead network co-op player is watching */
 		if (player->unit_index == NONE && coop_spectating() && !cinematic_in_progress())
 			coop_spectate_draw(render.local_player_index);
 

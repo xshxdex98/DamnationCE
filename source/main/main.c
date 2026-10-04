@@ -1938,7 +1938,7 @@ static void main_save_map_private(
 
 		if (save_map)
 		{
-			/* port: where the players are, for co-op over the network */
+			/* port: remember where the players are, for network co-op respawns */
 			players_note_checkpoint();
 			hud_autosave(TRUE);
 			main_globals.save_map_completed = TRUE;
@@ -1967,8 +1967,8 @@ static void main_lost_map_private(
 		{
 			main_globals.lost_map = FALSE;
 			main_globals.loss_timer = 0;
-			/* port: co-op over the network goes back to no checkpoint, which
-			every machine would have to: its players come back there */
+			/* port: network co-op can't revert to a checkpoint (every machine would
+			have to), so the players respawn where they were at the last one */
 			if (game_connection() == _game_connection_network_server)
 				players_respawn_at_checkpoint();
 			else
@@ -2132,16 +2132,16 @@ static void main_won_map_private(
 	short level;
 	short local_player_index;
 
-	/* port: a co-op game's level won over the network: the round ends for
-	everyone, as a multiplayer game's does, and the next is the campaign's
-	next level (the last: the same again) */
+	/* port: when a network co-op level is won, the round ends for everyone as
+	in multiplayer, and the next round is the campaign's next level (the
+	last level repeats) */
 	if (game_connection() == _game_connection_network_server)
 	{
 		struct network_game *game = network_game_get_game();
 
 		main_globals.won_map = FALSE;
-		/* (the campaign's level by its exact name: a Custom Edition campaign
-		map, whatever its name, plays again) */
+		/* match the stock level by exact name, so a Custom Edition campaign map
+		just repeats */
 		level = game ? custom_edition_maps_campaign_level(custom_edition_maps_display_index(game->map.name)) : NONE;
 		player_profile_save_level_completed(0);
 		network_game_server_port_cooperative_won(level != NONE && level + 1 < 10 ? main_get_solo_level_name(level + 1) :

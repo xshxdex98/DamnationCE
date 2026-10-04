@@ -1350,7 +1350,7 @@ static void network_game_server_list(
 	listing_text(name, sizeof(name), game->name, NUMBEROF(game->name));
 	listing_text(gametype, sizeof(gametype), game->variant.human_readable_game_description,
 		NUMBEROF(game->variant.human_readable_game_description));
-	/* (a co-op game, which no game engine runs: its difficulty too) */
+	/* co-op: add the difficulty */
 	if (!game->variant.game_engine_index && game->difficulty >= 0 && game->difficulty < 4)
 	{
 		static char const *const difficulty_names[] = { "Easy", "Normal", "Heroic", "Legendary" };
@@ -3942,8 +3942,8 @@ void network_game_server_port_set_settings(
 		network_game_server_port_settings_apply(server);
 }
 
-/* port: the map of a co-op game's next round, once its level is won
-(network_game_server_port_cooperative_won); empty while there is none */
+/* port: the map for the next co-op round after a win
+(network_game_server_port_cooperative_won); empty when there is none */
 static char network_game_server_cooperative_next_map[sizeof(((struct network_game *)NULL)->map.name)];
 
 void network_game_server_port_cooperative_won(
@@ -3959,9 +3959,9 @@ void network_game_server_port_cooperative_won(
 	network_game_server_switch_to_postgame(server);
 }
 
-/* port: a co-op round's settings again after a round won: the playlist the
-next round is set up from (network_game_server_setup_game_from_playlist)
-has a multiplayer gametype and map, and the co-op game keeps its own */
+/* port: reapply the co-op settings after a won round, since the playlist
+the next round is set up from (network_game_server_setup_game_from_playlist)
+has a multiplayer gametype and map */
 static void network_game_server_cooperative_round(
 	struct network_game_server *server)
 {
