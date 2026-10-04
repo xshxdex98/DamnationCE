@@ -154,6 +154,8 @@ static struct
 	short button_hovered;
 	/* whether the mouse is over the connecting box's CANCEL */
 	boolean cancel_hovered;
+	/* CREATE GAME opened the map picker, which comes back here if backed out of */
+	boolean creating;
 } browser_screen;
 
 /* ---------- private code */
@@ -518,10 +520,27 @@ static void create_game(
 {
 	join_first_player();
 	pc_menu_host_internet();
+	/* (set first: the picker can open as the map select screen loads) */
+	browser_screen.creating = TRUE;
 	if (ui_widget_online_games_create_game())
+	{
 		close_screen();
+	}
 	else
+	{
+		browser_screen.creating = FALSE;
 		set_status("Could not create a game.");
+	}
+}
+
+/* the map picker, as it opens: whether CREATE GAME opened it (asked once) */
+boolean browser_screen_take_create(
+	void)
+{
+	boolean creating = browser_screen.creating;
+
+	browser_screen.creating = FALSE;
+	return creating;
 }
 
 /* ---------- actions */

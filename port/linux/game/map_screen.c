@@ -171,6 +171,9 @@ boolean ui_widget_port_open_from_top(char const *name);
 void event_manager_post_button(short controller_index, short button_index);
 char const *config_string(char const *name);
 void ui_widget_port_go_back_from_top(void);
+/* browser_screen.c */
+boolean browser_screen_take_create(void);
+void browser_screen_open(void);
 
 /* ---------- structures */
 
@@ -213,6 +216,8 @@ static struct
 	short difficulty;
 	/* hosting a network game: starts at COOPERATIVE | PVP */
 	boolean hosting;
+	/* opened by Online Games' CREATE GAME, which backing out returns to */
+	boolean from_online_games;
 	char **level_names;
 	short level_count;
 	/* the Xbox map list this was opened over, or NULL */
@@ -350,6 +355,8 @@ static void leave(void)
 	map_screen.active = FALSE;
 	map_screen.xbox_list = NULL;
 	ui_widget_port_go_back_from_top();
+	if (map_screen.from_online_games)
+		browser_screen_open();
 }
 
 static void pick(void)
@@ -663,6 +670,7 @@ boolean map_screen_open(void)
 	map_screen.repeat.held = FALSE;
 	map_screen.button_hovered = NONE;
 	map_screen.hosting = global_network_game_server_get() != NULL && !network_game_is_splitscreen_local();
+	map_screen.from_online_games = browser_screen_take_create();
 	map_screen.step = map_screen.hosting ? STEP_KINDS : STEP_CATEGORIES;
 	map_screen.kind_selected = 0;
 	map_screen.cooperative_selected = 0;

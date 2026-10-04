@@ -3433,9 +3433,13 @@ boolean ui_widget_online_games_create_game(
 {
 	long map_select = tag_loaded(UI_WIDGET_DEFINITION_TAG, ONLINE_GAMES_MAP_SELECT);
 	long screen = tag_loaded(UI_WIDGET_DEFINITION_TAG, ONLINE_GAMES_SCREEN);
+	/* back from the map picker goes to the menu Online Games was opened from:
+	the Xbox's Multiplayer menu, or the PC menus' own */
+	struct widget_instance *behind = widget_globals.active_widgets[0];
+	long previous = behind ? behind->definition_tag_index : screen;
 	char build[0x20];
 
-	if (map_select == NONE || screen == NONE)
+	if (map_select == NONE || previous == NONE)
 		return FALSE;
 	if (!cache_files_multiplayer_region(build))
 	{
@@ -3444,8 +3448,8 @@ boolean ui_widget_online_games_create_game(
 	}
 	if (!ui_online_games_start_server())
 		return FALSE;
-	return ui_widget_load_by_name_or_tag(NULL, map_select, NULL, NONE, screen, online_games.list_tag,
-		ONLINE_GAMES_POSITION) != NULL;
+	return ui_widget_load_by_name_or_tag(NULL, map_select, NULL, NONE, previous,
+		previous == screen ? online_games.list_tag : NONE, previous == screen ? ONLINE_GAMES_POSITION : NONE) != NULL;
 }
 
 /* the Multiplayer menu's description for its focused item
