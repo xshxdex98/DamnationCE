@@ -92,7 +92,7 @@ SCREENS = {
              "Let internet play ask the router to forward its\nport, for networks that stop connections.", None),
             ("JOIN FROM CLIPBOARD:", "network.join_from_clipboard", ON_OFF,
              "Join the game of an invite link copied before\nswitching to the game.", None),
-            ("CHECK FOR UPDATES:", "update.auto", ON_OFF,
+            ("CHECK FOR UPDATES:", "update.check", ON_OFF,
              "Look for a new version when the game starts.", None),
             ("PLAYER NAMES:", "display.player_names",
              [("ALL", "all"), ("ALLIES", "allies"), ("ENEMIES", "enemies"), ("NONE", "none")],

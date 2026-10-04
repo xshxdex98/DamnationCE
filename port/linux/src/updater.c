@@ -15,7 +15,7 @@ Two kinds of build look for updates (tools/version.py):
   it if it was built from another commit.
 
 Other builds (a local build, another branch's) never look. When
-update.auto in config.toml is true (the default), the game asks GitHub when
+update.check in config.toml is true (the default), the game asks GitHub when
 it starts, on a thread of its own: the game starts meanwhile, and nothing
 happens if there is nothing newer or GitHub cannot be reached. If there is,
 the game asks whether to update:
@@ -26,7 +26,7 @@ the game asks whether to update:
   game's (which become <name>.old, deleted at the next start), and the new
   game started; this one quits.
 - No: nothing, until the next start.
-- Do not ask again: after the player confirms it, update.auto = false is
+- Do not ask again: after the player confirms it, update.check = false is
   written to config.toml.
 
 The system side (the HTTPS download, the files, starting the new game) is
@@ -700,7 +700,7 @@ void updater_start(void)
 	updater_clean_up();
 	/* (not for builds other than a release's, the player's no, or runs nobody
 	is watching, but for a test with its answer) */
-	if ((!HALO_RELEASE_BUILD && !updater_rolling()) || !config_boolean("update.auto") ||
+	if ((!HALO_RELEASE_BUILD && !updater_rolling()) || !config_boolean("update.check") ||
 		(!config_string("debug.update_answer")[0] && (config_boolean("debug.hidden_window") ||
 			config_real("debug.exit_after") > 0.0 || config_string("debug.network_test")[0])))
 	{
@@ -747,7 +747,7 @@ void updater_poll(SDL_Window *window)
 		if (!strcmp(test_answer, "yes"))
 			updater_update();
 		else if (!strcmp(test_answer, "never"))
-			config_write_boolean("update.auto", 0);
+			config_write_boolean("update.check", 0);
 		return;
 	}
 	/* (a dialog cannot show above a fullscreen game) */
@@ -781,10 +781,10 @@ void updater_poll(SDL_Window *window)
 
 		if (SDL_ShowMessageBox(&confirm, &confirmed) && confirmed == 1)
 		{
-			if (config_write_boolean("update.auto", 0))
-				platform_log("update: update.auto = false written to config.toml");
+			if (config_write_boolean("update.check", 0))
+				platform_log("update: update.check = false written to config.toml");
 			else
-				platform_log("update: could not write update.auto to config.toml");
+				platform_log("update: could not write update.check to config.toml");
 		}
 	}
 	else if (answer == 1)
