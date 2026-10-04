@@ -20,7 +20,7 @@ support and synced AI on top.
 ## What it adds
 
 **Menus**
-- Two themes, switched from the main menu's **MENUS** button: **Glassed**, a
+- Menu themes, switched from the main menu's **MENUS** button: **Glassed**, a
   minimal look of plain text over the scene and clear glass behind what is
   chosen, and **Vanilla**, the PC menus as they were
 - Left-hand main menu, with Campaign, Multiplayer and Menus columns
@@ -68,11 +68,10 @@ in `config.toml`.
 
 | You want to | Do this |
 | --- | --- |
-| Join a game | **Multiplayer → Online Games**, pick a game, press **A** |
-| Host a game | **Multiplayer → Online Games → Y (Create Game)**, or host from LAN as usual |
-| Invite a friend | When you host, the game copies an invite link (`halo://join/…`) to send |
+| Join a game | **Multiplayer → Online Games**, pick a game from the list, press **A** |
+| Host a game | **Multiplayer → Online Games → Create Game**, or host from LAN as usual |
 
-The game list and stats are ChupathingyCE's service,
+The game stats are ChupathingyCE's service,
 [halo.milenko.org](https://halo.milenko.org).
 
 ## Building
@@ -102,7 +101,7 @@ that draw them).
   [bnunu/halo-1](https://github.com/bnunu/halo-1), of the Xbox build 2342.
 - The port: [OpenCE](https://github.com/cybersecurity/halo-ce-universal) and its
   contributors, which this is a fork of.
-- Online Games, hosting, invites, dedicated servers and stats:
+- Stats:
   [ChupathingyCE](https://github.com/ChupathingyCE/chupathingyce), by
   [Milenko](https://github.com/MrMilenko) and contributors (CC0), used with
   their permission, and its service halo.milenko.org.
