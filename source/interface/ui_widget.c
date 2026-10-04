@@ -641,7 +641,6 @@ struct widget_instance;
 #include "game/game_engine.h"
 #include "game/game_globals.h"
 #include "game/players.h"
-#include "game/player_queues_new.h" /* port: the main menu's input queues */
 #include "hs/hs.h"
 #include "input/input.h"
 #include "input/input_abstraction.h"
@@ -2295,14 +2294,6 @@ void ui_widget_delete(
 					game_time_initialize_for_new_map();
 					game_time_start();
 				}
-			}
-			/* port: the main menu's screens don't pause its scene (above). The
-			players a screen added or removed get their input queues, numbered
-			from the clock that kept running; not in a lobby, whose network
-			game owns the queues */
-			else if (we_are_at_the_main_menu && game_connection() == _game_connection_local)
-			{
-				update_queues_reset_and_fill_with_lies();
 			}
 			if (widget_globals.sound_paused == TRUE)
 			{

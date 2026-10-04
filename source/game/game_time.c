@@ -331,13 +331,15 @@ static short game_time_connection(
 	return game_connection();
 }
 
-/* port: whether this is the main menu's scene ticking while a network game
-is set up (a lobby). It runs on this machine's clock and takes no player
-input: the input queues belong to the network game. */
-boolean game_time_menu_scene_in_lobby(
+/* port: whether the main menu's scene is what ticks. It runs on this
+machine's clock and takes no player input. A tick normally waits for the
+players' input, an action for each player; the menus change who the local
+players are (profiles, a lobby's network game owns the queues), and with
+none the ticks stopped and the scene froze behind the menus. */
+boolean game_time_menu_scene(
 	void)
 {
-	return game_time_connection() == _game_connection_local && game_connection() != _game_connection_local;
+	return global_scenario && global_scenario->type == _scenario_type_main_menu;
 }
 
 /* whether a client's clock waits for the host's first game update, which
@@ -462,9 +464,9 @@ void game_time_update(
 				long maximum_possible_server_time;
 
 				final_local_time = game_time_globals->local_time + ticks_elapsed;
-				/* port: the main menu's scene in a lobby ticks on this machine's
-				clock, without the players' input queues */
-				if (game_time_menu_scene_in_lobby())
+				/* port: the main menu's scene ticks on this machine's clock,
+				without the players' input queues */
+				if (game_time_menu_scene())
 				{
 					maximum_possible_server_time = final_local_time;
 				}

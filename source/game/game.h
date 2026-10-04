@@ -188,7 +188,7 @@ boolean game_map_loaded(void);
 boolean game_time_get_paused(void);
 /* whether a client's clock waits for the host's first game update */
 boolean game_time_held(void);
-boolean game_time_menu_scene_in_lobby(void);
+boolean game_time_menu_scene(void);
 void game_time_set_paused(boolean paused);
 real game_time_get_speed(void);
 void game_time_set_speed(real speed);

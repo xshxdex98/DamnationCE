@@ -3895,15 +3895,15 @@ void player_aiming_vector_from_facing(
 	return;
 }
 
-/* port: the main menu's scene in a lobby takes no input (game_time.c), so
-the network's queue has none for it: its players stand idle. Returns
-whether that is the case. */
+/* port: the main menu's scene takes no input (game_time.c), so the queues
+have none for it: its players stand idle. Returns whether that is the
+case. */
 static boolean players_idle_actions(
 	struct player_action *actions)
 {
 	short index;
 
-	if (!game_time_menu_scene_in_lobby())
+	if (!game_time_menu_scene())
 		return FALSE;
 	for (index = 0; index < NETWORK_GAME_MAXIMUM_PLAYER_COUNT; index++)
 	{
