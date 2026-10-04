@@ -2,9 +2,9 @@
 LOBBY_SCREEN.C
 
 The pregame lobby, drawn in the server browser's style (browser_screen.c):
-the players down the left, their names in their team's color in a team
-game; the map, the game's details and the countdown on the right; the
-buttons along the foot.
+the players down the left (a column per team in a team game); the map,
+the game's details and the countdown on the right; the buttons along the
+foot.
 
 The lobby's widgets (tools/port_settings.py, _lobby) still run it. They
 are invisible, with no pictures and clear text, but they update the lobby
@@ -140,8 +140,82 @@ static void render_header(
 	}
 }
 
-/* The players: a row each, the one with the focus lit, a name in its team's
-color in a team game, and YOU on this machine's players. */
+/* A player's row: the name, a bar of its team's color in a team game, and
+YOU on this machine's players. */
+static void render_player_row(
+	struct overlay_palette const *palette,
+	struct network_player const *player,
+	float x,
+	float y,
+	float width,
+	boolean teams,
+	boolean lit)
+{
+	char name[64];
+
+	if (lit)
+	{
+		ui_overlay_rect(x, y, width, ROW_HEIGHT - 1, palette->radius / 2, palette->row_selected);
+		if (palette->glassed && !teams)
+			ui_overlay_rect(x, y, 1.5f, ROW_HEIGHT - 1, 0, 0xFFFFFFFF);
+	}
+	if (teams)
+	{
+		ui_overlay_rect(x, y, 3.0f, ROW_HEIGHT - 1, 0,
+			player->team_index ? OVERLAY_COLOR_BLUE_TEAM : OVERLAY_COLOR_RED_TEAM);
+	}
+	overlay_utf8((unsigned short const *)player->name, NUMBEROF(player->name), name, sizeof(name));
+	overlay_text_fitted(UI_FONT_BOLD, 11.0f, x + 10, y + 5, width - 50, lit ? palette->title : palette->text, name);
+	if (player->machine_index == network_game_client_get_local_machine_index())
+		ui_overlay_text(UI_FONT_BOLD, 8.0f, x + width - 8, y + 7, UI_ALIGN_RIGHT, OVERLAY_COLOR_NOTICE, "YOU");
+}
+
+/* A team game's players: a column per team under its name and count, as
+many as fit (the rest counted at the foot). */
+static void render_teams(
+	struct overlay_palette const *palette,
+	struct network_player *const *players,
+	short count)
+{
+	static char const *const team_names[] = { "RED TEAM", "BLUE TEAM" };
+	static unsigned int const team_colors[] = { OVERLAY_COLOR_RED_TEAM, OVERLAY_COLOR_BLUE_TEAM };
+	float width = (ROW_WIDTH - 12) / 2.0f;
+	short team;
+
+	for (team = 0; team < NUMBEROF(team_names); team++)
+	{
+		float x = ROW_LEFT + team * (width + 12);
+		short members = 0, shown = 0, index;
+		char text[32];
+
+		for (index = 0; index < count; index++)
+			members += (players[index]->team_index ? 1 : 0) == team;
+		ui_overlay_text(UI_FONT_BOLD, 8.0f, x + 10, HEADING_Y, UI_ALIGN_LEFT, team_colors[team], team_names[team]);
+		snprintf(text, sizeof(text), "%d", members);
+		ui_overlay_text(UI_FONT_BOLD, 8.0f, x + width - 8, HEADING_Y, UI_ALIGN_RIGHT, palette->dim, text);
+		ui_overlay_rect(x, ROW_TOP - 2, width, 0.75f, 0, team_colors[team]);
+		for (index = 0; index < count; index++)
+		{
+			float y = (float)(ROW_TOP + shown * ROW_HEIGHT);
+
+			if ((players[index]->team_index ? 1 : 0) != team)
+				continue;
+			if (shown == ROWS - 1 && members > ROWS)
+			{
+				snprintf(text, sizeof(text), "+%d MORE", members - shown);
+				ui_overlay_text(UI_FONT_BOLD, 9.0f, x + 10, y + 6, UI_ALIGN_LEFT, palette->dim, text);
+				break;
+			}
+			if (shown % 2)
+				ui_overlay_rect(x, y, width, ROW_HEIGHT - 1, 0, palette->row_rule);
+			render_player_row(palette, players[index], x, y, width, TRUE, FALSE);
+			shown++;
+		}
+	}
+}
+
+/* The players: in a team game a column per team, else a list (scrolled by
+the rows' focus, the row with the focus lit). */
 static void render_players(
 	struct overlay_palette const *palette,
 	struct widget_instance *list,
@@ -149,44 +223,30 @@ static void render_players(
 {
 	struct network_player *const *players;
 	short first, count = pc_menu_lobby_players(&players, &first);
-	short local_machine = network_game_client_get_local_machine_index();
-	boolean teams = game->variant.universal_variant.teams;
 	struct widget_instance *row = list->child;
 	char text[64];
 	short index;
 
+	if (game->variant.universal_variant.teams)
+	{
+		render_teams(palette, players, count);
+		return;
+	}
 	ui_overlay_text(UI_FONT_BOLD, 8.0f, ROW_LEFT + 10, HEADING_Y, UI_ALIGN_LEFT, palette->dim, "PLAYERS");
 	if (count > ROWS)
-	{
 		snprintf(text, sizeof(text), "%d\xE2\x80\x93%d OF %d", first + 1, MIN(first + ROWS, count), count);
-		ui_overlay_text(UI_FONT_BOLD, 8.0f, ROW_LEFT + ROW_WIDTH - 10, HEADING_Y, UI_ALIGN_RIGHT, palette->dim, text);
-	}
+	else
+		snprintf(text, sizeof(text), "%d", count);
+	ui_overlay_text(UI_FONT_BOLD, 8.0f, ROW_LEFT + ROW_WIDTH - 8, HEADING_Y, UI_ALIGN_RIGHT, palette->dim, text);
 	ui_overlay_rect(ROW_LEFT, ROW_TOP - 2, ROW_WIDTH, 0.75f, 0, palette->row_rule);
 	for (index = 0; index < ROWS && first + index < count; index++, row = row ? row->next : NULL)
 	{
-		struct network_player const *player = players[first + index];
 		float y = (float)(ROW_TOP + index * ROW_HEIGHT);
-		boolean focused = row && list->focused_child == row;
-		unsigned int color = !teams ? (focused ? palette->title : palette->text) :
-			player->team_index ? OVERLAY_COLOR_BLUE_TEAM : OVERLAY_COLOR_RED_TEAM;
+		boolean lit = row && list->focused_child == row;
 
-		if (focused)
-		{
-			ui_overlay_rect(ROW_LEFT, y, ROW_WIDTH, ROW_HEIGHT - 1, palette->radius / 2, palette->row_selected);
-			if (palette->glassed)
-				ui_overlay_rect(ROW_LEFT, y, 1.5f, ROW_HEIGHT - 1, 0, 0xFFFFFFFF);
-		}
-		else if (index % 2)
-		{
+		if (!lit && index % 2)
 			ui_overlay_rect(ROW_LEFT, y, ROW_WIDTH, ROW_HEIGHT - 1, 0, palette->row_rule);
-		}
-		overlay_utf8((unsigned short const *)player->name, NUMBEROF(player->name), text, sizeof(text));
-		overlay_text_fitted(UI_FONT_BOLD, 11.0f, ROW_LEFT + 10, y + 5, ROW_WIDTH - 70, color, text);
-		if (player->machine_index == local_machine)
-		{
-			ui_overlay_text(UI_FONT_BOLD, 8.0f, ROW_LEFT + ROW_WIDTH - 10, y + 7, UI_ALIGN_RIGHT,
-				OVERLAY_COLOR_NOTICE, "YOU");
-		}
+		render_player_row(palette, players[first + index], ROW_LEFT, y, ROW_WIDTH, FALSE, lit);
 	}
 }
 
