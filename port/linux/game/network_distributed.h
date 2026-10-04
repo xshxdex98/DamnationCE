@@ -88,6 +88,9 @@ enum
 	/* co-op: what the host's scripts did once: sounds, titles, HUD text,
 	animations (network_coop.c) */
 	_distributed_message_coop_events,
+	/* co-op: where the host's scenery and machines are, when they move
+	(network_coop.c) */
+	_distributed_message_coop_object_transforms,
 
 	NUMBER_OF_DISTRIBUTED_MESSAGES
 };
@@ -260,6 +263,8 @@ word network_coop_device_group_entry_size(void);
 void network_coop_handle_device_groups(void const *entries, short count);
 word network_coop_object_names_entry_size(void);
 void network_coop_handle_object_names(void const *entries);
+word network_coop_object_transform_entry_size(void);
+void network_coop_handle_object_transforms(void const *entries, short count);
 word network_coop_skip_vote_entry_size(void);
 void network_coop_handle_skip_vote(long machine_index, void const *entries);
 /* game_sound.c: a sound the host's scripts played */

@@ -271,6 +271,29 @@ struct distributed_coop_object_names_message
 	struct distributed_coop_object_names names;
 };
 
+/* Where one of the host's scenery or machines is. Scripts move them (a
+cutscene's drop pod) and nothing else tells a client. Found as the
+scenery animations' are (object_find). */
+struct distributed_coop_object_transform
+{
+	short name_index;
+	short pad;
+	long object_index;
+	long definition_index;
+	real_point3d position;
+	struct distributed_vector forward;
+	struct distributed_vector up;
+};
+
+#define MAXIMUM_OBJECT_TRANSFORMS_PER_MESSAGE 64
+#define COOP_MOVED_OBJECTS (_object_mask_scenery | _object_mask_machine)
+
+struct distributed_coop_object_transforms_message
+{
+	struct distributed_message_header header;
+	struct distributed_coop_object_transform transforms[MAXIMUM_OBJECT_TRANSFORMS_PER_MESSAGE];
+};
+
 /* a client's vote to skip the cinematic, sent every tick while it stands */
 struct distributed_coop_skip_vote
 {
@@ -645,6 +668,65 @@ static void host_send_device_groups(
 	{
 		distributed_send(&host_devices.message, _distributed_message_coop_device_groups, sent,
 			(word)(sizeof(host_devices.message.header) + sent * sizeof(entries[0])), _distributed_to_clients);
+	}
+}
+
+/* host: where each scenery or machine was last sent, by its absolute
+index; an object that moves from there is sent again */
+static struct
+{
+	long object_index;
+	real_point3d position;
+	real_vector3d forward;
+} host_sent_transforms[MAXIMUM_OBJECTS_PER_MAP];
+
+/* host, each tick: the scenery and machines that moved */
+static void host_send_object_transforms(
+	void)
+{
+	struct distributed_coop_object_transforms_message message;
+	struct object_iterator iterator;
+	struct object_datum *object;
+	short count = 0;
+
+	object_iterator_new(&iterator, COOP_MOVED_OBJECTS, 0);
+	while ((object = object_iterator_next(&iterator)) != NULL)
+	{
+		short absolute_index = DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.index);
+		struct distributed_coop_object_transform *transform;
+
+		if (object->object.parent_object_index != NONE || absolute_index < 0 || absolute_index >= MAXIMUM_OBJECTS_PER_MAP)
+			continue;
+		if (host_sent_transforms[absolute_index].object_index != iterator.index)
+		{
+			/* (an object first seen is where the map placed it, as on every machine) */
+			host_sent_transforms[absolute_index].object_index = iterator.index;
+			host_sent_transforms[absolute_index].position = object->object.position;
+			host_sent_transforms[absolute_index].forward = object->object.forward;
+			continue;
+		}
+		if (distance_squared3d(&host_sent_transforms[absolute_index].position, &object->object.position) < 0.0001f &&
+			dot_product3d(&host_sent_transforms[absolute_index].forward, &object->object.forward) > 0.9999f)
+		{
+			continue;
+		}
+		host_sent_transforms[absolute_index].position = object->object.position;
+		host_sent_transforms[absolute_index].forward = object->object.forward;
+		transform = &message.transforms[count++];
+		transform->name_index = object->object.name_index;
+		transform->pad = 0;
+		transform->object_index = iterator.index;
+		transform->definition_index = object->definition_index;
+		transform->position = object->object.position;
+		distributed_vector_pack(&object->object.forward, DISTRIBUTED_UNIT_SCALE, &transform->forward);
+		distributed_vector_pack(&object->object.up, DISTRIBUTED_UNIT_SCALE, &transform->up);
+		if (count == MAXIMUM_OBJECT_TRANSFORMS_PER_MESSAGE)
+			break;
+	}
+	if (count > 0)
+	{
+		distributed_send(&message, _distributed_message_coop_object_transforms, count,
+			(word)(sizeof(message.header) + count * sizeof(message.transforms[0])), _distributed_to_clients);
 	}
 }
 
@@ -1302,6 +1384,7 @@ void network_coop_host_tick(
 	host_send_device_groups();
 	if (game_time_get() % OBJECT_NAMES_INTERVAL_TICKS == 0)
 		host_send_object_names();
+	host_send_object_transforms();
 	host_send_events();
 }
 
@@ -1346,6 +1429,37 @@ word network_coop_device_group_entry_size(
 	void)
 {
 	return sizeof(struct distributed_coop_device_group);
+}
+
+word network_coop_object_transform_entry_size(
+	void)
+{
+	return sizeof(struct distributed_coop_object_transform);
+}
+
+void network_coop_handle_object_transforms(
+	void const *entries,
+	short count)
+{
+	struct distributed_coop_object_transform const *transforms = entries;
+	short index;
+
+	if (!coop_client())
+		return;
+	for (index = 0; index < count; index++)
+	{
+		struct distributed_coop_object_transform const *transform = &transforms[index];
+		long object_index = object_find(transform->name_index, transform->object_index, transform->definition_index,
+			COOP_MOVED_OBJECTS);
+		real_vector3d forward, up;
+
+		if (object_index == NONE || object_get(object_index)->object.parent_object_index != NONE)
+			continue;
+		distributed_vector_unpack(&transform->forward, DISTRIBUTED_UNIT_SCALE, &forward);
+		distributed_vector_unpack(&transform->up, DISTRIBUTED_UNIT_SCALE, &up);
+		if (distributed_point_valid(&transform->position, UNIT_WORLD_BOUND) && distributed_axes_make_valid(&forward, &up))
+			object_set_position(object_index, &transform->position, &forward, &up);
+	}
 }
 
 word network_coop_object_names_entry_size(
