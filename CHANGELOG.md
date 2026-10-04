@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.2.7
+
+### Co-op
+
+- Joining a game in progress spawns you straight away and starts you
+  watching another player, from behind them, instead of showing their
+  first-person view.
+- A player who joins in progress hears the music and ambience already
+  playing.
+- A spectating or joining player no longer sees enemies and vehicles
+  rubberband or drive on their own. The host was sending them every moving
+  object every tick, which flooded their connection; they now get what is
+  near the players, as everyone else does.
+- Switching between players while spectating works.
+- New players can spawn beside a teammate driving a vehicle.
+- A player left outside the map when the level moves on is brought back
+  beside a teammate after a second.
+- Respawning is held back only by enemy grenades and fire close to the
+  teammate you come back beside, and after 10 seconds you respawn anyway.
+
+### Menus
+
+- In the Glassed menus, lists highlight the entry under the mouse and
+  scroll one entry at a time, by mouse wheel or keys.
+
 ## 0.2.6
 
 ### Custom Edition maps
