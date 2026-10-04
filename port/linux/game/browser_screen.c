@@ -242,6 +242,8 @@ void ui_online_games_stop_network(void);
 /* (the platform layer: the menus' theme) */
 char const *config_string(char const *name);
 boolean ui_widget_online_games_create_game(void);
+/* (menu_functions.c: hosting for the internet, as Create Game > Internet) */
+void pc_menu_host_internet(void);
 
 /* the first player in the game to be joined or made, with the profile
 System Link's Start would pick: the one last used, else the first saved.
@@ -513,6 +515,7 @@ static void create_game(
 	void)
 {
 	join_first_player();
+	pc_menu_host_internet();
 	if (ui_widget_online_games_create_game())
 		close_screen();
 	else

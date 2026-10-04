@@ -157,14 +157,17 @@ void overlay_map_picture(
 	if (pictures == NONE)
 		return;
 	/* (a Custom Edition map's own picture, drawn over the whole place; one
-	without has the unknown level's frame) */
+	without has the unknown level's frame. One of the campaign's own levels
+	is a frame of the campaign menus' pictures, which fills its top left as
+	the level pictures' frames do) */
 	bitmap = custom_edition_maps_picture(pictures, &frame);
-	if (bitmap)
+	if (bitmap && custom_edition_maps_campaign_level(display_index) == NONE)
 	{
 		draw_bitmap_in_rect(bitmap, &bounds, NULL, NULL, 0xFFFFFFFF, NULL, FALSE);
 		return;
 	}
-	bitmap = bitmap_group_get_bitmap_from_sequence(pictures, 0, frame);
+	if (!bitmap)
+		bitmap = bitmap_group_get_bitmap_from_sequence(pictures, 0, frame);
 	if (!bitmap)
 		return;
 	art.x0 = 0;

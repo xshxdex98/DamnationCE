@@ -46,6 +46,9 @@ in lines of about 20 characters.
 /* ---------- constants */
 
 #define MAXIMUM_CUSTOM_EDITION_MAPS 1024
+/* the Custom Edition campaign maps (co-op games'), and their display indices */
+#define MAXIMUM_CUSTOM_EDITION_CAMPAIGNS 256
+#define FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX 0x5000
 /* room for the level list's Xbox levels
 (ui_widget_event_handler_functions.c offers 13) */
 #define MAXIMUM_XBOX_LEVELS 16
@@ -122,6 +125,9 @@ struct custom_edition_maps_globals
 	boolean looked_for;
 	short map_count;
 	struct custom_edition_map maps[MAXIMUM_CUSTOM_EDITION_MAPS];
+	/* the campaign maps, which no level list offers */
+	short campaign_count;
+	struct custom_edition_map campaigns[MAXIMUM_CUSTOM_EDITION_CAMPAIGNS];
 	/* the latest level list: its Xbox levels, then the maps' level names */
 	short xbox_level_count;
 	char *levels[MAXIMUM_XBOX_LEVELS + MAXIMUM_CUSTOM_EDITION_MAPS];
@@ -159,7 +165,13 @@ static void custom_edition_maps_forget(
 	{
 		bitmap_delete(globals->maps[map_index].picture);
 	}
+	for (map_index = 0; map_index < globals->campaign_count; map_index++)
+	{
+		if (globals->campaigns[map_index].picture)
+			bitmap_delete(globals->campaigns[map_index].picture);
+	}
 	globals->map_count = 0;
+	globals->campaign_count = 0;
 
 	return;
 }
@@ -312,6 +324,7 @@ static void custom_edition_map_add(
 {
 	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
 	struct custom_edition_map *map;
+	boolean campaign;
 	short map_index;
 
 	if (csstrcasecmp(extension, "map") && csstrcasecmp(extension, "yelo"))
@@ -325,11 +338,34 @@ static void custom_edition_map_add(
 			return;
 		}
 	}
-	if (xbox_level_named(name) || !custom_edition_cache_multiplayer(name))
+	for (map_index = 0; map_index < globals->campaign_count; map_index++)
+	{
+		if (!csstrcasecmp(globals->campaigns[map_index].name, name))
+		{
+			return;
+		}
+	}
+	if (xbox_level_named(name))
 	{
 		return;
 	}
-	if (csstrlen(name) > MAXIMUM_MAP_NAME_LENGTH)
+	/* (a campaign map, for co-op games, else a multiplayer one, else neither) */
+	campaign = custom_edition_cache_campaign(name);
+	if (!campaign && !custom_edition_cache_multiplayer(name))
+	{
+		return;
+	}
+	if (campaign)
+	{
+		if (globals->campaign_count == MAXIMUM_CUSTOM_EDITION_CAMPAIGNS || csstrlen(name) > MAXIMUM_MAP_NAME_LENGTH)
+		{
+			error(_error_silent, "custom edition: the campaign map '%s' is not listed (too many, or too long a name)",
+				name);
+			return;
+		}
+		map = &globals->campaigns[globals->campaign_count++];
+	}
+	else if (csstrlen(name) > MAXIMUM_MAP_NAME_LENGTH)
 	{
 		error(
 			_error_silent,
@@ -338,7 +374,7 @@ static void custom_edition_map_add(
 			MAXIMUM_MAP_NAME_LENGTH);
 		return;
 	}
-	if (globals->map_count == MAXIMUM_CUSTOM_EDITION_MAPS)
+	else if (globals->map_count == MAXIMUM_CUSTOM_EDITION_MAPS)
 	{
 		error(
 			_error_silent,
@@ -347,8 +383,10 @@ static void custom_edition_map_add(
 			MAXIMUM_CUSTOM_EDITION_MAPS);
 		return;
 	}
-
-	map = &globals->maps[globals->map_count++];
+	else
+	{
+		map = &globals->maps[globals->map_count++];
+	}
 	csmemset(map, 0, sizeof(*map));
 	csstrcpy(map->name, name);
 	csstrncpy(map->folder, folder, sizeof(map->folder) - 1);
@@ -406,7 +444,9 @@ static void custom_edition_maps_look_for(
 		}
 	}
 	qsort(globals->maps, globals->map_count, sizeof(globals->maps[0]), custom_edition_map_compare);
-	error(_error_silent, "custom edition: %d multiplayer maps for the level list", globals->map_count);
+	qsort(globals->campaigns, globals->campaign_count, sizeof(globals->campaigns[0]), custom_edition_map_compare);
+	error(_error_silent, "custom edition: %d multiplayer maps for the level list, %d campaign maps", globals->map_count,
+		globals->campaign_count);
 
 	return;
 }
@@ -487,7 +527,10 @@ static struct custom_edition_map *custom_edition_map_get(
 {
 	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
 	short map_index = display_index - FIRST_DISPLAY_INDEX;
+	short campaign_index = display_index - FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX;
 
+	if (campaign_index >= 0 && campaign_index < globals->campaign_count)
+		return &globals->campaigns[campaign_index];
 	return map_index >= 0 && map_index < globals->map_count ? &globals->maps[map_index] : NULL;
 }
 
@@ -575,6 +618,13 @@ short custom_edition_maps_display_index(
 			return FIRST_DISPLAY_INDEX + map_index;
 		}
 	}
+	for (map_index = 0; map_index < globals->campaign_count; map_index++)
+	{
+		if (!csstrcasecmp(globals->campaigns[map_index].name, name))
+		{
+			return FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX + map_index;
+		}
+	}
 
 	return NONE;
 }
@@ -582,7 +632,47 @@ short custom_edition_maps_display_index(
 boolean custom_edition_maps_campaign(
 	short display_index)
 {
-	return campaign_level_get(display_index) != NONE;
+	return campaign_level_get(display_index) != NONE ||
+		(display_index >= FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX && custom_edition_map_get(display_index));
+}
+
+short custom_edition_maps_campaign_level(
+	short display_index)
+{
+	return campaign_level_get(display_index);
+}
+
+short custom_edition_maps_custom_campaigns(
+	short *display_indices,
+	short maximum)
+{
+	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
+	short count;
+
+	if (!globals->looked_for)
+	{
+		custom_edition_maps_look_for();
+	}
+	for (count = 0; count < globals->campaign_count && count < maximum; count++)
+	{
+		display_indices[count] = FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX + count;
+	}
+
+	return count;
+}
+
+char const *custom_edition_maps_level_name(
+	short display_index)
+{
+	struct custom_edition_map *map = custom_edition_map_get(display_index);
+	short level = campaign_level_get(display_index);
+
+	if (level != NONE)
+	{
+		return main_get_solo_level_name(level);
+	}
+
+	return map ? map->level_name : NULL;
 }
 
 boolean custom_edition_maps_stock(

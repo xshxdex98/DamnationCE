@@ -1926,6 +1926,17 @@ static boolean multiplayer_player(short controller)
 	return ui_widget_port_multiplayer_player(controller, player_ui_get_active_player_profile_index(0));
 }
 
+/* the game about to be hosted reached from the internet or not, as its mode
+says: an internet one has an invite (and Discord), and is in the server
+browser if PUBLIC (Server Setup's LISTING, which a new game starts with as
+network.host_public says) */
+static void multiplayer_hosting_begin(void)
+{
+	p2p_set_hosting_allowed(multiplayer.mode == _multiplayer_mode_host_internet);
+	multiplayer.game_private = !config_boolean("network.host_public");
+	p2p_set_hosting_public(multiplayer.mode == _multiplayer_mode_host_internet && !multiplayer.game_private);
+}
+
 /* Create Game's ("join controller to mp game", first): player 1 in, and
 the server made: an internet one (an invite, Discord) or a LAN one */
 static boolean multiplayer_host(struct widget_instance *widget, struct event_record *event, short controller,
@@ -1934,12 +1945,16 @@ static boolean multiplayer_host(struct widget_instance *widget, struct event_rec
 	multiplayer_mode_set(widget);
 	if (!multiplayer_player(controller))
 		return FALSE;
-	p2p_set_hosting_allowed(multiplayer.mode == _multiplayer_mode_host_internet);
-	/* (in the server browser, if PUBLIC: Server Setup's LISTING, which a
-	new game starts with as network.host_public says) */
-	multiplayer.game_private = !config_boolean("network.host_public");
-	p2p_set_hosting_public(multiplayer.mode == _multiplayer_mode_host_internet && !multiplayer.game_private);
+	multiplayer_hosting_begin();
 	return ui_widget_port_host(widget, event, widget_deleted);
+}
+
+/* Online Games' Create Game (browser_screen.c): an internet game, as Create
+Game > Internet hosts one */
+void pc_menu_host_internet(void)
+{
+	multiplayer.mode = _multiplayer_mode_host_internet;
+	multiplayer_hosting_begin();
 }
 
 /* ---- the map list */

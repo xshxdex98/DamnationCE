@@ -5982,25 +5982,26 @@ short ui_widget_port_gametypes(
 	return (short)count;
 }
 
-/* port: a co-op game (port/linux/game/map_screen.c): the campaign level, at
-the difficulty, the server's, with a gametype no game engine runs (a network
-game on a campaign map is co-op: game.c, players.c); FALSE without a server */
+/* port: a co-op game (port/linux/game/map_screen.c): the campaign map (the
+campaign's level, or a Custom Edition campaign map), at the difficulty, the
+server's, with a gametype no game engine runs (a network game on a campaign
+map is co-op: game.c, players.c); FALSE without a server or such a map */
 boolean ui_widget_port_cooperative_level_choose(
-	short level,
+	char const *map_name,
 	short difficulty)
 {
 	struct network_game_server *server = global_network_game_server_get();
 	struct game_variant variant;
 
-	if (!server || level < 0 || level >= NUMBER_OF_SINGLE_PLAYER_LEVELS)
+	if (!server || !map_name || !custom_edition_maps_campaign(custom_edition_maps_display_index(map_name)))
 		return FALSE;
 	csmemset(&variant, 0, sizeof(variant));
 	ustrncpy(variant.human_readable_game_description, L"Co-op",
 		NUMBEROF(variant.human_readable_game_description) - 1);
 	main_set_difficulty(difficulty);
-	main_set_multiplayer_map_name(main_get_solo_level_name(level));
+	main_set_multiplayer_map_name(map_name);
 	network_game_server_port_set_cooperative(server, difficulty);
-	network_game_server_change_map_name(server, main_get_solo_level_name(level));
+	network_game_server_change_map_name(server, map_name);
 	network_game_server_change_game_variant(server, &variant);
 	return TRUE;
 }

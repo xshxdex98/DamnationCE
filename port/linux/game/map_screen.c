@@ -10,8 +10,9 @@ Vanilla's blues).
 Hosting a game over the network, it opens on its kinds: COOPERATIVE, the
 campaign with every player in it (a network game on a campaign map, which no
 game engine runs: game.c, players.c), and PVP. COOPERATIVE opens its modes,
-CAMPAIGN alone for now; CAMPAIGN opens the campaign's levels, at the
-difficulty X steps through, and A on one makes it the game's
+CAMPAIGN alone for now; CAMPAIGN opens VANILLA (the campaign's levels) and
+CUSTOM (the Custom Edition campaign maps in the maps folder), each its
+levels, at the difficulty X steps through, and A on one makes it the game's
 (ui_widget_port_cooperative_level_choose) and opens Server Setup (its name,
 players and listing; then the lobby, as a PvP game's). PVP opens two
 categories, VANILLA (the Xbox's 13 levels and Halo PC's own six) and CUSTOM
@@ -81,7 +82,9 @@ enum
 	STEP_KINDS,
 	/* (COOPERATIVE) its modes */
 	STEP_COOPERATIVE_MODES,
-	/* (CAMPAIGN) the campaign's levels */
+	/* (CAMPAIGN) VANILLA or CUSTOM */
+	STEP_CAMPAIGN_CATEGORIES,
+	/* (a campaign category) its levels */
 	STEP_CAMPAIGN_LEVELS,
 	/* (PVP, or the Xbox's map list) VANILLA or CUSTOM */
 	STEP_CATEGORIES,
@@ -169,7 +172,7 @@ static struct map_palette const *palette = &glassed_palette;
 list chooses it, a co-op game's level, and the screens opened and left) */
 char **ui_widget_port_multiplayer_levels(short *count, short *xbox_count);
 boolean ui_widget_port_multiplayer_level_choose(char const *map_name);
-boolean ui_widget_port_cooperative_level_choose(short level, short difficulty);
+boolean ui_widget_port_cooperative_level_choose(char const *map_name, short difficulty);
 boolean ui_widget_port_open_from_top(char const *name);
 void event_manager_post_button(short controller_index, short button_index);
 char const *config_string(char const *name);
@@ -178,7 +181,7 @@ void ui_widget_port_go_back_from_top(void);
 /* ---------- structures */
 
 /* a level or map of a list: its index in the multiplayer level list (a
-map), or the campaign level, and its display index (custom_edition_maps.h) */
+map; NONE for a campaign level), and its display index (custom_edition_maps.h) */
 struct map_entry
 {
 	short level;
@@ -200,6 +203,7 @@ static struct
 	/* the row chosen on each step of rows, kept while a later step is open */
 	short kind_selected;
 	short cooperative_selected;
+	short campaign_category_selected;
 	short category_selected;
 	/* the open category, and the campaign's difficulty */
 	short category;
@@ -245,6 +249,7 @@ static short *step_row_selected(void)
 	{
 	case STEP_KINDS: return &map_screen.kind_selected;
 	case STEP_COOPERATIVE_MODES: return &map_screen.cooperative_selected;
+	case STEP_CAMPAIGN_CATEGORIES: return &map_screen.campaign_category_selected;
 	default: return &map_screen.category_selected;
 	}
 }
@@ -305,16 +310,32 @@ static void category_open(short category)
 	list_open(STEP_MAPS);
 }
 
-static void campaign_open(void)
+/* the campaign levels of a category: the campaign's (VANILLA), or the Custom
+Edition campaign maps (CUSTOM) */
+static short campaign_levels(short category, struct map_entry *entries)
 {
-	short level;
+	short displays[MAXIMUM_LEVELS];
+	short count, index;
 
-	for (level = 0; level < NUMBER_OF_SINGLE_PLAYER_LEVELS; level++)
+	if (category == 0)
 	{
-		map_screen.entries[level].level = level;
-		map_screen.entries[level].display = custom_edition_maps_display_index(main_get_solo_level_name(level));
+		for (index = 0; index < NUMBER_OF_SINGLE_PLAYER_LEVELS; index++)
+			displays[index] = custom_edition_maps_display_index(main_get_solo_level_name(index));
+		count = NUMBER_OF_SINGLE_PLAYER_LEVELS;
 	}
-	map_screen.count = NUMBER_OF_SINGLE_PLAYER_LEVELS;
+	else
+		count = custom_edition_maps_custom_campaigns(displays, MAXIMUM_LEVELS);
+	for (index = 0; index < count && entries; index++)
+	{
+		entries[index].level = NONE;
+		entries[index].display = displays[index];
+	}
+	return count;
+}
+
+static void campaign_open(short category)
+{
+	map_screen.count = campaign_levels(category, map_screen.entries);
 	list_open(STEP_CAMPAIGN_LEVELS);
 }
 
@@ -352,14 +373,18 @@ static void pick(void)
 		map_screen.step = map_screen.kind_selected == 0 ? STEP_COOPERATIVE_MODES : STEP_CATEGORIES;
 		return;
 	case STEP_COOPERATIVE_MODES:
-		campaign_open();
+		map_screen.step = STEP_CAMPAIGN_CATEGORIES;
+		return;
+	case STEP_CAMPAIGN_CATEGORIES:
+		campaign_open(map_screen.campaign_category_selected);
 		return;
 	case STEP_CATEGORIES:
 		category_open(map_screen.category_selected);
 		return;
 	case STEP_CAMPAIGN_LEVELS:
-		if (!ui_widget_port_cooperative_level_choose(map_screen.entries[map_screen.selected].level,
-			map_screen.difficulty))
+		if (!map_screen.count ||
+			!ui_widget_port_cooperative_level_choose(
+				custom_edition_maps_level_name(map_screen.entries[map_screen.selected].display), map_screen.difficulty))
 		{
 			return;
 		}
@@ -397,6 +422,9 @@ static void back(void)
 		map_screen.step = STEP_CATEGORIES;
 		break;
 	case STEP_CAMPAIGN_LEVELS:
+		map_screen.step = STEP_CAMPAIGN_CATEGORIES;
+		break;
+	case STEP_CAMPAIGN_CATEGORIES:
 		map_screen.step = STEP_COOPERATIVE_MODES;
 		break;
 	case STEP_COOPERATIVE_MODES:
@@ -501,27 +529,26 @@ static void render_step_rows(struct step_row const *rows, short count, short sel
 	render_lines(description, PREVIEW_X, PREVIEW_Y + 24, 11.0f, COLOR_DIM);
 }
 
-static void render_categories(void)
+/* VANILLA and CUSTOM, with how many each has, and what to do for an empty CUSTOM */
+static void render_categories(short const *counts, short selected, char const *custom_hint)
 {
-	struct map_entry entries[MAXIMUM_LEVELS];
 	short category;
 	char text[64];
 
 	for (category = 0; category < NUMBER_OF_CATEGORIES; category++)
 	{
 		float y = (float)(ROW_Y + category * ROW_HEIGHT);
-		short count = category_levels(category, entries);
 
-		if (category == map_screen.category_selected)
+		if (category == selected)
 			chosen_row(ROW_X, y, ROW_WIDTH, ROW_HEIGHT);
 		ui_overlay_text(UI_FONT_BOLD, 12.0f, ROW_X + 10, y + 4, UI_ALIGN_LEFT, COLOR_TEXT, category_names[category]);
-		snprintf(text, sizeof(text), "%d", count);
+		snprintf(text, sizeof(text), "%d", counts[category]);
 		ui_overlay_text(UI_FONT_REGULAR, 11.0f, ROW_X + ROW_WIDTH - 10, y + 5, UI_ALIGN_RIGHT, COLOR_DIM, text);
 	}
-	if (!category_levels(1, entries))
+	if (!counts[1])
 	{
 		ui_overlay_text(UI_FONT_REGULAR, 10.0f, ROW_X + 10, ROW_Y + NUMBER_OF_CATEGORIES * ROW_HEIGHT + 14,
-			UI_ALIGN_LEFT, COLOR_DIM, "Put Custom Edition maps in the maps folder to play them here.");
+			UI_ALIGN_LEFT, COLOR_DIM, custom_hint);
 	}
 }
 
@@ -583,7 +610,8 @@ static char const *step_title(void)
 	{
 	case STEP_KINDS: return "CREATE GAME";
 	case STEP_COOPERATIVE_MODES: return "COOPERATIVE";
-	case STEP_CAMPAIGN_LEVELS: return "CAMPAIGN";
+	case STEP_CAMPAIGN_CATEGORIES: return "CAMPAIGN";
+	case STEP_CAMPAIGN_LEVELS: return map_screen.campaign_category_selected ? "CUSTOM CAMPAIGN" : "CAMPAIGN";
 	case STEP_CATEGORIES: return map_screen.hosting ? "PVP" : "SELECT MAP";
 	default: return category_names[map_screen.category];
 	}
@@ -612,6 +640,7 @@ boolean map_screen_open(void)
 	map_screen.step = map_screen.hosting ? STEP_KINDS : STEP_CATEGORIES;
 	map_screen.kind_selected = 0;
 	map_screen.cooperative_selected = 0;
+	map_screen.campaign_category_selected = 0;
 	map_screen.category_selected = 0;
 	map_screen.selected = 0;
 	map_screen.first = 0;
@@ -740,9 +769,27 @@ void map_screen_render(void)
 	case STEP_COOPERATIVE_MODES:
 		render_step_rows(cooperative_rows, NUMBEROF(cooperative_rows), map_screen.cooperative_selected);
 		break;
-	case STEP_CATEGORIES:
-		render_categories();
+	case STEP_CAMPAIGN_CATEGORIES:
+	{
+		short counts[NUMBER_OF_CATEGORIES];
+
+		counts[0] = campaign_levels(0, NULL);
+		counts[1] = campaign_levels(1, NULL);
+		render_categories(counts, map_screen.campaign_category_selected,
+			"Put Custom Edition campaign maps in the maps folder to play them here.");
 		break;
+	}
+	case STEP_CATEGORIES:
+	{
+		struct map_entry entries[MAXIMUM_LEVELS];
+		short counts[NUMBER_OF_CATEGORIES];
+
+		counts[0] = category_levels(0, entries);
+		counts[1] = category_levels(1, entries);
+		render_categories(counts, map_screen.category_selected,
+			"Put Custom Edition maps in the maps folder to play them here.");
+		break;
+	}
 	default:
 		if (map_screen.view == VIEW_GRID)
 			render_grid();
