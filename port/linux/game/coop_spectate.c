@@ -44,6 +44,11 @@ and looking down, so the camera stays inside the vehicle and sees all of them */
 #define SPECTATE_PASSENGER_DISTANCE 1.0f
 #define SPECTATE_PASSENGER_PITCH -0.5f
 
+/* a teammate the scripts hold (Pillar of Autumn's cryo tube) is watched from
+in front, far enough back to see all of what holds them */
+#define SPECTATE_HELD_DISTANCE 2.0f
+#define SPECTATE_HELD_PITCH -0.1f
+
 /* ---------- globals */
 
 /* the player each local player is watching, or NONE */
@@ -159,6 +164,13 @@ void coop_spectate_camera(
 		camera->distance = SPECTATE_PASSENGER_DISTANCE;
 		return;
 	}
+	if (!player_input_enabled())
+	{
+		camera->facing.yaw = yaw + _pi;
+		camera->facing.pitch = SPECTATE_HELD_PITCH;
+		camera->distance = SPECTATE_HELD_DISTANCE;
+		return;
+	}
 	/* ease the camera round behind the unit */
 	turn = yaw - camera->facing.yaw;
 	while (turn > _pi)
@@ -203,8 +215,6 @@ void coop_spectate_draw(
 		return;
 	if (!players_coop_waiting_to_start(local_player_get_player_index(local_player_index)))
 		hint = L"You come back beside them once it is safe";
-	else if (players_coop_waits_for_checkpoint())
-		hint = L"You join them at the level's first checkpoint";
 	else
 		hint = L"You join them when they're on foot";
 	usnprintf(text, NUMBEROF(text) - 1, L"SPECTATING %.12s   (A: NEXT)\r\n%s", player_get(watched)->name, hint);

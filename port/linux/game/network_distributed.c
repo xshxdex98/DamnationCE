@@ -2267,6 +2267,37 @@ static void distributed_client_send_inputs(
 	}
 }
 
+/* (the host, in co-op) where each client player's input last faced, by
+absolute index: how far it turns between inputs is its looking around */
+static struct
+{
+	boolean valid;
+	real_euler_angles2d facing;
+} distributed_input_facings[MAXIMUM_TRACKED_PLAYERS];
+
+/* (the host, in co-op) a client player's input counted in the scripts'
+action tests, as a local player's is (player_control_action_test_note) */
+static void distributed_note_input_actions(
+	short player_index,
+	struct player_action const *action)
+{
+	real_euler_angles2d turn = { 0.0f, 0.0f };
+
+	if (distributed_input_facings[player_index].valid)
+	{
+		turn.yaw = action->desired_facing.yaw - distributed_input_facings[player_index].facing.yaw;
+		turn.pitch = action->desired_facing.pitch - distributed_input_facings[player_index].facing.pitch;
+		/* (the short way round) */
+		if (turn.yaw > _pi)
+			turn.yaw -= 2.0f * _pi;
+		else if (turn.yaw < -_pi)
+			turn.yaw += 2.0f * _pi;
+	}
+	distributed_input_facings[player_index].valid = TRUE;
+	distributed_input_facings[player_index].facing = action->desired_facing;
+	player_control_action_test_note(action->control_flags, &turn, &action->throttle, action->primary_trigger);
+}
+
 /* (the host) a client's players' input, and from it (once a message) how
 long a message takes that client and back */
 static void distributed_handle_inputs(
@@ -2296,6 +2327,9 @@ static void distributed_handle_inputs(
 		action.throttle.i = PIN(action.throttle.i, -1.0f, 1.0f);
 		action.throttle.j = PIN(action.throttle.j, -1.0f, 1.0f);
 		action.primary_trigger = PIN(action.primary_trigger, 0.0f, 1.0f);
+		/* (a spectator's buttons pick whom it watches: not counted) */
+		if (network_coop_active() && player->unit_index != NONE)
+			distributed_note_input_actions(input->player_index, &action);
 		update_server_handle_distributed_input(DATUM_INDEX_NEW(input->player_index, player->identifier), input->tick,
 			&action, input->control_flags, DISTRIBUTED_INPUT_HISTORY);
 		if (input->host_time != NONE && (host_time == NONE || input->host_time > host_time))
@@ -3150,6 +3184,7 @@ void network_distributed_new_game(
 	csmemset(distributed_accepted, 0, sizeof(distributed_accepted));
 	csmemset(distributed_host_speeds, 0, sizeof(distributed_host_speeds));
 	csmemset(distributed_round_trips, 0, sizeof(distributed_round_trips));
+	csmemset(distributed_input_facings, 0, sizeof(distributed_input_facings));
 	csmemset(distributed_client_clocks, 0, sizeof(distributed_client_clocks));
 	csmemset(distributed_client_identities, 0, sizeof(distributed_client_identities));
 	distributed_identity_sent = FALSE;

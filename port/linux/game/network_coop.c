@@ -204,7 +204,8 @@ struct distributed_coop_presentation
 	/* whether the scripts have the host's camera (camera_control): else a
 	cutscene leaves it with the player, and a client spectates */
 	byte camera_scripted;
-	byte pad;
+	/* whether the scripts hold the players' controls (player_enable_input) */
+	byte input_disabled;
 	/* the object the camera films (camera_object_get) and the camera's
 	offset from it: a client puts its camera by its own copy, which its
 	timing may have a tick from the host's */
@@ -1094,6 +1095,7 @@ static void host_presentation(
 		presentation->camera_object_index = NONE;
 
 	presentation->camera_scripted = (byte)(*director_camera_scripted != FALSE);
+	presentation->input_disabled = (byte)!player_input_enabled();
 	SET_FLAG(presentation->flags, _presentation_skippable_bit, skip_vote.offered);
 	presentation->skip_votes = (byte)MIN(skip_vote.votes, 255);
 	presentation->skip_voters = (byte)MIN(skip_vote.voters, 255);
@@ -1822,6 +1824,7 @@ void network_coop_client_tick(
 	{
 		client_cinematic_end();
 		client_host_camera_set(FALSE);
+		player_input_enable(TRUE);
 	}
 	if (!network_coop_skip_offered())
 		skip_vote.voted = FALSE;
@@ -2060,6 +2063,7 @@ void network_coop_handle_presentation(
 	if (!coop_game())
 		return;
 	coop_presentation.heard_time = game_time_get();
+	player_input_enable(!presentation->input_disabled);
 
 	if (cinematic && !coop_presentation.cinematic_started && !cinematic_in_progress())
 	{
