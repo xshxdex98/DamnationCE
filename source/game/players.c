@@ -460,6 +460,16 @@ static void player_handle_powerup_equipment(
 
 /* ---------- globals */
 
+/* port: where each player was at the last checkpoint, in network co-op
+(players_note_checkpoint) */
+static struct
+{
+	boolean valid;
+	short structure_bsp_index;
+	boolean has_position[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
+	real_point3d positions[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
+} players_checkpoint;
+
 struct players_globals *players_globals;
 struct data_array *team_data;
 struct data_array *player_data;
@@ -556,6 +566,8 @@ void players_initialize_for_new_map(
 	players_globals->all_dead = FALSE;
 	players_globals->pending_teleport_starting_location_index = NONE;
 	players_globals->respawn_failure = 0;
+	/* port: a new map has no network co-op checkpoint yet */
+	csmemset(&players_checkpoint, 0, sizeof(players_checkpoint));
 	data_make_valid(player_data);
 	data_make_valid(team_data);
 	csmemset(
@@ -2412,14 +2424,6 @@ last checkpoint (game_state_revert), but every machine would have to do
 that in step. Instead the players respawn where they were at the last
 checkpoint (main_save_map_private records it), or at the map's start if
 that was on another BSP. */
-
-static struct
-{
-	boolean valid;
-	short structure_bsp_index;
-	boolean has_position[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
-	real_point3d positions[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
-} players_checkpoint;
 
 /* co-op host: moves a newly spawned player next to a living one, as a
 co-op respawn does (player_teleport finds room) */

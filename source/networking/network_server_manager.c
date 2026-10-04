@@ -771,6 +771,10 @@ static void network_game_server_remove_players_gone_while_loading(
 
 /* ---------- globals */
 
+/* port: the map for the next co-op round after a win
+(network_game_server_port_cooperative_won); empty when there is none */
+static char network_game_server_cooperative_next_map[sizeof(((struct network_game *)NULL)->map.name)];
+
 struct network_game_server network_game_server_memory_do_not_use_directly;
 boolean network_game_server_memory_do_not_use_directly_in_use = FALSE;
 
@@ -1187,6 +1191,9 @@ void network_game_server_dispose(
 	struct network_game_server *server)
 {
 	match_assert(NETWORK_SERVER_MANAGER_FILE, 0x120, server);
+
+	/* port: a won co-op round's next level belongs to this server alone */
+	network_game_server_cooperative_next_map[0] = 0;
 
 	switch (server->state)
 	{
@@ -3941,10 +3948,6 @@ void network_game_server_port_set_settings(
 	if (server)
 		network_game_server_port_settings_apply(server);
 }
-
-/* port: the map for the next co-op round after a win
-(network_game_server_port_cooperative_won); empty when there is none */
-static char network_game_server_cooperative_next_map[sizeof(((struct network_game *)NULL)->map.name)];
 
 void network_game_server_port_cooperative_won(
 	char const *next_map)
