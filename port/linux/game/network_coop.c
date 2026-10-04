@@ -89,7 +89,7 @@ enum
 	/* the field of view (radians) is sent as a word, scaled by this */
 	FIELD_OF_VIEW_SCALE = 10000,
 
-	MAXIMUM_QUEUED_EVENTS = 64,
+	MAXIMUM_QUEUED_EVENTS = 128,
 	/* each event is sent in this many ticks' messages */
 	EVENT_SENDS = 3,
 
@@ -445,8 +445,13 @@ static struct distributed_coop_event *event_new(
 {
 	struct distributed_coop_event *event;
 
-	if (!coop_host() || coop_events.count == MAXIMUM_QUEUED_EVENTS)
+	if (!coop_host())
 		return NULL;
+	if (coop_events.count == MAXIMUM_QUEUED_EVENTS)
+	{
+		error(_error_silent, "co-op: event queue full; an event of kind %d is not sent", kind);
+		return NULL;
+	}
 	event = &coop_events.events[coop_events.count];
 	csmemset(event, 0, sizeof(*event));
 	event->kind = kind;
