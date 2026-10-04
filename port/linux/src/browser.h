@@ -17,6 +17,7 @@ game reached through an invite. See browser.c.
 #define BROWSER_INVITE_LENGTH 64
 #define BROWSER_NAME_LENGTH 16
 #define BROWSER_MAP_LENGTH 64
+#define BROWSER_GAMETYPE_LENGTH 32
 #define BROWSER_MAXIMUM_GAMES 64
 /* a host's roster: the players it announces (as many as a game takes), and
 those a listed game keeps (as many as the Online Games screen shows) */
@@ -38,6 +39,8 @@ struct browser_game
 	/* (UTF-16, as the game's names) */
 	unsigned short name[BROWSER_NAME_LENGTH];
 	char map[BROWSER_MAP_LENGTH];
+	/* the host's description of its rules ("Co-op Heroic"); empty if not given */
+	char gametype[BROWSER_GAMETYPE_LENGTH];
 	short engine;
 	short players;
 	short maximum_players;
