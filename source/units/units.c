@@ -4114,8 +4114,6 @@ void unit_stop_custom_animation(
 	return;
 }
 
-/* port: a co-op client plays the custom animation the host's unit started
-(network_coop.c): exactly that animation, not another random permutation */
 /* port: a dead unit's death animation switched to the given one (the
 host's, port/linux/game/network_objects.c), from its start */
 void unit_port_set_death_animation(
@@ -4129,6 +4127,8 @@ void unit_port_set_death_animation(
 	object_compute_node_matrices_recursive(unit_index);
 }
 
+/* port: a co-op client plays the custom animation the host's unit started
+(network_coop.c): exactly that animation, not another random permutation */
 void unit_port_play_user_animation(
 	long unit_index,
 	long animation_graph_index,
