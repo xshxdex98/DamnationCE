@@ -344,7 +344,11 @@ void game_tick(
 	unlock_global_random_seed();
 	game_engine_update();
 	editor_update();
-	hs_update();
+	/* port: a co-op game's scripts are the host's (a campaign map over the
+	network, no game engine running it): a client's own would place the
+	map's actors and objects again, and decide what the host decides */
+	if (!network_game_distributed_client() || game_engine_running())
+		hs_update();
 	recorded_animations_update();
 	objects_update();
 	players_update_after_game();

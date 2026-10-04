@@ -1904,7 +1904,7 @@ static boolean player_teleport_internal(
 	match_assert(
 		"c:\\halo\\SOURCE\\game\\players.c",
 		0x4FB,
-		source_unit_index==NONE || local_player_count()>1);
+		source_unit_index==NONE || local_player_count()>1 || game_connection()!=_game_connection_local);
 	if (source_unit_index != NONE &&
 		object_get_ultimate_parent(source_unit_index) != source_unit_index)
 	{
@@ -2396,6 +2396,81 @@ boolean players_respawn_coop(
 
 result_complete:
 	return result;
+}
+
+/* ---------- port: co-op over the network
+
+A network game on a campaign map, which no game engine runs, is co-op: its
+players spawn on the host and respawn beside each other as a local co-op
+game's do (players_respawn_coop). With all of them dead a local game goes
+back to its last checkpoint (game_state_revert), which every machine's copy
+of a network game would have to: they come back where they were when the
+game last saved instead (main_save_map_private notes it), or, when that was
+on another structure BSP, where the map starts them. */
+
+static struct
+{
+	boolean valid;
+	short structure_bsp_index;
+	boolean has_position[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
+	real_point3d positions[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
+} players_checkpoint;
+
+void players_note_checkpoint(
+	void)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+
+	csmemset(&players_checkpoint, 0, sizeof(players_checkpoint));
+	players_checkpoint.structure_bsp_index = global_structure_bsp_index_get();
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		short index = DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index);
+
+		if (player->unit_index != NONE)
+		{
+			players_checkpoint.positions[index] = object_get(player->unit_index)->object.bounding_sphere_center;
+			players_checkpoint.has_position[index] = TRUE;
+			players_checkpoint.valid = TRUE;
+		}
+	}
+
+	return;
+}
+
+void players_respawn_at_checkpoint(
+	void)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+	real_point3d const *anyone = NULL;
+	short index;
+
+	if (players_checkpoint.structure_bsp_index != global_structure_bsp_index_get())
+		players_checkpoint.valid = FALSE;
+	/* (one without a place of its own, who joined since, goes to another's) */
+	for (index = 0; players_checkpoint.valid && !anyone && index < NETWORK_GAME_MAXIMUM_PLAYER_COUNT; index++)
+	{
+		if (players_checkpoint.has_position[index])
+			anyone = &players_checkpoint.positions[index];
+	}
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		if (player->unit_index != NONE)
+			continue;
+		player_spawn(iterator.datum_index);
+		index = DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index);
+		if (player->unit_index != NONE && anyone)
+		{
+			player_teleport(iterator.datum_index, NONE,
+				players_checkpoint.has_position[index] ? &players_checkpoint.positions[index] : anyone);
+		}
+	}
+
+	return;
 }
 
 static void player_teleport_on_bsp_switch(
@@ -3698,7 +3773,9 @@ void players_update_before_game(
 					else if (network_game_distributed_client())
 						game_engine_client_respawn_countdown(iterator.datum_index);
 				}
-				else if (!main_menu_is_active())
+				/* (port: a co-op game's players spawn on the host, and the
+				distributed netcode's clients are given their units) */
+				else if (!main_menu_is_active() && !network_game_distributed_client())
 				{
 					if (player->statistics.deaths == 0)
 						player_spawn(iterator.datum_index);
@@ -3920,7 +3997,10 @@ void players_update_after_game(
 		{
 			root_object_index = object_get_ultimate_parent(player->unit_index);
 			root_object = object_get(root_object_index);
-			if (!TEST_FLAG(root_object->object.flags, _object_outside_of_map_bit))
+			/* (port: a co-op game's client switches when the host does,
+			network_distributed.c) */
+			if (!TEST_FLAG(root_object->object.flags, _object_outside_of_map_bit) &&
+				(!network_game_distributed_client() || game_engine_running()))
 			{
 				scenario = global_scenario_get();
 				for (bsp_switch_trigger_volume_index = 0;
@@ -3977,7 +4057,7 @@ void players_update_after_game(
 
 	if (players_globals->all_dead)
 	{
-		if (!game_engine_running() && !players_lost_map_started)
+		if (!game_engine_running() && !players_lost_map_started && !network_game_distributed_client())
 		{
 			main_lost_map();
 			players_lost_map_started = TRUE;
