@@ -2450,39 +2450,53 @@ that in step. Instead the players respawn where they were at the last
 checkpoint (main_save_map_private records it), or at the map's start if
 that was on another BSP. */
 
-/* If a level hasn't saved after this long without a cutscene, the players
-waiting for its first checkpoint spawn anyway. */
+/* If Pillar of Autumn hasn't saved after this long without a cutscene, the
+players waiting for its first checkpoint spawn anyway. */
 #define COOP_START_FALLBACK_TICKS (3 * 60 * TICKS_PER_SECOND)
 
+/* whether the level keeps its other players out until its first checkpoint:
+Pillar of Autumn, whose cryo tube and tutorial drive the first player alone */
+static boolean players_coop_level_waits_for_checkpoint(
+	void)
+{
+	char const *name = global_scenario_index != NONE ? tag_get_name(global_scenario_index) : NULL;
+
+	return name && !csstrcmp(tag_name_strip_path(name), "a10");
+}
+
 /* Co-op host: whether a player who hasn't spawned on this level yet may
-spawn now. The first player spawns at once. The others wait for the level's
-first checkpoint, so they don't stand in on its opening (Pillar of Autumn's
-cryo tube and tutorial drive the first player alone); they spectate the
-first player meanwhile. */
+spawn now. The first player spawns at once (the level's script places it).
+The others spawn once no cutscene is playing, beside a teammate
+(player_place_beside_teammate): as the opening cutscene ends or is skipped,
+or at once if they join later. On Pillar of Autumn they wait for its first
+checkpoint, spectating the first player meanwhile. */
 static boolean players_coop_may_spawn(
 	void)
 {
 	struct data_iterator iterator;
 	struct player_datum *player;
+	boolean anyone_spawned = FALSE;
 
-	if (players_coop_start.released)
-		return TRUE;
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
 		if (player->unit_index != NONE)
-			return FALSE;
+			anyone_spawned = TRUE;
 	}
+	if (!anyone_spawned)
+		return TRUE;
+	if (players_coop_level_waits_for_checkpoint() && !players_coop_start.released)
+		return FALSE;
 
-	return TRUE;
+	return !cinematic_in_progress();
 }
 
-/* co-op host, each tick: the fallback for a level that never saves */
+/* co-op host, each tick: the fallback for a Pillar of Autumn that never saves */
 static void players_coop_start_update(
 	void)
 {
 	if (players_coop_start.released || game_connection() != _game_connection_network_server ||
-		!network_coop_active())
+		!network_coop_active() || !players_coop_level_waits_for_checkpoint())
 	{
 		return;
 	}
@@ -2492,15 +2506,16 @@ static void players_coop_start_update(
 		players_coop_start.released = TRUE;
 }
 
-/* whether this player is still waiting for the level's first checkpoint
-(coop_spectate.c tells them so) */
+/* whether this player hasn't spawned on the level yet and is waiting to:
+for Pillar of Autumn's first checkpoint (coop_spectate.c tells them so), or
+for the cutscene playing to end */
 boolean players_coop_waiting_to_start(
 	long player_index)
 {
 	struct player_datum *player = player_try_and_get(player_index);
 
-	return player && player->unit_index == NONE && player->statistics.deaths == 0 &&
-		network_coop_active() && !players_coop_start.released;
+	return player && player->unit_index == NONE && player->statistics.deaths == 0 && network_coop_active() &&
+		((players_coop_level_waits_for_checkpoint() && !players_coop_start.released) || cinematic_in_progress());
 }
 
 /* how close a projectile, a grenade throw or a dying unit makes a teammate
@@ -2610,27 +2625,58 @@ static boolean players_respawn_network_coop(
 	return result;
 }
 
-/* co-op host: moves a newly spawned player next to a living one, as a
-co-op respawn does (player_teleport finds room) */
+/* co-op host: seats a unit in an empty passenger seat (not a driver's or
+gunner's) of the vehicle; FALSE if there is none */
+static boolean player_take_passenger_seat(
+	long unit_index,
+	long vehicle_index)
+{
+	struct unit_definition *vehicle_definition = unit_definition_get(unit_get(vehicle_index)->definition_index);
+	short seat_index;
+
+	for (seat_index = 0; seat_index < vehicle_definition->unit.seats.count; seat_index++)
+	{
+		struct unit_seat *seat = TAG_BLOCK_GET_ELEMENT(&vehicle_definition->unit.seats, seat_index, struct unit_seat);
+
+		if (TEST_FLAG(seat->flags, _unit_seat_driver_bit) || TEST_FLAG(seat->flags, _unit_seat_gunner_bit))
+			continue;
+		if (unit_enter_seat(unit_index, vehicle_index, seat_index))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+/* Co-op host: puts a newly spawned player with a living one: in an empty
+passenger seat of the vehicle the teammate rides (Silent Cartographer's
+Pelican), else beside them, as a co-op respawn does (player_teleport finds
+room). */
 static void player_place_beside_teammate(
 	long player_index)
 {
+	long unit_index = player_get(player_index)->unit_index;
 	struct data_iterator iterator;
 	struct player_datum *other;
 
-	if (player_get(player_index)->unit_index == NONE)
+	if (unit_index == NONE)
 		return;
 	data_iterator_new(&iterator, player_data);
 	while ((other = data_iterator_next(&iterator)) != NULL)
 	{
-		if (iterator.datum_index != player_index && other->unit_index != NONE)
+		long vehicle_index;
+
+		if (iterator.datum_index == player_index || other->unit_index == NONE)
+			continue;
+		vehicle_index = object_get_ultimate_parent(other->unit_index);
+		if (vehicle_index != other->unit_index &&
+			object_try_and_get_and_verify_type(vehicle_index, _object_mask_vehicle) &&
+			player_take_passenger_seat(unit_index, vehicle_index))
 		{
-			player_teleport(player_index, other->unit_index, &object_get(other->unit_index)->object.bounding_sphere_center);
 			return;
 		}
+		player_teleport(player_index, other->unit_index, &object_get(other->unit_index)->object.bounding_sphere_center);
+		return;
 	}
-
-	return;
 }
 
 void players_note_checkpoint(
