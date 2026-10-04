@@ -5,10 +5,14 @@ name: Build
 # every pushed commit and pull request, uploaded as artifacts: whether a
 # change builds. tools/ci_build.py does each build; see it for the options.
 #
-# These builds are VERSION's -dev, and never look for updates. A release is
-# this workflow called by release.yml (a tag v<VERSION> pushed): then only
-# the release builds are made, versioned, and zipped as the updater names
-# them (damnationce-<platform>-release.zip).
+# These builds are VERSION's -dev, and never look for updates, but for a
+# push to main: its builds are VERSION+<commit>, and its Windows and Linux
+# release builds are published as the "latest" pre-release (publish-latest),
+# replacing the last push's. Builds of main offer each newer one when the
+# game starts (port/linux/src/updater.c). A release is this workflow called
+# by release.yml (a tag v<VERSION> pushed): then only the release builds are
+# made, versioned, and zipped as the updater names them
+# (damnationce-<platform>-release.zip).
 #
 # Kept cheap:
 # - one job per platform builds both configurations, so its set-up (tools,
@@ -54,6 +58,9 @@ env:
   # (tools/version.py: empty unless release.yml calls this)
   HALO_VERSION: ${{ inputs.version }}
   HALO_RELEASE_BUILD: ${{ inputs.release && '1' || '' }}
+  # (a push to main: its builds offer newer pushes; tools/version.py)
+  HALO_UPDATE_CHANNEL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'latest' || '' }}
+  HALO_BUILD_COMMIT: ${{ github.sha }}
   # (Android's version code: each build must be higher than the one it
   # installs over)
   HALO_BUILD_NUMBER: ${{ github.run_number }}
@@ -107,11 +114,11 @@ jobs:
           retention-days: 3
 
       - name: Zip for the release
-        if: ${{ inputs.release }}
+        if: ${{ inputs.release || env.HALO_UPDATE_CHANNEL == 'latest' }}
         run: python -c "import shutil; shutil.make_archive('damnationce-linux-release', 'zip', 'dist/damnationce-linux-release')"
 
       - uses: actions/upload-artifact@v4
-        if: ${{ inputs.release }}
+        if: ${{ inputs.release || env.HALO_UPDATE_CHANNEL == 'latest' }}
         with:
           name: damnationce-linux-release-zip
           path: damnationce-linux-release.zip
@@ -260,11 +267,11 @@ jobs:
           retention-days: 3
 
       - name: Zip for the release
-        if: ${{ inputs.release }}
+        if: ${{ inputs.release || env.HALO_UPDATE_CHANNEL == 'latest' }}
         run: python -c "import shutil; shutil.make_archive('damnationce-windows-release', 'zip', 'dist/damnationce-windows-release')"
 
       - uses: actions/upload-artifact@v4
-        if: ${{ inputs.release }}
+        if: ${{ inputs.release || env.HALO_UPDATE_CHANNEL == 'latest' }}
         with:
           name: damnationce-windows-release-zip
           path: damnationce-windows-release.zip
@@ -333,3 +340,30 @@ jobs:
           name: damnationce-macos-release-zip
           path: damnationce-macos-release.zip
           retention-days: 3
+
+  # A push to main: its Windows and Linux release builds become the "latest"
+  # pre-release (the last push's goes), which builds of main offer to
+  # update to (port/linux/src/updater.c). The release is pointed at the
+  # commit, which is how the game tells whether it has it.
+  publish-latest:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: [linux, windows]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: damnationce-*-release-zip
+          path: latest
+          merge-multiple: true
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -l latest
+          gh release delete latest --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create latest latest/*.zip --repo "$GITHUB_REPOSITORY" --prerelease \
+            --target "$GITHUB_SHA" --title "DamnationCE latest build" \
+            --notes "The newest build of main, from ${GITHUB_SHA::7}. Builds of main offer it when they start."

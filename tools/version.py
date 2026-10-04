@@ -21,9 +21,25 @@ def base_version() -> str:
     return (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 
 
+def build_commit() -> str:
+    """the commit a CI build was made from (shortened), or "" """
+    return os.environ.get("HALO_BUILD_COMMIT", "")[:7]
+
+
+def update_channel() -> str:
+    """"latest" for a build of main pushed to GitHub, whose updater offers
+    each newer push (build.yml publishes them as the "latest" pre-release);
+    "" for any other build"""
+    return "latest" if os.environ.get("HALO_UPDATE_CHANNEL") == "latest" and build_commit() else ""
+
+
 def version() -> str:
     """this build's"""
-    return os.environ.get("HALO_VERSION") or f"{base_version()}-dev"
+    if os.environ.get("HALO_VERSION"):
+        return os.environ["HALO_VERSION"]
+    if update_channel():
+        return f"{base_version()}+{build_commit()}"
+    return f"{base_version()}-dev"
 
 
 def release_build() -> bool:
