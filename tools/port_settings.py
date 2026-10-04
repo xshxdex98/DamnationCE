@@ -699,7 +699,14 @@ def _lobby() -> list:
                       f'<child widget="{base}/lobby_button_bar" y="414"/>'])
     lines += _widget(f"{base}/lobby_desc", [("width", 640), ("height", 480)],
                      ['<child widget="main_menu/current_profile_name"/>',
-                      f'<child widget="{base}/lobby_right_item" x="22" y="2"/>'])
+                      f'<child widget="{base}/lobby_right_item" x="22" y="2"/>',
+                      f'<child widget="{base}/lobby_countdown"/>'])
+    # the game's start countdown, large, beside the header (menu_functions.c's
+    # lobby_update; teal in both themes, as the server browser's notices)
+    lines += _widget(f"{base}/lobby_countdown", [("type", "text"), ("controller", 1), ("left", 406), ("top", 30),
+                                                 ("width", 184), ("height", 36), ("font", "ui\\large_ui"),
+                                                 ("color", "#FF3CC8C0"), ("align", "center"),
+                                                 ("text_flags", "no_focus_test")], [])
     lines += _widget(f"{base}/lobby_right_item", [("controller", 1), ("left", 406), ("top", 75), ("width", 162),
                                                   ("height", 326),
                                                   ("bitmap", "bitmaps/spinner_list_3_wide_item_background")],
