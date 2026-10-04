@@ -951,6 +951,21 @@ static struct
 } host_attachments[MAXIMUM_ATTACHMENTS];
 static short host_attachment_count;
 
+/* host: the looping sounds its scripts play (music, ambience), sent again
+every OBJECT_REFRESH_TICKS for a client that joined since they started */
+enum
+{
+	MAXIMUM_LOOPING_SOUNDS = 32,
+};
+
+static struct
+{
+	long definition_index;
+	long object_index;
+	real scale;
+} host_looping_sounds[MAXIMUM_LOOPING_SOUNDS];
+static short host_looping_sound_count;
+
 static void host_send_object_names(
 	void)
 {
@@ -1324,8 +1339,12 @@ static void client_apply_sound(
 			scripted_sound_new(event->tag_index, object_index, scale);
 		break;
 	case _coop_sound_looping_start:
-		if (distributed_tag_of_group(event->tag_index, LOOPING_SOUND_DEFINITION_TAG))
+		/* (one sent again for a late joiner, which plays here already, plays on) */
+		if (distributed_tag_of_group(event->tag_index, LOOPING_SOUND_DEFINITION_TAG) &&
+			looping_sound_definition_get(event->tag_index)->runtime_scripting_sound_index == NONE)
+		{
 			scripted_looping_sound_start(event->tag_index, object_index, scale);
+		}
 		break;
 	case _coop_sound_looping_stop:
 		if (distributed_tag_of_group(event->tag_index, LOOPING_SOUND_DEFINITION_TAG))
@@ -1484,6 +1503,7 @@ void network_coop_new_game(
 	csmemset(host_sent_looks, 0, sizeof(host_sent_looks));
 	csmemset(&host_sent_screen_effect, 0, sizeof(host_sent_screen_effect));
 	host_attachment_count = 0;
+	host_looping_sound_count = 0;
 	skip_vote_clear();
 	skip_vote.offered = FALSE;
 	skip_vote.voters = 0;
@@ -1516,6 +1536,49 @@ void network_coop_note_device_snap(
 		host_devices.snap_counts[group_index]++;
 }
 
+/* the looping sound's place in host_looping_sounds, or NONE */
+static short host_looping_sound_find(
+	long definition_index)
+{
+	short index;
+
+	for (index = 0; index < host_looping_sound_count; index++)
+	{
+		if (host_looping_sounds[index].definition_index == definition_index)
+			return index;
+	}
+	return NONE;
+}
+
+static void host_send_looping_sounds(
+	void)
+{
+	short index = 0;
+
+	if (game_time_get() % OBJECT_REFRESH_TICKS != 0)
+		return;
+	while (index < host_looping_sound_count)
+	{
+		long definition_index = host_looping_sounds[index].definition_index;
+		struct distributed_coop_event *event;
+
+		/* (one that has stopped by itself: forgotten) */
+		if (looping_sound_definition_get(definition_index)->runtime_scripting_sound_index == NONE)
+		{
+			host_looping_sounds[index] = host_looping_sounds[--host_looping_sound_count];
+			continue;
+		}
+		if ((event = event_new(_coop_event_sound)) != NULL)
+		{
+			event->type = _coop_sound_looping_start;
+			event->tag_index = definition_index;
+			event->object_index = host_looping_sounds[index].object_index;
+			event->reals[0] = host_looping_sounds[index].scale;
+		}
+		index++;
+	}
+}
+
 void network_coop_note_sound(
 	short kind,
 	long definition_index,
@@ -1523,6 +1586,7 @@ void network_coop_note_sound(
 	real scale)
 {
 	struct distributed_coop_event *event = event_new(_coop_event_sound);
+	short index;
 
 	if (!event)
 		return;
@@ -1530,6 +1594,23 @@ void network_coop_note_sound(
 	event->tag_index = definition_index;
 	event->object_index = object_index;
 	event->reals[0] = scale;
+
+	index = host_looping_sound_find(definition_index);
+	if (kind == _coop_sound_looping_stop && index != NONE)
+	{
+		host_looping_sounds[index] = host_looping_sounds[--host_looping_sound_count];
+	}
+	else if (kind == _coop_sound_looping_start)
+	{
+		if (index == NONE && host_looping_sound_count < MAXIMUM_LOOPING_SOUNDS)
+			index = host_looping_sound_count++;
+		if (index != NONE)
+		{
+			host_looping_sounds[index].definition_index = definition_index;
+			host_looping_sounds[index].object_index = object_index;
+			host_looping_sounds[index].scale = scale;
+		}
+	}
 }
 
 void network_coop_note_title(
@@ -1864,6 +1945,7 @@ void network_coop_host_tick(
 	host_send_object_looks();
 	host_send_screen_effect();
 	host_send_attachments();
+	host_send_looping_sounds();
 	host_send_events();
 }
 
