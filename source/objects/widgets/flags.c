@@ -393,12 +393,9 @@ void flag_update_attachment(
 	delta.j = attachment_points->y - flag->first_attachment.y;
 	delta.k = attachment_points->z - flag->first_attachment.z;
 
-	/*
-	 * (as the original: the integer truncation makes this a two-unit threshold)
-	 */
-	if ((real)abs((long)delta.i) > 1.0f ||
-		(real)abs((long)delta.j) > 1.0f ||
-		(real)abs((long)delta.k) > 1.0f)
+	if (fabsf(delta.i) > 1.0f ||
+		fabsf(delta.j) > 1.0f ||
+		fabsf(delta.k) > 1.0f)
 	{
 		short x;
 
