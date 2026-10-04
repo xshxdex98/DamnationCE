@@ -49,6 +49,7 @@ index and tag, since the map placed them at the same index everywhere.
 /* ---------- headers */
 
 #include "cseries.h"
+#include "cseries/errors.h"
 #include "cache/cache_files.h"
 #include "camera/camera_scripting.h"
 #include "camera/observer.h"
@@ -58,6 +59,7 @@ index and tag, since the map placed them at the same index everywhere.
 #include "game/game.h"
 #include "game/game_engine.h"
 #include "game/players.h"
+#include "game/player_queues_new.h"
 #include "hs/hs.h"
 #include "interface/hud.h"
 #include "interface/hud_definitions.h"
@@ -69,6 +71,7 @@ index and tag, since the map placed them at the same index everywhere.
 #include "objects/objects.h"
 #include "objects/object_types.h"
 #include "objects/scenery.h"
+#include "saved games/game_state.h"
 #include "scenario/scenario.h"
 #include "scenario/scenario_definitions.h"
 #include "sound/game_sound.h"
@@ -323,6 +326,8 @@ static struct
 	long client_vote_times[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
 	/* host: no voting before this game time (set after a skip) */
 	long cooldown_until;
+	/* host: the vote passed and main_skip_cinematic was called once */
+	boolean requested;
 } skip_vote;
 
 /* ---------- private code */
@@ -674,13 +679,20 @@ static void host_count_skip_votes(
 	long now = game_time_get();
 	short index;
 
-	skip_vote.offered = cinematic_in_progress() && cinematic_can_be_skipped() && now >= skip_vote.cooldown_until;
+	/* not while the cinematic's save is still being written: reverting then
+	would go back to the save before it */
+	skip_vote.offered = cinematic_in_progress() && cinematic_can_be_skipped() && !main_saving_map() &&
+		now >= skip_vote.cooldown_until;
 	if (!skip_vote.offered)
 	{
 		skip_vote_clear();
 		skip_vote.voters = 0;
+		skip_vote.requested = FALSE;
 		return;
 	}
+	/* asked for already: main.c skips at the end of this frame */
+	if (skip_vote.requested)
+		return;
 	/* the host votes too, unless it is a dedicated server with no player */
 	skip_vote.voters = (short)(machine_count + (local_player_get_next(NONE) != NONE ? 1 : 0));
 	skip_vote.votes = skip_vote.voted ? 1 : 0;
@@ -692,7 +704,11 @@ static void host_count_skip_votes(
 			skip_vote.votes++;
 	}
 	if (skip_vote.votes * 2 > skip_vote.voters)
+	{
+		error(_error_silent, "co-op: skipping the cutscene (%d of %d voted)", skip_vote.votes, skip_vote.voters);
+		skip_vote.requested = TRUE;
 		main_skip_cinematic();
+	}
 }
 
 /* host: the presentation sent to every client this tick */
@@ -1166,7 +1182,12 @@ boolean network_coop_vote_skip(
 /* The skip reverted the host's game state, clock included. The clock is
 put back, since clients and the netcode expect it to only go forward, and
 the script threads' wake times move by the same amount so they still wake
-when they would have. */
+when they would have. The revert also renumbered the input queues from the
+old clock (update_queues_reset_and_fill_with_lies); they are renumbered
+from the restored one, or no tick would run until they caught up. And the
+revert is stamped with the restored time, since the script's game_reverted
+compares the stamp with the clock: otherwise it would play the cinematic
+it was meant to skip. */
 void network_coop_skip_reverted(
 	long now)
 {
@@ -1178,9 +1199,13 @@ void network_coop_skip_reverted(
 	if (ticks > 0)
 	{
 		game_time_set_distributed(now);
+		update_queues_reset_and_fill_with_lies();
+		game_state_port_restamp_revert_time();
 		hs_runtime_port_shift_sleep_times(ticks);
 	}
+	error(_error_silent, "co-op: cutscene skipped; reverted %ld ticks, clock kept at %ld", ticks, now);
 	skip_vote_clear();
+	skip_vote.requested = FALSE;
 	skip_vote.cooldown_until = game_time_get() + SKIP_COOLDOWN_TICKS;
 }
 

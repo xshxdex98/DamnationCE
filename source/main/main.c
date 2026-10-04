@@ -1866,6 +1866,11 @@ static void main_skip_cinematic_private(
 		ui_widgets_disable_pause_game(30);
 		main_globals.revert_map = FALSE;
 	}
+	else if (game_connection() == _game_connection_network_server)
+	{
+		error(_error_silent, "co-op: cutscene not skipped (skippable %d, saved state %d)",
+			cinematic_can_be_skipped(), game_state_port_saved_game_valid());
+	}
 	main_globals.skip_cinematic = FALSE;
 	return;
 }

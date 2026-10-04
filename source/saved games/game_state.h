@@ -38,6 +38,8 @@ void game_state_save(
 	void);
 boolean game_state_port_saved_game_valid(
 	void);
+void game_state_port_restamp_revert_time(
+	void);
 void game_state_revert(
 	void);
 void game_state_save_to_persistent_storage(
