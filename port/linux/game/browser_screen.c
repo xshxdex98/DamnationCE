@@ -647,7 +647,8 @@ enum
 	/* roster names by team */
 	COLOR_RED_TEAM = 0xFF6B6BFF,
 	COLOR_BLUE_TEAM = 0x6BB0FFFF,
-	COLOR_CLOSED = 0xF08A4BFF,
+	/* notices, and what can't be joined: a full or closed game, a missing map */
+	COLOR_NOTICE = 0x3CC8C0FF,
 };
 
 /* the layout, in the menus' 640x480: game cards down the left, the selected
@@ -933,13 +934,13 @@ static void render_card(
 		!map->installed ? " (not installed)" : map->kind == MAP_CUSTOM_EDITION ? " (CE)" : "",
 		type_name(game, rules, sizeof(rules)));
 	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 58, y + 24, UI_ALIGN_LEFT,
-		map->installed ? COLOR_DIM : COLOR_CLOSED, line);
+		map->installed ? COLOR_DIM : COLOR_NOTICE, line);
 
 	snprintf(line, sizeof(line), "%d/%d", game->players, game->maximum_players);
-	ui_overlay_text(UI_FONT_BOLD, 11.0f, right, y + 7, UI_ALIGN_RIGHT, game->open ? color : COLOR_CLOSED, line);
+	ui_overlay_text(UI_FONT_BOLD, 11.0f, right, y + 7, UI_ALIGN_RIGHT, game->open ? color : COLOR_NOTICE, line);
 	ui_overlay_rect(right - FULLNESS_WIDTH, y + 27, FULLNESS_WIDTH, 2.0f, 0, COLOR_ROW_RULE);
 	ui_overlay_rect(right - FULLNESS_WIDTH, y + 27, FULLNESS_WIDTH * MIN(filled, 1.0f), 2.0f, 0,
-		game->open ? COLOR_TEXT : COLOR_CLOSED);
+		game->open ? COLOR_TEXT : COLOR_NOTICE);
 }
 
 /* The selected game's details: map, settings, and the roster if the host
@@ -1088,8 +1089,12 @@ void browser_screen_render(
 		overlay_buttons_draw(cancel_label, 1, cancel_left(), CANCEL_Y, browser_screen.cancel_hovered ? 0 : NONE, 0,
 			&colors);
 	}
+	/* under the list, clear of the cards, the details and the buttons */
 	else if (browser_screen.status[0] && system_milliseconds() - browser_screen.status_time < STATUS_DURATION)
-		ui_overlay_text(UI_FONT_BOLD, 9.0f, layout.right, TABS_Y + 20, UI_ALIGN_RIGHT, COLOR_CLOSED, browser_screen.status);
+	{
+		ui_overlay_text(UI_FONT_REGULAR, 11.0f, layout.list_x, LIST_Y + ROWS_PER_PAGE * CARD_HEIGHT + 26, UI_ALIGN_LEFT,
+			COLOR_NOTICE, browser_screen.status);
+	}
 }
 
 #endif
