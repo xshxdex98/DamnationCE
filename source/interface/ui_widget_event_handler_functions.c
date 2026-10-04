@@ -923,6 +923,7 @@ symbols in this file:
 #include "networking/network_game_manager.h"
 #include "networking/network_messages.h"
 #include "networking/network_server_manager.h"
+#include "network_coop.h" /* port: port/linux/game/network_coop.c */
 #include "saved games/game_state.h"
 #include "saved games/player_profile.h"
 #include "interface/ui_widget_definitions.h"
@@ -1975,6 +1976,9 @@ static boolean pause_game_restart_at_checkpoint(
 	struct event_record *event,
 	boolean *widget_deleted)
 {
+	/* port: in co-op this would revert only this machine */
+	if (network_coop_active())
+		return FALSE;
 	main_revert_map();
 	return TRUE;
 }
@@ -1984,6 +1988,9 @@ static boolean pause_game_restart_level(
 	struct event_record *event,
 	boolean *widget_deleted)
 {
+	/* port: in co-op this would restart only this machine */
+	if (network_coop_active())
+		return FALSE;
 	main_reset_map();
 	return TRUE;
 }
@@ -1993,6 +2000,10 @@ static boolean pause_game_quit_to_main_menu(
 	struct event_record *event,
 	boolean *widget_deleted)
 {
+	/* port: co-op leaves the network game, as the multiplayer pause menu's
+	quit does, and keeps the solo saved game */
+	if (network_coop_active())
+		return network_game_remove_local_player(widget, event, widget_deleted);
 	game_state_save_to_persistent_storage();
 	main_goto_main_menu();
 	return TRUE;
