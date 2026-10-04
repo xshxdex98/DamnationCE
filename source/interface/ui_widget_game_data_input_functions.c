@@ -1883,6 +1883,7 @@ static void game_options_menu_update_text_desc(
 		definition->child_widgets.count > 0,
 		"expected some list items for multiplayer game settings list");
 
+	description_index = 0;
 	extended_description = widget->parameters.list.extended_description;
 	if (widget->focused_child)
 	{
@@ -1956,6 +1957,7 @@ static void game_options_menu_update_pic_desc(
 		definition->child_widgets.count > 0,
 		"expected some list items for game settings list");
 
+	description_index = 0;
 	extended_description = widget->parameters.list.extended_description;
 	if (widget->focused_child)
 	{
