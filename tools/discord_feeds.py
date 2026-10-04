@@ -9,12 +9,12 @@
                                  and prints its ID, for the repository variable
 
   discord_feeds.py release <tag> <notes file>
-      A release's changelog drawn as a card (discord_card.py), posted
+      A release's changelog drawn as pages (discord_card.py), posted
       silently as it is published (release.yml); as text without Pillow.
         DISCORD_RELEASES_WEBHOOK  the changelog channel's webhook URL
 
   discord_feeds.py rules
-      The rules channel's card, of discord_rules.md: posted, or with
+      The rules channel's picture, of discord_rules.md: posted, or with
       DISCORD_RULES_MESSAGE that message edited to match the file.
         DISCORD_RULES_WEBHOOK  the rules channel's webhook URL
         DISCORD_RULES_MESSAGE  the rules' message, once posted
@@ -194,8 +194,8 @@ def unwrap(markdown):
     return "\n".join(lines)
 
 
-def release_card(tag, changelog):
-    """the release's changelog as a card (discord_card.py) over one of the
+def release_pages(tag, changelog):
+    """the release's changelog as pages (discord_card.py) over one of the
     Xbox maps, the same for a version each time; None without Pillow"""
     try:
         import discord_card
@@ -204,8 +204,8 @@ def release_card(tag, changelog):
     maps = sorted(XBOX_MAPS)
     backdrop = map_art(maps[sum(map(ord, tag)) % len(maps)])
     date = time.strftime("%d %B %Y", time.gmtime()).lstrip("0")
-    return discord_card.document_card("DamnationCE", tag.lstrip("v"), "Release notes", date, changelog, backdrop,
-                                      USER_AGENT)
+    return discord_card.document_pages("DamnationCE", tag.lstrip("v"), "Release notes", date, changelog, backdrop,
+                                       USER_AGENT)
 
 
 def post_card(webhook, name, card):
@@ -218,9 +218,11 @@ def post_release(tag, notes_path):
     webhook = os.environ["DISCORD_RELEASES_WEBHOOK"]
     with open(notes_path, encoding="utf-8") as notes:
         changelog = unwrap(notes.read())
-    card = release_card(tag, changelog)
-    if card:
-        post_card(webhook, "release.png", card)
+    pages = release_pages(tag, changelog)
+    if pages:
+        # (a page a message: pictures together in one are shown smaller)
+        for number, page in enumerate(pages, 1):
+            post_card(webhook, f"release-{number}.png", page)
         return
     # (without Pillow, as text: a long changelog goes on in further messages)
     for part in message_parts(f"**DamnationCE {tag}**\n" + changelog):
@@ -234,8 +236,9 @@ def update_rules():
     webhook = os.environ["DISCORD_RULES_WEBHOOK"]
     message_id = os.environ.get("DISCORD_RULES_MESSAGE", "")
     with open(os.path.join(os.path.dirname(__file__), "discord_rules.md"), encoding="utf-8") as rules:
-        card = discord_card.document_card("OpenCE", "RULES", "Read before posting", "", rules.read(),
-                                          map_art("damnation"), USER_AGENT)
+        # (the rules are short: one page)
+        card = discord_card.document_pages("OpenCE", "RULES", "Read before posting", "", rules.read(),
+                                           map_art("damnation"), USER_AGENT)[0]
     if not message_id:
         message = json.loads(request(f"{webhook}?wait=true", "POST", {
             "content": "", "allowed_mentions": {"parse": []}, "attachments": [{"id": 0, "filename": "rules.png"}]},
