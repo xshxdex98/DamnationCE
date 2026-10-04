@@ -121,6 +121,7 @@ symbols in this file:
 
 #include "camera_scripting.h"
 #include "dead_camera.h"
+#include "coop_spectate.h" /* port: port/linux/game/coop_spectate.c */
 #include "editor_flying_camera.h"
 #include "first_person_camera.h"
 #include "flying_camera.h"
@@ -713,17 +714,26 @@ static void director_choose_camera_game(
 			director_choose_game_perspective(local_player_index, initialize);
 			if (use_dead_camera)
 			{
-				if (director->camera_proc != (director_camera_update_proc)dead_camera_update)
+				/* port: a dead player of a co-op game over the network
+				watches a living teammate (port/linux/game/coop_spectate.c);
+				with none, its own body as the campaign's does */
+				long watched_unit_index = coop_spectating() ? coop_spectate_unit(local_player_index) : NONE;
+
+				if (director->camera_proc != (director_camera_update_proc)dead_camera_update ||
+					(watched_unit_index != NONE &&
+						((struct dead_camera *)director->camera_data)->unit_index != watched_unit_index))
 				{
 					dead_camera_new(
 						(struct dead_camera *)director->camera_data,
 						local_player_index,
-						NONE);
+						watched_unit_index);
 					director_set_camera(
 						local_player_index,
 						(director_camera_update_proc)dead_camera_update,
 						TRUE);
 				}
+				if (watched_unit_index != NONE)
+					coop_spectate_camera((struct dead_camera *)director->camera_data);
 			}
 			else if (director->camera_proc == (director_camera_update_proc)dead_camera_update)
 			{

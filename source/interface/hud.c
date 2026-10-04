@@ -107,6 +107,7 @@ symbols in this file:
 #include "sound/game_sound.h"
 #include "tag_files/tag_files.h"
 #include "text/draw_string.h"
+#include "coop_spectate.h" /* port: port/linux/game/coop_spectate.c */
 #include "text/font_group.h"
 #include "text/text_group.h"
 #include "units/unit_definitions.h"
@@ -1391,6 +1392,9 @@ void hud_draw_screen(
 		/* port: players' names above their heads, in multiplayer */
 		if (game_engine_running() && !cinematic_in_progress())
 			hud_draw_player_names();
+		/* port: whom a dead player of a co-op game over the network watches */
+		if (player->unit_index == NONE && coop_spectating() && !cinematic_in_progress())
+			coop_spectate_draw(render.local_player_index);
 
 		if (!game_time_get_paused() &&
 			render.local_player_index == local_player_get_next(NONE))
