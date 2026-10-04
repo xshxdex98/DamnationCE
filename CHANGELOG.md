@@ -2,33 +2,40 @@
 
 ## 0.2.2
 
+### Crash fixes
+
 - Fixed a crash about four seconds into setting up any network game (LAN or
   internet, co-op or PvP), for example while picking a map. It came in with
   0.2.0.
 - Fixed a crash when a co-op game starts loading a campaign level.
-- Fixed the black screen after skipping a co-op cutscene.
-- In co-op, everyone but the first player now waits for the level's first
-  checkpoint before spawning, watching the first player meanwhile. On
-  Pillar of Autumn that means after the cryo tube and the tutorial.
-- Respawning in co-op now checks that the teammate you come back beside is
-  safe (no enemies attacking them, nothing exploding nearby), instead of
-  waiting for the whole map to be quiet, which with many players could
-  take minutes.
-- Fixed co-op checkpoints and the next level carrying over between games.
+
+### Co-op
+
+- Fixed the black screen after skipping a cutscene.
+- Everyone but the first player now waits for the level's first checkpoint
+  before spawning, watching the first player meanwhile. On Pillar of Autumn
+  that means after the cryo tube and the tutorial.
+- Respawning checks that the teammate you come back beside is safe (no
+  enemies attacking them, nothing exploding nearby), instead of waiting for
+  the whole map to be quiet, which with many players could take minutes.
 - The lobby shows the right map name for campaign levels and Custom Edition
   maps (it showed Battle Creek).
 - Co-op games in the server browser show their difficulty ("Co-op Heroic").
-- The main menu's background no longer freezes or jumps back when some menus
-  open.
-- The Glassed server browser uses the whole screen: games down the left edge,
-  the selected game's details at the right edge.
-- Server browser notices (missing maps, refreshing) and full or closed games
-  are shown in teal, and notices sit under the game list instead of over the
-  header. The main menu's version number is teal too.
-- The Glassed theme's text is now set in Rajdhani, a free font in the style of
-  Conduit. Vanilla keeps its fonts.
+- Fixed checkpoints and the next level carrying over between games.
 - Co-op code no longer runs in the menus while a game is being set up. It
   used to stop the menu background's scripts for joining players.
+
+### Menus
+
+- The Glassed theme's text is now set in Rajdhani, a free font in the style
+  of Conduit. Vanilla keeps its fonts.
+- The Glassed server browser uses the whole screen: games down the left
+  edge, the selected game's details at the right edge.
+- Server browser notices (missing maps, refreshing) and full or closed games
+  are teal, and notices sit under the game list instead of over the header.
+  The main menu's version number is teal too.
+- The main menu's background no longer freezes or jumps back when some
+  menus open.
 
 ## 0.2.1
 
