@@ -1,0 +1,50 @@
+name: Server list
+
+# The live server list in the Discord server: tools/discord_feeds.py edits
+# its message in the server tracker channel through that channel's webhook
+# (the DISCORD_SERVERS_WEBHOOK secret). GitHub runs a schedule every five
+# minutes at most, and late when it is busy.
+#
+# The message edited is the DISCORD_SERVERS_MESSAGE repository variable.
+# While it is empty only a run by hand posts, once, and prints the new
+# message's ID to set it to; a schedule never posts, so it can't fill the
+# channel.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-list
+  cancel-in-progress: true
+
+jobs:
+  update:
+    if: ${{ vars.DISCORD_SERVERS_MESSAGE != '' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            tools/discord_feeds.py
+            tools/discord_card.py
+            port/assets/fonts/Rajdhani-*.ttf
+            port/assets/fonts/OpenCE-Regular.ttf
+          sparse-checkout-cone-mode: false
+
+      # (Pillow draws the list's card)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install --quiet pillow
+
+      - name: Update
+        env:
+          DISCORD_SERVERS_WEBHOOK: ${{ secrets.DISCORD_SERVERS_WEBHOOK }}
+          DISCORD_SERVERS_MESSAGE: ${{ vars.DISCORD_SERVERS_MESSAGE }}
+        run: python3 tools/discord_feeds.py servers
