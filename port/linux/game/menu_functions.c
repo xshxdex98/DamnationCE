@@ -3049,6 +3049,18 @@ static void lobby_map_show(struct widget_instance *description, char const *map_
 		widget->parameters.text_box.string_list_index = map;
 }
 
+/* the game's start countdown, large beside the header; nothing when there
+is none (a host by itself starts at once) */
+static void lobby_countdown_show(struct widget_instance *description, void *client, boolean pregame)
+{
+	short seconds = pregame ? network_game_client_get_seconds_to_game_start(client) : 0;
+	wchar_t text[ROW_TEXT_LENGTH] = L"";
+
+	if (seconds > 0)
+		usnprintf(text, NUMBEROF(text) - 1, L"STARTING IN %d", seconds);
+	text_set(named(description, "lobby_countdown", 0), text);
+}
+
 /* "port lobby update" */
 static void lobby_update(struct widget_instance *list)
 {
@@ -3073,6 +3085,7 @@ static void lobby_update(struct widget_instance *list)
 	/* (the buttons' focus, off Switch Team when it is hidden) */
 	focus_off_hidden(named(list, "lobby_button_bar", 0));
 	visible_set(named(description, "lobby_right_item", 0), game != NULL && state >= _client_state_pregame);
+	lobby_countdown_show(description, client, game != NULL && state == _client_state_pregame);
 	if (!game || state < _client_state_pregame)
 	{
 		profile_name_show(description);
@@ -3080,7 +3093,6 @@ static void lobby_update(struct widget_instance *list)
 	}
 	lobby_map_show(description, game->map.name);
 	{
-		short seconds = network_game_client_get_seconds_to_game_start(client);
 		char link[TEXT_FIELD_LENGTH];
 		wchar_t gametype[NUMBEROF(game->variant.human_readable_game_description) + 1];
 
@@ -3095,15 +3107,8 @@ static void lobby_update(struct widget_instance *list)
 			ustrncpy(kind, engine_names[PIN(game->variant.game_engine_index, 0, 5)], NUMBEROF(kind) - 1);
 		kind[NUMBEROF(kind) - 1] = 0;
 		usnprintf(text, NUMBEROF(text) - 1, L"%s\r\n%s\r\n%d of %d players\r\n\r\n%s", gametype,
-			kind, lobby_player_count, game->maximum_players,
-			seconds > 0 ? L"Starting in:" : game->machine_count < 2 ? L"Waiting for players" : L"");
+			kind, lobby_player_count, game->maximum_players, game->machine_count < 2 ? L"Waiting for players" : L"");
 		text[NUMBEROF(text) - 1] = 0;
-		if (seconds > 0)
-		{
-			size_t length = ustrlen(text);
-
-			usnprintf(text + length, NUMBEROF(text) - 1 - length, L" %d", seconds);
-		}
 		if (global_network_game_server_get() && p2p_invite_link(link, sizeof(link)))
 		{
 			size_t length = ustrlen(text);
