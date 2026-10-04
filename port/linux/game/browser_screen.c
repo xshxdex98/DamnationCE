@@ -14,6 +14,11 @@ page's Join or an invite link would, and B goes back. Once the invite's host
 answers, its game shows in the System Link list through the tunnel, to be
 picked there as any.
 
+The games are the game list's (port/linux/src/browser.c) and the public
+games of internet play's server browser (port/linux/src/p2p_lobby.c),
+which share their invites: a game both list shows once, and either is
+joined the same way.
+
 A game on a Custom Edition map shows the map's name and picture when this
 machine has the map (custom_edition_maps.c), and is marked CE; one on a map
 this machine lacks says so, and is not joined: its host's map would only
@@ -42,6 +47,7 @@ fail to load here.
 #include "cache/cache_files.h"
 #include "tag_files/files.h"
 #include "../src/browser.h"
+#include "../src/p2p.h"
 #include "../src/ui_overlay.h"
 #include "halo_ui_pointer.h"
 #include "custom_edition_maps.h"
@@ -61,6 +67,9 @@ enum
 	/* the games' maps looked up while the screen is up (known_map) */
 	MAXIMUM_KNOWN_MAPS = 64,
 };
+
+/* (p2p.c's invite links: this, then the invite the game list has) */
+#define INVITE_LINK_PREFIX "halo://join/"
 
 /* the kinds of map a game is on (known_map) */
 enum
@@ -260,6 +269,15 @@ static void join_first_player(
 	}
 }
 
+/* the screen gone (a game joined or made, or B): the server browser stops
+gathering public games */
+static void close_screen(
+	void)
+{
+	browser_screen.active = FALSE;
+	p2p_lobby_browse(FALSE);
+}
+
 /* a game picked: its invite joined (the tunnel to its host), then its game
 joined once advertised through it (browser_screen_process) */
 static void join_selected(
@@ -318,7 +336,7 @@ static void wait_for_host(
 	if (joined > 0)
 	{
 		browser_screen.connecting = FALSE;
-		browser_screen.active = FALSE;
+		close_screen();
 		ui_widgets_close_all();
 		ui_widget_load_by_name_or_tag(
 			"ui\\shell\\main_menu\\multiplayer_type_select\\connected\\pregame\\connected_pregame_screen",
@@ -380,8 +398,48 @@ static long compare_games(
 	return order ? order : compare_names(a->name, b->name);
 }
 
-/* the game list's games, in the screen's order; the selection stays on its
-game */
+/* the server browser's public games after the game list's, as games of
+it: they share invites (a game both list is kept once) and are joined the
+same way (browser_join) */
+static void add_lobby_games(
+	void)
+{
+	static struct p2p_listing listings[BROWSER_MAXIMUM_GAMES];
+	int listing_count = p2p_lobby_games(listings, BROWSER_MAXIMUM_GAMES);
+	size_t prefix_length = strlen(INVITE_LINK_PREFIX);
+	int listing_index;
+
+	for (listing_index = 0; listing_index < listing_count && browser_screen.count < BROWSER_MAXIMUM_GAMES; listing_index++)
+	{
+		struct p2p_listing const *listing = &listings[listing_index];
+		char const *invite = listing->invite + prefix_length;
+		struct browser_game *game;
+		short index;
+
+		if (strncmp(listing->invite, INVITE_LINK_PREFIX, prefix_length) || strlen(invite) != BROWSER_INVITE_LENGTH)
+			continue;
+		for (index = 0; index < browser_screen.count && strcmp(browser_screen.games[index].invite, invite); index++)
+		{
+		}
+		if (index < browser_screen.count)
+			continue;
+		game = &browser_screen.games[browser_screen.count++];
+		csmemset(game, 0, sizeof(*game));
+		csstrcpy(game->invite, invite);
+		/* (the listing's name is ASCII) */
+		for (index = 0; index < BROWSER_NAME_LENGTH && listing->name[index]; index++)
+			game->name[index] = (unsigned char)listing->name[index];
+		snprintf(game->map, sizeof(game->map), "%s", listing->map);
+		game->engine = listing->engine_type;
+		game->players = listing->player_count;
+		game->maximum_players = listing->maximum_player_count;
+		game->open = listing->open;
+		game->teams = listing->has_teams;
+	}
+}
+
+/* the game list's games and the server browser's, in the screen's order;
+the selection stays on its game */
 static void fetch_games(
 	void)
 {
@@ -393,6 +451,7 @@ static void fetch_games(
 		csstrncpy(invite, browser_screen.games[browser_screen.selected].invite, sizeof(invite) - 1);
 	invite[sizeof(invite) - 1] = 0;
 	browser_screen.count = (short)browser_get_games(browser_screen.games, BROWSER_MAXIMUM_GAMES);
+	add_lobby_games();
 	/* (insertion: a few dozen games) */
 	for (index = 1; index < browser_screen.count; index++)
 	{
@@ -413,7 +472,7 @@ static void fetch_games(
 static void leave(
 	void)
 {
-	browser_screen.active = FALSE;
+	close_screen();
 	ui_online_games_stop_network();
 }
 
@@ -436,6 +495,7 @@ void browser_screen_open(
 	browser_screen.opened_time = system_milliseconds();
 	/* (maps may have been added since it was last up) */
 	browser_screen.known_map_count = 0;
+	p2p_lobby_browse(TRUE);
 	/* (the menu's A, still queued, is not a pick) */
 	event_manager_flush();
 	/* the network searching, as System Link's list starts it: a game left
@@ -452,7 +512,7 @@ static void create_game(
 {
 	join_first_player();
 	if (ui_widget_online_games_create_game())
-		browser_screen.active = FALSE;
+		close_screen();
 	else
 		set_status("Could not create a game.");
 }
@@ -496,6 +556,7 @@ void browser_screen_process(
 				set_status("Opening your profile in the web browser");
 				break;
 			case _gamepad_analog_button_x:
+				p2p_lobby_refresh();
 				fetch_games();
 				set_status("Refreshed");
 				break;
