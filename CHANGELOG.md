@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.5
+
+### Updates
+
+- The game looks for updates again. When a new release is out, it offers
+  to update as it starts. Network Setup's CHECK FOR UPDATES turns this on
+  and off, and it is now on for everyone.
+
+### Online split screen, from OpenCE
+
+- In a game's lobby, another controller's START joins it as a second
+  player, who picks a profile. ADD PLAYER makes the next controller's START
+  count. The lobby marks this machine's players [P1], [P2].
+- A split-screen player who quits leaves the others in the game.
+- Works in both the Glassed and Vanilla menus.
+
 ## 0.2.4
 
 ### Co-op
