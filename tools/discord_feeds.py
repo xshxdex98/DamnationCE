@@ -9,9 +9,15 @@
                                  and prints its ID, for the repository variable
 
   discord_feeds.py release <tag> <notes file>
-      A release's changelog as plain text, posted silently as it is
-      published (release.yml).
+      A release's changelog drawn as a card (discord_card.py), posted
+      silently as it is published (release.yml); as text without Pillow.
         DISCORD_RELEASES_WEBHOOK  the changelog channel's webhook URL
+
+  discord_feeds.py rules
+      The rules channel's card, of discord_rules.md: posted, or with
+      DISCORD_RULES_MESSAGE that message edited to match the file.
+        DISCORD_RULES_WEBHOOK  the rules channel's webhook URL
+        DISCORD_RULES_MESSAGE  the rules' message, once posted
 
 The server list is what the game's own server browser reads, one game a line,
 tab-separated: invite, name, map, engine, players, maximum players, open,
@@ -188,9 +194,9 @@ def unwrap(markdown):
     return "\n".join(lines)
 
 
-def release_banner(tag):
-    """the release's banner (discord_card.py) over one of the Xbox maps, the
-    same for a version each time; None without Pillow"""
+def release_card(tag, changelog):
+    """the release's changelog as a card (discord_card.py) over one of the
+    Xbox maps, the same for a version each time; None without Pillow"""
     try:
         import discord_card
     except ImportError:
@@ -198,23 +204,46 @@ def release_banner(tag):
     maps = sorted(XBOX_MAPS)
     backdrop = map_art(maps[sum(map(ord, tag)) % len(maps)])
     date = time.strftime("%d %B %Y", time.gmtime()).lstrip("0")
-    return discord_card.release_banner("DamnationCE", tag.lstrip("v"), date, backdrop, USER_AGENT)
+    return discord_card.document_card("DamnationCE", tag.lstrip("v"), "Release notes", date, changelog, backdrop,
+                                      USER_AGENT)
+
+
+def post_card(webhook, name, card):
+    """the card as a message of its own, posted silently"""
+    request(webhook, "POST", {"content": "", "flags": SUPPRESS_NOTIFICATIONS, "allowed_mentions": {"parse": []},
+                              "attachments": [{"id": 0, "filename": name}]}, [(name, card)])
 
 
 def post_release(tag, notes_path):
     webhook = os.environ["DISCORD_RELEASES_WEBHOOK"]
     with open(notes_path, encoding="utf-8") as notes:
         changelog = unwrap(notes.read())
-    banner = release_banner(tag)
-    # (the banner names the version; without it, a line does)
-    parts = message_parts(changelog if banner else f"**DamnationCE {tag}**\n" + changelog)
-    # (a long changelog goes on in further messages)
-    for index, part in enumerate(parts):
-        body = {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS, "allowed_mentions": {"parse": []}}
-        files = [("release.png", banner)] if banner and index == 0 else []
-        if files:
-            body["attachments"] = [{"id": 0, "filename": "release.png"}]
-        request(webhook, "POST", body, files)
+    card = release_card(tag, changelog)
+    if card:
+        post_card(webhook, "release.png", card)
+        return
+    # (without Pillow, as text: a long changelog goes on in further messages)
+    for part in message_parts(f"**DamnationCE {tag}**\n" + changelog):
+        request(webhook, "POST", {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS,
+                                  "allowed_mentions": {"parse": []}})
+
+
+def update_rules():
+    import discord_card
+
+    webhook = os.environ["DISCORD_RULES_WEBHOOK"]
+    message_id = os.environ.get("DISCORD_RULES_MESSAGE", "")
+    with open(os.path.join(os.path.dirname(__file__), "discord_rules.md"), encoding="utf-8") as rules:
+        card = discord_card.document_card("OpenCE", "RULES", "Read before posting", "", rules.read(),
+                                          map_art("damnation"), USER_AGENT)
+    if not message_id:
+        message = json.loads(request(f"{webhook}?wait=true", "POST", {
+            "content": "", "allowed_mentions": {"parse": []}, "attachments": [{"id": 0, "filename": "rules.png"}]},
+            [("rules.png", card)]))
+        print(f"Posted the rules as message {message['id']}: give it as DISCORD_RULES_MESSAGE to edit them.")
+        return
+    request(f"{webhook}/messages/{message_id}", "PATCH", {"attachments": [{"id": 0, "filename": "rules.png"}]},
+            [("rules.png", card)])
 
 
 def main():
@@ -222,6 +251,8 @@ def main():
         update_servers()
     elif sys.argv[1:2] == ["release"] and len(sys.argv) == 4:
         post_release(sys.argv[2], sys.argv[3])
+    elif sys.argv[1:2] == ["rules"]:
+        update_rules()
     else:
         sys.exit(__doc__)
 

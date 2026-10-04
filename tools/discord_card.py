@@ -1,13 +1,16 @@
-"""The server list as a picture in the Glassed theme's look (tools/shell_skin.py):
-dark glass in white hairlines over the busiest game's map, in Rajdhani.
-discord_feeds.py attaches it to the server tracker's message, and a
-release's banner (release_banner) to its changelog's.
+"""Discord's pictures in the Glassed theme's look (tools/shell_skin.py): dark
+glass in white hairlines over a map, in Rajdhani. discord_feeds.py posts them.
 
-It is wide and always the same size: Discord fits a picture into a box
-wider than it is tall, so a wide one is shown largest, and a constant size
-keeps the message from jumping as games come and go."""
+- server_card: the server list. It is wide and always the same size:
+  Discord fits a picture into a box wider than it is tall, so a wide one is
+  shown largest, and a constant size keeps the message from jumping as games
+  come and go.
+- document_card: a release's changelog, or the rules.
+"""
 
+import functools
 import io
+import re
 import urllib.request
 from pathlib import Path
 
@@ -32,8 +35,16 @@ FULL_SIZE_ROWS = 5
 THUMBNAIL = (144, 108)
 
 
+@functools.lru_cache(maxsize=None)
 def font(weight, size):
+    """the Glassed theme's text: Rajdhani, SemiBold or Bold"""
     return ImageFont.truetype(str(FONTS / f"Rajdhani-{weight}.ttf"), size)
+
+
+@functools.lru_cache(maxsize=None)
+def title_font(size):
+    """the menus' titles': OpenCE (tools/title_font.py)"""
+    return ImageFont.truetype(str(FONTS / "OpenCE-Regular.ttf"), size)
 
 
 def fetch_art(path, user_agent):
@@ -142,7 +153,7 @@ def server_card(games, map_name, mode_name, map_art, user_agent):
     players = sum(game["players"] for game in active)
 
     # the heading
-    draw.text((MARGIN, HEADER_HEIGHT // 2), spaced("OpenCE") + "   " + spaced("Servers"), font=font("Bold", 76),
+    draw.text((MARGIN, HEADER_HEIGHT // 2), "OPENCE SERVERS", font=title_font(80),
               fill=WHITE + (235,), anchor="lm")
     summary = (f"{players} {'PLAYER' if players == 1 else 'PLAYERS'}  ·  "
                f"{len(active)} {'SERVER' if len(active) == 1 else 'SERVERS'}")
@@ -205,27 +216,157 @@ def wrap(draw, names, typeface, width):
     return lines
 
 
-# a release's banner: wide and short, so Discord shows it the width of the message
-BANNER_SIZE = (1600, 400)
-STRIP_TOP, STRIP_BOTTOM = 64, 336
+# ---------- documents: a release's changelog, the rules
+
+# A document is a card of its own: a heading on the Glassed theme's strip of
+# dark glass between two hairlines (tools/shell_skin.py), over its text on a
+# pane of glass. A long one flows into two columns, so the card stays wide
+# enough for Discord to show it large.
+DOCUMENT_WIDTH = 1600
+STRIP_TOP, STRIP_BOTTOM = 30, 250
+PANE_PADDING = 48
+TEXT_COLUMN_GAP = 64
+# (text taller than this goes into two columns)
+ONE_COLUMN_HEIGHT = 700
+TEXT_SIZE = 34
+LINE_HEIGHT = 46
+BLOCK_GAP = 12
+HEADING_HEIGHT, HEADING_GAP = 58, 26
+INDENTS = {"paragraph": 0, "item": 44, "numbered": 56}
 
 
-def release_banner(product, version, date, backdrop_path, user_agent):
-    """a release's banner: its version large on the Glassed theme's strip of
-    dark glass between two hairlines (tools/shell_skin.py), over a map"""
-    width, height = BANNER_SIZE
-    # (the map shows more than behind the server list, which has text all over it)
-    card = Card(fetch_art(backdrop_path, user_agent), BANNER_SIZE, blur=9, dim=0.3)
+def text_font(bold):
+    return font("Bold" if bold else "SemiBold", TEXT_SIZE)
+
+
+def wrap_text(draw, text, width):
+    """the text's lines no wider than width, each a list of (piece, bold)
+    pairs; **bold** words are bold, and backticks are dropped"""
+    lines, line, line_width = [], [], 0.0
+    for index, part in enumerate(text.replace("`", "").split("**")):
+        bold = index % 2 == 1
+        for token in re.findall(r"\s+|\S+", part):
+            if token.isspace():
+                if line:
+                    line.append((" ", bold))
+                    line_width += draw.textlength(" ", font=text_font(bold))
+                continue
+            token_width = draw.textlength(token, font=text_font(bold))
+            if line and line_width + token_width > width:
+                if line[-1][0] == " ":
+                    line.pop()
+                lines.append(line)
+                line, line_width = [], 0.0
+            line.append((token, bold))
+            line_width += token_width
+    return lines + [line] if line else lines
+
+
+def parse_blocks(markdown):
+    """the markdown's headings, list items and paragraphs, one a line (as
+    discord_feeds.unwrap leaves them), as (kind, text, number) triples"""
+    blocks = []
+    for line in markdown.splitlines():
+        text = line.strip()
+        first_word = text.split(" ", 1)[0]
+        if not text:
+            continue
+        if text.startswith("#"):
+            blocks.append(("heading", text.lstrip("#").strip(), None))
+        elif text.startswith(("- ", "* ")):
+            blocks.append(("item", text[2:], None))
+        elif " " in text and first_word.rstrip(".").isdigit():
+            blocks.append(("numbered", text.split(" ", 1)[1], first_word.rstrip(".")))
+        else:
+            blocks.append(("paragraph", text, None))
+    return blocks
+
+
+def lay_out(draw, block, width, starts_column):
+    """a block as (height, kind, lines or heading, number, starts_column)"""
+    kind, text, number = block
+    if kind == "heading":
+        return (HEADING_HEIGHT + (0 if starts_column else HEADING_GAP), kind, spaced(text), None, starts_column)
+    lines = wrap_text(draw, text, width - INDENTS[kind])
+    return (len(lines) * LINE_HEIGHT + BLOCK_GAP, kind, lines, number, starts_column)
+
+
+def draw_block(draw, block, x, y, width):
+    _, kind, content, number, starts_column = block
+    if kind == "heading":
+        y += 0 if starts_column else HEADING_GAP
+        draw.text((x, y + 6), content, font=font("SemiBold", 28), fill=WHITE + (170,))
+        draw.line((x, y + 46, x + width, y + 46), fill=WHITE + (70,), width=2)
+        return
+    if kind == "item":
+        draw.text((x + 8, y), "•", font=text_font(True), fill=GREEN + (220,))
+    elif kind == "numbered":
+        draw.text((x, y), number, font=text_font(True), fill=GREEN + (230,))
+    for line in content:
+        line_x = x + INDENTS[kind]
+        for piece, bold in line:
+            draw.text((line_x, y), piece, font=text_font(bold), fill=WHITE + ((245,) if bold else (215,)))
+            line_x += draw.textlength(piece, font=text_font(bold))
+        y += LINE_HEIGHT
+
+
+def split_columns(blocks):
+    """the blocks' indexes in two columns of about equal height, a heading
+    never left at the foot of the first"""
+    total, running, split = sum(block[0] for block in blocks), 0, len(blocks)
+    for index, block in enumerate(blocks):
+        if running + block[0] / 2 > total / 2:
+            split = index
+            break
+        running += block[0]
+    while 0 < split < len(blocks) and blocks[split - 1][1] == "heading":
+        split -= 1
+    return [range(split), range(split, len(blocks))]
+
+
+def document_card(label, title, aside_label, aside, markdown, backdrop_path, user_agent):
+    """a document's card: label (small, spaced) over title (large), and
+    aside_label over aside, on its strip; then its markdown's text"""
+    measure = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+    pane_width = DOCUMENT_WIDTH - 2 * MARGIN
+    parsed = parse_blocks(markdown)
+
+    column_width = pane_width - 2 * PANE_PADDING
+    blocks = [lay_out(measure, block, column_width, index == 0) for index, block in enumerate(parsed)]
+    columns = [range(len(blocks))]
+    if sum(block[0] for block in blocks) > ONE_COLUMN_HEIGHT:
+        column_width = (pane_width - 2 * PANE_PADDING - TEXT_COLUMN_GAP) // 2
+        blocks = [lay_out(measure, block, column_width, index == 0) for index, block in enumerate(parsed)]
+        columns = split_columns(blocks)
+        # (the second column's first block starts it, with no gap above)
+        if columns[1]:
+            first = columns[1][0]
+            blocks[first] = lay_out(measure, parsed[first], column_width, True)
+    body_height = max(sum(blocks[index][0] for index in column) for column in columns)
+
+    pane_top = STRIP_BOTTOM + 40
+    height = pane_top + body_height + 2 * PANE_PADDING + MARGIN
+    card = Card(fetch_art(backdrop_path, user_agent), (DOCUMENT_WIDTH, height), blur=9, dim=0.45)
     draw = card.draw
-    draw.rectangle((0, STRIP_TOP, width, STRIP_BOTTOM), fill=SHADE + (140,))
-    for y in (STRIP_TOP, STRIP_BOTTOM):
-        draw.line((0, y, width, y), fill=WHITE + (90,), width=2)
 
+    # the heading on its strip
+    draw.rectangle((0, STRIP_TOP, DOCUMENT_WIDTH, STRIP_BOTTOM), fill=SHADE + (140,))
+    for y in (STRIP_TOP, STRIP_BOTTOM):
+        draw.line((0, y, DOCUMENT_WIDTH, y), fill=WHITE + (90,), width=2)
     middle = (STRIP_TOP + STRIP_BOTTOM) // 2
-    draw.text((MARGIN * 2, middle - 58), spaced(product), font=font("SemiBold", 40), fill=WHITE + (190,), anchor="ls")
-    draw.text((MARGIN * 2, middle + 82), version, font=font("Bold", 150), fill=WHITE + (240,), anchor="ls")
-    draw.text((width - MARGIN * 2, middle - 58), spaced("Release notes"), font=font("SemiBold", 40),
-              fill=WHITE + (150,), anchor="rs")
-    draw.text((width - MARGIN * 2, middle + 82), date.upper(), font=font("SemiBold", 48), fill=WHITE + (190,),
-              anchor="rs")
+    left, right = MARGIN * 2, DOCUMENT_WIDTH - MARGIN * 2
+    draw.text((left, middle - 52), spaced(label), font=font("SemiBold", 38), fill=WHITE + (190,), anchor="ls")
+    draw.text((left, middle + 74), title, font=title_font(120), fill=WHITE + (240,), anchor="ls")
+    draw.text((right, middle - 52), spaced(aside_label), font=font("SemiBold", 38), fill=WHITE + (150,), anchor="rs")
+    draw.text((right, middle + 60), aside.upper(), font=font("SemiBold", 46), fill=WHITE + (190,), anchor="rs")
+
+    # the text on its pane
+    draw.rectangle((MARGIN, pane_top, DOCUMENT_WIDTH - MARGIN, height - MARGIN), fill=SHADE + (150,),
+                   outline=WHITE + (70,))
+    for number, column in enumerate(columns):
+        x = MARGIN + PANE_PADDING + number * (column_width + TEXT_COLUMN_GAP)
+        y = pane_top + PANE_PADDING
+        for index in column:
+            draw_block(draw, blocks[index], x, y, column_width)
+            y += blocks[index][0]
     return card.png()
