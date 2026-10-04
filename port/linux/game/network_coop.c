@@ -91,6 +91,9 @@ index and tag, since the map placed them at the same index everywhere.
 
 enum
 {
+	/* the farthest an object the cutscene camera films can be from it
+	(camera_object_get) */
+	CAMERA_OBJECT_DISTANCE = 8,
 	/* a client ends the cinematic after this long without hearing from the host */
 	PRESENTATION_SILENCE_TICKS = 2 * TICKS_PER_SECOND,
 	/* the field of view (radians) is sent as a word, scaled by this */
@@ -190,6 +193,11 @@ struct distributed_coop_presentation
 	short timer_y;
 	short timer_corner;
 	word pad;
+	/* the object the camera films (camera_object_get) and the camera's
+	offset from it: a client puts its camera by its own copy, which its
+	timing may have a tick from the host's */
+	long camera_object_index;
+	real_vector3d camera_object_offset;
 };
 
 struct distributed_coop_presentation_message
@@ -810,6 +818,43 @@ static void host_count_skip_votes(
 	}
 }
 
+/* the least speed (squared, world units a tick) of an object the cutscene
+camera films when the scripts don't name it */
+#define CAMERA_OBJECT_SPEED 0.01f
+
+/* Host: the object the cutscene camera films: the nearest vehicle moving
+close to it (a camera riding along with a drop pod or a Pelican), else the
+one the scripts set it relative to; NONE for a camera on its own. The last
+one is kept while it stays close, so the camera doesn't jump between two. */
+static long camera_object_get(
+	struct observer_result const *camera)
+{
+	static long filmed = NONE;
+	real nearest = CAMERA_OBJECT_DISTANCE * CAMERA_OBJECT_DISTANCE;
+	struct object_iterator iterator;
+	struct object_datum *object;
+
+	object = object_try_and_get_and_verify_type(filmed, _object_mask_vehicle);
+	if (object && distance_squared3d(&camera->position, &object->object.position) < nearest)
+		return filmed;
+	filmed = NONE;
+	object_iterator_new(&iterator, _object_mask_vehicle, 0);
+	while ((object = object_iterator_next(&iterator)) != NULL)
+	{
+		real distance = distance_squared3d(&camera->position, &object->object.position);
+
+		if (distance < nearest && object->object.parent_object_index == NONE &&
+			magnitude_squared3d(&object->object.translational_velocity) > CAMERA_OBJECT_SPEED)
+		{
+			nearest = distance;
+			filmed = iterator.index;
+		}
+	}
+	if (filmed != NONE)
+		return filmed;
+	return object_try_and_get(scripted_camera_object_relative_to()) ? scripted_camera_object_relative_to() : NONE;
+}
+
 /* host: the presentation sent to every client this tick */
 static void host_presentation(
 	struct distributed_coop_presentation *presentation)
@@ -838,7 +883,15 @@ static void host_presentation(
 		distributed_vector_pack(&camera->up, DISTRIBUTED_UNIT_SCALE, &presentation->camera_up);
 		presentation->camera_field_of_view =
 			(word)PIN(camera->field_of_view * FIELD_OF_VIEW_SCALE + 0.5f, 1, UNSIGNED_SHORT_MAX);
+		presentation->camera_object_index = camera_object_get(camera);
+		if (presentation->camera_object_index != NONE)
+		{
+			vector_from_points3d(&object_get(presentation->camera_object_index)->object.position, &camera->position,
+				&presentation->camera_object_offset);
+		}
 	}
+	else
+		presentation->camera_object_index = NONE;
 
 	SET_FLAG(presentation->flags, _presentation_skippable_bit, skip_vote.offered);
 	presentation->skip_votes = (byte)MIN(skip_vote.votes, 255);
@@ -1622,10 +1675,22 @@ void network_coop_handle_presentation(
 			cinematic_show_letterbox(TEST_FLAG(presentation->flags, _presentation_letterbox_bit));
 		distributed_vector_unpack(&presentation->camera_forward, DISTRIBUTED_UNIT_SCALE, &forward);
 		distributed_vector_unpack(&presentation->camera_up, DISTRIBUTED_UNIT_SCALE, &up);
-		if (distributed_point_valid(&presentation->camera_position, UNIT_WORLD_BOUND) &&
-			distributed_axes_make_valid(&forward, &up))
+		real_point3d position = presentation->camera_position;
+		struct object_datum *filmed = presentation->camera_object_index != NONE &&
+			distributed_object_index_valid(presentation->camera_object_index) ?
+			object_try_and_get(presentation->camera_object_index) : NULL;
+
+		/* (by this machine's copy of what it films, which may be a tick off the host's) */
+		if (filmed && distributed_real_valid(presentation->camera_object_offset.i) &&
+			distributed_real_valid(presentation->camera_object_offset.j) &&
+			distributed_real_valid(presentation->camera_object_offset.k) &&
+			magnitude_squared3d(&presentation->camera_object_offset) < CAMERA_OBJECT_DISTANCE * CAMERA_OBJECT_DISTANCE * 4.0f)
 		{
-			scripted_camera_set_camera_point_relative(&presentation->camera_position, &forward, &up,
+			point_from_line3d(&filmed->object.position, &presentation->camera_object_offset, 1.0f, &position);
+		}
+		if (distributed_point_valid(&position, UNIT_WORLD_BOUND) && distributed_axes_make_valid(&forward, &up))
+		{
+			scripted_camera_set_camera_point_relative(&position, &forward, &up,
 				(real)presentation->camera_field_of_view / FIELD_OF_VIEW_SCALE, 0, NONE);
 		}
 	}

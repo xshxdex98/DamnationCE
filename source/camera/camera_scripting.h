@@ -28,6 +28,8 @@ union real_vector3d;
 
 void scripted_camera_enable(
 	boolean enabled);
+long scripted_camera_object_relative_to(
+	void);
 void scripted_camera_set_animation(
 	long animation_graph_index,
 	char const *animation_name);
