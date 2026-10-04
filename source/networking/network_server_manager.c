@@ -2955,9 +2955,51 @@ boolean server_has_enough_machines(
 	return has_enough_machines;
 }
 
+/* port: the host's machine the only one in the game: a host by itself (no
+one has joined, and no dedicated server, whose machine has no player) may
+start any game alone, to play or try a map with no one to wait for */
+boolean network_game_server_host_alone(
+	struct network_game_server *server)
+{
+	long machine_count = 0;
+	boolean host_joined = FALSE;
+	long client_machine_index;
+
+#ifdef HALO_GAME_BROWSER
+	{
+		boolean dedicated_server_active(void);
+
+		if (dedicated_server_active())
+			return FALSE;
+	}
+#endif
+	for (client_machine_index = 0;
+		client_machine_index < MAXIMUM_NETWORK_MACHINE_COUNT;
+		client_machine_index++)
+	{
+		struct network_game_server_client_machine *client_machine =
+			&server->client_machines[client_machine_index];
+
+		if (network_game_server_client_machine_is_joined_to_game(server, client_machine))
+		{
+			machine_count++;
+			host_joined |= network_game_server_client_machine_is_local(server, client_machine);
+		}
+	}
+
+	return machine_count == 1 && host_joined;
+}
+
 boolean server_ok_to_countdown(
 	struct network_game_server *server)
 {
+	/* port: a host by itself, with its players (network_game_server_host_alone) */
+	if (network_game_server_host_alone(server) &&
+		server->game.player_count > 0 &&
+		server_has_a_player_on_each_machine(server))
+	{
+		return TRUE;
+	}
 	if (server_has_enough_machines(server) &&
 		server_has_a_player_on_each_machine(server) &&
 		!server_needs_more_teams(server) &&
