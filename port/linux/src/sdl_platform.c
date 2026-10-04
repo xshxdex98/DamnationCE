@@ -143,7 +143,21 @@ BOOL platform_sdl_initialize(void)
 	return TRUE;
 }
 
+/* the mouse pointer shown or hidden (Android has none to show) */
+static void show_pointer(BOOL shown)
+{
 #ifndef HALO_ANDROID
+	if (shown)
+		SDL_ShowCursor();
+	else
+		SDL_HideCursor();
+#else
+	(void)shown;
+#endif
+}
+
+#ifndef HALO_ANDROID
+
 /* ---------- first start without game data (xbox_files.c) */
 
 struct data_extraction
@@ -1389,6 +1403,8 @@ void platform_pump_events(void)
 			{
 				input_state.mouse_released = !input_state.mouse_released;
 				platform_mouse_capture(!input_state.mouse_released && !input_state.ui_pointer);
+				/* (the pointer shows while released, hidden again in play) */
+				show_pointer(input_state.mouse_released || input_state.ui_pointer);
 			}
 #ifndef HALO_ANDROID
 			/* F11 switches between fullscreen and the window (SDL keeps the
@@ -1616,10 +1632,15 @@ void platform_ui_pointer_set_active(BOOL active)
 
 		SDL_GetWindowSize(platform_window, &width, &height);
 		SDL_WarpMouseInWindow(platform_window, width * 0.5f, height * 0.5f);
+		show_pointer(TRUE);
 		pthread_mutex_lock(&input_lock);
 		ui_pointer.x = width * 0.5f;
 		ui_pointer.y = height * 0.5f;
 		pthread_mutex_unlock(&input_lock);
+	}
+	else
+	{
+		show_pointer(FALSE);
 	}
 }
 
