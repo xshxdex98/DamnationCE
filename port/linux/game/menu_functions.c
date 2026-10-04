@@ -1740,6 +1740,7 @@ boolean ui_widget_port_multiplayer_player(short controller_index, long profile_i
 void network_game_server_port_set_settings(wchar_t const *name, long maximum_players);
 void *global_network_game_client_get(void);
 void *global_network_game_server_get(void);
+struct network_game *network_game_server_get_game(void *server);
 struct advertised_game *network_game_client_get_available_games(void *client);
 boolean network_game_client_advertised_game_is_valid(struct advertised_game *game);
 short network_game_client_get_state(void *client, short *state_data);
@@ -2140,6 +2141,29 @@ static void game_name_done(char const *text)
 	multiplayer.game_name[index] = 0;
 }
 
+/* whether a network game is co-op: a campaign level, with a gametype no game
+engine runs (ui_widget_port_cooperative_level_choose) */
+static boolean game_cooperative(struct network_game const *game)
+{
+	return game && !game->variant.game_engine_index &&
+		custom_edition_maps_campaign(custom_edition_maps_display_index(game->map.name));
+}
+
+/* ... the game this machine hosts */
+static boolean hosting_cooperative(void)
+{
+	void *server = global_network_game_server_get();
+
+	return server && game_cooperative(network_game_server_get_game(server));
+}
+
+/* Server Setup's rows of a PvP game's gametype, which a co-op game has none of */
+static char const *const server_settings_gametype_rows[] =
+{
+	"op_game_type", "op_player_options", "op_item_options", "op_vehicle_options", "op_indicator_options",
+	"op_team_options",
+};
+
 /* "server settings init": the game's name (player 1's, else the one given
 last), the most players, the gametype's copy (once: the screen is made
 again on coming back from an option's screen) */
@@ -2147,7 +2171,12 @@ static boolean server_settings_initialize(struct widget_instance *list)
 {
 	struct widget_instance *spinner = named(list, "max_players_spinner", 0);
 
-	gametype_setup_begin();
+	/* (a co-op game has no gametype to edit, and as many players as the
+	build holds unless told fewer) */
+	if (hosting_cooperative())
+		multiplayer.maximum_players_index = NUMBEROF(maximum_players) - 1;
+	else
+		gametype_setup_begin();
 	if (!multiplayer.game_name[0] && player_ui_get_active_player_profile_index(0) != NONE)
 	{
 		struct player_profile profile;
@@ -2199,6 +2228,13 @@ static void server_settings_update(struct widget_instance *list)
 		text_set(named(list, "game_type_value", 0), type);
 	}
 	settings_help(list);
+	{
+		boolean cooperative = hosting_cooperative();
+		short row;
+
+		for (row = 0; row < NUMBEROF(server_settings_gametype_rows); row++)
+			visible_set(named(list, server_settings_gametype_rows[row], 0), !cooperative);
+	}
 	/* LISTING (an internet game's): PUBLIC, listed in everyone's server
 	browser, or PRIVATE, for this game. Its help is its choice's */
 	visible_set(named(list, "op_listing", 0), multiplayer.mode == _multiplayer_mode_host_internet &&
@@ -2249,8 +2285,10 @@ static boolean server_start(void)
 		text_field_end(TRUE);
 	network_game_server_port_set_settings(multiplayer.game_name,
 		maximum_players[PIN(multiplayer.maximum_players_index, 0, NUMBEROF(maximum_players) - 1)]);
-	/* (the gametype as Server Setup's options left it) */
-	if (!gametype_setup_apply())
+	/* (the gametype as Server Setup's options left it; a co-op game's is its own) */
+	if (hosting_cooperative())
+		gametype_setup_end();
+	else if (!gametype_setup_apply())
 		return campaign_fail();
 	return global_network_game_server_get() != NULL;
 }
@@ -3003,10 +3041,18 @@ static void lobby_update(struct widget_instance *list)
 		char link[TEXT_FIELD_LENGTH];
 		wchar_t gametype[NUMBEROF(game->variant.human_readable_game_description) + 1];
 
+		wchar_t kind[ROW_TEXT_LENGTH];
+
 		ustrncpy(gametype, game->variant.human_readable_game_description, NUMBEROF(gametype) - 1);
 		gametype[NUMBEROF(gametype) - 1] = 0;
+		/* (a co-op game's difficulty where a PvP game's engine is) */
+		if (game_cooperative(game))
+			string_get("pc\\main_menu\\player_profiles_select\\difficulty_names", game->difficulty, kind);
+		else
+			ustrncpy(kind, engine_names[PIN(game->variant.game_engine_index, 0, 5)], NUMBEROF(kind) - 1);
+		kind[NUMBEROF(kind) - 1] = 0;
 		usnprintf(text, NUMBEROF(text) - 1, L"%s\r\n%s\r\n%d of %d players\r\n\r\n%s", gametype,
-			engine_names[PIN(game->variant.game_engine_index, 0, 5)], lobby_player_count, game->maximum_players,
+			kind, lobby_player_count, game->maximum_players,
 			seconds > 0 ? L"Starting in:" : game->machine_count < 2 ? L"Waiting for players" : L"");
 		text[NUMBEROF(text) - 1] = 0;
 		if (seconds > 0)

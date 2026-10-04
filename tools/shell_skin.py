@@ -103,8 +103,8 @@ CHILD_CHANGES = {
     ("main_menu/new_select/scroll_up_button", "main_menu/new_select/scroll_up_arrow"): {"x": "152"},
     ("main_menu/new_select/scroll_down_button", "main_menu/new_select/scroll_down_arrow"): {"x": "152"},
 }
-# handlers added to widgets: the Map screen opens the map picker
-# (port/linux/game/map_screen.c) over its own list
+# handlers added to widgets, in both themes: the Map screen opens the map
+# picker (port/linux/game/map_screen.c) over its own list
 HANDLER_ADDITIONS = {
     "main_menu/multiplayer_type_select/mp_map_select/mp_map_select_screen": [{"event": "created", "run": "port map select"}],
 }
@@ -287,6 +287,16 @@ def enlarged(pixels, scale):
     return image.filter(ImageFilter.UnsharpMask(radius=2, percent=60, threshold=2))
 
 
+def add_handlers(widget):
+    """Gives a widget its HANDLER_ADDITIONS, after its own; whether it had any."""
+    additions = HANDLER_ADDITIONS.get(widget.get("name"), [])
+    for attributes in additions:
+        handlers = widget.findall("on")
+        at = list(widget).index(handlers[-1]) + 1 if handlers else 0
+        widget.insert(at, ET.Element("on", attributes))
+    return bool(additions)
+
+
 def restyle(menus):
     """Gives a file's widgets the look's text colors and layout; whether any changed."""
     changed = False
@@ -306,11 +316,7 @@ def restyle(menus):
                     else:
                         widget.set(attribute, value)
             changed = True
-        for attributes in HANDLER_ADDITIONS.get(name, []):
-            handlers = widget.findall("on")
-            at = list(widget).index(handlers[-1]) + 1 if handlers else 0
-            widget.insert(at, ET.Element("on", attributes))
-            changed = True
+        changed |= add_handlers(widget)
         for child in widget.findall("child"):
             for attribute, value in CHILD_CHANGES.get((name, child.get("widget")), {}).items():
                 child.set(attribute, value)
@@ -362,7 +368,14 @@ def vanilla_layer():
     rows = next(widget for widget in menus.iter("widget") if widget.get("name") == "main_menu/main_menu_select_list")
     rows.append(ET.Element("child", {"widget": "main_menu/main_menu_item_menus", "x": "256", "y": "431"}))
     write_xml(tree, VANILLA / "ce" / "main_menu.xml")
-    print("Vanilla: the main menu")
+    # the screens with handlers added (the Map screen's map picker), as they are
+    screens = 0
+    for file in sorted((MENUS / "ce").glob("*.xml")):
+        tree = ET.parse(file)
+        if any([add_handlers(widget) for widget in tree.getroot().iter("widget")]):
+            write_xml(tree, VANILLA / "ce" / file.name)
+            screens += 1
+    print(f"Vanilla: the main menu, {screens} screens with handlers")
 
 
 def maps_layer(folder):
