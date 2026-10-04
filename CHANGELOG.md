@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.2.6
+
+### Custom Edition maps
+
+- A map whose tags point past the end of a list no longer crashes the
+  game. Halo PC never checked these, so many maps have them; they now read
+  as empty and are logged (this crashed foundation@ce 13 seconds in).
+- Uncompressed sounds and mono 44 kHz sounds play. They were refused every
+  time they played; they are now converted when the map loads, as Ogg
+  Vorbis sounds already were.
+- Maps with big Halo 3 and Reach textures show them: the texture cache is
+  64 MB, up from 44.
+- Maps whose scripts use functions or settings this build doesn't have
+  (OpenSauce's, for example) load, with those doing nothing, instead of
+  being refused.
+- Maps with a shader marked as the wrong type (as protected maps have) load
+  instead of being refused.
+- Maps with very detailed models (44 bones or more) load, as long as each
+  part of the model fits.
+- Custom Edition singleplayer maps are listed under CUSTOM in co-op's
+  campaign list.
+- The log no longer claims a Custom Edition map "cannot run" when it can.
+
+### Co-op
+
+- After The Maw, the campaign goes on to The Pillar of Autumn. Every won
+  level takes everyone back to the lobby with the next one set; a Custom
+  Edition campaign map repeats.
+
+### Crash reports
+
+- On Windows, a crash's log names the functions and source lines it
+  happened in (halo.pdb now comes with the game), so crashes can be found
+  and fixed.
+
+### Updates
+
+- The log says why a build doesn't look for updates.
+
+### Internet play, from OpenCE
+
+- The brokers internet play finds games through are read from brokers.txt
+  beside the game.
+
 ## 0.2.5
 
 ### Updates
