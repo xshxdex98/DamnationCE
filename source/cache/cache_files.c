@@ -232,6 +232,10 @@ static struct cache_file_tag_instance *cache_get_tag_instance(
 
 static struct cache_file_globals cache_file_globals = { 0 };
 extern struct cache_file_tag_instance *global_tag_instances;
+/* port: global_tag_instances' count. The menus add their tags to a copy of
+the table (port/linux/game/menu_tags.c); the map's tag header keeps its own,
+which a Custom Edition map's loader goes on reading. */
+static long global_tag_count;
 static char const *data_00316820[] =
 {
 	"d:\\maps_de\\",
@@ -263,7 +267,7 @@ static struct cache_file_tag_instance *cache_get_tag_instance(
 	match_vassert(
 		"c:\\halo\\SOURCE\\cache\\cache_files.c",
 		522,
-		absolute_index >= 0 && absolute_index < cache_file_globals.tag_header->tag_count,
+		absolute_index >= 0 && absolute_index < global_tag_count,
 		csprintf(temporary, "i don't think %08x is a tag index", tag_index));
 
 	tag_instance = &global_tag_instances[absolute_index];
@@ -360,6 +364,7 @@ void scenario_tags_unload(
 	}
 	cache_file_globals.tags_loaded = FALSE;
 	global_tag_instances = NULL;
+	global_tag_count = 0;
 
 	return;
 }
@@ -369,17 +374,16 @@ void scenario_tags_unload(
 void *cache_files_tag_instances(
 	long *count)
 {
-	*count = cache_file_globals.tags_loaded ? cache_file_globals.tag_header->tag_count : 0;
-	return cache_file_globals.tags_loaded ? xbox_pointer(cache_file_globals.tag_header->tag_instances) : NULL;
+	*count = cache_file_globals.tags_loaded ? global_tag_count : 0;
+	return cache_file_globals.tags_loaded ? global_tag_instances : NULL;
 }
 
 void cache_files_set_tag_instances(
 	void *instances,
 	long count)
 {
-	cache_file_globals.tag_header->tag_instances = XBOX_ADDRESS(instances);
-	cache_file_globals.tag_header->tag_count = count;
 	global_tag_instances = instances;
+	global_tag_count = count;
 }
 
 void tag_files_open(
@@ -430,7 +434,7 @@ long tag_loaded(
 			global_tag_instances);
 
 		for (absolute_index = 0;
-			absolute_index < cache_file_globals.tag_header->tag_count;
+			absolute_index < global_tag_count;
 			absolute_index++)
 		{
 			if (group_tag == global_tag_instances[absolute_index].group_tag &&
@@ -570,7 +574,7 @@ long tag_iterator_next(
 {
 	long result = NONE;
 
-	while (iterator->absolute_index < cache_file_globals.tag_header->tag_count)
+	while (iterator->absolute_index < global_tag_count)
 	{
 		struct cache_file_tag_instance *tag_instance =
 			&global_tag_instances[iterator->absolute_index++];
@@ -821,8 +825,16 @@ long scenario_tags_load(
 		if (cache_file_globals.tag_header)
 		{
 			global_tag_instances = xbox_pointer(cache_file_globals.tag_header->tag_instances);
+			global_tag_count = cache_file_globals.tag_header->tag_count;
 			cache_file_globals.tags_loaded = TRUE;
 			result = cache_file_globals.tag_header->scenario_tag_index;
+			/* port: the menus' tags, as for the Xbox's maps below: the pause
+			menu's SETTINGS and the menus' theme */
+			{
+				extern void menu_tags_loaded(char const *map_name);
+
+				menu_tags_loaded(cache_file_globals.header.name);
+			}
 		}
 
 		return result;
@@ -862,6 +874,7 @@ long scenario_tags_load(
 					'g',
 					's'));
 			global_tag_instances = xbox_pointer(cache_file_globals.tag_header->tag_instances);
+			global_tag_count = cache_file_globals.tag_header->tag_count;
 			tags_header_register_vertex_and_index_buffers(cache_file_globals.tag_header);
 			cache_file_globals.tags_loaded = TRUE;
 			/* port: a PAL map played as the NTSC maps are (port/linux/game/pal_tags.c) */
@@ -1032,7 +1045,7 @@ boolean tag_index_is_group(
 	struct cache_file_tag_instance *tag_instance;
 
 	if (tag_index == NONE || !cache_file_globals.tags_loaded || !global_tag_instances ||
-		absolute_index < 0 || absolute_index >= cache_file_globals.tag_header->tag_count)
+		absolute_index < 0 || absolute_index >= global_tag_count)
 	{
 		return FALSE;
 	}
