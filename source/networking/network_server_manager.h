@@ -59,6 +59,11 @@ every game the server sets up */
 void network_game_server_port_set_settings(
 	wchar_t const *name,
 	long maximum_players);
+/* port: a co-op game's settings, told the clients: its difficulty, and as
+many players as the build holds (Server Setup's choice is a PvP game's) */
+void network_game_server_port_set_cooperative(
+	struct network_game_server *server,
+	short difficulty);
 boolean network_game_server_ban_player(
 	char const *text);
 short network_game_server_matching_player_names(

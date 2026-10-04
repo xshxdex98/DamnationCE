@@ -33,6 +33,8 @@ in lines of about 20 characters.
 #include "bitmaps/bitmaps.h"
 #include "bitmaps/bitmap_group.h"
 #include "cache/cache_files.h"
+#include "main/main.h"
+#include "saved games/player_profile.h"
 #include "text/unicode.h"
 #include "bmp_files.h"
 #include "custom_edition_cache.h"
@@ -59,6 +61,18 @@ longer name levels\<name> */
 /* The maps' display indices: beyond every string and frame of the menus'
 tags (the level names are 15 strings, the level pictures 14 frames). */
 #define FIRST_DISPLAY_INDEX 0x4000
+
+/* The campaign's levels, as the multiplayer menus show a co-op game's: their
+own display indices, below the Custom Edition maps', their names, and their
+pictures the campaign menus' (a frame each, in the levels' order). */
+#define FIRST_CAMPAIGN_DISPLAY_INDEX 0x3000
+#define CAMPAIGN_LEVEL_PICTURES_TAG_NAME "ui\\shell\\bitmaps\\sp_levels"
+static wchar_t campaign_level_names[NUMBER_OF_SINGLE_PLAYER_LEVELS][32] =
+{
+	L"The Pillar of Autumn", L"Halo", L"The Truth and Reconciliation", L"The Silent Cartographer",
+	L"Assault on the Control Room", L"343 Guilty Spark", L"The Library", L"Two Betrayals", L"Keyes", L"The Maw",
+};
+static wchar_t campaign_level_description[] = L"A campaign level, played co-op";
 
 /* the level pictures, their shape (the level list's are 140 by 114 of the
 menus' 640 by 480, the lobby's 139 by 113) and their frame of an unknown
@@ -477,6 +491,32 @@ static struct custom_edition_map *custom_edition_map_get(
 	return map_index >= 0 && map_index < globals->map_count ? &globals->maps[map_index] : NULL;
 }
 
+/* the campaign level shown with `display_index`, or NONE */
+static short campaign_level_get(
+	short display_index)
+{
+	short level = display_index - FIRST_CAMPAIGN_DISPLAY_INDEX;
+
+	return level >= 0 && level < NUMBER_OF_SINGLE_PLAYER_LEVELS ? level : NONE;
+}
+
+/* the campaign level a level name names (by its file's name: levels\a10\a10
+names the first), or NONE */
+static short campaign_level_from_name(
+	char const *level_name)
+{
+	char const *name = tag_name_strip_path(level_name);
+	short level;
+
+	for (level = 0; level < NUMBER_OF_SINGLE_PLAYER_LEVELS; level++)
+	{
+		if (!csstrcasecmp(tag_name_strip_path(main_get_solo_level_name(level)), name))
+			return level;
+	}
+
+	return NONE;
+}
+
 /* ---------- public code */
 
 char **custom_edition_maps_level_list(
@@ -517,8 +557,13 @@ short custom_edition_maps_display_index(
 {
 	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
 	char const *name = tag_name_strip_path(level_name);
+	short level = campaign_level_from_name(level_name);
 	short map_index;
 
+	if (level != NONE)
+	{
+		return FIRST_CAMPAIGN_DISPLAY_INDEX + level;
+	}
 	if (!globals->looked_for)
 	{
 		custom_edition_maps_look_for();
@@ -534,6 +579,12 @@ short custom_edition_maps_display_index(
 	return NONE;
 }
 
+boolean custom_edition_maps_campaign(
+	short display_index)
+{
+	return campaign_level_get(display_index) != NONE;
+}
+
 boolean custom_edition_maps_stock(
 	short display_index)
 {
@@ -546,6 +597,12 @@ wchar_t *custom_edition_maps_name(
 	short display_index)
 {
 	struct custom_edition_map *map = custom_edition_map_get(display_index);
+	short level = campaign_level_get(display_index);
+
+	if (level != NONE)
+	{
+		return campaign_level_names[level];
+	}
 
 	return map ? map->display_name : NULL;
 }
@@ -555,6 +612,11 @@ wchar_t *custom_edition_maps_description(
 {
 	struct custom_edition_map *map = custom_edition_map_get(display_index);
 
+	if (campaign_level_get(display_index) != NONE)
+	{
+		return campaign_level_description;
+	}
+
 	return map ? map->description : NULL;
 }
 
@@ -563,7 +625,17 @@ struct bitmap_data *custom_edition_maps_picture(
 	short *frame_index)
 {
 	struct custom_edition_map *map;
+	short level = campaign_level_get(*frame_index);
 
+	if (level != NONE &&
+		bitmap_tag_index != NONE &&
+		!csstrcasecmp(tag_get_name(bitmap_tag_index), LEVEL_PICTURES_TAG_NAME))
+	{
+		long pictures = tag_loaded('bitm', CAMPAIGN_LEVEL_PICTURES_TAG_NAME);
+
+		*frame_index = UNKNOWN_LEVEL_FRAME;
+		return pictures != NONE ? bitmap_group_get_bitmap_from_sequence(pictures, 0, level) : NULL;
+	}
 	if (*frame_index < FIRST_DISPLAY_INDEX ||
 		bitmap_tag_index == NONE ||
 		csstrcasecmp(tag_get_name(bitmap_tag_index), LEVEL_PICTURES_TAG_NAME))

@@ -8,7 +8,9 @@ Edition multiplayer maps in the maps folder after the Xbox levels. The menus
 that show a level (ui_widget_game_data_input_functions.c) know a level by an
 index into the strings and frames of their own tags; these maps get display
 indices beyond those, and text_group.c and ui_widget.c ask this unit for
-their names, descriptions and pictures (custom_edition_maps.c).
+their names, descriptions and pictures (custom_edition_maps.c). The
+campaign's levels, which co-op games are played on, have display indices of
+their own as well, for the same menus to show them.
 */
 
 #ifndef __CUSTOM_EDITION_MAPS_H
@@ -34,11 +36,15 @@ Xbox level's own index, or a Custom Edition map's display index. */
 short custom_edition_maps_level_display_index(
 	short level_index);
 
-/* The display index of the Custom Edition map the level name `level_name`
-(a network game's map name) names, or NONE when it names none of the maps
-found; the maps are looked for the first time this is asked. */
+/* The display index of the Custom Edition map, or the campaign level, the
+level name `level_name` (a network game's map name) names, or NONE when it
+names none of them; the maps are looked for the first time this is asked. */
 short custom_edition_maps_display_index(
 	char const *level_name);
+
+/* Whether the display index is a campaign level's (a co-op game's). */
+boolean custom_edition_maps_campaign(
+	short display_index);
 
 /* Whether the display index is one of Halo PC's own multiplayer maps (Ice
 Fields, Death Island and the rest), which the menus offer beside the Xbox's. */

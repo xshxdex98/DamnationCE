@@ -3933,6 +3933,20 @@ void network_game_server_port_set_settings(
 		network_game_server_port_settings_apply(server);
 }
 
+void network_game_server_port_set_cooperative(
+	struct network_game_server *server,
+	short difficulty)
+{
+	if (!server || server->state != _network_game_server_state_pregame)
+		return;
+	server->game.difficulty = difficulty;
+	server->game.maximum_players = MAXIMUM_NETWORK_PLAYER_COUNT;
+	if (!network_game_server_send_game_data_pregame(server))
+		network_event("network_game_server_port_set_cooperative() failed to send updated game settings to clients");
+
+	return;
+}
+
 /* port: a gametype's PC options: the menus' (player_ui_set_game_variant_options)
 when it is the menus' gametype, else its defaults */
 static void network_game_server_variant_options(
