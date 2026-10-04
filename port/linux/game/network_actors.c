@@ -9,18 +9,25 @@ have the units (network_objects.c); this file makes them move like the
 host's.
 
 Each tick the host records the control every actor gave its unit (a hook
-in unit_control) and sends it to each client along with the unit's state:
-position, seat, shields and health. Units near a client's players are sent
-every tick, others less often. Each tick a client feeds the latest control
-into unit_control, the same path that drives a remote player's unit, so
-the unit walks, aims, fires, throws and melees as it does on the host. The
-state corrects any drift.
+in unit_control, and the bursts it holds the trigger for) and sends it to
+each client with the unit's state: position, seat, shields and health,
+camouflage, and whether it flees in a panic. Units near a client's players
+are sent every tick, others less often, but a unit starting a one-tick
+action (a jump, a grenade) goes to everyone that tick. Each tick a client
+feeds the latest control into unit_control, the same path that drives a
+remote player's unit, so the unit walks, aims, fires and throws as it does
+on the host. The state corrects any drift.
 
-Animation impulses (dives, leaps, vaults) are numbered, so a client plays
-each once however many times it receives it.
+What the AI starts once is numbered, so a client plays each once however
+many times it receives it: animation impulses (dives, vaults), melee
+attacks and leaps (which the AI starts directly, not through the control),
+speech, and custom animations (outside co-op, whose events carry them).
+Pain and death sounds aren't sent: a client plays those itself as it
+replays the host's damage.
 
-Deaths need nothing here: network_damage.c kills a client's copy of an AI
-unit the same way it kills a player's.
+A client creates no actors of its own (actors.c): the host's are the only
+ones. Deaths need nothing here: network_damage.c kills a client's copy of
+an AI unit the same way it kills a player's.
 */
 
 /* ---------- headers */
@@ -30,8 +37,11 @@ unit the same way it kills a player's.
 #include "networking/network_game_globals.h"
 #include "objects/objects.h"
 #include "objects/damage.h"
+#include "sound/game_sound.h"
+#include "sound/sound_definitions.h"
 #include "units/units.h"
 #include "units/unit_control_data.h"
+#include "network_coop.h"
 #include "network_distributed.h"
 
 #include <math.h>
@@ -53,6 +63,19 @@ enum
 	/* the number of unit_start_animation_impulse impulses (private to units.c) */
 	NUMBER_OF_UNIT_ANIMATION_IMPULSES = 14,
 	NO_IMPULSE = 0xFF,
+
+	/* An entry's impulse is one of the animation impulses or, past them, an
+	action the AI starts directly: a melee attack (unit_melee_attack_begin)
+	or a leap (unit_leap_begin). */
+	_actor_action_melee = NUMBER_OF_UNIT_ANIMATION_IMPULSES,
+	_actor_action_leap,
+	NUMBER_OF_ACTOR_ACTIONS,
+
+	/* control flags a unit acts on in one tick: a unit that sets one goes to
+	every client that tick, however far away, so the action isn't missed */
+	ONE_SHOT_CONTROL_FLAGS = FLAG(_unit_control_jump_bit) | FLAG(_unit_control_action_bit) |
+		FLAG(_unit_control_weapon_reload_bit) | FLAG(_unit_control_throw_grenade_bit) |
+		FLAG(_unit_control_swap_weapons_bit),
 };
 
 /* struct distributed_actor_state flags */
@@ -66,6 +89,8 @@ enum
 	_distributed_actor_super_camouflaged_bit,
 	/* the impulse turns the unit to impulse_alignment */
 	_distributed_actor_impulse_aligned_bit,
+	/* fleeing in a panic, toward run_blindly_angle (unit_start_running_blindly) */
+	_distributed_actor_running_blindly_bit,
 };
 
 /* facing, aiming and looking vectors are sent as yaw and pitch */
@@ -95,12 +120,24 @@ struct distributed_actor_state
 	word control_flags;
 	signed char throttle[3];
 	byte active_camouflage;
+	/* the speech's sequence number; 0 when there is none */
+	byte speech_number;
+	byte pad;
 	short facing[NUMBER_OF_ANGLES];
 	short aiming[NUMBER_OF_ANGLES];
 	short looking[NUMBER_OF_ANGLES];
 	short impulse_alignment;
+	short run_blindly_angle;
 	word body_vitality;
 	word shield_vitality;
+	/* the sound the unit started saying (a sound tag) */
+	long speech_sound;
+	/* the custom animation it started (unit_start_user_animation), and its
+	sequence number; the graph is NONE when there is none */
+	long user_animation_graph;
+	short user_animation;
+	byte user_animation_number;
+	byte user_animation_interpolate;
 	real_point3d position;
 	struct distributed_vector velocity;
 	struct distributed_vector forward;
@@ -120,12 +157,24 @@ struct host_actor
 	/* got a control since the last send (noted during game_tick, sent after it) */
 	boolean noted;
 	struct unit_control_data control;
+	/* the control flags of the last tick's entry */
+	word sent_control_flags;
 	/* the latest impulse, how many more entries carry it, and its number */
 	short impulse;
 	short impulse_sends;
 	byte impulse_number;
 	boolean impulse_aligned;
 	real_vector2d impulse_alignment;
+	/* the latest speech, how many more entries carry it, and its number */
+	long speech_sound;
+	short speech_sends;
+	byte speech_number;
+	/* the latest custom animation, the same way */
+	long user_animation_graph;
+	short user_animation;
+	boolean user_animation_interpolate;
+	short user_animation_sends;
+	byte user_animation_number;
 };
 
 /* client: the latest the host sent about an AI unit */
@@ -140,6 +189,17 @@ struct client_actor
 	byte played_impulse_number;
 	boolean impulse_aligned;
 	real_vector2d impulse_alignment;
+	/* the speech to play (NONE when there is none), and the number of the last played */
+	long speech_sound;
+	byte speech_number;
+	byte played_speech_number;
+	/* the custom animation to play (graph NONE when there is none), and the
+	number of the last played */
+	long user_animation_graph;
+	short user_animation;
+	boolean user_animation_interpolate;
+	byte user_animation_number;
+	byte played_user_animation_number;
 	boolean driven;
 };
 
@@ -147,9 +207,10 @@ struct client_actor
 
 static struct host_actor host_actors[MAXIMUM_NETWORK_ACTORS];
 static short host_actor_count;
-/* host: one counter for every unit's impulses, so a unit that drops out of
-the table and comes back can't repeat the number a client last played */
-static byte host_impulse_number;
+/* host: the numbers of every unit's impulses, speech and animations, from
+one counter, so a unit that drops out of the table and comes back can't
+repeat the number a client last played */
+static byte host_event_number;
 
 static struct client_actor client_actors[MAXIMUM_NETWORK_ACTORS];
 static short client_actor_count;
@@ -176,6 +237,16 @@ static void angles_unpack(
 	vector->k = (real)sin(pitch);
 }
 
+/* host: the next event's number (never 0, which a client's new entry has
+as played) */
+static byte next_event_number(
+	void)
+{
+	if (++host_event_number == 0)
+		host_event_number = 1;
+	return host_event_number;
+}
+
 /* the unit's entry, adding one if needed; NULL if the table is full */
 static struct host_actor *host_actor_for(
 	long unit_index)
@@ -192,6 +263,8 @@ static struct host_actor *host_actor_for(
 	csmemset(&host_actors[host_actor_count], 0, sizeof(host_actors[0]));
 	host_actors[host_actor_count].unit_index = unit_index;
 	host_actors[host_actor_count].impulse = NONE;
+	host_actors[host_actor_count].speech_sound = NONE;
+	host_actors[host_actor_count].user_animation_graph = NONE;
 	return &host_actors[host_actor_count++];
 }
 
@@ -210,6 +283,8 @@ static struct client_actor *client_actor_for(
 	csmemset(&client_actors[client_actor_count], 0, sizeof(client_actors[0]));
 	client_actors[client_actor_count].unit_index = unit_index;
 	client_actors[client_actor_count].impulse = NONE;
+	client_actors[client_actor_count].speech_sound = NONE;
+	client_actors[client_actor_count].user_animation_graph = NONE;
 	return &client_actors[client_actor_count++];
 }
 
@@ -248,6 +323,13 @@ static void actor_state_from_unit(
 	state->aiming_speed = (byte)actor->control.aiming_speed;
 	state->primary_trigger = (byte)(long)floor(PIN(actor->control.primary_trigger, 0.0f, 1.0f) * 255.0f + 0.5f);
 	state->control_flags = actor->control.control_flags;
+	/* (a burst the AI holds the trigger for, unit_persistent_control: the
+	flags and trigger the unit's update made of it this tick) */
+	if (unit->unit.persistent_control_timer > 0)
+	{
+		state->control_flags = (word)(unit->unit.control_flags & (FLAG(NUMBER_OF_UNIT_CONTROL_FLAGS) - 1));
+		state->primary_trigger = (byte)(long)floor(PIN(unit->unit.primary_trigger, 0.0f, 1.0f) * 255.0f + 0.5f);
+	}
 	state->throttle[0] = (signed char)(long)floor(PIN(actor->control.throttle.i, -1.0f, 1.0f) * 127.0f + 0.5f);
 	state->throttle[1] = (signed char)(long)floor(PIN(actor->control.throttle.j, -1.0f, 1.0f) * 127.0f + 0.5f);
 	state->throttle[2] = (signed char)(long)floor(PIN(actor->control.throttle.k, -1.0f, 1.0f) * 127.0f + 0.5f);
@@ -265,6 +347,25 @@ static void actor_state_from_unit(
 			state->impulse_alignment = distributed_angle_pack(
 				(real)atan2(actor->impulse_alignment.j, actor->impulse_alignment.i));
 		}
+	}
+	state->speech_sound = NONE;
+	if (actor->speech_sound != NONE && actor->speech_sends > 0)
+	{
+		state->speech_sound = actor->speech_sound;
+		state->speech_number = actor->speech_number;
+	}
+	state->user_animation_graph = NONE;
+	if (actor->user_animation_graph != NONE && actor->user_animation_sends > 0)
+	{
+		state->user_animation_graph = actor->user_animation_graph;
+		state->user_animation = actor->user_animation;
+		state->user_animation_interpolate = (byte)actor->user_animation_interpolate;
+		state->user_animation_number = actor->user_animation_number;
+	}
+	if (TEST_FLAG(unit->unit.flags, _unit_running_blindly_bit))
+	{
+		SET_FLAG(state->flags, _distributed_actor_running_blindly_bit, TRUE);
+		state->run_blindly_angle = distributed_angle_pack(unit->unit.run_blindly_angle);
 	}
 	damage_get_network_state(actor->unit_index, &damage);
 	SET_FLAG(state->flags, _distributed_actor_shield_depleted_bit, damage.shield_depleted);
@@ -301,7 +402,10 @@ static boolean actor_state_apply(
 		state->animation_state >= NUMBER_OF_UNIT_ANIMATION_STATES ||
 		state->aiming_speed >= NUMBER_OF_UNIT_AIMING_SPEEDS ||
 		!VALID_FLAGS(state->control_flags, NUMBER_OF_UNIT_CONTROL_FLAGS) ||
-		(state->impulse != NO_IMPULSE && state->impulse >= NUMBER_OF_UNIT_ANIMATION_IMPULSES) ||
+		(state->impulse != NO_IMPULSE && state->impulse >= NUMBER_OF_ACTOR_ACTIONS) ||
+		(state->speech_sound != NONE && !distributed_tag_of_group(state->speech_sound, SOUND_DEFINITION_TAG)) ||
+		(state->user_animation_graph != NONE &&
+			!distributed_graph_animation(state->user_animation_graph, state->user_animation)) ||
 		!distributed_point_valid(&state->position, UNIT_WORLD_BOUND))
 	{
 		return FALSE;
@@ -341,8 +445,21 @@ static boolean actor_state_apply(
 		actor->impulse_alignment.j = (real)sin(yaw);
 	}
 
-	/* the state: seat, shields and health, camouflage, and position (a
-	unit in a vehicle goes where the vehicle goes) */
+	if (state->speech_sound != NONE && state->speech_number != actor->played_speech_number)
+	{
+		actor->speech_sound = state->speech_sound;
+		actor->speech_number = state->speech_number;
+	}
+	if (state->user_animation_graph != NONE && state->user_animation_number != actor->played_user_animation_number)
+	{
+		actor->user_animation_graph = state->user_animation_graph;
+		actor->user_animation = state->user_animation;
+		actor->user_animation_interpolate = state->user_animation_interpolate != 0;
+		actor->user_animation_number = state->user_animation_number;
+	}
+
+	/* the state: seat, shields and health, camouflage, running blindly, and
+	position (a unit in a vehicle goes where the vehicle goes) */
 	unit = unit_get(state->unit_index);
 	if (TEST_FLAG(state->flags, _distributed_actor_rides_bit))
 	{
@@ -368,6 +485,10 @@ static boolean actor_state_apply(
 	SET_FLAG(unit->unit.flags, _unit_super_camouflaged_bit,
 		TEST_FLAG(state->flags, _distributed_actor_super_camouflaged_bit));
 	unit->unit.active_camouflage = (real)state->active_camouflage / 255.0f;
+	SET_FLAG(unit->unit.flags, _unit_running_blindly_bit,
+		TEST_FLAG(state->flags, _distributed_actor_running_blindly_bit));
+	if (TEST_FLAG(state->flags, _distributed_actor_running_blindly_bit))
+		unit->unit.run_blindly_angle = distributed_angle_unpack(state->run_blindly_angle, FALSE);
 	if (unit->object.parent_object_index == NONE)
 	{
 		real dx = state->position.x - unit->object.position.x;
@@ -382,6 +503,26 @@ static boolean actor_state_apply(
 		}
 	}
 	return TRUE;
+}
+
+/* Client: plays a sound at the unit's head, as unit_dialogue_update starts
+a unit's speech. */
+static void speech_play(
+	long unit_index,
+	long sound_definition_index)
+{
+	struct object_marker marker;
+	real_point3d position = *global_origin3d;
+	real_vector3d forward = *global_forward3d;
+	short node_index = 0;
+
+	if (object_get_marker_by_name(unit_index, "head", &marker, 1))
+	{
+		node_index = marker.node_index;
+		position = marker.node_matrix.position;
+		forward = marker.node_matrix.forward;
+	}
+	object_impulse_sound_new(unit_index, sound_definition_index, node_index, &position, &forward, 1.0f);
 }
 
 /* ---------- public code */
@@ -409,10 +550,10 @@ void network_actors_note_control(
 	actor->control = *control_data;
 }
 
-/* host: unit_start_animation_impulse calls this for an AI unit */
-void network_actors_note_impulse(
+/* host: an impulse or action for an AI unit, sent in the next few entries */
+static void note_action(
 	long unit_index,
-	short animation_impulse,
+	short action,
 	real_vector2d const *alignment_vector)
 {
 	struct host_actor *actor;
@@ -422,25 +563,90 @@ void network_actors_note_impulse(
 	actor = host_actor_for(unit_index);
 	if (!actor)
 		return;
-	/* (never 0, which a client's new entry has as played) */
-	if (++host_impulse_number == 0)
-		host_impulse_number = 1;
-	actor->impulse = animation_impulse;
+	actor->impulse = action;
 	actor->impulse_sends = IMPULSE_REPEAT_TICKS;
-	actor->impulse_number = host_impulse_number;
+	actor->impulse_number = next_event_number();
 	actor->impulse_aligned = alignment_vector != NULL;
 	if (alignment_vector)
 		actor->impulse_alignment = *alignment_vector;
 }
 
+/* host: unit_start_animation_impulse calls this for an AI unit */
+void network_actors_note_impulse(
+	long unit_index,
+	short animation_impulse,
+	real_vector2d const *alignment_vector)
+{
+	note_action(unit_index, animation_impulse, alignment_vector);
+}
+
+/* host: unit_melee_attack_begin calls this when an AI unit starts a melee attack */
+void network_actors_note_melee(
+	long unit_index,
+	real_vector2d const *alignment_vector)
+{
+	note_action(unit_index, _actor_action_melee, alignment_vector);
+}
+
+/* host: unit_leap_begin calls this when an AI unit leaps */
+void network_actors_note_leap(
+	long unit_index,
+	real_vector2d const *alignment_vector)
+{
+	note_action(unit_index, _actor_action_leap, alignment_vector);
+}
+
+/* host: unit_dialogue_update calls this when an AI unit starts saying
+something (not a pain or death sound, which clients play themselves) */
+void network_actors_note_speech(
+	long unit_index,
+	long sound_definition_index)
+{
+	struct host_actor *actor;
+
+	if (game_connection() != _game_connection_network_server)
+		return;
+	actor = host_actor_for(unit_index);
+	if (!actor)
+		return;
+	actor->speech_sound = sound_definition_index;
+	actor->speech_sends = IMPULSE_REPEAT_TICKS;
+	actor->speech_number = next_event_number();
+}
+
+/* host: unit_start_user_animation calls this when an AI unit starts a
+custom animation (co-op's events carry them in co-op) */
+void network_actors_note_user_animation(
+	long unit_index,
+	long animation_graph_index,
+	short animation_index,
+	boolean interpolate)
+{
+	struct host_actor *actor;
+
+	if (game_connection() != _game_connection_network_server || network_coop_active())
+		return;
+	actor = host_actor_for(unit_index);
+	if (!actor)
+		return;
+	actor->user_animation_graph = animation_graph_index;
+	actor->user_animation = animation_index;
+	actor->user_animation_interpolate = interpolate;
+	actor->user_animation_sends = IMPULSE_REPEAT_TICKS;
+	actor->user_animation_number = next_event_number();
+}
+
 /* Host, after each tick: sends each client the AI units driven this tick.
-Units near the client's players go every tick, others less often, and a
-unit with a fresh impulse goes in each of the next IMPULSE_REPEAT_TICKS
-ticks. A unit no actor drove this tick is dropped from the table. */
+Units near the client's players go every tick, others less often. A unit
+with a fresh impulse, action, speech or animation goes to everyone in each
+of the next IMPULSE_REPEAT_TICKS ticks, and one starting a one-tick action
+goes that tick. A unit no actor drove this tick is dropped from the table. */
 void network_actors_host_tick(
 	void)
 {
 	static struct distributed_actor_state states[MAXIMUM_NETWORK_ACTORS];
+	/* sent to every client this tick, whatever its period */
+	static boolean urgent[MAXIMUM_NETWORK_ACTORS];
 	struct distributed_actor_state_message message;
 	long machine_indices[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
 	short machine_count = distributed_client_machines(machine_indices, HALO_PORT_MAXIMUM_NETWORK_MACHINES);
@@ -458,10 +664,19 @@ void network_actors_host_tick(
 			host_actors[index--] = host_actors[--host_actor_count];
 			continue;
 		}
-		actor_state_from_unit(actor, &states[state_count++]);
+		actor_state_from_unit(actor, &states[state_count]);
+		urgent[state_count] = states[state_count].impulse != NO_IMPULSE || states[state_count].speech_sound != NONE ||
+			states[state_count].user_animation_graph != NONE ||
+			(states[state_count].control_flags & ~actor->sent_control_flags & ONE_SHOT_CONTROL_FLAGS) != 0;
+		actor->sent_control_flags = states[state_count].control_flags;
+		state_count++;
 		actor->noted = FALSE;
 		if (actor->impulse_sends > 0)
 			actor->impulse_sends--;
+		if (actor->speech_sends > 0)
+			actor->speech_sends--;
+		if (actor->user_animation_sends > 0)
+			actor->user_animation_sends--;
 	}
 	for (machine_number = 0; machine_number < machine_count; machine_number++)
 	{
@@ -473,7 +688,7 @@ void network_actors_host_tick(
 			struct distributed_actor_state const *state = &states[index];
 			short period = network_objects_send_period(machine_index, &state->position);
 
-			if (state->impulse == NO_IMPULSE && (now + DATUM_INDEX_TO_ABSOLUTE_INDEX(state->unit_index)) % period != 0)
+			if (!urgent[index] && (now + DATUM_INDEX_TO_ABSOLUTE_INDEX(state->unit_index)) % period != 0)
 				continue;
 			message.states[count++] = *state;
 			if (count == MAXIMUM_ENTRIES_PER_MESSAGE || count == DATAGRAM_ENTRIES(struct distributed_actor_state))
@@ -537,10 +752,29 @@ void network_actors_drive(
 		unit_control(actor->unit_index, &actor->control);
 		if (actor->impulse != NONE && actor->impulse_number != actor->played_impulse_number)
 		{
-			unit_start_animation_impulse(actor->unit_index, actor->impulse,
-				actor->impulse_aligned ? &actor->impulse_alignment : NULL);
+			real_vector2d *alignment = actor->impulse_aligned ? &actor->impulse_alignment : NULL;
+
+			if (actor->impulse == _actor_action_melee)
+				unit_melee_attack_begin(actor->unit_index, FALSE, alignment);
+			else if (actor->impulse == _actor_action_leap)
+				unit_leap_begin(actor->unit_index, alignment);
+			else
+				unit_start_animation_impulse(actor->unit_index, actor->impulse, alignment);
 			actor->played_impulse_number = actor->impulse_number;
 			actor->impulse = NONE;
+		}
+		if (actor->speech_sound != NONE)
+		{
+			speech_play(actor->unit_index, actor->speech_sound);
+			actor->played_speech_number = actor->speech_number;
+			actor->speech_sound = NONE;
+		}
+		if (actor->user_animation_graph != NONE)
+		{
+			unit_port_play_user_animation(actor->unit_index, actor->user_animation_graph, actor->user_animation,
+				actor->user_animation_interpolate, 0);
+			actor->played_user_animation_number = actor->user_animation_number;
+			actor->user_animation_graph = NONE;
 		}
 	}
 }

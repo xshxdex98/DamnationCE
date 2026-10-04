@@ -353,24 +353,6 @@ static boolean coop_client(
 	return game_connection() == _game_connection_network_client && coop_game();
 }
 
-/* whether a tag index from the host really is a tag of that group */
-static boolean tag_of_group(
-	long tag_index,
-	unsigned long group_tag)
-{
-	struct tag_iterator iterator;
-	long index;
-
-	tag_iterator_new(&iterator, group_tag);
-	while ((index = tag_iterator_next(&iterator)) != NONE)
-	{
-		if (index == tag_index)
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
 /* whether the object is a player's unit or carries one (scripts never delete those) */
 static boolean object_holds_player(
 	long object_index)
@@ -886,22 +868,6 @@ static void client_apply_nav_point(
 	}
 }
 
-/* the graph's animation, if the graph tag and index are valid */
-static struct animation *graph_animation(
-	long animation_graph_index,
-	short animation_index)
-{
-	struct animation_graph *graph;
-
-	if (!tag_of_group(animation_graph_index, ANIMATION_GRAPH_TAG))
-		return NULL;
-	graph = animation_graph_definition_get(animation_graph_index);
-	if (animation_index < 0 || animation_index >= graph->animations.count)
-		return NULL;
-
-	return TAG_BLOCK_GET_ELEMENT(&graph->animations, animation_index, struct animation);
-}
-
 static void client_apply_unit_animation(
 	struct distributed_coop_event const *event)
 {
@@ -912,7 +878,7 @@ static void client_apply_unit_animation(
 	}
 	if (event->tag_index == NONE)
 		unit_stop_custom_animation(event->object_index);
-	else if (graph_animation(event->tag_index, event->value))
+	else if (distributed_graph_animation(event->tag_index, event->value))
 		unit_port_play_user_animation(event->object_index, event->tag_index, event->value, event->interpolate, event->frame);
 }
 
@@ -921,7 +887,7 @@ static void client_apply_scenery_animation(
 {
 	long scenery_index = object_find(event->name_index, event->object_index, event->definition_index,
 		_object_mask_scenery);
-	struct animation *animation = graph_animation(event->tag_index, event->value);
+	struct animation *animation = distributed_graph_animation(event->tag_index, event->value);
 
 	/* scenery animations have no random permutations, so the name finds the same one */
 	if (scenery_index != NONE && animation)
@@ -938,15 +904,15 @@ static void client_apply_sound(
 	switch (event->type)
 	{
 	case _coop_sound_impulse:
-		if (tag_of_group(event->tag_index, SOUND_DEFINITION_TAG))
+		if (distributed_tag_of_group(event->tag_index, SOUND_DEFINITION_TAG))
 			scripted_sound_new(event->tag_index, object_index, scale);
 		break;
 	case _coop_sound_looping_start:
-		if (tag_of_group(event->tag_index, LOOPING_SOUND_DEFINITION_TAG))
+		if (distributed_tag_of_group(event->tag_index, LOOPING_SOUND_DEFINITION_TAG))
 			scripted_looping_sound_start(event->tag_index, object_index, scale);
 		break;
 	case _coop_sound_looping_stop:
-		if (tag_of_group(event->tag_index, LOOPING_SOUND_DEFINITION_TAG))
+		if (distributed_tag_of_group(event->tag_index, LOOPING_SOUND_DEFINITION_TAG))
 			scripted_looping_sound_stop(event->tag_index);
 		break;
 	default:
