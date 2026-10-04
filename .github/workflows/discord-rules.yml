@@ -1,0 +1,42 @@
+name: Discord rules
+
+# The rules channel's card: tools/discord_feeds.py draws tools/discord_rules.md
+# and edits the DISCORD_RULES_MESSAGE message to match, through the channel's
+# webhook (the DISCORD_RULES_WEBHOOK secret), each time the file changes.
+on:
+  push:
+    branches: [main]
+    paths: [tools/discord_rules.md]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    if: ${{ vars.DISCORD_RULES_MESSAGE != '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            tools/discord_feeds.py
+            tools/discord_card.py
+            tools/discord_rules.md
+            port/assets/fonts/Rajdhani-*.ttf
+            port/assets/fonts/OpenCE-Regular.ttf
+          sparse-checkout-cone-mode: false
+
+      # (Pillow draws the card)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install --quiet pillow
+
+      - name: Update
+        env:
+          DISCORD_RULES_WEBHOOK: ${{ secrets.DISCORD_RULES_WEBHOOK }}
+          DISCORD_RULES_MESSAGE: ${{ vars.DISCORD_RULES_MESSAGE }}
+        run: python3 tools/discord_feeds.py rules

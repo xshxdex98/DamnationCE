@@ -72,3 +72,19 @@ jobs:
           ls -l release
           gh release create "$GITHUB_REF_NAME" release/*.zip --repo "$GITHUB_REPOSITORY" \
             --title "DamnationCE $GITHUB_REF_NAME" --notes-file notes.md
+
+      # (Pillow draws the changelog's banner)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install --quiet pillow
+
+      # (the changelog channel's post; none without its webhook, as in a fork)
+      - name: Post to Discord
+        env:
+          DISCORD_RELEASES_WEBHOOK: ${{ secrets.DISCORD_RELEASES_WEBHOOK }}
+        run: |
+          if [ -n "$DISCORD_RELEASES_WEBHOOK" ]; then
+            python3 tools/discord_feeds.py release "$GITHUB_REF_NAME" notes.md
+          fi
