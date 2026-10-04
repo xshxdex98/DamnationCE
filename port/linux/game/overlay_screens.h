@@ -1,8 +1,8 @@
 /*
 OVERLAY_SCREENS.H
 
-What the screens the overlay draws over the menus share: Online Games
-(browser_screen.c) and the map picker (map_screen.c). overlay_screens.c.
+Helpers shared by the screens drawn over the menus: Online Games
+(browser_screen.c) and the map picker (map_screen.c).
 */
 
 #ifndef __OVERLAY_SCREENS_H
@@ -12,55 +12,76 @@ What the screens the overlay draws over the menus share: Online Games
 
 enum
 {
-	/* (event_manager.c's event types, which it keeps to itself) */
+	/* event_manager.c's event types, which it keeps private */
 	OVERLAY_EVENT_LEFT_STICK = 1,
 	OVERLAY_EVENT_BUTTON = 3,
+
+	/* the button bar along the foot of the 640x480 layout */
+	OVERLAY_BUTTON_Y = 450,
+	OVERLAY_BUTTON_HEIGHT = 22,
 };
 
 /* ---------- structures */
 
-/* a direction held down: the game reports it every frame it is held */
+/* key repeat for a held direction (the game reports it every frame) */
 struct overlay_repeat
 {
 	boolean held;
 	unsigned long next_time;
 };
 
+/* overlay_buttons_draw's colors (0xRRGGBBAA) */
+struct overlay_button_colors
+{
+	unsigned int fill, fill_lit, edge, text, text_lit, text_disabled;
+	float radius;
+};
+
 /* ---------- prototypes */
 
-/* Whether a direction held (or not) moves this frame: once when it is first
-pressed, then again after a moment, then steadily while it stays held. */
+/* Whether a held direction should move this frame: once when first
+pressed, again after a short delay, then steadily while held. */
 boolean overlay_repeat_step(
 	struct overlay_repeat *repeat,
 	boolean held);
 
-/* UTF-16 text, at most `length` characters (it may stop sooner, at a 0), as
-UTF-8 in `out` of `size` bytes. */
+/* Converts UTF-16 text (at most `length` characters, or up to a 0) to UTF-8
+in `out`, which holds `size` bytes. */
 void overlay_utf8(
 	unsigned short const *text,
 	long length,
 	char *out,
 	long size);
 
-/* A button and what it does ("=JOIN") along the foot of the screen, from x:
-the x after it. */
-float overlay_prompt(
-	int button,
-	char const *words,
+/* A row of clickable buttons, each as wide as its label, starting at x.
+`hovered` is lit (NONE for none); bit n of `disabled` greys out button n.
+overlay_button_at returns the button at a point, or NONE. */
+float overlay_buttons_width(
+	char const *const *labels,
+	short count);
+void overlay_buttons_draw(
+	char const *const *labels,
+	short count,
 	float x,
-	unsigned int color);
-float overlay_prompt_width(
-	int button,
-	char const *words);
+	float y,
+	short hovered,
+	unsigned long disabled,
+	struct overlay_button_colors const *colors);
+short overlay_button_at(
+	char const *const *labels,
+	short count,
+	float x,
+	float y,
+	short point_x,
+	short point_y);
 
-/* The display index of a map, by its map name (levels\test\<name>\<name>):
-an Xbox level's frame of the menus' level pictures, a Custom Edition map's
-display index (custom_edition_maps.h), else the unknown level's frame. */
+/* The display index (custom_edition_maps.h) for a map path such as
+levels\test\<name>\<name>. Unknown maps get the unknown level's frame. */
 short overlay_map_display_index(
 	char const *map_name);
 
-/* A map's picture, by its display index, in a place of the screen, which the
-overlay leaves to the game's drawing. */
+/* Draws a map's picture, by display index, into a rectangle that the
+overlay leaves clear for the game to draw. */
 void overlay_map_picture(
 	short display_index,
 	float x,

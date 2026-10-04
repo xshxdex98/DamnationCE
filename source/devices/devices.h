@@ -129,8 +129,7 @@ void device_set_power(
 boolean device_group_set_desired_value(
 	short group_index,
 	real desired_value);
-/* port: a device group as a co-op host sends it, and as its client takes it
-(port/linux/game/network_coop.c) */
+/* port: co-op device sync (port/linux/game/network_coop.c) */
 boolean device_group_network_get(
 	short group_index,
 	real *value,

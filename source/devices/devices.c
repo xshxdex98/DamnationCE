@@ -112,7 +112,7 @@ enum
 	_scenario_device_group_can_change_only_once_bit = 0,
 };
 
-/* port: the group flags a co-op host sends its clients (network_coop.c) */
+/* port: the group flags network_coop.c syncs */
 #define DEVICE_GROUP_NETWORK_FLAGS \
 	(FLAG(_device_group_can_change_only_once_bit) | FLAG(_device_group_changed_once_bit))
 
@@ -187,7 +187,7 @@ typedef char device_animation_frame_count_offset_assert[
 
 /* ---------- prototypes */
 
-/* port: a co-op client's devices are the host's (port/linux/game/network_coop.c) */
+/* port: co-op device sync (port/linux/game/network_coop.c) */
 boolean network_coop_devices_remote(void);
 void network_coop_note_device_snap(short group_index);
 
@@ -690,15 +690,14 @@ boolean device_group_set_desired_value(
 	short group_index,
 	real desired_value)
 {
-	/* port: a co-op client's devices move as the host's do, never of its own
-	accord (a door it walks up to, a switch it uses: the host's decision) */
+	/* port: on a co-op client only the host moves devices (network_coop.c) */
 	if (network_coop_devices_remote())
 		return FALSE;
 
 	return device_group_change(group_index, desired_value);
 }
 
-/* port: the group's value and flags, as network_coop.c sends them */
+/* port: reads a group for network_coop.c; FALSE if it doesn't exist */
 boolean device_group_network_get(
 	short group_index,
 	real *value,
@@ -716,8 +715,8 @@ boolean device_group_network_get(
 	return TRUE;
 }
 
-/* port: (a co-op client) the host's value and flags of the group: its
-devices put straight there (snapped), or moving there as the host's did */
+/* port: a co-op client applies the host's group state. snap jumps the
+devices to the value; otherwise they move there as usual. */
 void device_group_network_set(
 	short group_index,
 	real value,

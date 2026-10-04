@@ -1797,8 +1797,8 @@ static boolean player_handle_action(
 	switch (player->action_result)
 	{
 	case _player_action_result_touch_device:
-		/* port: a co-op client's devices are the host's (network_coop.c):
-		its player's use of one is relayed to the host, which decides */
+		/* port: on a co-op client the host decides device use; the action
+		is relayed to it (network_coop.c) */
 		if (!network_coop_devices_remote())
 			device_touched(player->action_object_index, player->unit_index);
 		result = TRUE;
