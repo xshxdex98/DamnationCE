@@ -1889,6 +1889,19 @@ static void distributed_client_apply_change(
 	struct object_datum *object = object_get(object_index);
 
 	csmemcpy(object->object.base_change_colors, change->change_colors, sizeof(object->object.base_change_colors));
+	/* (and the colors drawn, which object_new chose from the tag: an AI unit's
+	are its variant's, set after it was made, actors.c) */
+	{
+		short color_index;
+
+		for (color_index = 0; color_index < NUMBER_OF_OBJECT_CHANGE_COLORS; color_index++)
+		{
+			object->object.outgoing_change_colors[color_index].red = PIN(change->change_colors[color_index].red, 0.0f, 1.0f);
+			object->object.outgoing_change_colors[color_index].green =
+				PIN(change->change_colors[color_index].green, 0.0f, 1.0f);
+			object->object.outgoing_change_colors[color_index].blue = PIN(change->change_colors[color_index].blue, 0.0f, 1.0f);
+		}
+	}
 	/* (a permutation the model has, or none: the model's renderer takes it
 as it is) */
 	{
