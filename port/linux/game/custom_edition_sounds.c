@@ -225,7 +225,10 @@ static short *vorbis_decode(
 			}
 		}
 	}
-	free(stream_samples);
+	/* (stb_vorbis.c is an object of its own, which allocates with the C
+	library's malloc, not cseries.h's debug_malloc: the parentheses keep
+	cseries.h's free macro, debug_free, from taking it) */
+	(free)(stream_samples);
 
 	return samples;
 }
