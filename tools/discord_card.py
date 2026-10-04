@@ -5,7 +5,8 @@ glass in white hairlines over a map, in Rajdhani. discord_feeds.py posts them.
   Discord fits a picture into a box wider than it is tall, so a wide one is
   shown largest, and a constant size keeps the message from jumping as games
   come and go.
-- document_pages: a release's changelog, or the rules, as pages.
+- document_pages: the rules, as pages.
+- heading_card: a release's heading, over its changelog in Discord's own text.
 """
 
 import functools
@@ -361,6 +362,33 @@ def draw_row(draw, row, x, y, width, top_of_column):
             line_x += draw.textlength(piece, font=text_font(bold))
 
 
+def draw_heading(draw, top, bottom, label, title, aside_label, aside):
+    """the Glassed theme's strip of dark glass between two hairlines across the
+    picture from top to bottom: label (small, spaced) over title (large) at
+    its left, aside_label over aside at its right"""
+    width = draw.im.size[0]
+    draw.rectangle((0, top, width, bottom), fill=SHADE + (140,))
+    for y in (top, bottom):
+        draw.line((0, y, width, y), fill=WHITE + (90,), width=2)
+    middle = (top + bottom) // 2
+    left, right = MARGIN * 2, width - MARGIN * 2
+    draw.text((left, middle - 40), spaced(label), font=font("SemiBold", 34), fill=WHITE + (190,), anchor="ls")
+    draw.text((left, middle + 60), title, font=title_font(100), fill=WHITE + (240,), anchor="ls")
+    draw.text((right, middle - 40), spaced(aside_label), font=font("SemiBold", 34), fill=WHITE + (150,), anchor="rs")
+    draw.text((right, middle + 50), aside.upper(), font=font("SemiBold", 44), fill=WHITE + (190,), anchor="rs")
+
+
+# a heading of its own: wide and short, so Discord shows it the message's width
+BANNER_SIZE = (1600, 320)
+
+
+def heading_card(label, title, aside_label, aside, backdrop_path, user_agent):
+    """draw_heading's strip as a picture of its own, over a map"""
+    card = Card(fetch_art(backdrop_path, user_agent), BANNER_SIZE, blur=9, dim=0.3)
+    draw_heading(card.draw, 44, BANNER_SIZE[1] - 44, label, title, aside_label, aside)
+    return card.png()
+
+
 def document_pages(label, title, aside_label, aside, markdown, backdrop_path, user_agent):
     """a document's pages as PNGs: label (small, spaced) over title (large),
     and aside_label over aside, on each page's strip; then its markdown's
@@ -397,17 +425,8 @@ def document_pages(label, title, aside_label, aside, markdown, backdrop_path, us
         card = Card(backdrop, (PAGE_WIDTH, height), blur=9, dim=0.45)
         draw = card.draw
 
-        # the heading on its strip
-        draw.rectangle((0, STRIP_TOP, PAGE_WIDTH, STRIP_BOTTOM), fill=SHADE + (140,))
-        for y in (STRIP_TOP, STRIP_BOTTOM):
-            draw.line((0, y, PAGE_WIDTH, y), fill=WHITE + (90,), width=2)
-        middle = (STRIP_TOP + STRIP_BOTTOM) // 2
-        left, right = MARGIN * 2, PAGE_WIDTH - MARGIN * 2
         page_label = aside_label + (f"   {number} / {len(pages)}" if len(pages) > 1 else "")
-        draw.text((left, middle - 40), spaced(label), font=font("SemiBold", 34), fill=WHITE + (190,), anchor="ls")
-        draw.text((left, middle + 60), title, font=title_font(100), fill=WHITE + (240,), anchor="ls")
-        draw.text((right, middle - 40), spaced(page_label), font=font("SemiBold", 34), fill=WHITE + (150,), anchor="rs")
-        draw.text((right, middle + 50), aside.upper(), font=font("SemiBold", 44), fill=WHITE + (190,), anchor="rs")
+        draw_heading(draw, STRIP_TOP, STRIP_BOTTOM, label, title, page_label, aside)
 
         # the text on its pane
         draw.rectangle((MARGIN, PANE_TOP, PAGE_WIDTH - MARGIN, height - MARGIN), fill=SHADE + (150,),

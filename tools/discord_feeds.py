@@ -9,8 +9,8 @@
                                  and prints its ID, for the repository variable
 
   discord_feeds.py release <tag> <notes file>
-      A release's changelog drawn as pages (discord_card.py), posted
-      silently as it is published (release.yml); as text without Pillow.
+      A release's heading drawn as a card (discord_card.py) over its
+      changelog's text, posted silently as it is published (release.yml).
         DISCORD_RELEASES_WEBHOOK  the changelog channel's webhook URL
 
   discord_feeds.py rules
@@ -194,9 +194,9 @@ def unwrap(markdown):
     return "\n".join(lines)
 
 
-def release_pages(tag, changelog):
-    """the release's changelog as pages (discord_card.py) over one of the
-    Xbox maps, the same for a version each time; None without Pillow"""
+def release_heading(tag):
+    """the release's heading (discord_card.py) over one of the Xbox maps, the
+    same for a version each time; None without Pillow"""
     try:
         import discord_card
     except ImportError:
@@ -204,8 +204,7 @@ def release_pages(tag, changelog):
     maps = sorted(XBOX_MAPS)
     backdrop = map_art(maps[sum(map(ord, tag)) % len(maps)])
     date = time.strftime("%d %B %Y", time.gmtime()).lstrip("0")
-    return discord_card.document_pages("DamnationCE", tag.lstrip("v"), "Release notes", date, changelog, backdrop,
-                                       USER_AGENT)
+    return discord_card.heading_card("DamnationCE", tag.lstrip("v"), "Release notes", date, backdrop, USER_AGENT)
 
 
 def post_card(webhook, name, card):
@@ -218,14 +217,13 @@ def post_release(tag, notes_path):
     webhook = os.environ["DISCORD_RELEASES_WEBHOOK"]
     with open(notes_path, encoding="utf-8") as notes:
         changelog = unwrap(notes.read())
-    pages = release_pages(tag, changelog)
-    if pages:
-        # (a page a message: pictures together in one are shown smaller)
-        for number, page in enumerate(pages, 1):
-            post_card(webhook, f"release-{number}.png", page)
-        return
-    # (without Pillow, as text: a long changelog goes on in further messages)
-    for part in message_parts(f"**DamnationCE {tag}**\n" + changelog):
+    heading = release_heading(tag)
+    if heading:
+        post_card(webhook, "release.png", heading)
+    else:
+        changelog = f"**DamnationCE {tag}**\n" + changelog
+    # (Discord's own text, readable at any length; a long changelog goes on in further messages)
+    for part in message_parts(changelog):
         request(webhook, "POST", {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS,
                                   "allowed_mentions": {"parse": []}})
 
