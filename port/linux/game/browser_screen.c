@@ -13,6 +13,11 @@ game, left and right turn the page, A joins it through its invite, as a web
 page's Join or an invite link would, and B goes back. Once the invite's host
 answers, its game shows in the System Link list through the tunnel, to be
 picked there as any.
+
+A game on a Custom Edition map shows the map's name and picture when this
+machine has the map (custom_edition_maps.c), and is marked CE; one on a map
+this machine lacks says so, and is not joined: its host's map would only
+fail to load here.
 */
 
 #ifdef HALO_GAME_BROWSER
@@ -34,9 +39,12 @@ picked there as any.
 #include "saved games/player_profile.h"
 #include "saved games/saved_game_files.h"
 #include "networking/network_game_globals.h"
+#include "cache/cache_files.h"
+#include "tag_files/files.h"
 #include "../src/browser.h"
 #include "../src/ui_overlay.h"
 #include "halo_ui_pointer.h"
+#include "custom_edition_maps.h"
 #include "overlay_screens.h"
 
 /* ---------- constants */
@@ -50,6 +58,18 @@ enum
 	CONNECT_TIMEOUT = 15000,
 	/* the screen takes no A this soon after it opens */
 	OPEN_SETTLE = 600,
+	/* the games' maps looked up while the screen is up (known_map) */
+	MAXIMUM_KNOWN_MAPS = 64,
+};
+
+/* the kinds of map a game is on (known_map) */
+enum
+{
+	MAP_XBOX,
+	/* a Custom Edition map this machine has (Halo PC's own among them) */
+	MAP_CUSTOM_EDITION,
+	/* any other: named by its file, here when the maps folder has it */
+	MAP_OTHER,
 };
 
 /* ui_widget.c owns the same private enum (virtual_keyboard.c keeps a copy) */
@@ -86,6 +106,18 @@ enum
 	NUMBER_OF_SORTS
 };
 
+/* ---------- structures */
+
+/* a game's map as this machine knows it: its kind, its name in the menus,
+and whether it is here to be played */
+struct known_map
+{
+	char path[BROWSER_MAP_LENGTH];
+	short kind;
+	boolean installed;
+	char name[48];
+};
+
 /* ---------- globals */
 
 static struct
@@ -105,6 +137,9 @@ static struct
 	/* when the screen opened (the menu's A that opened it picks nothing) */
 	unsigned long opened_time;
 	struct overlay_repeat repeat;
+	/* (the games are fetched every frame: their maps are looked up once) */
+	struct known_map known_maps[MAXIMUM_KNOWN_MAPS];
+	short known_map_count;
 } browser_screen;
 
 /* ---------- private code */
@@ -117,24 +152,71 @@ static void set_status(
 	browser_screen.status_time = system_milliseconds();
 }
 
-static char const *map_display_name(
+/* a map's file's name: the last part of its path (levels\test\<name>\<name>) */
+static char const *map_file_name(
 	char const *path)
 {
 	char const *base = path;
 	char const *cursor;
-	long index;
 
 	for (cursor = path; *cursor; cursor++)
 	{
 		if (*cursor == '\\' || *cursor == '/')
 			base = cursor + 1;
 	}
+	return base;
+}
+
+/* a game's map, looked up the first time while the screen is up: an Xbox
+map's name, a Custom Edition map's (when this machine has it), else its
+file's, with whether the maps folder has that file */
+static struct known_map const *known_map(
+	char const *path)
+{
+	char const *base = map_file_name(path);
+	struct known_map *map;
+	short display_index;
+	wchar_t const *display_name;
+	char file[256];
+	struct file_reference reference;
+	short index;
+
+	for (index = 0; index < browser_screen.known_map_count; index++)
+	{
+		if (!strcmp(browser_screen.known_maps[index].path, path))
+			return &browser_screen.known_maps[index];
+	}
+	/* (a list of more maps than are kept starts over) */
+	if (browser_screen.known_map_count == MAXIMUM_KNOWN_MAPS)
+		browser_screen.known_map_count = 0;
+	map = &browser_screen.known_maps[browser_screen.known_map_count++];
+	csstrncpy(map->path, path, sizeof(map->path) - 1);
+	map->path[sizeof(map->path) - 1] = 0;
+	map->installed = TRUE;
 	for (index = 0; index < NUMBEROF(map_names); index++)
 	{
 		if (!csstrcmp(base, map_names[index][0]))
-			return map_names[index][1];
+		{
+			map->kind = MAP_XBOX;
+			csstrncpy(map->name, map_names[index][1], sizeof(map->name) - 1);
+			map->name[sizeof(map->name) - 1] = 0;
+			return map;
+		}
 	}
-	return base;
+	display_index = custom_edition_maps_display_index(path);
+	display_name = display_index != NONE ? custom_edition_maps_name(display_index) : NULL;
+	if (display_name)
+	{
+		map->kind = MAP_CUSTOM_EDITION;
+		overlay_utf8((unsigned short const *)display_name, sizeof(map->name), map->name, sizeof(map->name));
+		return map;
+	}
+	map->kind = MAP_OTHER;
+	csstrncpy(map->name, base, sizeof(map->name) - 1);
+	map->name[sizeof(map->name) - 1] = 0;
+	snprintf(file, sizeof(file), "%s%s.map", cache_files_map_directory(), base);
+	map->installed = file_exists(file_reference_create_from_path(&reference, file, FALSE));
+	return map;
 }
 
 /* (network_client_manager.c: the game whose host's identifier the invite
@@ -191,6 +273,15 @@ static void join_selected(
 	if (!game->open)
 	{
 		set_status("That game is not accepting players.");
+		return;
+	}
+	if (!known_map(game->map)->installed)
+	{
+		char text[sizeof(browser_screen.status)];
+
+		snprintf(text, sizeof(text), "You don't have %s: put %s.map in your maps folder.",
+			known_map(game->map)->name, map_file_name(game->map));
+		set_status(text);
 		return;
 	}
 	/* a network client searching, as System Link's (the advertisement comes
@@ -274,7 +365,15 @@ static long compare_games(
 	switch (browser_screen.sort)
 	{
 	case SORT_NAME: order = compare_names(a->name, b->name); break;
-	case SORT_MAP: order = strcmp(map_display_name(a->map), map_display_name(b->map)); break;
+	case SORT_MAP:
+	{
+		char a_name[sizeof(((struct known_map *)0)->name)];
+
+		/* (a's name kept: looking b up may reuse a's entry) */
+		csstrcpy(a_name, known_map(a->map)->name);
+		order = strcmp(a_name, known_map(b->map)->name);
+		break;
+	}
 	case SORT_TYPE: order = (long)a->engine * 2 + a->teams - ((long)b->engine * 2 + b->teams); break;
 	default: order = (long)b->players - (long)a->players; break;
 	}
@@ -335,6 +434,8 @@ void browser_screen_open(
 	browser_screen.status[0] = 0;
 	browser_screen.connecting = FALSE;
 	browser_screen.opened_time = system_milliseconds();
+	/* (maps may have been added since it was last up) */
+	browser_screen.known_map_count = 0;
 	/* (the menu's A, still queued, is not a pick) */
 	event_manager_flush();
 	/* the network searching, as System Link's list starts it: a game left
@@ -598,7 +699,8 @@ static void render_card(
 	float y,
 	boolean chosen)
 {
-	char name[64], line[96], rules[32];
+	struct known_map const *map = known_map(game->map);
+	char name[64], line[112], rules[32];
 	unsigned int color = game->open ? COLOR_TEXT : COLOR_DIM;
 	float right = LIST_X + LIST_WIDTH - 10;
 	float filled = game->maximum_players > 0 ? (float)game->players / (float)game->maximum_players : 0.0f;
@@ -612,8 +714,11 @@ static void render_card(
 	map_picture(game->map, LIST_X + 7, y + 5, CARD_PICTURE_WIDTH, CARD_PICTURE_HEIGHT);
 	overlay_utf8(game->name, NUMBEROF(game->name), name, sizeof(name));
 	ui_overlay_text(UI_FONT_BOLD, 11.0f, LIST_X + 58, y + 7, UI_ALIGN_LEFT, chosen ? COLOR_TITLE : color, name);
-	snprintf(line, sizeof(line), "%s  \xC2\xB7  %s", map_display_name(game->map), type_name(game, rules, sizeof(rules)));
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, LIST_X + 58, y + 24, UI_ALIGN_LEFT, COLOR_DIM, line);
+	snprintf(line, sizeof(line), "%s%s  \xC2\xB7  %s", map->name,
+		!map->installed ? " (not installed)" : map->kind == MAP_CUSTOM_EDITION ? " (CE)" : "",
+		type_name(game, rules, sizeof(rules)));
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, LIST_X + 58, y + 24, UI_ALIGN_LEFT,
+		map->installed ? COLOR_DIM : COLOR_CLOSED, line);
 
 	snprintf(line, sizeof(line), "%d/%d", game->players, game->maximum_players);
 	ui_overlay_text(UI_FONT_BOLD, 11.0f, right, y + 7, UI_ALIGN_RIGHT, game->open ? color : COLOR_CLOSED, line);
@@ -643,6 +748,11 @@ static void render_details(
 	ui_overlay_text(UI_FONT_REGULAR, 9.0f, DETAIL_X + DETAIL_WIDTH, y, UI_ALIGN_RIGHT, COLOR_TEXT, value); \
 	y += 13;
 	DETAIL_LINE("Status", game->open ? "Accepting players" : "In progress");
+	if (known_map(game->map)->kind != MAP_XBOX)
+	{
+		DETAIL_LINE("Map", !known_map(game->map)->installed ? "Not installed" :
+			known_map(game->map)->kind == MAP_CUSTOM_EDITION ? "Custom Edition" : "Custom");
+	}
 	DETAIL_LINE("Rules", type_name(game, text, sizeof(text)));
 	if (game->score_limit)
 	{
