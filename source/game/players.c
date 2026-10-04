@@ -2416,6 +2416,29 @@ static struct
 	real_point3d positions[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
 } players_checkpoint;
 
+/* (a co-op game's host) a player just spawned put beside another who has a
+unit, as a coop respawn puts it (player_teleport finds room beside them) */
+static void player_place_beside_teammate(
+	long player_index)
+{
+	struct data_iterator iterator;
+	struct player_datum *other;
+
+	if (player_get(player_index)->unit_index == NONE)
+		return;
+	data_iterator_new(&iterator, player_data);
+	while ((other = data_iterator_next(&iterator)) != NULL)
+	{
+		if (iterator.datum_index != player_index && other->unit_index != NONE)
+		{
+			player_teleport(player_index, other->unit_index, &object_get(other->unit_index)->object.bounding_sphere_center);
+			return;
+		}
+	}
+
+	return;
+}
+
 void players_note_checkpoint(
 	void)
 {
@@ -3778,7 +3801,14 @@ void players_update_before_game(
 				else if (!main_menu_is_active() && !network_game_distributed_client())
 				{
 					if (player->statistics.deaths == 0)
+					{
 						player_spawn(iterator.datum_index);
+						/* (port: in co-op over the network, beside a player
+						already playing, not at the map's start: one who
+						joins later, and the many who start together) */
+						if (game_connection() == _game_connection_network_server)
+							player_place_beside_teammate(iterator.datum_index);
+					}
 					else if (!players_globals->all_dead)
 						main_respawn(players_globals->respawn_failed);
 				}
