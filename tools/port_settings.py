@@ -689,8 +689,25 @@ def _lobby() -> list:
                      f'<child widget="{base}/lobby_list"/>',
                      f'<child widget="{base}/header_lobby"/>'])
     lines += _header(f"{base}/header_lobby", f"{base}/header_lobby")
-    rows = [f'<child widget="main_menu/new_select/list_item_{index}" x="20" y="{73 + 30 * index}"/>'
-            for index in range(11)]
+    # the players: a row each with the name, YOU on this machine's, and the
+    # team in its color (menu_functions.c's lobby_update)
+    rows = [f'<child widget="{base}/list_item_{index}" x="20" y="{73 + 30 * index}"/>' for index in range(11)]
+    for index in range(11):
+        lines += _widget(f"{base}/list_item_{index}", [("controller", 1), ("width", 360), ("height", 28),
+                                                       ("bitmap", "bitmaps/sel_list_item_bkd_top" if index == 0
+                                                        else "bitmaps/sel_list_item_bkd")],
+                         [f'<child widget="{base}/list_item_text" x="14"/>',
+                          f'<child widget="{base}/list_item_you" x="196"/>',
+                          f'<child widget="{base}/list_item_red" x="262"/>',
+                          f'<child widget="{base}/list_item_blue" x="262"/>'])
+    lines += _widget(f"{base}/list_item_text", [("type", "text"), ("controller", 1), ("width", 180), ("height", 28),
+                                                ("font", "ui\\large_ui"), ("color", "#FF2896FF"),
+                                                ("text_flags", "no_focus_test"), ("text_y", 3)], [])
+    for key, color in (("you", "#FF3CC8C0"), ("red", "#FFFF6B6B"), ("blue", "#FF6BB0FF")):
+        lines += _widget(f"{base}/list_item_{key}", [("type", "text"), ("controller", 1),
+                                                     ("width", 56 if key == "you" else 84), ("height", 28),
+                                                     ("font", "ui\\small_ui"), ("color", color), ("align", "right"),
+                                                     ("text_flags", "no_focus_test"), ("text_y", 8)], [])
     lines += _widget(f"{base}/lobby_list", [("type", "column_list"), ("width", 640), ("height", 480),
                                             ("flags", "pass_unhandled_to_focused_child up_down_tabs_children"),
                                             ("description", f"{base}/lobby_desc")],
@@ -711,15 +728,25 @@ def _lobby() -> list:
                                                   ("height", 326),
                                                   ("bitmap", "bitmaps/spinner_list_3_wide_item_background")],
                      [f'<child widget="{base}/lobby_map_pic"/>', f'<child widget="{base}/lobby_map_name"/>',
-                      f'<child widget="{base}/lobby_game_data"/>'])
+                      f'<child widget="{base}/lobby_info_labels"/>', f'<child widget="{base}/lobby_info_values"/>',
+                      f'<child widget="{base}/lobby_note"/>'])
     lines += _widget(f"{base}/lobby_map_pic", [("controller", 1), ("left", 419), ("top", 87), ("width", 140),
                                                ("height", 114), ("bitmap", "ui\\shell\\bitmaps\\mp_map_grafix")], [])
     lines += _widget(f"{base}/lobby_map_name", [("type", "text"), ("controller", 1), ("left", 417), ("top", 204),
                                                 ("width", 146), ("height", 43), ("string_list", "main_menu/mp_map_list"),
                                                 ("font", "ui\\large_ui"), ("color", "#FF2896FF")], [])
-    lines += _widget(f"{base}/lobby_game_data", [("type", "text"), ("controller", 1), ("left", 417), ("top", 250),
-                                                 ("width", 146), ("height", 144), ("font", "ui\\small_ui"),
-                                                 ("color", "#FF2896FF")], [])
+    # the game's details: labels down the left, their values right-aligned
+    # beside them, and a note under them (the invite link)
+    lines += _widget(f"{base}/lobby_info_labels", [("type", "text"), ("controller", 1), ("left", 417), ("top", 252),
+                                                   ("width", 146), ("height", 80), ("font", "ui\\small_ui"),
+                                                   ("color", "#FF0080FF"), ("text_flags", "no_focus_test")], [])
+    lines += _widget(f"{base}/lobby_info_values", [("type", "text"), ("controller", 1), ("left", 417), ("top", 252),
+                                                   ("width", 146), ("height", 80), ("font", "ui\\small_ui"),
+                                                   ("color", "#FF2896FF"), ("align", "right"),
+                                                   ("text_flags", "no_focus_test")], [])
+    lines += _widget(f"{base}/lobby_note", [("type", "text"), ("controller", 1), ("left", 417), ("top", 350),
+                                            ("width", 146), ("height", 44), ("font", "ui\\small_ui"),
+                                            ("color", "#FF0080FF"), ("text_flags", "no_focus_test")], [])
     lines += _widget(f"{base}/lobby_button_bar", [("type", "column_list"), ("width", 640), ("height", 28),
                                                   ("flags", "pass_unhandled_to_focused_child left_right_tabs_items")],
                      [f'<child widget="{base}/lobby_button_team" x="250" y="1"/>',
