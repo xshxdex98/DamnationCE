@@ -309,6 +309,8 @@ static void network_player_log_idle_action(long player_index, unsigned long cont
 netcode, whose players' weapons, grenades and power-ups are the host's
 (port/linux/game/network_distributed.c) */
 #define players_decide_pickups() (!network_game_distributed_client())
+/* port/linux/game/network_coop.c's */
+boolean network_coop_devices_remote(void);
 
 /* ---------- constants */
 
@@ -1795,7 +1797,10 @@ static boolean player_handle_action(
 	switch (player->action_result)
 	{
 	case _player_action_result_touch_device:
-		device_touched(player->action_object_index, player->unit_index);
+		/* port: a co-op client's devices are the host's (network_coop.c):
+		its player's use of one is relayed to the host, which decides */
+		if (!network_coop_devices_remote())
+			device_touched(player->action_object_index, player->unit_index);
 		result = TRUE;
 		break;
 

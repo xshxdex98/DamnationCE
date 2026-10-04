@@ -32,7 +32,10 @@ with ideas from VALORANT's netcode articles, keeping the 30 Hz tick:
   engine runs (Create Game > COOPERATIVE > CAMPAIGN), is co-op. Only the host
   runs the level's scripts and spawns players; every machine follows the
   host's structure BSP, and sees the host's cinematics, camera and screen
-  fades (`network_coop.c`). A dead player watches a living teammate
+  fades, hears its scripts' sounds, and has its devices (doors, elevators,
+  switches: a client sets none itself, its player's use of one relayed to
+  the host) and the named objects its scripts create and destroy
+  (`network_coop.c`). A dead player watches a living teammate
   (`coop_spectate.c`) and comes back beside one once it is safe (the
   campaign's own coop respawn); with all of them dead they come back where
   they were at the last checkpoint, as no machine's game can go back to it.
