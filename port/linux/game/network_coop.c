@@ -310,6 +310,27 @@ struct distributed_coop_object_transforms_message
 	struct distributed_coop_object_transform transforms[MAXIMUM_OBJECT_TRANSFORMS_PER_MESSAGE];
 };
 
+/* How one of the host's objects looks: the permutation of each region of
+its model (NONE for none) and its scale. The scripts change them (a
+helmet off, a ship scaled) and so does damage. */
+struct distributed_coop_object_look
+{
+	short name_index;
+	short pad;
+	long object_index;
+	long definition_index;
+	byte region_permutations[MAXIMUM_REGIONS_PER_OBJECT];
+	real scale;
+};
+
+#define MAXIMUM_OBJECT_LOOKS_PER_MESSAGE 64
+
+struct distributed_coop_object_looks_message
+{
+	struct distributed_message_header header;
+	struct distributed_coop_object_look looks[MAXIMUM_OBJECT_LOOKS_PER_MESSAGE];
+};
+
 /* a client's vote to skip the cinematic, sent every tick while it stands */
 struct distributed_coop_skip_vote
 {
@@ -743,6 +764,61 @@ static void host_send_object_transforms(
 	{
 		distributed_send(&message, _distributed_message_coop_object_transforms, count,
 			(word)(sizeof(message.header) + count * sizeof(message.transforms[0])), _distributed_to_clients);
+	}
+}
+
+/* host: how each object looked when last sent, by its absolute index */
+static struct
+{
+	long object_index;
+	byte region_permutations[MAXIMUM_REGIONS_PER_OBJECT];
+	real scale;
+} host_sent_looks[MAXIMUM_OBJECTS_PER_MAP];
+
+/* host, each tick: the objects whose looks changed */
+static void host_send_object_looks(
+	void)
+{
+	struct distributed_coop_object_looks_message message;
+	struct object_iterator iterator;
+	struct object_datum *object;
+	short count = 0;
+
+	object_iterator_new(&iterator, _object_mask_all, 0);
+	while ((object = object_iterator_next(&iterator)) != NULL && count < MAXIMUM_OBJECT_LOOKS_PER_MESSAGE)
+	{
+		short absolute_index = DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.index);
+		struct distributed_coop_object_look *look;
+		boolean first_seen;
+
+		if (absolute_index < 0 || absolute_index >= MAXIMUM_OBJECTS_PER_MAP)
+			continue;
+		first_seen = host_sent_looks[absolute_index].object_index != iterator.index;
+		if (!first_seen && host_sent_looks[absolute_index].scale == object->object.scale &&
+			!csmemcmp(host_sent_looks[absolute_index].region_permutations, object->object.region_permutations,
+				sizeof(object->object.region_permutations)))
+		{
+			continue;
+		}
+		host_sent_looks[absolute_index].object_index = iterator.index;
+		host_sent_looks[absolute_index].scale = object->object.scale;
+		csmemcpy(host_sent_looks[absolute_index].region_permutations, object->object.region_permutations,
+			sizeof(object->object.region_permutations));
+		/* (an object first seen looks as the map, or its creation, made it on every machine) */
+		if (first_seen)
+			continue;
+		look = &message.looks[count++];
+		look->name_index = object->object.name_index;
+		look->pad = 0;
+		look->object_index = iterator.index;
+		look->definition_index = object->definition_index;
+		csmemcpy(look->region_permutations, object->object.region_permutations, sizeof(look->region_permutations));
+		look->scale = object->object.scale;
+	}
+	if (count > 0)
+	{
+		distributed_send(&message, _distributed_message_coop_object_looks, count,
+			(word)(sizeof(message.header) + count * sizeof(message.looks[0])), _distributed_to_clients);
 	}
 }
 
@@ -1223,6 +1299,7 @@ void network_coop_new_game(
 	csmemset(&client_devices, 0, sizeof(client_devices));
 	csmemset(client_names_differing, 0, sizeof(client_names_differing));
 	csmemset(host_sent_transforms, 0, sizeof(host_sent_transforms));
+	csmemset(host_sent_looks, 0, sizeof(host_sent_looks));
 	skip_vote_clear();
 	skip_vote.offered = FALSE;
 	skip_vote.voters = 0;
@@ -1537,6 +1614,7 @@ void network_coop_host_tick(
 	if (game_time_get() % OBJECT_NAMES_INTERVAL_TICKS == 0)
 		host_send_object_names();
 	host_send_object_transforms();
+	host_send_object_looks();
 	host_send_events();
 }
 
@@ -1611,6 +1689,52 @@ void network_coop_handle_object_transforms(
 		distributed_vector_unpack(&transform->up, DISTRIBUTED_UNIT_SCALE, &up);
 		if (distributed_point_valid(&transform->position, UNIT_WORLD_BOUND) && distributed_axes_make_valid(&forward, &up))
 			object_set_position(object_index, &transform->position, &forward, &up);
+	}
+}
+
+word network_coop_object_look_entry_size(
+	void)
+{
+	return sizeof(struct distributed_coop_object_look);
+}
+
+void network_coop_handle_object_looks(
+	void const *entries,
+	short count)
+{
+	struct distributed_coop_object_look const *looks = entries;
+	short index;
+
+	if (!coop_client())
+		return;
+	for (index = 0; index < count; index++)
+	{
+		struct distributed_coop_object_look const *look = &looks[index];
+		long object_index = object_find(look->name_index, look->object_index, look->definition_index, _object_mask_all);
+		struct object_datum *object = object_index != NONE ? object_get(object_index) : NULL;
+		long model_index = object ? object_definition_get(object->definition_index)->object.model.index : NONE;
+		struct model *model = model_index != NONE ? model_definition_get(model_index) : NULL;
+		short region_index;
+
+		if (!object)
+			continue;
+		/* (a permutation its model has, or none) */
+		for (region_index = 0; model && region_index < model->regions.count &&
+			region_index < MAXIMUM_REGIONS_PER_OBJECT; region_index++)
+		{
+			byte permutation_index = look->region_permutations[region_index];
+
+			if (permutation_index == (byte)NONE ||
+				permutation_index < TAG_BLOCK_GET_ELEMENT(&model->regions, region_index, struct model_region)->permutations.count)
+			{
+				object->object.region_permutations[region_index] = permutation_index;
+			}
+		}
+		if (distributed_real_valid(look->scale) && look->scale > 0.0f && look->scale < 100.0f &&
+			look->scale != object->object.scale)
+		{
+			objects_scripting_set_scale(object_index, look->scale, 0);
+		}
 	}
 }
 
