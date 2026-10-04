@@ -838,6 +838,9 @@ void network_actors_drive(
 			client_actors[index--] = client_actors[--client_actor_count];
 			continue;
 		}
+		/* (a vehicle follows the host's transform instead: network_objects.c) */
+		if (object_get(actor->unit_index)->object.type == _object_type_vehicle)
+			continue;
 		if (!actor->driven)
 		{
 			unit_set_actively_controlled(actor->unit_index, TRUE);

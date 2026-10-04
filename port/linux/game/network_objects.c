@@ -639,6 +639,30 @@ static void distributed_vector_clamp(
 	}
 }
 
+/* Whether the object is a vehicle no player drives (a Pelican on its flight
+path): nothing on a client steers it, so its copy is kept at rest there
+(no physics of its own) and moved only to where the host has it. */
+static boolean distributed_vehicle_unsteered(
+	long object_index)
+{
+	struct unit_datum *vehicle;
+
+	if (object_get(object_index)->object.type != _object_type_vehicle)
+		return FALSE;
+	vehicle = unit_get(object_index);
+	return vehicle->unit.driver_object_index == NONE ||
+		unit_get(vehicle->unit.driver_object_index)->unit.player_index == NONE;
+}
+
+/* Whether a client puts its copy exactly where the host has it, rather than
+closing on it: an unsteered vehicle, and anything in a co-op cutscene
+(where it keeps up with the host's camera). */
+static boolean distributed_object_follows_host(
+	long object_index)
+{
+	return (network_coop_active() && cinematic_in_progress()) || distributed_vehicle_unsteered(object_index);
+}
+
 /* (the transform checked) */
 static void distributed_object_move(
 	long object_index,
@@ -660,9 +684,10 @@ static void distributed_object_move(
 		object->object.translational_velocity = *velocity;
 	if (angular_velocity)
 		object->object.angular_velocity = *angular_velocity;
-	/* (not in a co-op cutscene, where it keeps up with the host's camera) */
-	if (!(network_coop_active() && cinematic_in_progress()))
+	if (!distributed_object_follows_host(object_index))
 		render_interpolation_correct_object(object_index, &offset);
+	if (distributed_vehicle_unsteered(object_index))
+		SET_FLAG(object->object.flags, _object_at_rest_bit, TRUE);
 }
 
 void network_objects_correct(
@@ -707,9 +732,8 @@ boolean network_objects_reconcile(
 		distributed_object_move(object_index, position, &valid_forward, &valid_up, velocity, angular_velocity);
 		return TRUE;
 	}
-	/* (half of the way: the tick's snapshots draw it moving, no jump; in a
-	co-op cutscene all the way, so it keeps up with the host's camera) */
-	if (network_coop_active() && cinematic_in_progress())
+	/* (half of the way: the tick's snapshots draw it moving, no jump) */
+	if (distributed_object_follows_host(object_index))
 		blended = *position;
 	else
 	{
@@ -722,6 +746,8 @@ boolean network_objects_reconcile(
 		object->object.translational_velocity = *velocity;
 	if (angular_velocity)
 		object->object.angular_velocity = *angular_velocity;
+	if (distributed_vehicle_unsteered(object_index))
+		SET_FLAG(object->object.flags, _object_at_rest_bit, TRUE);
 	return FALSE;
 }
 
@@ -2202,7 +2228,8 @@ void network_objects_handle_states(
 		{
 			distributed_count_correction();
 		}
-		SET_FLAG(object->object.flags, _object_at_rest_bit, TEST_FLAG(state->flags, _distributed_object_at_rest_bit));
+		SET_FLAG(object->object.flags, _object_at_rest_bit, TEST_FLAG(state->flags, _distributed_object_at_rest_bit) ||
+			distributed_vehicle_unsteered(state->object_index));
 	}
 }
 
