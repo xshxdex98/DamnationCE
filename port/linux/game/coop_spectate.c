@@ -24,6 +24,7 @@ It also draws the line telling players about the vote to skip a cutscene
 #include "text/draw_string.h"
 #include "text/font_group.h"
 #include "text/unicode.h"
+#include "units/units.h"
 
 #include "coop_spectate.h"
 #include "network_coop.h"
@@ -37,6 +38,11 @@ turn toward the unit's facing it makes each frame */
 #define SPECTATE_DISTANCE 3.5f
 #define SPECTATE_PITCH -0.3f
 #define SPECTATE_TURN 0.15f
+
+/* a passenger (riding a Pelican) is watched from just in front of them,
+facing them, so the camera stays inside the vehicle */
+#define SPECTATE_PASSENGER_DISTANCE 0.5f
+#define SPECTATE_PASSENGER_PITCH -0.1f
 
 /* ---------- globals */
 
@@ -88,6 +94,16 @@ static boolean next_pressed(short controller_index)
 		input_abstraction_port_accept(controller_index) == 1;
 }
 
+/* whether the unit rides in a vehicle it isn't driving */
+static boolean unit_is_passenger(
+	long unit_index)
+{
+	long vehicle_index = object_get(unit_index)->object.parent_object_index;
+
+	return vehicle_index != NONE && object_try_and_get_and_verify_type(vehicle_index, _object_mask_unit) &&
+		unit_get(vehicle_index)->unit.driver_object_index != unit_index;
+}
+
 /* ---------- public code */
 
 boolean coop_spectating(
@@ -134,8 +150,16 @@ void coop_spectate_camera(
 
 	if (!unit)
 		return;
-	/* ease the camera round behind the unit */
 	yaw = (real)atan2(unit->object.forward.j, unit->object.forward.i);
+	if (unit_is_passenger(camera->unit_index))
+	{
+		/* fixed in front of the seat, turning with the vehicle */
+		camera->facing.yaw = yaw + _pi;
+		camera->facing.pitch = SPECTATE_PASSENGER_PITCH;
+		camera->distance = SPECTATE_PASSENGER_DISTANCE;
+		return;
+	}
+	/* ease the camera round behind the unit */
 	turn = yaw - camera->facing.yaw;
 	while (turn > _pi)
 		turn -= 2.0f * _pi;
