@@ -1,17 +1,20 @@
 /*
 CUSTOM_EDITION_SOUNDS.C
 
-The Ogg Vorbis sounds of Halo Custom Edition maps (custom_edition_cache.h).
+The sounds of Halo Custom Edition maps this build would not play
+(custom_edition_cache.h).
 
-Halo PC compresses music, dialogue and the announcer as Ogg Vorbis, which
-this build's mixer does not play: it plays Xbox ADPCM and uncompressed
-samples. When a map is loaded, every Ogg Vorbis permutation is decoded here
-(stb_vorbis.c, public domain) and encoded again as Xbox ADPCM, at the
-sound's channel count and sample rate, into one buffer kept for as long as
-the map is loaded. The permutation is then an Xbox ADPCM one whose samples
-lie in a region of the combined offset space of its own
-(custom_edition_cache_read serves it from the buffer), so the sound cache
-and the mixer see nothing new.
+This build plays Xbox ADPCM only, mono at 22 kHz or stereo at 22 or 44 kHz
+(sound_manager.c), and refuses any other sound each time it is played.
+Halo PC also has Ogg Vorbis (music, dialogue, the announcer), uncompressed
+samples and mono sounds at 44 kHz. When a map is loaded, each such
+permutation is decoded here (Ogg Vorbis with stb_vorbis.c, public domain),
+brought to the sound's channel count at a rate this build plays, and
+encoded again as Xbox ADPCM into one buffer kept for as long as the map is
+loaded. The permutation is then an Xbox ADPCM one whose samples lie in a
+region of the combined offset space of its own (custom_edition_cache_read
+serves it from the buffer), so the sound cache and the mixer see nothing
+new.
 
 Xbox ADPCM is IMA ADPCM in blocks of 64 samples per channel: a 4-byte
 header per channel (the predictor and step index the block starts from),
@@ -36,6 +39,7 @@ the channels (port/linux/src/dsound_sdl.c decodes it).
 
 /* ---------- constants */
 
+#define SOUND_COMPRESSION_NONE 0
 #define SOUND_COMPRESSION_XBOX_ADPCM 1
 #define SOUND_COMPRESSION_OGG_VORBIS 3
 
@@ -66,6 +70,8 @@ static struct
 	byte *decoded;
 	unsigned long decoded_bytes;
 	unsigned long decoded_capacity;
+	/* the most the region of the combined offset space for them holds */
+	unsigned long decoded_limit;
 } custom_edition_sounds_globals;
 
 /* ---------- private code */
@@ -176,69 +182,194 @@ static void adpcm_encode(
 	return;
 }
 
-/* Interleaved 16-bit frames of the Ogg Vorbis stream `data` at the sound's
-channel count and sample rate (a mono stream fills both channels, a stereo
-one is averaged for a mono sound, and another rate is resampled by the
-nearest frame); NULL when the stream cannot be decoded. The caller frees
-the frames. */
-static short *vorbis_decode(
+/* 16-bit frames: their samples, channel count and rate */
+struct frames
+{
+	short *samples;
+	long count;
+	long channels;
+	long rate;
+};
+
+static void frames_free(
+	struct frames *frames)
+{
+	free(frames->samples);
+	frames->samples = NULL;
+}
+
+/* the Ogg Vorbis stream `data`, at its own channel count and rate; FALSE
+when it cannot be decoded */
+static boolean vorbis_decode(
 	byte const *data,
 	long data_bytes,
-	long channel_count,
-	long sample_rate,
-	long *frame_count)
+	struct frames *frames)
 {
-	int stream_channels;
-	int stream_rate;
-	short *stream_samples;
-	int stream_frames;
+	int channels;
+	int rate;
 	short *samples;
-	long frame;
+	int count = stb_vorbis_decode_memory(data, data_bytes, &channels, &rate, &samples);
 
-	stream_frames = stb_vorbis_decode_memory(data, data_bytes, &stream_channels, &stream_rate, &stream_samples);
-	if (stream_frames <= 0 || stream_channels <= 0 || stream_rate <= 0)
+	if (count <= 0 || channels <= 0 || rate <= 0)
 	{
-		return NULL;
+		return FALSE;
 	}
-
-	*frame_count = (long)((double)stream_frames * sample_rate / stream_rate);
-	samples = malloc((size_t)*frame_count * channel_count * sizeof(*samples));
-	if (samples)
+	frames->count = count;
+	frames->channels = channels;
+	frames->rate = rate;
+	frames->samples = malloc((size_t)count * channels * sizeof(short));
+	if (frames->samples)
 	{
-		for (frame = 0; frame < *frame_count; frame++)
-		{
-			long source = MIN((long)((double)frame * stream_rate / sample_rate), (long)stream_frames - 1);
-			short const *in = stream_samples + source * stream_channels;
-			short *out = samples + frame * channel_count;
-
-			if (channel_count == stream_channels)
-			{
-				memcpy(out, in, channel_count * sizeof(*out));
-			}
-			else if (channel_count == 2)
-			{
-				out[0] = out[1] = in[0];
-			}
-			else
-			{
-				out[0] = (short)((in[0] + in[1]) / 2);
-			}
-		}
+		memcpy(frames->samples, samples, (size_t)count * channels * sizeof(short));
 	}
 	/* (stb_vorbis.c is an object of its own, which allocates with the C
 	library's malloc, not cseries.h's debug_malloc: the parentheses keep
 	cseries.h's free macro, debug_free, from taking it) */
-	(free)(stream_samples);
+	(free)(samples);
 
-	return samples;
+	return frames->samples != NULL;
 }
 
-/* Room for `bytes` more in the decoded buffer: its offset, or NONE. */
+/* uncompressed samples, 16-bit little-endian as Halo PC keeps them */
+static boolean pcm_decode(
+	byte const *data,
+	long data_bytes,
+	long channels,
+	long rate,
+	struct frames *frames)
+{
+	long index;
+
+	frames->count = data_bytes / (2 * channels);
+	frames->channels = channels;
+	frames->rate = rate;
+	frames->samples = frames->count > 0 ? malloc((size_t)frames->count * channels * sizeof(short)) : NULL;
+	for (index = 0; frames->samples && index < frames->count * channels; index++)
+	{
+		frames->samples[index] = (short)(data[2 * index] | (data[2 * index + 1] << 8));
+	}
+
+	return frames->samples != NULL;
+}
+
+/* Xbox ADPCM, as the mixer decodes it (port/linux/src/dsound_sdl.c) */
+static int adpcm_decode_nibble(
+	struct adpcm_state *state,
+	int nibble)
+{
+	int step = adpcm_step_table[state->step_index];
+	int difference = step >> 3;
+
+	if (nibble & 1)
+		difference += step >> 2;
+	if (nibble & 2)
+		difference += step >> 1;
+	if (nibble & 4)
+		difference += step;
+	state->predictor += (nibble & 8) ? -difference : difference;
+	state->predictor = PIN(state->predictor, -32768, 32767);
+	state->step_index = PIN(state->step_index + adpcm_index_table[nibble & 7], 0, ADPCM_STEP_INDEX_MAXIMUM);
+
+	return state->predictor;
+}
+
+static boolean adpcm_decode(
+	byte const *data,
+	long data_bytes,
+	long channels,
+	long rate,
+	struct frames *frames)
+{
+	long block_count = data_bytes / (ADPCM_BLOCK_BYTES * channels);
+	long block_index;
+
+	frames->count = block_count * ADPCM_BLOCK_SAMPLES;
+	frames->channels = channels;
+	frames->rate = rate;
+	frames->samples = frames->count > 0 ? malloc((size_t)frames->count * channels * sizeof(short)) : NULL;
+	for (block_index = 0; frames->samples && block_index < block_count; block_index++)
+	{
+		byte const *block = data + block_index * ADPCM_BLOCK_BYTES * channels;
+		short *output = frames->samples + block_index * ADPCM_BLOCK_SAMPLES * channels;
+		long channel;
+
+		for (channel = 0; channel < channels; channel++)
+		{
+			byte const *header = block + channel * 4;
+			struct adpcm_state state;
+			long group;
+
+			state.predictor = (short)(header[0] | (header[1] << 8));
+			state.step_index = MIN(header[2], ADPCM_STEP_INDEX_MAXIMUM);
+			for (group = 0; group < 8; group++)
+			{
+				byte const *group_bytes = block + 4 * channels + (group * channels + channel) * 4;
+				long byte_index;
+
+				for (byte_index = 0; byte_index < 4; byte_index++)
+				{
+					long frame = group * 8 + byte_index * 2;
+
+					output[frame * channels + channel] = (short)adpcm_decode_nibble(&state, group_bytes[byte_index] & 0xF);
+					output[(frame + 1) * channels + channel] = (short)adpcm_decode_nibble(&state, group_bytes[byte_index] >> 4);
+				}
+			}
+		}
+	}
+
+	return frames->samples != NULL;
+}
+
+/* `frames` at `channels` and `rate` (a mono stream fills both channels, a
+stereo one is averaged for mono, and another rate is resampled by the
+nearest frame); FALSE when it comes to nothing */
+static boolean frames_conform(
+	struct frames *frames,
+	long channels,
+	long rate)
+{
+	long count = (long)((double)frames->count * rate / frames->rate);
+	short *samples;
+	long frame;
+
+	if (frames->channels == channels && frames->rate == rate)
+	{
+		return frames->count > 0;
+	}
+	samples = count > 0 ? malloc((size_t)count * channels * sizeof(short)) : NULL;
+	for (frame = 0; samples && frame < count; frame++)
+	{
+		long source = MIN((long)((double)frame * frames->rate / rate), frames->count - 1);
+		short const *in = frames->samples + source * frames->channels;
+		short *out = samples + frame * channels;
+
+		if (channels == frames->channels)
+			memcpy(out, in, channels * sizeof(*out));
+		else if (channels == 2)
+			out[0] = out[1] = in[0];
+		else
+			out[0] = (short)((in[0] + in[1]) / 2);
+	}
+	frames_free(frames);
+	frames->samples = samples;
+	frames->count = count;
+	frames->channels = channels;
+	frames->rate = rate;
+
+	return samples != NULL;
+}
+
+/* Room for `bytes` more in the decoded buffer: its offset, or NONE when the
+memory or the region for them runs out. */
 static long decoded_reserve(
 	unsigned long bytes)
 {
 	unsigned long needed = custom_edition_sounds_globals.decoded_bytes + bytes;
 
+	if (needed < bytes || needed > custom_edition_sounds_globals.decoded_limit)
+	{
+		return NONE;
+	}
 	if (needed > custom_edition_sounds_globals.decoded_capacity)
 	{
 		unsigned long capacity = (needed + DECODED_GROWTH - 1) / DECODED_GROWTH * DECODED_GROWTH;
@@ -255,46 +386,76 @@ static long decoded_reserve(
 	return (long)custom_edition_sounds_globals.decoded_bytes;
 }
 
-/* Makes the Ogg Vorbis permutation `permutation` of `sound` an Xbox ADPCM
-one whose samples are in the decoded buffer; FALSE when it cannot be. */
-static boolean permutation_decode(
+/* the format this build plays a sound in (sound_manager.c): Xbox ADPCM,
+mono at 22 kHz or stereo at 22 or 44 kHz */
+static long playable_rate(
+	struct sound_definition const *sound)
+{
+	return sound->encoding == 0 ? 22050 : (sound->sample_rate == 0 ? 22050 : 44100);
+}
+
+/* whether a permutation of `sound` must be made playable here: Ogg Vorbis
+and uncompressed ones, and mono ones at 44 kHz */
+static boolean permutation_needs_conversion(
+	struct sound_definition const *sound,
+	struct sound_permutation const *permutation)
+{
+	return permutation->compression == SOUND_COMPRESSION_OGG_VORBIS ||
+		permutation->compression == SOUND_COMPRESSION_NONE ||
+		(sound->encoding == 0 && sound->sample_rate != 0);
+}
+
+/* Makes the permutation `permutation` of `sound` an Xbox ADPCM one in the
+format this build plays it, whose samples are in the decoded buffer; FALSE
+when it cannot be. */
+static boolean permutation_convert(
 	struct sound_definition const *sound,
 	struct sound_permutation *permutation,
 	long decoded_offset)
 {
-	long channel_count = sound->encoding == 0 ? 1 : 2;
-	long sample_rate = sound->sample_rate == 0 ? 22050 : 44100;
-	byte *data;
-	short *samples;
-	long frame_count;
+	long channels = sound->encoding == 0 ? 1 : 2;
+	long rate = sound->sample_rate == 0 ? 22050 : 44100;
+	struct frames frames = { 0 };
+	boolean decoded = FALSE;
 	unsigned long encoded_bytes;
-	long offset;
+	byte *data;
+	long offset = NONE;
 
-	data = malloc(permutation->samples.size);
-	if (!data)
+	/* (the loader checked the samples lie in the file; none at all is no sound) */
+	if (permutation->samples.size <= 0 || !(data = malloc(permutation->samples.size)))
 	{
 		return FALSE;
 	}
 	custom_edition_cache_read(NONE, permutation->samples.file_offset, permutation->samples.size, data);
-	samples = vorbis_decode(data, permutation->samples.size, channel_count, sample_rate, &frame_count);
+	switch (permutation->compression)
+	{
+	case SOUND_COMPRESSION_OGG_VORBIS:
+		decoded = vorbis_decode(data, permutation->samples.size, &frames);
+		break;
+	case SOUND_COMPRESSION_NONE:
+		decoded = pcm_decode(data, permutation->samples.size, channels, rate, &frames);
+		break;
+	case SOUND_COMPRESSION_XBOX_ADPCM:
+		decoded = adpcm_decode(data, permutation->samples.size, channels, rate, &frames);
+		break;
+	}
 	free(data);
-	if (!samples)
-	{
-		return FALSE;
-	}
 
-	encoded_bytes = adpcm_encoded_bytes(frame_count, channel_count);
-	offset = decoded_reserve(encoded_bytes);
-	if (offset != NONE)
+	if (decoded && frames_conform(&frames, channels, playable_rate(sound)))
 	{
-		adpcm_encode(samples, frame_count, channel_count, custom_edition_sounds_globals.decoded + offset);
-		custom_edition_sounds_globals.decoded_bytes += encoded_bytes;
-		permutation->compression = SOUND_COMPRESSION_XBOX_ADPCM;
-		permutation->samples.file_offset = decoded_offset + offset;
-		permutation->samples.size = (long)encoded_bytes;
-		permutation->sample_buffer_size = 0;
+		encoded_bytes = adpcm_encoded_bytes(frames.count, channels);
+		offset = decoded_reserve(encoded_bytes);
+		if (offset != NONE)
+		{
+			adpcm_encode(frames.samples, frames.count, channels, custom_edition_sounds_globals.decoded + offset);
+			custom_edition_sounds_globals.decoded_bytes += encoded_bytes;
+			permutation->compression = SOUND_COMPRESSION_XBOX_ADPCM;
+			permutation->samples.file_offset = decoded_offset + offset;
+			permutation->samples.size = (long)encoded_bytes;
+			permutation->sample_buffer_size = 0;
+		}
 	}
-	free(samples);
+	frames_free(&frames);
 
 	return offset != NONE;
 }
@@ -304,16 +465,19 @@ static boolean permutation_decode(
 boolean custom_edition_sounds_decode(
 	byte *tag_cache,
 	unsigned long loaded_bytes,
-	long decoded_offset)
+	long decoded_offset,
+	unsigned long decoded_limit)
 {
 	struct sound_definition *sound;
 	int32_t tag_index = NONE;
-	long decoded_count = 0;
+	long converted_count = 0;
 	long failed_count = 0;
 
+	custom_edition_sounds_globals.decoded_limit = decoded_limit;
 	while ((sound = custom_edition_cache_tag_next(tag_cache, loaded_bytes, SOUND_DEFINITION_TAG, sizeof(*sound), &tag_index)) != NULL)
 	{
-		boolean decoded = TRUE;
+		boolean converted = TRUE;
+		boolean any = FALSE;
 		long range_index;
 
 		for (range_index = 0; range_index < sound->pitch_ranges.count; range_index++)
@@ -327,37 +491,41 @@ boolean custom_edition_sounds_decode(
 				struct sound_permutation *permutation = custom_edition_cache_block_element(
 					tag_cache, loaded_bytes, &range->permutations, permutation_index, sizeof(*permutation));
 
-				if (permutation && permutation->compression == SOUND_COMPRESSION_OGG_VORBIS)
+				if (!permutation || !permutation_needs_conversion(sound, permutation))
 				{
-					if (permutation_decode(sound, permutation, decoded_offset))
-					{
-						decoded_count++;
-					}
-					else
-					{
-						decoded = FALSE;
-					}
+					continue;
+				}
+				any = TRUE;
+				if (permutation_convert(sound, permutation, decoded_offset))
+				{
+					converted_count++;
+				}
+				else
+				{
+					converted = FALSE;
 				}
 			}
 		}
-		if (sound->compression == SOUND_COMPRESSION_OGG_VORBIS)
+		if (any || sound->compression != SOUND_COMPRESSION_XBOX_ADPCM)
 		{
 			sound->compression = SOUND_COMPRESSION_XBOX_ADPCM;
+			if (sound->encoding == 0)
+				sound->sample_rate = 0;
 		}
-		if (!decoded)
+		if (!converted)
 		{
 			/* with no pitch ranges the game neither plays nor loads the sound */
-			error(_error_silent, "custom edition: cannot decode the Ogg Vorbis sound '%s'; it will not play",
+			error(_error_silent, "custom edition: cannot convert the sound '%s'; it will not play",
 				custom_edition_cache_tag_name(tag_cache, loaded_bytes, tag_index));
 			sound->pitch_ranges.count = 0;
 			failed_count++;
 		}
 	}
-	if (decoded_count || failed_count)
+	if (converted_count || failed_count)
 	{
-		error(_error_silent, "custom edition: %ld Ogg Vorbis sound permutations decoded to %lu bytes of Xbox ADPCM%s",
-			decoded_count, custom_edition_sounds_globals.decoded_bytes,
-			failed_count ? " (some sounds could not be decoded)" : "");
+		error(_error_silent, "custom edition: %ld sound permutations converted to %lu bytes of Xbox ADPCM%s",
+			converted_count, custom_edition_sounds_globals.decoded_bytes,
+			failed_count ? " (some sounds could not be converted)" : "");
 	}
 
 	return TRUE;

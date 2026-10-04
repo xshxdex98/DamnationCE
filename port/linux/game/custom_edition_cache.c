@@ -289,7 +289,8 @@ static boolean custom_edition_cache_tags_convert(
 		COMBINED_BITMAPS_OFFSET,
 		COMBINED_SOUNDS_OFFSET);
 	/* (before the conversion, which silences sounds this build cannot play) */
-	custom_edition_sounds_decode(tag_cache, loaded_bytes, (long)COMBINED_DECODED_OFFSET);
+	custom_edition_sounds_decode(tag_cache, loaded_bytes, (long)COMBINED_DECODED_OFFSET,
+		COMBINED_BITMAPS_OFFSET - COMBINED_DECODED_OFFSET);
 	status = custom_edition_cache_convert(tag_cache, loaded_bytes, &conversion);
 	if (status != _cache_file_status_ok)
 	{
