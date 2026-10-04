@@ -32,6 +32,7 @@ from .linux_build import (
     MBEDTLS_DIR,
     MINIUPNPC_DEFINES,
     MINIUPNPC_DIR,
+    MONOCYPHER_DIR,
     MUSL_MATH_DIR,
     OPTIMISATION,
     PLATFORM_FLAGS as LINUX_PLATFORM_FLAGS,
@@ -322,6 +323,9 @@ def generate_macos_build(n: Writer, sln: Any) -> None:
             # (the menus' XML parser's own headers, not rewritten: Expat is
             # built with the host's ABI, below)
             f"-I{EXPAT_DIR}",
+            # (internet play's signatures: p2p_crypto.c; Monocypher is built
+            # with the host's ABI, below)
+            f"-I{MONOCYPHER_DIR}",
             f"-I{_quote(lp64(Path('source')))} -I{_quote(lp64(Path('source/cseries')))}",
             homebrew_include, f"-idirafter {xdk}",
         ])
@@ -359,6 +363,10 @@ def generate_macos_build(n: Writer, sln: Any) -> None:
         for source in sorted((MBEDTLS_DIR / "library").glob("*.c")):
             add_object(source, " ".join([target, "-std=gnu11", OPTIMISATION, "-g", "-w", mbedtls_include,
                                          f"-I{MBEDTLS_DIR / 'library'}"]))
+        # internet play's signatures, for public games' listings
+        # (port/third_party/monocypher; p2p_crypto.c)
+        for name in ("monocypher.c", "monocypher-ed25519.c"):
+            add_object(MONOCYPHER_DIR / name, " ".join([target, "-std=gnu11", OPTIMISATION, "-g", "-w"]))
         for source in miniupnpc_sources():
             add_object(source, " ".join([target, "-std=gnu11", OPTIMISATION, "-g", "-w", *MINIUPNPC_DEFINES,
                                          f"-I{MINIUPNPC_DIR / 'include'}", f"-I{MINIUPNPC_DIR / 'src'}"]))
