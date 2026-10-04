@@ -94,6 +94,9 @@ enum
 	/* the damage the host's AI units are taking, which their shields'
 	flares are drawn by (network_actors.c) */
 	_distributed_message_actor_damage,
+	/* co-op: how the host's objects look (their permutations, scale), when
+	that changes (network_coop.c) */
+	_distributed_message_coop_object_looks,
 
 	NUMBER_OF_DISTRIBUTED_MESSAGES
 };
@@ -267,6 +270,8 @@ void network_coop_handle_device_groups(void const *entries, short count);
 word network_coop_object_names_entry_size(void);
 void network_coop_handle_object_names(void const *entries);
 word network_coop_object_transform_entry_size(void);
+word network_coop_object_look_entry_size(void);
+void network_coop_handle_object_looks(void const *entries, short count);
 word network_actors_damage_entry_size(void);
 void network_actors_handle_damage(void const *entries, short count);
 void network_coop_handle_object_transforms(void const *entries, short count);
