@@ -9,11 +9,11 @@ the user interface's tags.
 
 X on the System Link screen opens it (ui_widget.c; the list screen marks
 when it is up, ui_widget_game_data_input_functions.c). Up and down pick a
-game, left and right turn the page, A joins it through its invite, as a web
-page's Join or an invite link would, and B goes back. Its buttons along the
-foot (JOIN, CREATE GAME, REFRESH, SORT, PROFILE, BACK) are clicked, and each
-shows the key that does the same; the header's sort tabs are clicked too. Once the invite's host
-answers, its game shows in the System Link list through the tunnel, to be
+game and left and right turn the page; everything else is clicked: a game
+(joined through its invite, as a web page's Join or an invite link would),
+the buttons along the foot (JOIN, CREATE GAME, REFRESH, SORT, PROFILE, BACK)
+and the header's sort tabs. Escape (B) alone goes back without a click.
+Once the invite's host answers, its game shows in the System Link list through the tunnel, to be
 picked there as any.
 
 The games are the game list's (port/linux/src/browser.c) and the public
@@ -153,8 +153,9 @@ static struct
 	/* (the games are fetched every frame: their maps are looked up once) */
 	struct known_map known_maps[MAXIMUM_KNOWN_MAPS];
 	short known_map_count;
-	/* the button the mouse is over, or NONE */
+	/* the button the mouse is over, or NONE, and whether it is over the connecting box's CANCEL */
 	short button_hovered;
+	boolean cancel_hovered;
 } browser_screen;
 
 /* ---------- private code */
@@ -527,7 +528,7 @@ static void create_game(
 		set_status("Could not create a game.");
 }
 
-/* ---------- the screen's actions: its keys' and its buttons' */
+/* ---------- the screen's actions: its buttons' */
 
 static boolean settled(void)
 {
@@ -553,15 +554,10 @@ static void action_refresh(void)
 	set_status("Refreshed");
 }
 
-static void action_sort(short step)
-{
-	browser_screen.sort = (short)((browser_screen.sort + NUMBER_OF_SORTS + step) % NUMBER_OF_SORTS);
-	fetch_games();
-}
-
 static void action_sort_next(void)
 {
-	action_sort(1);
+	browser_screen.sort = (short)((browser_screen.sort + 1) % NUMBER_OF_SORTS);
+	fetch_games();
 }
 
 static void action_profile(void)
@@ -609,18 +605,6 @@ void browser_screen_process(
 			case _gamepad_binary_button_dpad_down: move = 1; break;
 			case _gamepad_binary_button_dpad_left: move = -ROWS_PER_PAGE; break;
 			case _gamepad_binary_button_dpad_right: move = ROWS_PER_PAGE; break;
-			case _gamepad_analog_button_a: action_join(); break;
-			case _gamepad_binary_button_start: action_profile(); break;
-			case _gamepad_analog_button_x: action_refresh(); break;
-			case _gamepad_analog_button_y: action_create(); break;
-			case _gamepad_analog_button_left_trigger:
-			case _gamepad_analog_button_white:
-				action_sort(-1);
-				break;
-			case _gamepad_analog_button_right_trigger:
-			case _gamepad_analog_button_black:
-				action_sort(1);
-				break;
 			case _gamepad_analog_button_b: action_back(); break;
 			default: break;
 			}
@@ -713,29 +697,28 @@ static short row_at(
 }
 
 /* the mouse: the row under it is the selected one, a click there joins it,
-the wheel turns the page and the right button goes back */
-/* the buttons along the foot: each its action, and the key that does it too
-(the sort's label is its order's) */
+and the wheel moves the selection */
+/* the buttons along the foot, each its action (the sort's label is its order's) */
 struct browser_button
 {
 	char const *label;
-	short key;
 	void (*action)(void);
 };
 static struct browser_button const browser_buttons[] =
 {
-	{ "JOIN", UI_BUTTON_A, action_join },
-	{ "CREATE GAME", UI_BUTTON_Y, action_create },
-	{ "REFRESH", UI_BUTTON_X, action_refresh },
-	{ NULL, UI_BUTTON_RIGHT_TRIGGER, action_sort_next },
-	{ "PROFILE", UI_BUTTON_START, action_profile },
-	{ "BACK", UI_BUTTON_B, action_back },
+	{ "JOIN", action_join },
+	{ "CREATE GAME", action_create },
+	{ "REFRESH", action_refresh },
+	{ NULL, action_sort_next },
+	{ "PROFILE", action_profile },
+	{ "BACK", action_back },
 };
 
 enum
 {
-	BUTTON_Y = 450, BUTTON_HEIGHT = 22, BUTTON_GAP = 8, BUTTON_KEY_SIZE = 13, BUTTON_PADDING = 7,
-	BUTTON_TEXT_SIZE = 10,
+	BUTTON_Y = 450, BUTTON_HEIGHT = 22, BUTTON_GAP = 8, BUTTON_PADDING = 10, BUTTON_TEXT_SIZE = 10,
+	/* the connecting box's CANCEL */
+	CANCEL_WIDTH = 80, CANCEL_X = 320 - CANCEL_WIDTH / 2, CANCEL_Y = 234,
 };
 
 static char const *const sort_names[NUMBER_OF_SORTS] = { "PLAYERS", "NAME", "MAP", "TYPE" };
@@ -753,8 +736,7 @@ static float button_width(short index)
 	char label[32];
 
 	button_label(index, label, sizeof(label));
-	return BUTTON_PADDING + ui_overlay_button_width(browser_buttons[index].key, BUTTON_KEY_SIZE) + 4 +
-		ui_overlay_text_width(UI_FONT_BOLD, BUTTON_TEXT_SIZE, label) + BUTTON_PADDING;
+	return BUTTON_PADDING + ui_overlay_text_width(UI_FONT_BOLD, BUTTON_TEXT_SIZE, label) + BUTTON_PADDING;
 }
 
 /* where the buttons begin: at the left, or (Vanilla) centred */
@@ -808,6 +790,12 @@ static short sort_tab_at(short x, short y)
 	return NONE;
 }
 
+/* whether a point of the 640x480 layout is on the connecting box's CANCEL */
+static boolean cancel_at(short x, short y)
+{
+	return x >= CANCEL_X && x < CANCEL_X + CANCEL_WIDTH && y >= CANCEL_Y && y < CANCEL_Y + BUTTON_HEIGHT;
+}
+
 static boolean theme_vanilla(void)
 {
 	return !strcmp(config_string("display.theme"), "vanilla");
@@ -821,11 +809,20 @@ void browser_screen_pointer(
 	short row;
 
 	if (pointer->moved)
+	{
 		browser_screen.button_hovered = button_at(centred, pointer->x, pointer->y);
+		browser_screen.cancel_hovered = cancel_at(pointer->x, pointer->y);
+	}
 	if (pointer->left_clicks)
 	{
 		short button = button_at(centred, pointer->click_x, pointer->click_y);
 		short sort = sort_tab_at(pointer->click_x, pointer->click_y);
+
+		if (browser_screen.connecting && cancel_at(pointer->click_x, pointer->click_y))
+		{
+			action_back();
+			return;
+		}
 
 		/* (while a host is waited for, BACK alone: the wait given up) */
 		if (button != NONE && (!browser_screen.connecting || browser_buttons[button].action == action_back))
@@ -857,8 +854,6 @@ void browser_screen_pointer(
 		browser_screen.selected = (short)(page_first + row);
 		join_selected();
 	}
-	if (pointer->right_clicks)
-		leave();
 }
 
 static char const *type_name(
@@ -1088,10 +1083,7 @@ void browser_screen_render(
 		button_label(index, label, sizeof(label));
 		ui_overlay_rect(x, BUTTON_Y, width, BUTTON_HEIGHT, palette->radius, lit && usable ? COLOR_ROW_SELECTED : COLOR_PANEL);
 		ui_overlay_outline(x, BUTTON_Y, width, BUTTON_HEIGHT, palette->radius, 0.75f, COLOR_PANEL_EDGE);
-		ui_overlay_button(browser_buttons[index].key, BUTTON_KEY_SIZE, x + BUTTON_PADDING, BUTTON_Y + 4, 0xFFFFFFFF);
-		ui_overlay_text(UI_FONT_BOLD, BUTTON_TEXT_SIZE,
-			x + BUTTON_PADDING + ui_overlay_button_width(browser_buttons[index].key, BUTTON_KEY_SIZE) + 4, BUTTON_Y + 5,
-			UI_ALIGN_LEFT, usable ? (lit ? COLOR_TITLE : COLOR_PROMPT) : COLOR_DIM, label);
+		ui_overlay_text(UI_FONT_BOLD, BUTTON_TEXT_SIZE, x + width / 2, BUTTON_Y + 5, UI_ALIGN_CENTER, usable ? (lit ? COLOR_TITLE : COLOR_PROMPT) : COLOR_DIM, label);
 		x += width + BUTTON_GAP;
 	}
 
@@ -1104,9 +1096,11 @@ void browser_screen_render(
 		ui_overlay_rect(170, 200, 300, 64, palette->radius, palette->connecting);
 		ui_overlay_outline(170, 200, 300, 64, palette->radius, 0.75f, COLOR_PANEL_EDGE);
 		ui_overlay_text(UI_FONT_BOLD, 12.0f, 320, 212, UI_ALIGN_CENTER, 0xFFFFFFFF, line);
-		x = 320 - (ui_overlay_button_width(UI_BUTTON_B, 13.0f) + ui_overlay_text_width(UI_FONT_BOLD, 10.0f, "=CANCEL")) / 2;
-		x += ui_overlay_button(UI_BUTTON_B, 13.0f, x, 236, 0xFFFFFFFF) + 3;
-		ui_overlay_text(UI_FONT_BOLD, 10.0f, x, 237.5f, UI_ALIGN_LEFT, COLOR_PROMPT, "=CANCEL");
+		ui_overlay_rect(CANCEL_X, CANCEL_Y, CANCEL_WIDTH, BUTTON_HEIGHT, palette->radius,
+			browser_screen.cancel_hovered ? COLOR_ROW_SELECTED : COLOR_PANEL);
+		ui_overlay_outline(CANCEL_X, CANCEL_Y, CANCEL_WIDTH, BUTTON_HEIGHT, palette->radius, 0.75f, COLOR_PANEL_EDGE);
+		ui_overlay_text(UI_FONT_BOLD, BUTTON_TEXT_SIZE, 320, CANCEL_Y + 5, UI_ALIGN_CENTER,
+			browser_screen.cancel_hovered ? COLOR_TITLE : COLOR_PROMPT, "CANCEL");
 	}
 	else if (browser_screen.status[0] && system_milliseconds() - browser_screen.status_time < STATUS_DURATION)
 		ui_overlay_text(UI_FONT_BOLD, 9.0f, TABS_RIGHT, TABS_Y + 20, UI_ALIGN_RIGHT, COLOR_CLOSED, browser_screen.status);
