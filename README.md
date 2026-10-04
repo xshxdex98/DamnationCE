@@ -2,7 +2,7 @@
 
 <h1 align="center">DamnationCE</h1>
 
-<p align="center"><b>A Halo: Combat Evolved client built on OpenCE, with its own menus and Halo Custom Edition maps out of the box.</b></p>
+<p align="center"><b>A Halo CE Client forked from OpenCE.</b></p>
 
 <p align="center">
 <a href="https://github.com/xshxdex98/DamnationCE/releases/latest">Download</a> ·
