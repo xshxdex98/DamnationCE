@@ -6418,10 +6418,13 @@ static void widget_instance_render_recursive(
 				alpha_modifier;
 		}
 		color = modulate_pixel32_by_real_alpha(0xFFFFFFFF, alpha);
+		/* (a Custom Edition map's own picture is stretched over the widget;
+		a stock campaign level's is laid out as the stock pictures are) */
 		draw_bitmap_in_rect(
 			bitmap,
 			&bounds,
-			custom_edition_picture ? NULL : &bounds,
+			custom_edition_picture &&
+				custom_edition_maps_campaign_level(widget->animation.current_frame_index) == NONE ? NULL : &bounds,
 			clip,
 			color,
 			&multitexture_params,
