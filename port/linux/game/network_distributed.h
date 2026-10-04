@@ -92,8 +92,8 @@ enum
 	(network_coop.c) */
 	_distributed_message_coop_object_transforms,
 	/* the damage the host's AI units are taking, which their shields'
-	flares are drawn by (network_actors.c) */
-	_distributed_message_actor_damage,
+	flares are drawn by (network_actors.c); 73 in upstream's AI sync too */
+	_distributed_message_actor_damage = 73,
 	/* co-op: how the host's objects look (their permutations, scale), when
 	that changes (network_coop.c) */
 	_distributed_message_coop_object_looks,
