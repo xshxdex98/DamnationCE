@@ -36,6 +36,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageFilter
 
+import port_settings
 import shell_art
 from hud_assets import FORMATS, XboxMap, decode_bitmap, level0_size
 from shell_art import SHADE, WHITE, box, paint, polygon, ramp
@@ -43,6 +44,7 @@ from shell_art import SHADE, WHITE, box, paint, polygon, ramp
 MENUS = Path(__file__).resolve().parent.parent / "port" / "assets" / "menus"
 GLASSED = MENUS / "skin" / "glassed"
 VANILLA = MENUS / "skin" / "vanilla"
+LOBBY_FILE = "main_menu.multiplayer_type_select.lobby.xml"
 
 # ---------- the Glassed look
 
@@ -107,8 +109,8 @@ CHILD_CHANGES = {
     ("main_menu/new_select/scroll_up_button", "main_menu/new_select/scroll_up_arrow"): {"x": "152"},
     ("main_menu/new_select/scroll_down_button", "main_menu/new_select/scroll_down_arrow"): {"x": "152"},
 }
-# extra event handlers, in both themes: the Map screen opens the map
-# picker (port/linux/game/map_screen.c) over its own list
+# extra event handlers (Glassed): the Map screen opens the map picker
+# (port/linux/game/map_screen.c) over its own list
 HANDLER_ADDITIONS = {
     "main_menu/multiplayer_type_select/mp_map_select/mp_map_select_screen": [{"event": "created", "run": "port map select"}],
 }
@@ -351,8 +353,12 @@ def glassed_layer():
                 pictures += 1
     screens = 0
     for file in sorted((MENUS / "ce").glob("*.xml")):
-        tree = ET.parse(file)
-        if restyle(tree.getroot()):
+        if file.name == LOBBY_FILE:
+            # Glassed's lobby is the overlay's form (port_settings.py), not the stock one restyled
+            tree = ET.ElementTree(ET.fromstring("\n".join(port_settings.glassed_lobby_file()).encode("utf-8")))
+        else:
+            tree = ET.parse(file)
+        if restyle(tree.getroot()) or file.name == LOBBY_FILE:
             write_xml(tree, GLASSED / "ce" / file.name)
             screens += 1
     print(f"Glassed: {pictures} pictures, {screens} screens")
@@ -375,14 +381,7 @@ def vanilla_layer():
     rows = next(widget for widget in menus.iter("widget") if widget.get("name") == "main_menu/main_menu_select_list")
     rows.append(ET.Element("child", {"widget": "main_menu/main_menu_item_menus", "x": "256", "y": "431"}))
     write_xml(tree, VANILLA / "ce" / "main_menu.xml")
-    # copy the screens that get extra handlers (the Map screen) into the Vanilla layer
-    screens = 0
-    for file in sorted((MENUS / "ce").glob("*.xml")):
-        tree = ET.parse(file)
-        if any([add_handlers(widget) for widget in tree.getroot().iter("widget")]):
-            write_xml(tree, VANILLA / "ce" / file.name)
-            screens += 1
-    print(f"Vanilla: the main menu, {screens} screens with handlers")
+    print("Vanilla: the main menu")
 
 
 def maps_layer(folder):

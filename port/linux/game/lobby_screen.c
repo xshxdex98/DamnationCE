@@ -156,7 +156,7 @@ static void render_player_row(
 	if (lit)
 	{
 		ui_overlay_rect(x, y, width, ROW_HEIGHT - 1, palette->radius / 2, palette->row_selected);
-		if (palette->glassed && !teams)
+		if (!teams)
 			ui_overlay_rect(x, y, 1.5f, ROW_HEIGHT - 1, 0, 0xFFFFFFFF);
 	}
 	if (teams)
@@ -316,11 +316,12 @@ static void render_buttons(
 
 /* ---------- public code */
 
-/* whether the lobby is the screen up, which this draws over */
+/* whether the lobby is the screen up, which this draws over (Glassed only:
+Vanilla keeps the stock lobby) */
 boolean lobby_screen_active(
 	void)
 {
-	return ui_overlay_available() && lobby_list() != NULL;
+	return ui_overlay_available() && overlay_palette_current()->glassed && lobby_list() != NULL;
 }
 
 /* ui_widget.c, after the menus are drawn */
@@ -337,18 +338,9 @@ void lobby_screen_render(
 
 	if (!list)
 		return;
-	if (palette->glassed)
-	{
-		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
-		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, palette->rule);
-		ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, palette->rule);
-	}
-	else
-	{
-		ui_overlay_gradient(-margin, 0, 640 + 2 * margin, 480, 0, palette->backdrop, palette->backdrop_bottom);
-		ui_overlay_rect(ROW_LEFT - 4, HEADING_Y - 6, ROW_WIDTH + 8, ROW_TOP - HEADING_Y + ROWS * ROW_HEIGHT + 8,
-			palette->radius, palette->panel);
-	}
+	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
+	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, palette->rule);
+	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, palette->rule);
 	render_buttons(palette, list);
 	if (!game)
 	{

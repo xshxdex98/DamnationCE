@@ -3,7 +3,7 @@ MAP_SCREEN.C
 
 The map picker used when setting up a game. It replaces the PC menus' map
 list with a screen drawn by code over the menus (like Online Games,
-browser_screen.c), in either theme (display.theme: Glassed or Vanilla).
+browser_screen.c), in the Glassed theme. Vanilla keeps the stock list.
 
 The steps, when hosting a network game:
 
@@ -135,25 +135,18 @@ static struct step_row const cooperative_rows[] =
 	{ "CAMPAIGN", "The campaign's levels, with\nevery player in the game." },
 };
 
-/* colors (0xRRGGBBAA), matching browser_screen.c's palettes */
+/* colors (0xRRGGBBAA), matching browser_screen.c's Glassed palette (the
+picker is Glassed's alone: Vanilla keeps the stock map list) */
 struct map_palette
 {
-	boolean glassed;
-	unsigned int backdrop, backdrop_bottom, rule, title, chosen, tick, text, dim, edge, panel;
+	unsigned int backdrop, rule, title, chosen, tick, text, dim, edge, panel;
 	float radius;
 };
 static struct map_palette const glassed_palette =
 {
-	TRUE, 0x06080C8C, 0x06080C8C, 0xFFFFFF5A, 0xFFFFFFD7, 0xFFFFFF3E, 0xFFFFFFFF, 0xD2D6DAFF, 0x8C9096FF, 0xFFFFFF46,
-	0x06080C78, 0.0f,
+	0x06080C8C, 0xFFFFFF5A, 0xFFFFFFD7, 0xFFFFFF3E, 0xFFFFFFFF, 0xD2D6DAFF, 0x8C9096FF, 0xFFFFFF46, 0x06080C78, 0.0f,
 };
-static struct map_palette const vanilla_palette =
-{
-	FALSE, 0x0B1830FF, 0x03070FFF, 0x2A62C8FF, 0x3D8BFFFF, 0x2052B0FF, 0x7FB0FFFF, 0xE6EEFCFF, 0x8FA6C8FF, 0x2F6DD0FF,
-	0x081530F0, 6.0f,
-};
-/* set from the theme each frame */
-static struct map_palette const *palette = &glassed_palette;
+static struct map_palette const *const palette = &glassed_palette;
 
 #define COLOR_RULE (palette->rule)
 #define COLOR_TITLE (palette->title)
@@ -169,7 +162,6 @@ boolean ui_widget_port_multiplayer_level_choose(char const *map_name);
 boolean ui_widget_port_cooperative_level_choose(char const *map_name, short difficulty);
 boolean ui_widget_port_open_from_top(char const *name);
 void event_manager_post_button(short controller_index, short button_index);
-char const *config_string(char const *name);
 void ui_widget_port_go_back_from_top(void);
 /* browser_screen.c */
 boolean browser_screen_take_create(void);
@@ -478,12 +470,6 @@ static void step_buttons(struct button_bar *bar)
 	}
 }
 
-/* the bar's left edge: at the left in Glassed, centred in Vanilla */
-static float buttons_left(struct button_bar const *bar)
-{
-	return palette->glassed ? (float)ROW_X : 320.0f - overlay_buttons_width(bar->labels, bar->count) / 2;
-}
-
 /* Arrow keys: up and down move one row (or one grid row); left and right
 move one card in the grid, or a page in a list. */
 static void move(short dx, short dy)
@@ -670,10 +656,10 @@ boolean map_screen_active(void)
 }
 
 /* Opens the picker at its first step ("port map select"). Returns FALSE
-without the overlay, and the PC menus' own list is used instead. */
+without the overlay, or in Vanilla, and the menus' own list is used instead. */
 boolean map_screen_open(void)
 {
-	if (!ui_overlay_available())
+	if (!ui_overlay_available() || !overlay_palette_current()->glassed)
 		return FALSE;
 	map_screen.xbox_list = NULL;
 	map_screen.level_names = ui_widget_port_multiplayer_levels(&map_screen.level_count, &map_screen.xbox_count);
@@ -718,12 +704,12 @@ void map_screen_pointer(struct halo_ui_pointer const *pointer)
 	step_buttons(&bar);
 	if (pointer->moved)
 	{
-		map_screen.button_hovered = overlay_button_at(bar.labels, bar.count, buttons_left(&bar), OVERLAY_BUTTON_Y,
+		map_screen.button_hovered = overlay_button_at(bar.labels, bar.count, (float)ROW_X, OVERLAY_BUTTON_Y,
 			pointer->x, pointer->y);
 	}
 	if (pointer->left_clicks)
 	{
-		short button = overlay_button_at(bar.labels, bar.count, buttons_left(&bar), OVERLAY_BUTTON_Y,
+		short button = overlay_button_at(bar.labels, bar.count, (float)ROW_X, OVERLAY_BUTTON_Y,
 			pointer->click_x, pointer->click_y);
 
 		if (button != NONE)
@@ -787,12 +773,8 @@ void map_screen_render(void)
 
 	if (!ui_overlay_available())
 		return;
-	palette = strcmp(config_string("display.theme"), "vanilla") ? &glassed_palette : &vanilla_palette;
-	/* Glassed darkens a band over the scene; Vanilla covers the screen */
-	if (palette->glassed)
-		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
-	else
-		ui_overlay_gradient(-margin, 0, 640 + 2 * margin, 480, 0, palette->backdrop, palette->backdrop_bottom);
+	/* a darkened band over the scene */
+	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
 	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
 	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
 	ui_overlay_text(UI_FONT_BOLD, 30.0f, 37, 17, UI_ALIGN_LEFT, COLOR_TITLE, step_title());
@@ -842,7 +824,7 @@ void map_screen_render(void)
 	colors.text_lit = COLOR_TITLE;
 	colors.text_disabled = COLOR_DIM;
 	colors.radius = palette->radius;
-	overlay_buttons_draw(bar.labels, bar.count, buttons_left(&bar), OVERLAY_BUTTON_Y, map_screen.button_hovered, 0,
+	overlay_buttons_draw(bar.labels, bar.count, (float)ROW_X, OVERLAY_BUTTON_Y, map_screen.button_hovered, 0,
 		&colors);
 }
 
