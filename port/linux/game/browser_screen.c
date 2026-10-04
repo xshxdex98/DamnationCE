@@ -655,12 +655,47 @@ game's details on the right */
 enum
 {
 	GLASS_TOP = 66, GLASS_BOTTOM = 446,
-	LIST_X = 37, LIST_Y = 78, LIST_WIDTH = 368, CARD_HEIGHT = 44,
+	LIST_Y = 78, CARD_HEIGHT = 44,
 	CARD_PICTURE_WIDTH = 42, CARD_PICTURE_HEIGHT = 34, FULLNESS_WIDTH = 56,
-	DETAIL_X = 420, DETAIL_Y = 78, DETAIL_WIDTH = 183, DETAIL_PICTURE_HEIGHT = 149,
+	DETAIL_Y = 78, DETAIL_WIDTH = 183, DETAIL_PICTURE_HEIGHT = 149,
 	ROSTER_COLUMNS = 2, ROSTER_ROWS = 8,
-	TABS_RIGHT = 603, TABS_Y = 44,
+	TABS_Y = 44,
+	/* Glassed: the gap to the screen's edges and between list and details,
+	and the widest the list gets on a very wide screen */
+	EDGE_GAP = 24, COLUMN_GAP = 24, MAXIMUM_LIST_WIDTH = 560,
 };
+
+/* Where the columns go, in the 640x480 layout's units: Vanilla's are fixed
+and centred; Glassed's list starts at the screen's left edge and the details
+end at its right, however wide the screen. */
+static struct
+{
+	float list_x;
+	float list_width;
+	float detail_x;
+	/* the right edge of the details and the header's sort tabs */
+	float right;
+} layout;
+
+static void layout_update(
+	void)
+{
+	/* the screen's edges are this far outside the 640 units */
+	float edge = (float)((halo_screen_width() - 640) / 2);
+
+	if (!palette->glassed)
+	{
+		layout.list_x = 37.0f;
+		layout.list_width = 368.0f;
+		layout.detail_x = 420.0f;
+		layout.right = 603.0f;
+		return;
+	}
+	layout.list_x = -edge + EDGE_GAP;
+	layout.right = 640.0f + edge - EDGE_GAP;
+	layout.detail_x = layout.right - DETAIL_WIDTH;
+	layout.list_width = MIN(layout.detail_x - COLUMN_GAP - layout.list_x, (float)MAXIMUM_LIST_WIDTH);
+}
 
 /* the card row at a point of the 640x480 layout, or NONE */
 static short row_at(
@@ -669,7 +704,7 @@ static short row_at(
 {
 	short row = (short)((y - LIST_Y) / CARD_HEIGHT);
 
-	if (x < LIST_X || x >= LIST_X + LIST_WIDTH || y < LIST_Y || row >= ROWS_PER_PAGE)
+	if (x < layout.list_x || x >= layout.list_x + layout.list_width || y < LIST_Y || row >= ROWS_PER_PAGE)
 		return NONE;
 	return row;
 }
@@ -720,7 +755,7 @@ static void button_labels_get(struct button_labels *buttons)
 /* the bar's left edge: at the left in Glassed, centred in Vanilla */
 static float buttons_left(struct button_labels const *buttons)
 {
-	return palette->glassed ? (float)LIST_X : 320.0f - overlay_buttons_width(buttons->labels, NUMBER_OF_BUTTONS) / 2;
+	return palette->glassed ? (float)layout.list_x : 320.0f - overlay_buttons_width(buttons->labels, NUMBER_OF_BUTTONS) / 2;
 }
 
 static float cancel_left(void)
@@ -737,7 +772,7 @@ static unsigned long buttons_disabled(void)
 /* the header's sort tab at a point, or NONE (laid out as render_header draws them) */
 static short sort_tab_at(short x, short y)
 {
-	float right = TABS_RIGHT;
+	float right = layout.right;
 	short sort;
 
 	if (y < TABS_Y - 4 || y >= TABS_Y + 16)
@@ -762,6 +797,7 @@ void browser_screen_pointer(
 	struct button_labels buttons;
 	short row;
 
+	layout_update();
 	button_labels_get(&buttons);
 	if (pointer->moved)
 	{
@@ -852,13 +888,13 @@ static void render_header(
 	long players)
 {
 	char text[96];
-	float x = TABS_RIGHT;
+	float x = layout.right;
 	short sort;
 
-	ui_overlay_text(UI_FONT_BOLD, 30.0f, 37, 15, UI_ALIGN_LEFT, COLOR_TITLE, "ONLINE");
+	ui_overlay_text(UI_FONT_BOLD, 30.0f, layout.list_x, 15, UI_ALIGN_LEFT, COLOR_TITLE, "ONLINE");
 	snprintf(text, sizeof(text), "%d %s  \xC2\xB7  %ld %s", browser_screen.count, browser_screen.count == 1 ? "GAME" : "GAMES",
 		players, players == 1 ? "PLAYER" : "PLAYERS");
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, 39, 50, UI_ALIGN_LEFT, COLOR_DIM, text);
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 2, 50, UI_ALIGN_LEFT, COLOR_DIM, text);
 	for (sort = NUMBER_OF_SORTS - 1; sort >= 0; sort--)
 	{
 		boolean shown = sort == browser_screen.sort;
@@ -881,22 +917,22 @@ static void render_card(
 	struct known_map const *map = known_map(game->map);
 	char name[64], line[112], rules[32];
 	unsigned int color = game->open ? COLOR_TEXT : COLOR_DIM;
-	float right = LIST_X + LIST_WIDTH - 10;
+	float right = layout.list_x + layout.list_width - 10;
 	float filled = game->maximum_players > 0 ? (float)game->players / (float)game->maximum_players : 0.0f;
 
 	if (chosen)
 	{
-		ui_overlay_rect(LIST_X, y + 1, LIST_WIDTH, CARD_HEIGHT - 2, palette->radius, COLOR_ROW_SELECTED);
+		ui_overlay_rect(layout.list_x, y + 1, layout.list_width, CARD_HEIGHT - 2, palette->radius, COLOR_ROW_SELECTED);
 		if (palette->glassed)
-			ui_overlay_rect(LIST_X, y + 1, 1.5f, CARD_HEIGHT - 2, 0, 0xFFFFFFFF);
+			ui_overlay_rect(layout.list_x, y + 1, 1.5f, CARD_HEIGHT - 2, 0, 0xFFFFFFFF);
 	}
-	map_picture(game->map, LIST_X + 7, y + 5, CARD_PICTURE_WIDTH, CARD_PICTURE_HEIGHT);
+	map_picture(game->map, layout.list_x + 7, y + 5, CARD_PICTURE_WIDTH, CARD_PICTURE_HEIGHT);
 	overlay_utf8(game->name, NUMBEROF(game->name), name, sizeof(name));
-	ui_overlay_text(UI_FONT_BOLD, 11.0f, LIST_X + 58, y + 7, UI_ALIGN_LEFT, chosen ? COLOR_TITLE : color, name);
+	ui_overlay_text(UI_FONT_BOLD, 11.0f, layout.list_x + 58, y + 7, UI_ALIGN_LEFT, chosen ? COLOR_TITLE : color, name);
 	snprintf(line, sizeof(line), "%s%s  \xC2\xB7  %s", map->name,
 		!map->installed ? " (not installed)" : map->kind == MAP_CUSTOM_EDITION ? " (CE)" : "",
 		type_name(game, rules, sizeof(rules)));
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, LIST_X + 58, y + 24, UI_ALIGN_LEFT,
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 58, y + 24, UI_ALIGN_LEFT,
 		map->installed ? COLOR_DIM : COLOR_CLOSED, line);
 
 	snprintf(line, sizeof(line), "%d/%d", game->players, game->maximum_players);
@@ -915,16 +951,16 @@ static void render_details(
 	float y = DETAIL_Y + DETAIL_PICTURE_HEIGHT + 8;
 	long index;
 
-	ui_overlay_rect(DETAIL_X - 6, DETAIL_Y - 4, DETAIL_WIDTH + 12, GLASS_BOTTOM - DETAIL_Y - 6, palette->radius, COLOR_PANEL);
+	ui_overlay_rect(layout.detail_x - 6, DETAIL_Y - 4, DETAIL_WIDTH + 12, GLASS_BOTTOM - DETAIL_Y - 6, palette->radius, COLOR_PANEL);
 	if (!game)
 		return;
-	map_picture(game->map, DETAIL_X, DETAIL_Y, DETAIL_WIDTH, DETAIL_PICTURE_HEIGHT);
+	map_picture(game->map, layout.detail_x, DETAIL_Y, DETAIL_WIDTH, DETAIL_PICTURE_HEIGHT);
 	overlay_utf8(game->name, NUMBEROF(game->name), name, sizeof(name));
-	ui_overlay_text(UI_FONT_BOLD, 13.0f, DETAIL_X, y, UI_ALIGN_LEFT, COLOR_TITLE, name);
+	ui_overlay_text(UI_FONT_BOLD, 13.0f, layout.detail_x, y, UI_ALIGN_LEFT, COLOR_TITLE, name);
 	y += 20;
 #define DETAIL_LINE(label, value) \
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, DETAIL_X, y, UI_ALIGN_LEFT, COLOR_DIM, label); \
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, DETAIL_X + DETAIL_WIDTH, y, UI_ALIGN_RIGHT, COLOR_TEXT, value); \
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.detail_x, y, UI_ALIGN_LEFT, COLOR_DIM, label); \
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.detail_x + DETAIL_WIDTH, y, UI_ALIGN_RIGHT, COLOR_TEXT, value); \
 	y += 13;
 	DETAIL_LINE("Status", game->open ? "Accepting players" : "In progress");
 	if (known_map(game->map)->kind != MAP_XBOX)
@@ -942,12 +978,12 @@ static void render_details(
 #undef DETAIL_LINE
 
 	y += 4;
-	ui_overlay_rect(DETAIL_X, y, DETAIL_WIDTH, 0.75f, 0, COLOR_ROW_RULE);
+	ui_overlay_rect(layout.detail_x, y, DETAIL_WIDTH, 0.75f, 0, COLOR_ROW_RULE);
 	y += 5;
 	if (!game->players && !game->roster_count)
-		ui_overlay_text(UI_FONT_REGULAR, 9.0f, DETAIL_X, y, UI_ALIGN_LEFT, COLOR_DIM, "No one yet");
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.detail_x, y, UI_ALIGN_LEFT, COLOR_DIM, "No one yet");
 	else if (!game->roster_count)
-		ui_overlay_text(UI_FONT_REGULAR, 9.0f, DETAIL_X, y, UI_ALIGN_LEFT, COLOR_DIM, "This host doesn't share names");
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.detail_x, y, UI_ALIGN_LEFT, COLOR_DIM, "This host doesn't share names");
 	else
 	{
 		long kept = game->roster_count < BROWSER_LISTED_ROSTER ? game->roster_count : BROWSER_LISTED_ROSTER;
@@ -962,13 +998,13 @@ static void render_details(
 				player->team == 0 ? COLOR_RED_TEAM : COLOR_BLUE_TEAM;
 
 			overlay_utf8(player->name, NUMBEROF(player->name), name, sizeof(name));
-			ui_overlay_text(UI_FONT_REGULAR, 9.0f, DETAIL_X + (index / ROSTER_ROWS) * column_width,
+			ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.detail_x + (index / ROSTER_ROWS) * column_width,
 				y + (index % ROSTER_ROWS) * 11, UI_ALIGN_LEFT, color, name);
 		}
 		if (game->roster_count > shown)
 		{
 			snprintf(text, sizeof(text), "+%d more", game->roster_count - (int)shown);
-			ui_overlay_text(UI_FONT_REGULAR, 9.0f, DETAIL_X + (shown / ROSTER_ROWS) * column_width,
+			ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.detail_x + (shown / ROSTER_ROWS) * column_width,
 				y + (shown % ROSTER_ROWS) * 11, UI_ALIGN_LEFT, COLOR_DIM, text);
 		}
 	}
@@ -992,6 +1028,7 @@ void browser_screen_render(
 
 	/* Glassed darkens a band over the scene; Vanilla covers the screen */
 	palette = strcmp(config_string("display.theme"), "vanilla") ? &glassed_palette : &vanilla_palette;
+	layout_update();
 	if (palette->glassed)
 	{
 		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
@@ -1007,11 +1044,11 @@ void browser_screen_render(
 	page_first = (short)(browser_screen.selected - browser_screen.selected % ROWS_PER_PAGE);
 	page_count = (short)MAX(1, (browser_screen.count + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE);
 	if (!palette->glassed)
-		ui_overlay_rect(LIST_X - 4, LIST_Y - 4, LIST_WIDTH + 8, ROWS_PER_PAGE * CARD_HEIGHT + 8, palette->radius, COLOR_PANEL);
+		ui_overlay_rect(layout.list_x - 4, LIST_Y - 4, layout.list_width + 8, ROWS_PER_PAGE * CARD_HEIGHT + 8, palette->radius, COLOR_PANEL);
 	if (!browser_screen.count)
 	{
-		ui_overlay_text(UI_FONT_BOLD, 12.0f, LIST_X + 10, LIST_Y + 20, UI_ALIGN_LEFT, COLOR_TEXT, "No games right now");
-		ui_overlay_text(UI_FONT_REGULAR, 9.0f, LIST_X + 10, LIST_Y + 38, UI_ALIGN_LEFT, COLOR_DIM,
+		ui_overlay_text(UI_FONT_BOLD, 12.0f, layout.list_x + 10, LIST_Y + 20, UI_ALIGN_LEFT, COLOR_TEXT, "No games right now");
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 10, LIST_Y + 38, UI_ALIGN_LEFT, COLOR_DIM,
 			"Host one with Create Game, and it shows here for everyone.");
 	}
 	for (row = 0; row < ROWS_PER_PAGE && page_first + row < browser_screen.count; row++)
@@ -1022,7 +1059,7 @@ void browser_screen_render(
 	if (page_count > 1)
 	{
 		snprintf(text, sizeof(text), "\xE2\x80\xB9  %d / %d  \xE2\x80\xBA", page_first / ROWS_PER_PAGE + 1, page_count);
-		ui_overlay_text(UI_FONT_BOLD, 9.0f, LIST_X + LIST_WIDTH, LIST_Y + ROWS_PER_PAGE * CARD_HEIGHT + 6, UI_ALIGN_RIGHT,
+		ui_overlay_text(UI_FONT_BOLD, 9.0f, layout.list_x + layout.list_width, LIST_Y + ROWS_PER_PAGE * CARD_HEIGHT + 6, UI_ALIGN_RIGHT,
 			COLOR_DIM, text);
 	}
 	render_details(selected);
@@ -1052,7 +1089,7 @@ void browser_screen_render(
 			&colors);
 	}
 	else if (browser_screen.status[0] && system_milliseconds() - browser_screen.status_time < STATUS_DURATION)
-		ui_overlay_text(UI_FONT_BOLD, 9.0f, TABS_RIGHT, TABS_Y + 20, UI_ALIGN_RIGHT, COLOR_CLOSED, browser_screen.status);
+		ui_overlay_text(UI_FONT_BOLD, 9.0f, layout.right, TABS_Y + 20, UI_ALIGN_RIGHT, COLOR_CLOSED, browser_screen.status);
 }
 
 #endif

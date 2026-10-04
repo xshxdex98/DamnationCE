@@ -20,6 +20,8 @@
 - Co-op games in the server browser show their difficulty ("Co-op Heroic").
 - The main menu's background no longer freezes or jumps back when some menus
   open.
+- The Glassed server browser uses the whole screen: games down the left edge,
+  the selected game's details at the right edge.
 - Co-op code no longer runs in the menus while a game is being set up. It
   used to stop the menu background's scripts for joining players.
 
