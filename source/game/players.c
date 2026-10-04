@@ -237,6 +237,7 @@ symbols in this file:
 #include "data.h"
 #include "devices/devices.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
+#include "cutscene/cinematics.h" /* port: network co-op's first spawns */
 #include "editor/editor_stubs.h"
 #include "effects/effects.h"
 #include "effects/player_effects.h"
@@ -411,6 +412,8 @@ typedef char players_static_data_screen_flash_offset_assert[
 
 /* ---------- prototypes */
 
+static boolean players_respawn_network_coop(
+	void);
 static long is_player_in_trigger(
 	short bsp_switch_trigger_volume_index,
 	long object_index);
@@ -459,6 +462,15 @@ static void player_handle_powerup_equipment(
 	long equipment_index);
 
 /* ---------- globals */
+
+/* port: network co-op. Whether the level's other players may spawn yet
+(players_coop_may_spawn), and how long the level has gone without a cutscene
+while they wait. */
+static struct
+{
+	boolean released;
+	long quiet_ticks;
+} players_coop_start;
 
 /* port: where each player was at the last checkpoint, in network co-op
 (players_note_checkpoint) */
@@ -568,6 +580,7 @@ void players_initialize_for_new_map(
 	players_globals->respawn_failure = 0;
 	/* port: a new map has no network co-op checkpoint yet */
 	csmemset(&players_checkpoint, 0, sizeof(players_checkpoint));
+	csmemset(&players_coop_start, 0, sizeof(players_coop_start));
 	data_make_valid(player_data);
 	data_make_valid(team_data);
 	csmemset(
@@ -2320,6 +2333,10 @@ boolean players_respawn_coop(
 	boolean result;
 	boolean dangerous;
 
+	/* port: network co-op judges safety around each teammate (players_respawn_network_coop) */
+	if (game_connection() == _game_connection_network_server && network_coop_active())
+		return players_respawn_network_coop();
+
 	players_globals->respawn_failure = 0;
 	result = FALSE;
 	if (!players_globals->respawn_failed)
@@ -2425,6 +2442,160 @@ that in step. Instead the players respawn where they were at the last
 checkpoint (main_save_map_private records it), or at the map's start if
 that was on another BSP. */
 
+/* If a level hasn't saved after this long without a cutscene, the players
+waiting for its first checkpoint spawn anyway. */
+#define COOP_START_FALLBACK_TICKS (3 * 60 * TICKS_PER_SECOND)
+
+/* Co-op host: whether a player who hasn't spawned on this level yet may
+spawn now. The first player spawns at once. The others wait for the level's
+first checkpoint, so they don't stand in on its opening (Pillar of Autumn's
+cryo tube and tutorial drive the first player alone); they spectate the
+first player meanwhile. */
+static boolean players_coop_may_spawn(
+	void)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+
+	if (players_coop_start.released)
+		return TRUE;
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		if (player->unit_index != NONE)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+/* co-op host, each tick: the fallback for a level that never saves */
+static void players_coop_start_update(
+	void)
+{
+	if (players_coop_start.released || game_connection() != _game_connection_network_server ||
+		!network_coop_active())
+	{
+		return;
+	}
+	if (!cinematic_in_progress())
+		players_coop_start.quiet_ticks++;
+	if (players_coop_start.quiet_ticks >= COOP_START_FALLBACK_TICKS)
+		players_coop_start.released = TRUE;
+}
+
+/* whether this player is still waiting for the level's first checkpoint
+(coop_spectate.c tells them so) */
+boolean players_coop_waiting_to_start(
+	long player_index)
+{
+	struct player_datum *player = player_try_and_get(player_index);
+
+	return player && player->unit_index == NONE && player->statistics.deaths == 0 &&
+		network_coop_active() && !players_coop_start.released;
+}
+
+/* how close a projectile, a grenade throw or a dying unit makes a teammate
+unsafe to respawn beside (world units) */
+#define COOP_RESPAWN_DANGER_RADIUS 15.0f
+
+/* whether something near the unit's position is dangerous: a projectile, a
+unit throwing a grenade, or one dying (any_unit_is_dangerous's tests, near
+this unit only) */
+static boolean players_coop_danger_near(
+	long unit_index)
+{
+	real_point3d const *center = &object_get(unit_index)->object.bounding_sphere_center;
+	real radius_squared = COOP_RESPAWN_DANGER_RADIUS * COOP_RESPAWN_DANGER_RADIUS;
+	struct object_iterator iterator;
+	struct object_datum *object;
+
+	object_iterator_new(&iterator, _object_mask_projectile | _object_mask_unit, 0);
+	while ((object = object_iterator_next(&iterator)) != NULL)
+	{
+		struct unit_datum *unit;
+
+		if (distance_squared3d(center, &object->object.bounding_sphere_center) > radius_squared)
+			continue;
+		if (object->object.type == _object_type_projectile)
+			return TRUE;
+		unit = (struct unit_datum *)object;
+		if ((unit->unit.animation.state == _unit_state_throw_grenade &&
+				unit->unit.grenade_throw_state != _unit_grenade_throw_ending) ||
+			((unit->unit.animation.state == _unit_state_dying || unit->unit.animation.state == _unit_state_dying_airborne) &&
+				!TEST_FLAG(unit->unit.animation.flags, _unit_animation_ignore_translation_bit)))
+		{
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+/* whether a living player's unit is safe to respawn beside: not in the air
+or a moving vehicle, no enemy attacking it, nothing dangerous near it */
+static boolean players_coop_unit_safe(
+	long unit_index)
+{
+	long root_index = object_get_ultimate_parent(unit_index);
+
+	if (root_index == unit_index)
+	{
+		struct biped_datum *biped = biped_try_and_get(unit_index);
+
+		if (biped && TEST_FLAG(biped->biped.flags, _biped_airborne_bit))
+			return FALSE;
+	}
+	else
+	{
+		struct players_vehicle_datum *vehicle = (struct players_vehicle_datum *)
+			object_try_and_get_and_verify_type(root_index, _object_mask_vehicle);
+
+		if (vehicle && vehicle->vehicle.unknown_state > 0)
+			return FALSE;
+	}
+
+	return !ai_port_enemies_attacking_unit(unit_index) && !players_coop_danger_near(unit_index);
+}
+
+/* Network co-op respawn: the dead come back beside the first teammate who
+is safe. The campaign's own test (players_respawn_coop) is map-wide (any
+projectile or enemy attack anywhere), which with many players spread out
+would almost never pass. Returns whether everyone waiting came back. */
+static boolean players_respawn_network_coop(
+	void)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+	long safe_unit_index = NONE;
+	boolean result = TRUE;
+
+	data_iterator_new(&iterator, player_data);
+	while (safe_unit_index == NONE && (player = data_iterator_next(&iterator)) != NULL)
+	{
+		if (player->unit_index != NONE && players_coop_unit_safe(player->unit_index))
+			safe_unit_index = player->unit_index;
+	}
+	if (safe_unit_index == NONE)
+		return FALSE;
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		/* (those still waiting for the level's first checkpoint spawn then) */
+		if (player->unit_index != NONE || players_coop_waiting_to_start(iterator.datum_index))
+			continue;
+		player_spawn(iterator.datum_index);
+		if (player->unit_index == NONE ||
+			!player_teleport(iterator.datum_index, safe_unit_index,
+				&object_get(safe_unit_index)->object.bounding_sphere_center))
+		{
+			result = FALSE;
+		}
+	}
+
+	return result;
+}
+
 /* co-op host: moves a newly spawned player next to a living one, as a
 co-op respawn does (player_teleport finds room) */
 static void player_place_beside_teammate(
@@ -2456,6 +2627,8 @@ void players_note_checkpoint(
 
 	csmemset(&players_checkpoint, 0, sizeof(players_checkpoint));
 	players_checkpoint.structure_bsp_index = global_structure_bsp_index_get();
+	/* the level's first checkpoint lets everyone else in */
+	players_coop_start.released = TRUE;
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
@@ -3756,6 +3929,7 @@ void players_update_before_game(
 	short action_index;
 
 	profile_enter(PLAYERS_UPDATE_BEFORE_GAME_PROFILE);
+	players_coop_start_update();
 	if (update_client_dequeue(actions) || players_idle_actions(actions))
 	{
 		data_iterator_new(&iterator, player_data);
@@ -3832,11 +4006,16 @@ void players_update_before_game(
 				{
 					if (player->statistics.deaths == 0)
 					{
-						player_spawn(iterator.datum_index);
-						/* port: in network co-op, spawn next to a player already in the game,
-						not at the map's start (late joiners, and everyone at the start) */
-						if (game_connection() == _game_connection_network_server)
+						/* port: in network co-op the first player spawns at the map's
+						start; the rest wait for the first checkpoint, then spawn next
+						to a player already in the game (so do late joiners) */
+						if (game_connection() != _game_connection_network_server)
+							player_spawn(iterator.datum_index);
+						else if (players_coop_may_spawn())
+						{
+							player_spawn(iterator.datum_index);
 							player_place_beside_teammate(iterator.datum_index);
+						}
 					}
 					else if (!players_globals->all_dead)
 						main_respawn(players_globals->respawn_failed);
