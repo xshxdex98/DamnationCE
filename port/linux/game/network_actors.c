@@ -144,6 +144,23 @@ struct distributed_actor_state
 	struct distributed_vector up;
 };
 
+/* the damage an AI unit is taking: its shield's flare and its body's wounds
+are drawn by it */
+struct distributed_actor_damage
+{
+	long unit_index;
+	word current_shield_damage;
+	word recent_shield_damage;
+	word current_body_damage;
+	word recent_body_damage;
+};
+
+struct distributed_actor_damage_message
+{
+	struct distributed_message_header header;
+	struct distributed_actor_damage units[MAXIMUM_ENTRIES_PER_MESSAGE];
+};
+
 struct distributed_actor_state_message
 {
 	struct distributed_message_header header;
@@ -156,6 +173,8 @@ struct host_actor
 	long unit_index;
 	/* got a control since the last send (noted during game_tick, sent after it) */
 	boolean noted;
+	/* its damage was sent last tick (and once more when it ends) */
+	boolean damaged;
 	struct unit_control_data control;
 	/* the control flags of the last tick's entry */
 	word sent_control_flags;
@@ -636,6 +655,48 @@ void network_actors_note_user_animation(
 	actor->user_animation_number = next_event_number();
 }
 
+/* host: the damage of the AI units taking some, to every client (and once
+more when it ends, so a flare goes) */
+static void host_send_damage(
+	void)
+{
+	struct distributed_actor_damage_message message;
+	short count = 0;
+	short index;
+
+	for (index = 0; index < host_actor_count; index++)
+	{
+		struct host_actor *actor = &host_actors[index];
+		struct damage_network_state damage;
+		boolean damaged;
+
+		if (!actor_unit_valid(actor->unit_index))
+			continue;
+		damage_get_network_state(actor->unit_index, &damage);
+		damaged = damage.current_shield_damage > 0.0f || damage.recent_shield_damage > 0.0f ||
+			damage.current_body_damage > 0.0f || damage.recent_body_damage > 0.0f;
+		if (!damaged && !actor->damaged)
+			continue;
+		actor->damaged = damaged;
+		message.units[count].unit_index = actor->unit_index;
+		message.units[count].current_shield_damage = distributed_vitality_pack(damage.current_shield_damage);
+		message.units[count].recent_shield_damage = distributed_vitality_pack(damage.recent_shield_damage);
+		message.units[count].current_body_damage = distributed_vitality_pack(damage.current_body_damage);
+		message.units[count].recent_body_damage = distributed_vitality_pack(damage.recent_body_damage);
+		if (++count == MAXIMUM_ENTRIES_PER_MESSAGE)
+		{
+			distributed_send(&message, _distributed_message_actor_damage, count,
+				(word)(sizeof(message.header) + count * sizeof(message.units[0])), _distributed_to_clients);
+			count = 0;
+		}
+	}
+	if (count)
+	{
+		distributed_send(&message, _distributed_message_actor_damage, count,
+			(word)(sizeof(message.header) + count * sizeof(message.units[0])), _distributed_to_clients);
+	}
+}
+
 /* Host, after each tick: sends each client the AI units driven this tick.
 Units near the client's players go every tick, others less often. A unit
 with a fresh impulse, action, speech or animation goes to everyone in each
@@ -678,6 +739,7 @@ void network_actors_host_tick(
 		if (actor->user_animation_sends > 0)
 			actor->user_animation_sends--;
 	}
+	host_send_damage();
 	for (machine_number = 0; machine_number < machine_count; machine_number++)
 	{
 		long machine_index = machine_indices[machine_number];
@@ -703,6 +765,38 @@ void network_actors_host_tick(
 			distributed_send_to_machine(machine_index, &message, _distributed_message_actor_states, count,
 				(word)(sizeof(message.header) + count * sizeof(struct distributed_actor_state)));
 		}
+	}
+}
+
+word network_actors_damage_entry_size(
+	void)
+{
+	return sizeof(struct distributed_actor_damage);
+}
+
+/* client: the damage the host's AI units are taking */
+void network_actors_handle_damage(
+	void const *entries,
+	short count)
+{
+	struct distributed_actor_damage const *units = entries;
+	short index;
+
+	for (index = 0; index < count; index++)
+	{
+		struct damage_network_state damage;
+
+		if (!distributed_object_index_valid(units[index].unit_index) ||
+			!network_objects_client_has(units[index].unit_index) || !actor_unit_valid(units[index].unit_index))
+		{
+			continue;
+		}
+		damage_get_network_state(units[index].unit_index, &damage);
+		damage.current_shield_damage = distributed_vitality_unpack(units[index].current_shield_damage);
+		damage.recent_shield_damage = distributed_vitality_unpack(units[index].recent_shield_damage);
+		damage.current_body_damage = distributed_vitality_unpack(units[index].current_body_damage);
+		damage.recent_body_damage = distributed_vitality_unpack(units[index].recent_body_damage);
+		damage_set_network_state(units[index].unit_index, &damage);
 	}
 }
 
