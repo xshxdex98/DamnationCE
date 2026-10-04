@@ -221,6 +221,31 @@ void periodic_functions_dispose(
 	return;
 }
 
+/* port: a function type from a Custom Edition map's tag that this build
+doesn't know. Some tools left such fields big-endian, as tag files store
+them (Hornet's Nest's assault rifle muzzle flash light has 256 for 1), so
+the type with its bytes swapped is taken when that is valid. Returns the
+type to use, or NONE; logs the first unknown type of each kind. */
+static short function_type_repair(
+	short function_type,
+	short type_count,
+	char const *kind)
+{
+	static boolean logged[2];
+	short swapped = (short)(((function_type & 0xFF) << 8) | ((function_type >> 8) & 0xFF));
+	short repaired = swapped >= 0 && swapped < type_count ? swapped : NONE;
+	boolean *logged_kind = &logged[type_count == NUMBER_OF_PERIODIC_FUNCTIONS ? 0 : 1];
+
+	if (!*logged_kind)
+	{
+		error(_error_silent, "%s function type %d is unknown; %s", kind, function_type,
+			repaired != NONE ? "its bytes swapped are used" : "a constant is used");
+		*logged_kind = TRUE;
+	}
+
+	return repaired;
+}
+
 real periodic_function_evaluate(
 	short function_type,
 	real time)
@@ -234,17 +259,12 @@ real periodic_function_evaluate(
 
 	if (function_type == _periodic_function_one)
 		return 1.0f;
-	/* port: a Custom Edition map's tag can hold a function type this build
-	doesn't know (a field its loader doesn't convert); drawn as "one" rather
-	than halting the game, and logged once */
+	/* port: an unknown type (function_type_repair), else "one" */
 	if (function_type < 0 || function_type >= NUMBER_OF_PERIODIC_FUNCTIONS)
 	{
-		static boolean logged;
-
-		if (!logged)
-			error(_error_silent, "periodic function type %d is unknown; drawn as \"one\"", function_type);
-		logged = TRUE;
-		return 1.0f;
+		function_type = function_type_repair(function_type, NUMBER_OF_PERIODIC_FUNCTIONS, "periodic");
+		if (function_type == NONE || function_type == _periodic_function_one)
+			return 1.0f;
 	}
 
 	match_assert(
@@ -299,15 +319,12 @@ real transition_function_evaluate(
 
 	if (function_type == _transition_function_linear)
 		return value;
-	/* port: as periodic_function_evaluate's: an unknown type is linear */
+	/* port: an unknown type (function_type_repair), else linear */
 	if (function_type < 0 || function_type >= NUMBER_OF_TRANSITION_FUNCTIONS)
 	{
-		static boolean logged;
-
-		if (!logged)
-			error(_error_silent, "transition function type %d is unknown; drawn as linear", function_type);
-		logged = TRUE;
-		return value;
+		function_type = function_type_repair(function_type, NUMBER_OF_TRANSITION_FUNCTIONS, "transition");
+		if (function_type == NONE || function_type == _transition_function_linear)
+			return value;
 	}
 
 	match_assert(
