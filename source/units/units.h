@@ -758,6 +758,13 @@ boolean unit_is_playing_custom_animation(
 	long unit_index);
 boolean unit_flying_through_air(
 	long unit_index);
+/* port: network co-op (port/linux/game/network_coop.c) */
+void unit_port_play_user_animation(
+	long unit_index,
+	long animation_graph_index,
+	short animation_index,
+	boolean interpolate,
+	short frame_index);
 void unit_stop_custom_animation(
 	long unit_index);
 boolean unit_melee_attack_begin(

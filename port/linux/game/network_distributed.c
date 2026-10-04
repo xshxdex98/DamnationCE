@@ -3262,9 +3262,10 @@ static boolean distributed_message_stale(
 	case _distributed_message_actor_states:
 	case _distributed_message_structure_bsp:
 	case _distributed_message_coop_presentation:
-	case _distributed_message_coop_sounds:
 	case _distributed_message_coop_device_groups:
 	case _distributed_message_coop_object_names:
+	case _distributed_message_coop_skip_vote:
+	case _distributed_message_coop_events:
 		break;
 	default:
 		return FALSE;
@@ -3705,7 +3706,8 @@ void network_distributed_handle_message(
 	case _distributed_message_actor_states: entry_size = network_actors_entry_size(); break;
 	case _distributed_message_structure_bsp: entry_size = sizeof(struct distributed_structure_bsp); break;
 	case _distributed_message_coop_presentation: entry_size = network_coop_presentation_entry_size(); break;
-	case _distributed_message_coop_sounds: entry_size = network_coop_sound_entry_size(); break;
+	case _distributed_message_coop_events: entry_size = network_coop_event_entry_size(); break;
+	case _distributed_message_coop_skip_vote: entry_size = network_coop_skip_vote_entry_size(); break;
 	case _distributed_message_coop_device_groups: entry_size = network_coop_device_group_entry_size(); break;
 	case _distributed_message_coop_object_names: entry_size = network_coop_object_names_entry_size(); break;
 	case _distributed_message_pickups: entry_size = sizeof(struct distributed_pickup); break;
@@ -3781,8 +3783,11 @@ void network_distributed_handle_message(
 	case _distributed_message_coop_presentation:
 		network_coop_handle_presentation(entries);
 		break;
-	case _distributed_message_coop_sounds:
-		network_coop_handle_sounds(entries, header.count);
+	case _distributed_message_coop_events:
+		network_coop_handle_events(entries, header.count);
+		break;
+	case _distributed_message_coop_skip_vote:
+		network_coop_handle_skip_vote(machine_index, entries);
 		break;
 	case _distributed_message_coop_device_groups:
 		network_coop_handle_device_groups(entries, header.count);

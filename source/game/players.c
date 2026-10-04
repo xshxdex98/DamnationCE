@@ -236,6 +236,7 @@ symbols in this file:
 #include "camera/observer.h"
 #include "data.h"
 #include "devices/devices.h"
+#include "network_coop.h" /* port: port/linux/game/network_coop.c */
 #include "editor/editor_stubs.h"
 #include "effects/effects.h"
 #include "effects/player_effects.h"
@@ -309,8 +310,7 @@ static void network_player_log_idle_action(long player_index, unsigned long cont
 netcode, whose players' weapons, grenades and power-ups are the host's
 (port/linux/game/network_distributed.c) */
 #define players_decide_pickups() (!network_game_distributed_client())
-/* port/linux/game/network_coop.c's */
-boolean network_coop_devices_remote(void);
+
 
 /* ---------- constants */
 

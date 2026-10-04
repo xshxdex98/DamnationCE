@@ -107,6 +107,7 @@ symbols in this file:
 #include "units/units.h"
 
 #include <stddef.h>
+#include "network_coop.h" /* port: port/linux/game/network_coop.c */
 
 /* ---------- constants */
 
@@ -397,6 +398,7 @@ void scripted_player_effect_set_rotation(
 	real pitch,
 	real roll)
 {
+	network_coop_note_player_effect(_coop_player_effect_rotation, yaw, pitch, roll);
 	player_effect_globals->scripted_effect.max_rotation.yaw = DEGREES_TO_RADIANS(yaw);
 	player_effect_globals->scripted_effect.max_rotation.pitch = DEGREES_TO_RADIANS(pitch);
 	player_effect_globals->scripted_effect.max_rotation.roll = DEGREES_TO_RADIANS(roll);
@@ -640,6 +642,7 @@ void scripted_player_effect_set_translation(
 {
 	real_vector3d *translation = &player_effect_globals->scripted_effect.max_translation;
 
+	network_coop_note_player_effect(_coop_player_effect_translation, horizontal, vertical, depth);
 	translation->i = horizontal;
 	translation->j = vertical;
 	translation->k = depth;
@@ -653,6 +656,7 @@ void scripted_player_effect_start(
 {
 	short ticks;
 
+	network_coop_note_player_effect(_coop_player_effect_start, maximum_intensity, attack_time, 0.0f);
 	player_effect_globals->scripted_effect.max_intensity = maximum_intensity;
 
 	ticks = (short)fast_ftol(attack_time * TICKS_PER_SECOND);
@@ -675,6 +679,7 @@ void scripted_player_effect_stop(
 {
 	short ticks = (short)fast_ftol(duration * TICKS_PER_SECOND);
 
+	network_coop_note_player_effect(_coop_player_effect_stop, duration, 0.0f, 0.0f);
 	player_effect_globals->scripted_effect.timer = ticks;
 	player_effect_globals->scripted_effect.total_time = ticks;
 	SET_FLAG(

@@ -98,6 +98,7 @@ symbols in this file:
 #include "scenario/scenario_definitions.h"
 #include "sound/game_sound.h"
 #include "sound/sound_definitions.h"
+#include "network_coop.h" /* port: port/linux/game/network_coop.c */
 
 /* ---------- constants */
 
@@ -186,10 +187,6 @@ typedef char device_animation_frame_count_offset_assert[
 	offsetof(struct animation, frame_count) == 0x22 ? 1 : -1];
 
 /* ---------- prototypes */
-
-/* port: co-op device sync (port/linux/game/network_coop.c) */
-boolean network_coop_devices_remote(void);
-void network_coop_note_device_snap(short group_index);
 
 void device_group_set_actual_value(
 	short group_index,

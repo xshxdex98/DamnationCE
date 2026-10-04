@@ -380,6 +380,7 @@ symbols in this file:
 #include "networking/network_game_manager.h"
 #include "networking/network_server_manager.h" /* port: a co-op game's level won */
 #include "custom_edition_maps.h" /* port: a co-op game's campaign level */
+#include "network_coop.h" /* port: port/linux/game/network_coop.c */
 #include "camera/director.h"
 #include "camera/observer.h"
 #include "cutscene/cinematics.h"
@@ -1853,9 +1854,15 @@ static void main_revert_map_private(
 static void main_skip_cinematic_private(
 	void)
 {
-	if (cinematic_can_be_skipped())
+	/* port: a network host never reverts without a saved state, which
+	would reset the map on the host alone */
+	if (cinematic_can_be_skipped() &&
+		(game_connection() != _game_connection_network_server || game_state_port_saved_game_valid()))
 	{
+		long now = game_time_get();
+
 		game_state_revert();
+		network_coop_skip_reverted(now);
 		ui_widgets_disable_pause_game(30);
 		main_globals.revert_map = FALSE;
 	}

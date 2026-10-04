@@ -28,19 +28,30 @@ with ideas from VALORANT's netcode articles, keeping the 30 Hz tick:
   tick and others less often; a client drives each unit with the latest
   it has, as it drives a remote player's, until it hears nothing of it for
   two seconds (`port/linux/game/network_actors.c`).
-- **Co-op.** A network game on a campaign level, with a gametype no game
-  engine runs (Create Game > COOPERATIVE > CAMPAIGN), is co-op. Only the host
-  runs the level's scripts and spawns players; every machine follows the
-  host's structure BSP, and sees the host's cinematics, camera and screen
-  fades, hears its scripts' sounds, and has its devices (doors, elevators,
-  switches: a client sets none itself, its player's use of one relayed to
-  the host) and the named objects its scripts create and destroy
-  (`network_coop.c`). A dead player watches a living teammate
-  (`coop_spectate.c`) and comes back beside one once it is safe (the
-  campaign's own coop respawn); with all of them dead they come back where
-  they were at the last checkpoint, as no machine's game can go back to it.
-  A level won ends the round as a multiplayer game's does, and the next is
-  on the campaign's next level.
+- **Co-op.** A network game on a campaign level with no game engine
+  (Create Game > COOPERATIVE > CAMPAIGN) is co-op. Only the host runs the
+  level's scripts and spawns players. `network_coop.c` sends the clients
+  everything the scripts do that they would otherwise miss:
+  - every tick: the cinematic, camera, screen fade, the HUD settings the
+    scripts control (what is shown, the mission timer) and the skip vote;
+  - once each, numbered so nothing is applied twice: script sounds,
+    chapter titles, help and objective text, "Checkpoint" messages, screen
+    shake, nav points, and custom animations on units and scenery;
+  - device groups (doors, elevators, switches; a client sets none itself,
+    and its player's use of one is relayed to the host);
+  - which named objects exist, so scripted creates and deletes match.
+
+  Every machine follows the host's structure BSP. A dead player watches a
+  living teammate (`coop_spectate.c`) and comes back beside one once it is
+  safe. With everyone dead they come back where they were at the last
+  checkpoint, since only the host could revert. A level won ends the round
+  as in multiplayer, and the next round is the campaign's next level.
+
+  Cutscenes are skipped by vote: more than half the machines must press
+  skip. The host then reverts as single player does, but keeps its clock
+  moving forward (the netcode depends on that) and moves the script
+  threads' wake times along with it. The object, device and name syncs
+  bring the clients up to date.
 - **Host authoritative.** The host alone decides damage, deaths, spawns,
   pickups, scores and the game's objects; clients do not decide them but
   apply what the host sends.
