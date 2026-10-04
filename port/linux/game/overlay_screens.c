@@ -47,7 +47,96 @@ static char const *const xbox_levels[] =
 };
 #define UNKNOWN_LEVEL_FRAME NUMBEROF(xbox_levels)
 
+/* the Xbox multiplayer levels' display names */
+static char const *const xbox_map_names[][2] =
+{
+	{ "beavercreek", "Battle Creek" }, { "bloodgulch", "Blood Gulch" }, { "boardingaction", "Boarding Action" },
+	{ "carousel", "Derelict" }, { "chillout", "Chill Out" }, { "damnation", "Damnation" },
+	{ "hangemhigh", "Hang 'Em High" }, { "longest", "Longest" }, { "prisoner", "Prisoner" },
+	{ "putput", "Chiron TL-34" }, { "ratrace", "Rat Race" }, { "sidewinder", "Sidewinder" }, { "wizard", "Wizard" },
+};
+
+static struct overlay_palette const glassed_palette =
+{
+	TRUE, 0x06080C8C, 0x06080C8C, 0xFFFFFF5A, 0xFFFFFFD7, 0x06080C78, 0xFFFFFF46, 0xFFFFFF1A, 0xB4B8BCFF, 0xFFFFFF3E,
+	0xFFFFFF14, 0xD2D6DAFF, 0x8C9096FF, 0xA8ACB0FF, 0xD2D6DAFF, 0x06080CE6, 0.0f,
+};
+static struct overlay_palette const vanilla_palette =
+{
+	FALSE, 0x0B1830FF, 0x03070FFF, 0x2A62C8FF, 0x3D8BFFFF, 0x081530F0, 0x2F6DD0FF, 0x123266FF, 0x7FB0FFFF, 0x2052B0FF,
+	0x16294AFF, 0xE6EEFCFF, 0x8FA6C8FF, 0x4AA3FFFF, 0x4AA3FFFF, 0x0A1A36F8, 6.0f,
+};
+
+char const *config_string(char const *name);
+
 /* ---------- public code */
+
+struct overlay_palette const *overlay_palette_current(
+	void)
+{
+	return strcmp(config_string("display.theme"), "vanilla") ? &glassed_palette : &vanilla_palette;
+}
+
+void overlay_text_fitted(
+	int font,
+	float size,
+	float x,
+	float y,
+	float width,
+	unsigned int color,
+	char const *text)
+{
+	char fitted[128];
+	size_t length;
+
+	snprintf(fitted, sizeof(fitted), "%s", text);
+	length = strlen(fitted);
+	if (ui_overlay_text_width(font, size, fitted) > width)
+	{
+		/* drop whole UTF-8 characters until it fits with the ellipsis */
+		while (length > 0)
+		{
+			do
+				length--;
+			while (length > 0 && (fitted[length] & 0xC0) == 0x80);
+			snprintf(fitted + length, sizeof(fitted) - length, "\xE2\x80\xA6");
+			if (ui_overlay_text_width(font, size, fitted) <= width)
+				break;
+		}
+	}
+	ui_overlay_text(font, size, x, y, UI_ALIGN_LEFT, color, fitted);
+}
+
+char const *overlay_xbox_map_name(
+	char const *file_name)
+{
+	short index;
+
+	for (index = 0; index < NUMBEROF(xbox_map_names); index++)
+	{
+		if (!csstrcmp(file_name, xbox_map_names[index][0]))
+			return xbox_map_names[index][1];
+	}
+	return NULL;
+}
+
+void overlay_map_name(
+	char const *map_name,
+	char *out,
+	long size)
+{
+	char const *file_name = tag_name_strip_path(map_name);
+	char const *xbox_name = overlay_xbox_map_name(file_name);
+	short display_index = custom_edition_maps_display_index(map_name);
+	wchar_t const *custom_name = display_index != NONE ? custom_edition_maps_name(display_index) : NULL;
+
+	if (xbox_name)
+		snprintf(out, (size_t)size, "%s", xbox_name);
+	else if (custom_name)
+		overlay_utf8((unsigned short const *)custom_name, size, out, size);
+	else
+		snprintf(out, (size_t)size, "%s", file_name);
+}
 
 boolean overlay_repeat_step(
 	struct overlay_repeat *repeat,

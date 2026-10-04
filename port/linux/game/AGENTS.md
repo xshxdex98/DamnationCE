@@ -31,12 +31,22 @@ except the first:
 |---|---|
 | `menu_tags.c` | Builds the XML menus (`port/assets/menus`) into the game's widget tags. |
 | `menu_functions.c` | Event handlers the XML menus can call: hosting, Server Setup, the lobby. |
-| `overlay_screens.c/.h` | Helpers shared by the screens drawn over the menus: key repeat, prompts, map pictures. |
-| `map_screen.c` | The map picker used when hosting. Cooperative or PvP, then Campaign (stock or custom) or Vanilla/Custom maps. |
-| `browser_screen.c` | The Online Games server browser. |
+| `overlay_screens.c/.h` | Helpers shared by the screens drawn over the menus: key repeat, buttons, map pictures and names, the list screens' palette, fitted text. |
+| `map_screen.c` | The map picker used when hosting. Cooperative or PvP, then Campaign (stock or custom) or Vanilla/Custom maps. Backing out of it returns to Online Games if that opened it. |
+| `browser_screen.c` | The Online Games server browser: a list with sortable columns and a details pane. |
+| `lobby_screen.c` | The pregame lobby, drawn in the browser's style over the lobby's invisible widgets. |
 
 The overlay screens are drawn with `../src/ui_overlay.h`, in a 640x480
-layout. Each has a palette per theme: keep Glassed and Vanilla in step.
+layout. The browser and the lobby share one palette per theme
+(`overlay_palette_current`); the map picker has its own. Keep Glassed and
+Vanilla in step.
+
+The browser and the map picker take over the menus' input and drawing
+while open (`ui_widget.c` checks `*_screen_active`). The lobby doesn't: its
+widgets (`tools/port_settings.py`, `_lobby`) still run it, update it and
+take the focus and the mouse, but have no pictures and clear text, and
+`lobby_screen.c` draws over them. Their places must match the constants at
+the top of `lobby_screen.c`.
 
 ### Custom Edition maps
 

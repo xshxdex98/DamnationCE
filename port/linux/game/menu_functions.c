@@ -1669,7 +1669,7 @@ Xbox's networking, run by the engine's port entry points
 #define GAMETYPE_ROWS 10
 #define MAXIMUM_GAMETYPES 100
 #define BROWSER_ROWS 15
-#define LOBBY_ROWS 11
+#define LOBBY_ROWS 13
 #define TEXT_FIELD_LENGTH 128
 #define PLAYLIST_READ_ONLY_BIT 0x40000000UL
 /* (a key stroke's modifier, as input_xbox.c has them: shift, control) */
@@ -3011,28 +3011,6 @@ static void lobby_row_text(short row, wchar_t *text)
 	text[NUMBEROF(player->name)] = 0;
 }
 
-/* each player row's tags: YOU on this machine's players, and the team in
-its color in a team game */
-static void lobby_row_tags(struct widget_instance *list, boolean teams)
-{
-	short local_machine = network_game_client_get_local_machine_index();
-	struct widget_instance *row;
-	short index = 0;
-
-	for (row = list->child; row && !strncmp(row->name, "list_item_", 10); row = row->next, index++)
-	{
-		struct network_player const *player = row->visible ? lobby_players[multiplayer.lobby_first + index] : NULL;
-		struct widget_instance *red = named(row, "list_item_red", 0);
-		struct widget_instance *blue = named(row, "list_item_blue", 0);
-
-		text_set(named(row, "list_item_you", 0), player && player->machine_index == local_machine ? L"YOU" : L"");
-		visible_set(red, player && teams && !player->team_index);
-		visible_set(blue, player && teams && player->team_index);
-		text_set(red, L"RED");
-		text_set(blue, L"BLUE");
-	}
-}
-
 /* the lobby's panel's details: a label and a value a line */
 static void lobby_info_show(struct widget_instance *description, wchar_t const *const *labels,
 	wchar_t const *const *values, short count)
@@ -3085,22 +3063,10 @@ static void lobby_map_show(struct widget_instance *description, char const *map_
 		widget->parameters.text_box.string_list_index = map;
 }
 
-/* the game's start countdown, large beside the header; nothing when there
-is none (a host by itself starts at once) */
-static void lobby_countdown_show(struct widget_instance *description, void *client, boolean pregame)
-{
-	short seconds = pregame ? network_game_client_get_seconds_to_game_start(client) : 0;
-	wchar_t text[ROW_TEXT_LENGTH] = L"";
-
-	if (seconds > 0)
-		usnprintf(text, NUMBEROF(text) - 1, L"STARTING IN %d", seconds);
-	text_set(named(description, "lobby_countdown", 0), text);
-}
-
-/* "port lobby update" */
+/* "port lobby update": the players' rows and the buttons. lobby_screen.c
+draws the lobby over them. */
 static void lobby_update(struct widget_instance *list)
 {
-	struct widget_instance *description = list->parameters.list.extended_description;
 	void *client = global_network_game_client_get();
 	struct network_game *game = client ? network_game_client_get_game(client) : NULL;
 	short state_data, state = client ? network_game_client_get_state(client, &state_data) : NONE;
@@ -3116,46 +3082,18 @@ static void lobby_update(struct widget_instance *list)
 	if (multiplayer.lobby_first > MAX(0, lobby_player_count - LOBBY_ROWS))
 		multiplayer.lobby_first = (short)MAX(0, lobby_player_count - LOBBY_ROWS);
 	rows_update(list, (short)MIN(lobby_player_count, LOBBY_ROWS), lobby_row_text);
-	lobby_row_tags(list, game && game->variant.universal_variant.teams);
 	visible_set(named(list, "lobby_button_team", 0), game && game->variant.universal_variant.teams);
 	/* (the buttons' focus, off Switch Team when it is hidden) */
 	focus_off_hidden(named(list, "lobby_button_bar", 0));
-	visible_set(named(description, "lobby_right_item", 0), game != NULL && state >= _client_state_pregame);
-	lobby_countdown_show(description, client, game != NULL && state == _client_state_pregame);
-	if (!game || state < _client_state_pregame)
-	{
-		profile_name_show(description);
-		return;
-	}
-	lobby_map_show(description, game->map.name);
-	{
-		boolean cooperative = game_cooperative(game);
-		wchar_t const *labels[] = { L"GAME", cooperative ? L"DIFFICULTY" : L"MODE", L"PLAYERS", L"STATUS" };
-		wchar_t gametype[NUMBEROF(game->variant.human_readable_game_description) + 1];
-		wchar_t kind[ROW_TEXT_LENGTH], players[ROW_TEXT_LENGTH];
-		wchar_t const *values[NUMBEROF(labels)];
-		char link[TEXT_FIELD_LENGTH];
+}
 
-		ustrncpy(gametype, game->variant.human_readable_game_description, NUMBEROF(gametype) - 1);
-		gametype[NUMBEROF(gametype) - 1] = 0;
-		if (cooperative)
-			string_get("pc\\main_menu\\player_profiles_select\\difficulty_names", game->difficulty, kind);
-		else
-			ustrncpy(kind, engine_names[PIN(game->variant.game_engine_index, 0, 5)], NUMBEROF(kind) - 1);
-		kind[NUMBEROF(kind) - 1] = 0;
-		usnprintf(players, NUMBEROF(players) - 1, L"%d / %d", lobby_player_count, game->maximum_players);
-		players[NUMBEROF(players) - 1] = 0;
-		values[0] = gametype;
-		values[1] = kind;
-		values[2] = players;
-		values[3] = network_game_client_get_seconds_to_game_start(client) > 0 ? L"Starting" :
-			game->machine_count < 2 ? L"Waiting for players" : L"Ready";
-		lobby_info_show(description, labels, values, NUMBEROF(labels));
-		text_set(named(description, "lobby_note", 0),
-			global_network_game_server_get() && p2p_invite_link(link, sizeof(link)) ?
-			L"Invite link copied:\r\npaste it to friends" : L"");
-	}
-	profile_name_show(description);
+/* lobby_screen.c: the lobby's players in the order the rows show them, and
+which one the first row shows; returns how many there are */
+short pc_menu_lobby_players(struct network_player *const **players, short *first)
+{
+	*players = lobby_players;
+	*first = multiplayer.lobby_first;
+	return lobby_player_count;
 }
 
 /* ---- an in-progress game's lobby, before joining it (Direct Link and
@@ -3206,7 +3144,6 @@ static void preview_update(struct widget_instance *list)
 		values[2] = machines;
 		values[3] = game->open ? L"Joinable" : L"Not joinable";
 		lobby_info_show(description, labels, values, NUMBEROF(labels));
-		text_set(named(description, "lobby_note", 0), L"");
 		ustrncpy(name, game->game_name, NUMBEROF(game->game_name));
 		name[NUMBEROF(game->game_name)] = 0;
 		/* (the text box does not wrap: lines of up to 28 characters) */

@@ -695,6 +695,9 @@ boolean map_screen_active(void);
 void map_screen_process(void);
 void map_screen_render(void);
 void map_screen_pointer(struct halo_ui_pointer const *pointer);
+/* port/linux/game/lobby_screen.c: drawn over the lobby's widgets */
+boolean lobby_screen_active(void);
+void lobby_screen_render(void);
 /* (ONLINE GAMES, below: its list moves focus item by item) */
 boolean ui_widget_online_games_list(struct widget_instance *widget);
 #endif
@@ -3282,6 +3285,13 @@ void ui_widget_port_go_back_from_top(
 {
 	if (widget_globals.active_widgets[0])
 		widget_instance_go_back_to_previous(widget_globals.active_widgets[0]);
+}
+
+/* the first player's screen up, or NULL */
+struct widget_instance *ui_widget_port_top(
+	void)
+{
+	return widget_globals.active_widgets[0];
 }
 #endif
 
@@ -6648,6 +6658,11 @@ void render_ui_widgets(
 				}
 			}
 		}
+#ifdef HALO_GAME_BROWSER
+		/* port: the lobby is drawn over its own (invisible) widgets */
+		if (lobby_screen_active())
+			lobby_screen_render();
+#endif
 		if (widget_globals.fade_to_black >= 0.0f &&
 			widget_globals.fade_to_black <= 1.0f)
 		{

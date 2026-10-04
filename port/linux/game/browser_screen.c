@@ -98,15 +98,6 @@ static char const *const engine_names[] =
 	"", "CTF", "Slayer", "Oddball", "King", "Race",
 };
 
-/* the Xbox multiplayer maps' display names */
-static char const *const map_names[][2] =
-{
-	{ "beavercreek", "Battle Creek" }, { "bloodgulch", "Blood Gulch" }, { "boardingaction", "Boarding Action" },
-	{ "carousel", "Derelict" }, { "chillout", "Chill Out" }, { "damnation", "Damnation" },
-	{ "hangemhigh", "Hang 'Em High" }, { "longest", "Longest" }, { "prisoner", "Prisoner" },
-	{ "putput", "Chiron TL-34" }, { "ratrace", "Rat Race" }, { "sidewinder", "Sidewinder" }, { "wizard", "Wizard" },
-};
-
 enum
 {
 	SORT_PLAYERS,
@@ -208,15 +199,12 @@ static struct known_map const *known_map(
 	csstrncpy(map->path, path, sizeof(map->path) - 1);
 	map->path[sizeof(map->path) - 1] = 0;
 	map->installed = TRUE;
-	for (index = 0; index < NUMBEROF(map_names); index++)
+	if (overlay_xbox_map_name(base))
 	{
-		if (!csstrcmp(base, map_names[index][0]))
-		{
-			map->kind = MAP_XBOX;
-			csstrncpy(map->name, map_names[index][1], sizeof(map->name) - 1);
-			map->name[sizeof(map->name) - 1] = 0;
-			return map;
-		}
+		map->kind = MAP_XBOX;
+		csstrncpy(map->name, overlay_xbox_map_name(base), sizeof(map->name) - 1);
+		map->name[sizeof(map->name) - 1] = 0;
+		return map;
 	}
 	display_index = custom_edition_maps_display_index(path);
 	display_name = display_index != NONE ? custom_edition_maps_name(display_index) : NULL;
@@ -639,26 +627,8 @@ void browser_screen_process(
 
 /* ---------- drawing */
 
-/* colors (0xRRGGBBAA) for each theme (display.theme) */
-struct browser_palette
-{
-	boolean glassed;
-	unsigned int backdrop, backdrop_bottom, rule, title, panel, panel_edge, panel_head, head, row_selected, row_rule;
-	unsigned int text, dim, label, prompt, connecting;
-	float radius;
-};
-static struct browser_palette const glassed_palette =
-{
-	TRUE, 0x06080C8C, 0x06080C8C, 0xFFFFFF5A, 0xFFFFFFD7, 0x06080C78, 0xFFFFFF46, 0xFFFFFF1A, 0xB4B8BCFF, 0xFFFFFF3E,
-	0xFFFFFF14, 0xD2D6DAFF, 0x8C9096FF, 0xA8ACB0FF, 0xD2D6DAFF, 0x06080CE6, 0.0f,
-};
-static struct browser_palette const vanilla_palette =
-{
-	FALSE, 0x0B1830FF, 0x03070FFF, 0x2A62C8FF, 0x3D8BFFFF, 0x081530F0, 0x2F6DD0FF, 0x123266FF, 0x7FB0FFFF, 0x2052B0FF,
-	0x16294AFF, 0xE6EEFCFF, 0x8FA6C8FF, 0x4AA3FFFF, 0x4AA3FFFF, 0x0A1A36F8, 6.0f,
-};
-/* set from the theme each frame */
-static struct browser_palette const *palette = &glassed_palette;
+/* the theme's, set by layout_update */
+static struct overlay_palette const *palette;
 
 #define COLOR_RULE (palette->rule)
 #define COLOR_TITLE (palette->title)
@@ -672,19 +642,12 @@ static struct browser_palette const *palette = &glassed_palette;
 #define COLOR_DIM (palette->dim)
 #define COLOR_LABEL (palette->label)
 #define COLOR_PROMPT (palette->prompt)
-/* the same in both themes */
-enum
-{
-	/* roster names by team */
-	COLOR_RED_TEAM = 0xFF6B6BFF,
-	COLOR_BLUE_TEAM = 0x6BB0FFFF,
-	/* notices, and what can't be joined: a full or closed game, a missing map */
-	COLOR_NOTICE = 0x3CC8C0FF,
-	/* a game open to join (its row's dot), and a ping's quality */
-	COLOR_GOOD = 0x5ED38CFF,
-	COLOR_FAIR = 0xE8C547FF,
-	COLOR_POOR = 0xE86A5AFF,
-};
+#define COLOR_RED_TEAM OVERLAY_COLOR_RED_TEAM
+#define COLOR_BLUE_TEAM OVERLAY_COLOR_BLUE_TEAM
+#define COLOR_NOTICE OVERLAY_COLOR_NOTICE
+#define COLOR_GOOD OVERLAY_COLOR_GOOD
+#define COLOR_FAIR OVERLAY_COLOR_FAIR
+#define COLOR_POOR OVERLAY_COLOR_POOR
 
 /* The list's columns: each spans a share of the list's width, and the
 numbers are right-aligned. Clicking a heading sorts by it. */
@@ -736,6 +699,7 @@ static void layout_update(
 	/* the screen's edges are this far outside the 640 units */
 	float edge = (float)((halo_screen_width() - 640) / 2);
 
+	palette = overlay_palette_current();
 	if (!palette->glassed)
 	{
 		layout.list_x = 37.0f;
@@ -931,37 +895,6 @@ static char const *type_name(
 }
 
 
-/* Draws text cut to a width, ending in an ellipsis if it doesn't fit. */
-static void text_fitted(
-	int font,
-	float size,
-	float x,
-	float y,
-	float width,
-	unsigned int color,
-	char const *text)
-{
-	char fitted[128];
-	size_t length;
-
-	snprintf(fitted, sizeof(fitted), "%s", text);
-	length = strlen(fitted);
-	if (ui_overlay_text_width(font, size, fitted) > width)
-	{
-		/* drop whole UTF-8 characters until it fits with the ellipsis */
-		while (length > 0)
-		{
-			do
-				length--;
-			while (length > 0 && (fitted[length] & 0xC0) == 0x80);
-			snprintf(fitted + length, sizeof(fitted) - length, "\xE2\x80\xA6");
-			if (ui_overlay_text_width(font, size, fitted) <= width)
-				break;
-		}
-	}
-	ui_overlay_text(font, size, x, y, UI_ALIGN_LEFT, color, fitted);
-}
-
 /* the title, and how many games and players there are */
 static void render_header(
 	long players)
@@ -1029,7 +962,7 @@ static void render_row(
 	ui_overlay_rect(layout.list_x + 0.013f * layout.list_width - 2.5f, y + ROW_HEIGHT / 2 - 3, 5, 5, 2.5f, dot);
 
 	overlay_utf8(game->name, NUMBEROF(game->name), text, sizeof(text));
-	text_fitted(UI_FONT_BOLD, 10.0f, column_left(&columns[0]), text_y - 1,
+	overlay_text_fitted(UI_FONT_BOLD, 10.0f, column_left(&columns[0]), text_y - 1,
 		column_right(&columns[0]) - column_left(&columns[0]), chosen ? COLOR_TITLE : color, text);
 
 	/* a Custom Edition map gets a CE tag after its name; a missing one is
@@ -1041,15 +974,15 @@ static void render_row(
 
 		ui_overlay_outline(column_right(&columns[1]) - tag, y + 5, tag, 11, 2.0f, 0.75f, COLOR_DIM);
 		ui_overlay_text(UI_FONT_BOLD, 7.0f, column_right(&columns[1]) - tag + 3, y + 6.5f, UI_ALIGN_LEFT, COLOR_DIM, "CE");
-		text_fitted(UI_FONT_REGULAR, 9.5f, x, text_y, column_right(&columns[1]) - x - tag - 4, color, map->name);
+		overlay_text_fitted(UI_FONT_REGULAR, 9.5f, x, text_y, column_right(&columns[1]) - x - tag - 4, color, map->name);
 	}
 	else
 	{
-		text_fitted(UI_FONT_REGULAR, 9.5f, x, text_y, column_right(&columns[1]) - x,
+		overlay_text_fitted(UI_FONT_REGULAR, 9.5f, x, text_y, column_right(&columns[1]) - x,
 			map->installed ? color : COLOR_NOTICE, map->name);
 	}
 
-	text_fitted(UI_FONT_REGULAR, 9.5f, column_left(&columns[2]), text_y,
+	overlay_text_fitted(UI_FONT_REGULAR, 9.5f, column_left(&columns[2]), text_y,
 		column_right(&columns[2]) - column_left(&columns[2]), color, type_name(game, text, sizeof(text)));
 
 	snprintf(text, sizeof(text), "%d/%d", game->players, game->maximum_players);
@@ -1158,7 +1091,6 @@ void browser_screen_render(
 		players += browser_screen.games[index].players;
 
 	/* Glassed darkens a band over the scene; Vanilla covers the screen */
-	palette = strcmp(config_string("display.theme"), "vanilla") ? &glassed_palette : &vanilla_palette;
 	layout_update();
 	if (palette->glassed)
 	{
