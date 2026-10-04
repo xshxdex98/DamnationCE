@@ -31,7 +31,7 @@ SITE_URL = "https://halo.milenko.org"
 # (Discord turns away requests without a user agent of its form)
 USER_AGENT = "DiscordBot (https://github.com/xshxdex98/DamnationCE, 1)"
 
-ENGINES = {1: "Capture the Flag", 2: "Slayer", 3: "Oddball", 4: "King of the Hill", 5: "Race"}
+ENGINES = {1: "CTF", 2: "Slayer", 3: "Oddball", 4: "KOTH", 5: "Race"}
 XBOX_MAPS = {
     "beavercreek": "Battle Creek", "bloodgulch": "Blood Gulch", "boardingaction": "Boarding Action",
     "carousel": "Derelict", "chillout": "Chill Out", "damnation": "Damnation", "hangemhigh": "Hang 'Em High",
@@ -48,11 +48,9 @@ CAMPAIGN_MAPS = {
     "c40": "Two Betrayals", "d20": "Keyes", "d40": "The Maw",
 }
 
-# Discord's limits: 25 fields an embed, 256 characters a field's name, 1024 its value
-MAXIMUM_GAME_FIELDS = 23
-NAME_LENGTH = 256
+# Discord's limits: 4096 characters an embed's description, 1024 a field's value
+DESCRIPTION_LENGTH = 4096
 FIELD_LENGTH = 1024
-ROSTER_NAMES_SHOWN = 8
 
 COLOUR_LIVE = 0x3BA55D
 COLOUR_QUIET = 0x5865F2
@@ -78,13 +76,10 @@ def parse_games(text):
         if len(fields) < 8 or len(fields[0]) != 64:
             continue
         game = {"name": fields[1], "map": fields[2], "engine": int(fields[3]), "players": int(fields[4]),
-                "maximum_players": int(fields[5]), "open": fields[6] != "0", "score_limit": 0, "teams": False,
-                "roster": []}
+                "maximum_players": int(fields[5]), "open": fields[6] != "0", "score_limit": 0, "teams": False}
         if len(fields) >= 11:
             game["score_limit"] = int(fields[9] or 0)
             game["teams"] = fields[10] != "0"
-        if len(fields) >= 12 and fields[11]:
-            game["roster"] = [entry.partition(":")[2] for entry in fields[11].split("|")]
         games.append(game)
     return games
 
@@ -98,9 +93,9 @@ def map_file(path):
 def map_name(path):
     file, source = map_file(path)
     if source == "ce":
-        return CE_MAPS.get(file, file) + " (Halo PC)"
+        return CE_MAPS.get(file, file) + " (PC)"
     if source == "md":
-        return file + " (HaloMD)"
+        return file + " (MD)"
     return CAMPAIGN_MAPS.get(file) or XBOX_MAPS.get(file) or file
 
 
@@ -122,25 +117,19 @@ def clip(text, length):
     return text if len(text) <= length else text[:length - 1] + "…"
 
 
-def game_field(game):
-    """a game as a field: its server's name over its map, how many are
-    playing in it, and its mode"""
-    lines = [f"**{map_name(game['map'])}**  ·  **{game['players']}**/{game['maximum_players']} playing",
-             mode_name(game) + (f" to {game['score_limit']}" if game["score_limit"] else "")]
-    if not game["open"]:
-        lines.append("Closed to new players")
-    if game["roster"]:
-        more = len(game["roster"]) - ROSTER_NAMES_SHOWN
-        lines.append(", ".join(escape(player) for player in game["roster"][:ROSTER_NAMES_SHOWN]) +
-                     (f" +{more}" if more > 0 else ""))
-    return {"name": clip(game["name"], NAME_LENGTH), "value": clip("\n".join(lines), FIELD_LENGTH), "inline": False}
+def game_line(game, count_width):
+    """a game on one line: how many are playing, then its server's name, map
+    and mode"""
+    count = f"{game['players']}/{game['maximum_players']}".rjust(count_width)
+    details = [map_name(game["map"]), mode_name(game)] + ([] if game["open"] else ["closed"])
+    return f"`{count}` **{escape(game['name'])}** · " + " · ".join(details)
 
 
 def servers_embed(games, error=None):
-    """the list as an embed: games with players in them, busiest first, then
-    the empty ones' names together; games is None while the list server
-    can't be reached"""
-    updated = f"Updated <t:{int(time.time())}:R>"
+    """the list as an embed: a line for each game with players in it,
+    busiest first, then the empty ones' names in small print; games is None
+    while the list server can't be reached"""
+    updated = f"-# Updated <t:{int(time.time())}:R>"
     embed = {"title": "DamnationCE servers", "url": SITE_URL, "footer": {"text": "Join from the server browser in game"}}
     if games is None:
         embed["color"] = COLOUR_DOWN
@@ -150,16 +139,14 @@ def servers_embed(games, error=None):
     active = sorted((game for game in games if game["players"] > 0), key=lambda game: -game["players"])
     empty = [game for game in games if game["players"] == 0]
     players = sum(game["players"] for game in active)
-    embed["color"] = COLOUR_LIVE if active else COLOUR_QUIET
-    embed["description"] = (f"**{players}** {'player' if players == 1 else 'players'} in "
-                            f"**{len(active)}** of {len(games)} games\n{updated}")
-    embed["fields"] = [game_field(game) for game in active[:MAXIMUM_GAME_FIELDS]]
-    if len(active) > MAXIMUM_GAME_FIELDS:
-        embed["fields"].append({"name": "More", "value": f"{len(active) - MAXIMUM_GAME_FIELDS} more games with players",
-                                "inline": False})
+    count_width = max((len(f"{game['players']}/{game['maximum_players']}") for game in active), default=0)
+    lines = [f"**{players}** {'player' if players == 1 else 'players'} on "
+             f"**{len(active)}** {'server' if len(active) == 1 else 'servers'}", updated, ""]
+    lines += [game_line(game, count_width) for game in active]
     if empty:
-        names = "\n".join(f"{escape(game['name'])} · {map_name(game['map'])}" for game in empty)
-        embed["fields"].append({"name": f"Empty ({len(empty)})", "value": clip(names, FIELD_LENGTH), "inline": False})
+        lines += ["", "-# Empty: " + ", ".join(escape(game["name"]) for game in empty)]
+    embed["color"] = COLOUR_LIVE if active else COLOUR_QUIET
+    embed["description"] = clip("\n".join(lines), DESCRIPTION_LENGTH)
     return embed
 
 
