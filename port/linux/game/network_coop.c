@@ -52,6 +52,7 @@ index and tag, since the map placed them at the same index everywhere.
 #include "cseries/errors.h"
 #include "cache/cache_files.h"
 #include "camera/camera_scripting.h"
+#include "camera/director.h"
 #include "camera/observer.h"
 #include "cutscene/cinematics.h"
 #include "devices/devices.h"
@@ -768,7 +769,7 @@ static void client_cinematic_end(
 	if (!coop_presentation.cinematic_started)
 		return;
 	coop_presentation.cinematic_started = FALSE;
-	scripted_camera_enable(FALSE);
+	director_script_camera(FALSE);
 	cinematic_stop();
 }
 
@@ -1238,7 +1239,7 @@ void network_coop_client_tick(
 		if (coop_presentation.following_host)
 		{
 			coop_presentation.following_host = FALSE;
-			scripted_camera_enable(FALSE);
+			director_script_camera(FALSE);
 		}
 	}
 	if (!network_coop_skip_offered())
@@ -1405,7 +1406,7 @@ void network_coop_handle_presentation(
 	if (cinematic && !coop_presentation.cinematic_started && !cinematic_in_progress())
 	{
 		cinematic_start();
-		scripted_camera_enable(TRUE);
+		director_script_camera(TRUE);
 		coop_presentation.cinematic_started = TRUE;
 		coop_presentation.following_host = FALSE;
 	}
@@ -1420,7 +1421,7 @@ void network_coop_handle_presentation(
 		coop_spectate_nothing_to_watch(0) != coop_presentation.following_host)
 	{
 		coop_presentation.following_host = !coop_presentation.following_host;
-		scripted_camera_enable(coop_presentation.following_host);
+		director_script_camera(coop_presentation.following_host);
 	}
 	if (coop_presentation.cinematic_started || coop_presentation.following_host)
 	{
