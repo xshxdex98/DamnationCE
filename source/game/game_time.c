@@ -453,27 +453,38 @@ void game_time_update(
 				long maximum_possible_server_time;
 
 				final_local_time = game_time_globals->local_time + ticks_elapsed;
-				switch (game_time_connection())
+				/* port: the main menu's scene while a network game is set up
+				(its lobby) has no players: it ticks on this machine's clock,
+				without the players' input queues, which the network game owns */
+				if (game_time_connection() == _game_connection_local &&
+					game_connection() != _game_connection_local)
 				{
-				case _game_connection_local:
-					update_client_local_ticks(ticks_elapsed);
-					break;
-				case _game_connection_network_server:
-					network_game_server_update_ticks(global_network_game_server_get(), (short)ticks_elapsed);
-					break;
-				}
-
-				/* (a client of the distributed netcode ticks on its own clock,
-				with its own input and the latest the host relayed, from the
-				host's first game update, which brings the host's time: the
-				host ticks only once every machine has loaded) */
-				if (game_time_connection() == _game_connection_network_client)
-				{
-					maximum_possible_server_time = game_time_held() ?
-						game_time_globals->server_time : final_local_time;
+					maximum_possible_server_time = final_local_time;
 				}
 				else
-					maximum_possible_server_time = update_client_get_maximum_possible_server_time();
+				{
+					switch (game_time_connection())
+					{
+					case _game_connection_local:
+						update_client_local_ticks(ticks_elapsed);
+						break;
+					case _game_connection_network_server:
+						network_game_server_update_ticks(global_network_game_server_get(), (short)ticks_elapsed);
+						break;
+					}
+
+					/* (a client of the distributed netcode ticks on its own
+					clock, with its own input and the latest the host relayed,
+					from the host's first game update, which brings the host's
+					time: the host ticks only once every machine has loaded) */
+					if (game_time_connection() == _game_connection_network_client)
+					{
+						maximum_possible_server_time = game_time_held() ?
+							game_time_globals->server_time : final_local_time;
+					}
+					else
+						maximum_possible_server_time = update_client_get_maximum_possible_server_time();
+				}
 				if (maximum_possible_server_time > game_time_globals->server_time)
 				{
 					long final_server_time = MIN(maximum_possible_server_time, final_local_time);
