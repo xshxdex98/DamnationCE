@@ -73,6 +73,9 @@ enum
 	/* co-op (a campaign map, no game engine): the host's structure BSP,
 	twice a second, for a client to switch to; numbered as actor_states */
 	_distributed_message_structure_bsp,
+	/* co-op: the host's cinematic, camera and screen fade, every tick
+	(network_coop.c) */
+	_distributed_message_coop_presentation,
 
 	NUMBER_OF_DISTRIBUTED_MESSAGES
 };
@@ -225,6 +228,17 @@ word network_actors_entry_size(void);
 /* (a client, in its tick where the host runs its actors) each actor's unit
 given the control the host last sent for it */
 void network_actors_drive(void);
+
+/* ---------- prototypes/NETWORK_COOP.C */
+
+void network_coop_new_game(void);
+/* (the host, after each tick) its cinematic, camera and screen fade, to every client */
+void network_coop_host_tick(void);
+/* (a client, after each tick) */
+void network_coop_client_tick(void);
+word network_coop_presentation_entry_size(void);
+/* (a client) the host's, shown here */
+void network_coop_handle_presentation(void const *entries);
 
 /* ---------- prototypes/NETWORK_OBJECTS.C */
 

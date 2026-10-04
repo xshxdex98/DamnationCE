@@ -56,6 +56,17 @@ void player_effect_screen_fade_out(
 	real green,
 	real blue,
 	short ticks);
+/* port: the screen fade, as a co-op game's host tells its clients */
+void player_effect_port_screen_fade_get(
+	real_rgb_color *color,
+	short *ticks,
+	boolean *fading_out,
+	long *start_time);
+void player_effect_port_screen_fade_set(
+	real_rgb_color const *color,
+	short ticks,
+	boolean fading_out,
+	long start_time);
 void player_effect_get_damage_indicators(
 	short local_player_index,
 	byte *damage_indicators);

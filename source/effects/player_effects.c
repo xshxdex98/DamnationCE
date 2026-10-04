@@ -458,6 +458,37 @@ void player_effect_screen_fade_out(
 	return;
 }
 
+/* port: the screen fade as a co-op game's host tells its clients
+(port/linux/game/network_coop.c): its color, length, whether it fades out,
+and the game time it began */
+void player_effect_port_screen_fade_get(
+	real_rgb_color *color,
+	short *ticks,
+	boolean *fading_out,
+	long *start_time)
+{
+	*color = player_effect_globals->screen_fade.color;
+	*ticks = player_effect_globals->screen_fade.ticks;
+	*fading_out = player_effect_globals->screen_fade.fading_out;
+	*start_time = player_effect_globals->screen_fade.start_time;
+
+	return;
+}
+
+void player_effect_port_screen_fade_set(
+	real_rgb_color const *color,
+	short ticks,
+	boolean fading_out,
+	long start_time)
+{
+	player_effect_globals->screen_fade.color = *color;
+	player_effect_globals->screen_fade.ticks = ticks;
+	player_effect_globals->screen_fade.fading_out = fading_out;
+	player_effect_globals->screen_fade.start_time = start_time;
+
+	return;
+}
+
 void player_effect_get_damage_indicators(
 	short local_player_index,
 	byte *damage_indicators)
