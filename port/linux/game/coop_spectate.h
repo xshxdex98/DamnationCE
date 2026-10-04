@@ -1,7 +1,7 @@
 /*
 COOP_SPECTATE.H
 
-A dead player of a co-op game over the network watching the living
+Spectating in network co-op, and the cutscene skip vote's line
 (coop_spectate.c).
 */
 
@@ -10,22 +10,25 @@ A dead player of a co-op game over the network watching the living
 
 struct dead_camera;
 
-/* Whether the game is co-op over the network: a network game no game
-engine runs (a campaign map). */
+/* whether this is network co-op: a network game with no game engine (a campaign map) */
 boolean coop_spectating(
 	void);
 
-/* The unit a dead local player watches (a living teammate's; A moves to the
-next), or NONE when it is alive or no one is. */
+/* the unit a dead local player watches (A switches teammate), or NONE if
+the player is alive or nobody else is */
 long coop_spectate_unit(
 	short local_player_index);
 
-/* The dead camera watching it, put behind it as it turns. */
+/* keeps the dead camera behind the watched unit as it turns */
 void coop_spectate_camera(
 	struct dead_camera *camera);
 
-/* The HUD's line of whom a dead local player watches. */
+/* the HUD line saying who a dead local player is watching */
 void coop_spectate_draw(
+	short local_player_index);
+
+/* during a skippable cutscene in network co-op, the vote count and how to vote */
+void coop_skip_vote_draw(
 	short local_player_index);
 
 #endif

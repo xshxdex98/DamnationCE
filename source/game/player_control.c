@@ -209,6 +209,7 @@ symbols in this file:
 #include "units/vehicles.h"
 
 #include "real_math.h"
+#include "network_coop.h" /* port: port/linux/game/network_coop.c */
 
 /* ---------- constants */
 
@@ -1684,9 +1685,11 @@ static void player_control_action_test_check_reset_input_blob(
 {
 	struct player_control_globals_data *globals;
 
-	if (input->accept && cinematic_can_be_skipped())
+	if (input->accept && (cinematic_can_be_skipped() || network_coop_skip_offered()))
 	{
-		main_skip_cinematic();
+		/* port: in network co-op the players vote to skip (network_coop.c) */
+		if (!network_coop_vote_skip())
+			main_skip_cinematic();
 	}
 
 	globals = player_control_globals;

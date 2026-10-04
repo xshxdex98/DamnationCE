@@ -299,6 +299,13 @@ void game_state_save(
 	return;
 }
 
+/* port: whether game_state_revert has a saved state to go back to */
+boolean game_state_port_saved_game_valid(
+	void)
+{
+	return game_state_globals.saved_game_valid;
+}
+
 void game_state_revert(
 	void)
 {

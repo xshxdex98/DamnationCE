@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.1
+
+Finishes co-op. Host and players all need 0.2.1; it doesn't mix with 0.2.0
+in co-op games.
+
+- **Vote to skip cutscenes.** Press Space (or A) during a cutscene to vote.
+  Everyone sees the count, and the cutscene is skipped once more than half
+  the players have voted.
+- **Everyone now sees what the level's scripts do**, not just the host:
+  chapter titles, help and objective text, "Checkpoint" messages, the
+  mission timer (like the countdown on The Maw), screen shake, nav points,
+  HUD elements the scripts hide or show, and characters' cutscene
+  animations.
+
 ## 0.2.0
 
 ### Campaign co-op online

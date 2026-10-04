@@ -76,12 +76,18 @@ enum
 	/* co-op: the host's cinematic, camera and screen fade, every tick
 	(network_coop.c) */
 	_distributed_message_coop_presentation,
-	/* co-op: the sounds the host's scripts played (network_coop.c) */
-	_distributed_message_coop_sounds,
+	/* (0.2.0's co-op script sounds; now part of coop_events. The number
+	stays taken so a 0.2.0 build never misreads a newer message.) */
+	_distributed_message_coop_sounds_retired,
 	/* co-op: device group state (network_coop.c) */
 	_distributed_message_coop_device_groups,
 	/* co-op: which named objects exist on the host (network_coop.c) */
 	_distributed_message_coop_object_names,
+	/* co-op: a client's vote to skip the cutscene, to the host (network_coop.c) */
+	_distributed_message_coop_skip_vote,
+	/* co-op: what the host's scripts did once: sounds, titles, HUD text,
+	animations (network_coop.c) */
+	_distributed_message_coop_events,
 
 	NUMBER_OF_DISTRIBUTED_MESSAGES
 };
@@ -238,14 +244,21 @@ void network_actors_drive(void);
 /* ---------- prototypes/NETWORK_COOP.C */
 
 void network_coop_new_game(void);
-/* (the host, after each tick) its cinematic, camera and screen fade, to every client */
+/* after each tick, on the host and on a client */
 void network_coop_host_tick(void);
-/* (a client, after each tick) */
 void network_coop_client_tick(void);
+/* the message handlers, and their entry sizes */
 word network_coop_presentation_entry_size(void);
-/* (a client) the host's, shown here */
 void network_coop_handle_presentation(void const *entries);
-/* (the host) a sound its scripts played (game_sound.c), for its clients */
+word network_coop_event_entry_size(void);
+void network_coop_handle_events(void const *entries, short count);
+word network_coop_device_group_entry_size(void);
+void network_coop_handle_device_groups(void const *entries, short count);
+word network_coop_object_names_entry_size(void);
+void network_coop_handle_object_names(void const *entries);
+word network_coop_skip_vote_entry_size(void);
+void network_coop_handle_skip_vote(long machine_index, void const *entries);
+/* game_sound.c: a sound the host's scripts played */
 enum
 {
 	_coop_sound_impulse,
@@ -253,14 +266,6 @@ enum
 	_coop_sound_looping_stop,
 };
 void network_coop_note_sound(short kind, long definition_index, long object_index, real scale);
-word network_coop_sound_entry_size(void);
-/* (a client) the host's scripts' sounds, played here */
-void network_coop_handle_sounds(void const *entries, short count);
-word network_coop_device_group_entry_size(void);
-/* client: apply the host's device groups and named objects */
-void network_coop_handle_device_groups(void const *entries, short count);
-word network_coop_object_names_entry_size(void);
-void network_coop_handle_object_names(void const *entries);
 
 /* ---------- prototypes/NETWORK_OBJECTS.C */
 

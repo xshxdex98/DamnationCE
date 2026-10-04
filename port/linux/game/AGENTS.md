@@ -69,8 +69,13 @@ runs the scripts, the AI, spawning and the checkpoint logic (`game.c`,
 `players.c`, `main.c`, all marked `port:`). Everything those decide that a
 client must see goes through `network_coop.c` or `network_actors.c`. On a
 client, `network_coop_devices_remote()` makes devices obey only the host.
-When you add a scripted effect, ask whether a client would see it. If not,
-sync it.
+
+Halo's own code reports script effects through `network_coop.h`: each
+`network_coop_note_` call queues an event on the host and does nothing
+elsewhere, so a client can call the same engine function to apply what it
+receives. When you add a scripted effect, ask whether a client would see it.
+If not, add a note call where the engine does it, and an event kind in
+`network_coop.c`.
 
 ## Checking a change
 

@@ -691,6 +691,7 @@ symbols in this file:
 #include "saved games/game_state.h"
 #include "sound/game_sound.h"
 #include "vehicles.h"
+#include "network_coop.h" /* port: port/linux/game/network_coop.c */
 
 /* port: the control and animation impulses the host's actors give their
 units go to the clients' copies (port/linux/game/network_actors.c) */
@@ -2329,6 +2330,7 @@ boolean unit_custom_animation_at_frame(
 		{
 			unit->object.animation.state.frame_index = frame_index;
 			success = TRUE;
+			network_coop_note_unit_animation_frame(unit_index, frame_index);
 		}
 	}
 
@@ -4043,6 +4045,8 @@ boolean unit_start_user_animation(
 							TRUE);
 						object_compute_node_matrices_recursive(unit_index);
 						animation_started = TRUE;
+						network_coop_note_unit_animation(unit_index, animation_graph_index, animation_index,
+							interpolate);
 					}
 				}
 			}
@@ -4093,9 +4097,38 @@ void unit_stop_custom_animation(
 	if (unit_index!=NONE && unit_get(unit_index)->unit.animation.state==_unit_state_user_animation)
 	{
 		unit_animation_set_state(unit_index, _unit_state_idle);
+		network_coop_note_unit_animation(unit_index, NONE, NONE, FALSE);
 	}
 
 	return;
+}
+
+/* port: a co-op client plays the custom animation the host's unit started
+(network_coop.c): exactly that animation, not another random permutation */
+void unit_port_play_user_animation(
+	long unit_index,
+	long animation_graph_index,
+	short animation_index,
+	boolean interpolate,
+	short frame_index)
+{
+	struct unit_datum *unit = unit_get(unit_index);
+	struct animation_graph *animation_graph = animation_graph_definition_get(animation_graph_index);
+	struct animation *animation;
+
+	if (animation_index < 0 || animation_index >= animation_graph->animations.count)
+		return;
+	animation = TAG_BLOCK_GET_ELEMENT(&animation_graph->animations, animation_index, struct animation);
+	if (animation->type != _animation_base)
+		return;
+	if (interpolate)
+		object_start_interpolation(unit_index, 6);
+	unit->unit.animation.state = _unit_state_user_animation;
+	unit_set_animation(unit_index, animation_graph_index, animation_index);
+	SET_FLAG(unit->unit.animation.flags, _unit_animation_postpone_weapon_ik_until_interpolation_ends_bit, TRUE);
+	if (frame_index > 0 && frame_index < animation->frame_count)
+		unit->object.animation.state.frame_index = frame_index;
+	object_compute_node_matrices_recursive(unit_index);
 }
 
 boolean unit_melee_attack_begin(

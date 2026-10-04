@@ -6,6 +6,9 @@ until they respawn (players.c respawns them beside a teammate once it is
 safe). The campaign's dead camera would watch the body; instead this
 follows a teammate from behind, and A (jump on the keyboard) switches to
 the next one. director.c and hud.c call in here.
+
+It also draws the line telling players about the vote to skip a cutscene
+(network_coop.c counts the votes).
 */
 
 #include "cseries.h"
@@ -23,6 +26,7 @@ the next one. director.c and hud.c call in here.
 #include "text/unicode.h"
 
 #include "coop_spectate.h"
+#include "network_coop.h"
 
 #include <math.h>
 
@@ -135,28 +139,56 @@ void coop_spectate_camera(
 	camera->distance = SPECTATE_DISTANCE;
 }
 
-void coop_spectate_draw(
-	short local_player_index)
+/* centred text near the bottom of the screen, in the HUD's font */
+static void draw_bottom_text(
+	wchar_t const *text)
 {
-	long watched = coop_spectate_watched[local_player_index];
 	long font_index = hud_get_font_index();
 	struct font_header *font;
 	real_argb_color color = *global_real_argb_white;
 	rectangle2d bounds;
-	wchar_t text[96];
 	short height;
 
-	if (watched == NONE || !player_try_and_get(watched) || font_index == NONE)
+	if (font_index == NONE)
 		return;
 	font = font_definition_get(font_index);
 	height = (short)(font->ascending_height + font->descending_height);
-	usnprintf(text, NUMBEROF(text) - 1, L"SPECTATING %.12s   (A: NEXT)\r\nYou come back beside them once it is safe",
-		player_get(watched)->name);
-	text[NUMBEROF(text) - 1] = 0;
 	bounds = render.camera.window_bounds;
 	bounds.y0 = (short)(bounds.y1 - 3 * height - 24);
 	bounds.y1 = (short)(bounds.y1 - 24);
 	/* 2: centred */
 	draw_string_set_draw_mode(font_index, NONE, 2, 0, &color);
 	rasterizer_draw_unicode_string(&bounds, NULL, NULL, 0, text);
+}
+
+void coop_spectate_draw(
+	short local_player_index)
+{
+	long watched = coop_spectate_watched[local_player_index];
+	wchar_t text[96];
+
+	if (watched == NONE || !player_try_and_get(watched))
+		return;
+	usnprintf(text, NUMBEROF(text) - 1, L"SPECTATING %.12s   (A: NEXT)\r\nYou come back beside them once it is safe",
+		player_get(watched)->name);
+	text[NUMBEROF(text) - 1] = 0;
+	draw_bottom_text(text);
+}
+
+void coop_skip_vote_draw(
+	short local_player_index)
+{
+	short votes, voters;
+	boolean voted;
+	wchar_t text[96];
+
+	/* once, for the first local player */
+	if (local_player_index != local_player_get_next(NONE) || !network_coop_skip_vote_status(&votes, &voters, &voted))
+		return;
+	if (voted)
+		usnprintf(text, NUMBEROF(text) - 1, L"VOTED TO SKIP   %d OF %d", votes, voters);
+	else
+		usnprintf(text, NUMBEROF(text) - 1, L"PRESS SPACE OR A TO VOTE TO SKIP   %d OF %d", votes, voters);
+	text[NUMBEROF(text) - 1] = 0;
+	draw_bottom_text(text);
 }

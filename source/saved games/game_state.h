@@ -36,6 +36,8 @@ void game_state_dispose_from_old_map(
 	void);
 void game_state_save(
 	void);
+boolean game_state_port_saved_game_valid(
+	void);
 void game_state_revert(
 	void);
 void game_state_save_to_persistent_storage(
