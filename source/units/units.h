@@ -758,10 +758,12 @@ boolean unit_is_playing_custom_animation(
 	long unit_index);
 boolean unit_flying_through_air(
 	long unit_index);
-/* port: network co-op (port/linux/game/network_coop.c) */
+/* port: a dead unit's death animation switched to the host's
+(port/linux/game/network_objects.c) */
 void unit_port_set_death_animation(
 	long unit_index,
 	short animation_index);
+/* port: network co-op (port/linux/game/network_coop.c) */
 void unit_port_play_user_animation(
 	long unit_index,
 	long animation_graph_index,
