@@ -28,6 +28,16 @@ with ideas from VALORANT's netcode articles, keeping the 30 Hz tick:
   tick and others less often; a client drives each unit with the latest
   it has, as it drives a remote player's, until it hears nothing of it for
   two seconds (`port/linux/game/network_actors.c`).
+- **Co-op.** A network game on a campaign level, with a gametype no game
+  engine runs (Create Game > COOPERATIVE > CAMPAIGN), is co-op. Only the host
+  runs the level's scripts and spawns players; every machine follows the
+  host's structure BSP, and sees the host's cinematics, camera and screen
+  fades (`network_coop.c`). A dead player watches a living teammate
+  (`coop_spectate.c`) and comes back beside one once it is safe (the
+  campaign's own coop respawn); with all of them dead they come back where
+  they were at the last checkpoint, as no machine's game can go back to it.
+  A level won ends the round as a multiplayer game's does, and the next is
+  on the campaign's next level.
 - **Host authoritative.** The host alone decides damage, deaths, spawns,
   pickups, scores and the game's objects; clients do not decide them but
   apply what the host sends.
