@@ -66,6 +66,10 @@ void network_coop_note_unit_animation(long unit_index, long animation_graph_inde
 /* units.c: unit_custom_animation_at_frame moved it to a frame */
 void network_coop_note_unit_animation_frame(long unit_index, short frame_index);
 /* scenery.c: a scenery animation started */
+/* the scripts' effects (hs_library_external.c): at a cutscene flag, or on an
+object's marker */
+void network_coop_note_effect(long effect_definition_index, short cutscene_flag_index);
+void network_coop_note_object_effect(long effect_definition_index, long object_index, char const *marker_name);
 void network_coop_note_scenery_animation(long object_index, long animation_graph_index, short animation_index,
 	short frame_index);
 
