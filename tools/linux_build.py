@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from .embed_assets import hud_assets_build, hud_configure_inputs, ui_fonts_build
 from .ninja_syntax import Writer
-from .version import release_build, version
+from .version import build_commit, release_build, update_channel, version
 
 PORT_DIR = Path("port/linux")
 PORT_CONFIG = PORT_DIR / "port.json"
@@ -138,10 +138,12 @@ def miniupnpc_sources() -> List[Path]:
 def updater_defines(release: bool) -> str:
     """the version's defines (port/linux/src/updater.c, the self-updater, has
     them, and gives the version to the rest): the version (tools/version.py),
-    whether this build is a release's (only those look for updates), and its
-    configuration"""
+    whether this build is a release's (those look for newer releases), its
+    update channel and commit (a build of main looks for newer pushes), and
+    its configuration"""
     flavor = "release" if release else "debug"
     return (f'-DHALO_VERSION=\\"{version()}\\" -DHALO_RELEASE_BUILD={int(release_build())} '
+            f'-DHALO_UPDATE_CHANNEL=\\"{update_channel()}\\" -DHALO_BUILD_COMMIT=\\"{build_commit()}\\" '
             f'-DHALO_BUILD_FLAVOR=\\"{flavor}\\"')
 
 PLATFORM_FLAGS = [

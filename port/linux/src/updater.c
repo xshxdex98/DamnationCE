@@ -4,13 +4,21 @@ UPDATER.C
 The desktop ports' self-updater (Linux and Windows; the Android app updates
 itself in Java, port/android).
 
-A release's build (HALO_RELEASE_BUILD: built from the release's tag,
-v<version>, by DamnationCE's release workflow; tools/version.py) knows its
-version (HALO_VERSION, 0.5.0b); nightlies and other builds never look for
-updates. When update.auto in config.toml is true (the default), the game
-asks GitHub for the latest release when it starts, on a thread of its own:
-the game starts meanwhile, and nothing happens if the release is not newer
-or cannot be reached. If it is newer, the game asks whether to update:
+Two kinds of build look for updates (tools/version.py):
+
+- A release's (HALO_RELEASE_BUILD: built from the release's tag, v<version>,
+  by DamnationCE's release workflow) asks GitHub for the latest release and
+  offers it if its version (HALO_VERSION, 0.5.0b) is newer.
+- A build of main pushed to GitHub (HALO_UPDATE_CHANNEL "latest", with the
+  commit it was built from, HALO_BUILD_COMMIT) asks for the "latest"
+  pre-release, which build.yml replaces with every push to main, and offers
+  it if it was built from another commit.
+
+Other builds (a local build, another branch's) never look. When
+update.auto in config.toml is true (the default), the game asks GitHub when
+it starts, on a thread of its own: the game starts meanwhile, and nothing
+happens if there is nothing newer or GitHub cannot be reached. If there is,
+the game asks whether to update:
 
 - Yes: the release's build for this platform and configuration
   (damnationce-<platform>-<release|debug>.zip) is downloaded next to the executable
@@ -54,6 +62,17 @@ macos_build.py; the Android app's version is its own, build.gradle) */
 #endif
 #ifndef HALO_BUILD_FLAVOR
 #define HALO_BUILD_FLAVOR "release"
+#endif
+#ifndef HALO_UPDATE_CHANNEL
+#define HALO_UPDATE_CHANNEL ""
+#endif
+#ifndef HALO_BUILD_COMMIT
+#define HALO_BUILD_COMMIT ""
+#endif
+#ifdef __APPLE__
+/* (as above) */
+#undef HALO_UPDATE_CHANNEL
+#define HALO_UPDATE_CHANNEL ""
 #endif
 
 /* DamnationCE's releases */
@@ -357,6 +376,50 @@ static int updater_newer(const char *version)
 	return strcmp(latest_suffix, current_suffix) > 0;
 }
 
+/* whether this is a build of main that offers each newer push (its
+release configuration: the pre-release holds only those) */
+static int updater_rolling(void)
+{
+	return HALO_UPDATE_CHANNEL[0] && HALO_BUILD_COMMIT[0] && !strcmp(HALO_BUILD_FLAVOR, "release");
+}
+
+/* the commit GitHub's "latest" pre-release was built from (its target),
+shortened as HALO_BUILD_COMMIT is, into commit; 0 if there is none */
+static int updater_latest_build(char *commit, size_t size)
+{
+	char path[1200];
+	char error[512] = "";
+	size_t length = 0;
+	size_t commit_length = strlen(HALO_BUILD_COMMIT);
+	char *text;
+	const char *target;
+	int found = 0;
+
+	updater_path(path, sizeof(path), "update-check.json");
+	if (!update_download("https://api.github.com/repos/" UPDATE_REPOSITORY "/releases/tags/latest", path, NULL,
+		NULL, error, sizeof(error)))
+	{
+		platform_log("update: could not check for a new build: %s", error);
+		return 0;
+	}
+	text = SDL_LoadFile(path, &length);
+	update_delete_file(path);
+	if (!text)
+		return 0;
+	/* "target_commitish": "<commit>" */
+	target = strstr(text, "\"target_commitish\"");
+	if (target)
+		target = strchr(target + 18, '"');
+	if (target && strlen(target + 1) > commit_length && commit_length < size)
+	{
+		memcpy(commit, target + 1, commit_length);
+		commit[commit_length] = 0;
+		found = strcspn(commit, "\"") == commit_length;
+	}
+	SDL_free(text);
+	return found;
+}
+
 /* GitHub's latest release's version (its tag, without the v), into version;
 0 if there is none */
 static int updater_latest_release(char *version, size_t size)
@@ -405,6 +468,21 @@ static int SDLCALL updater_check_thread(void *context)
 	char latest[sizeof(updater_latest_version)];
 
 	(void)context;
+	if (updater_rolling())
+	{
+		if (updater_latest_build(latest, sizeof(latest)) && strcmp(latest, HALO_BUILD_COMMIT))
+		{
+			platform_log("update: build %s is available (this is %s)", latest, HALO_BUILD_COMMIT);
+			snprintf(updater_latest_version, sizeof(updater_latest_version), "%s", latest);
+			SDL_SetAtomicInt(&updater_state, _updater_available);
+		}
+		else
+		{
+			platform_log("update: this is the latest build (%s)", HALO_BUILD_COMMIT);
+			SDL_SetAtomicInt(&updater_state, _updater_handled);
+		}
+		return 0;
+	}
 	if (updater_latest_release(latest, sizeof(latest)) && updater_newer(latest))
 	{
 		platform_log("update: version %s is available (this is %s)", latest, HALO_VERSION);
@@ -468,8 +546,12 @@ static int updater_download_zip(const char *zip_path, char *error, size_t error_
 
 	memset(&download, 0, sizeof(download));
 	download.lock = SDL_CreateMutex();
-	snprintf(download.url, sizeof(download.url),
-		"https://github.com/" UPDATE_REPOSITORY "/releases/download/v%s/" UPDATE_ASSET, updater_latest_version);
+	if (updater_rolling())
+		snprintf(download.url, sizeof(download.url),
+			"https://github.com/" UPDATE_REPOSITORY "/releases/download/latest/" UPDATE_ASSET);
+	else
+		snprintf(download.url, sizeof(download.url),
+			"https://github.com/" UPDATE_REPOSITORY "/releases/download/v%s/" UPDATE_ASSET, updater_latest_version);
 	snprintf(download.zip_path, sizeof(download.zip_path), "%s", zip_path);
 	thread = SDL_CreateThread(updater_download_thread, "update download", &download);
 	if (!thread)
@@ -618,7 +700,7 @@ void updater_start(void)
 	updater_clean_up();
 	/* (not for builds other than a release's, the player's no, or runs nobody
 	is watching, but for a test with its answer) */
-	if (!HALO_RELEASE_BUILD || !config_boolean("update.auto") ||
+	if ((!HALO_RELEASE_BUILD && !updater_rolling()) || !config_boolean("update.auto") ||
 		(!config_string("debug.update_answer")[0] && (config_boolean("debug.hidden_window") ||
 			config_real("debug.exit_after") > 0.0 || config_string("debug.network_test")[0])))
 	{
@@ -672,10 +754,16 @@ void updater_poll(SDL_Window *window)
 	fullscreen = window && (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN);
 	if (fullscreen)
 		SDL_SetWindowFullscreen(window, false);
-	snprintf(message, sizeof(message),
-		"A new version of DamnationCE is out (%s; this is %s).\n\n"
-		"Do you want to update? The game will close and start the new version.",
-		updater_latest_version, HALO_VERSION);
+	if (updater_rolling())
+		snprintf(message, sizeof(message),
+			"A new build of DamnationCE is out (%s; this is %s).\n\n"
+			"Do you want to update? The game will close and start the new build.",
+			updater_latest_version, HALO_BUILD_COMMIT);
+	else
+		snprintf(message, sizeof(message),
+			"A new version of DamnationCE is out (%s; this is %s).\n\n"
+			"Do you want to update? The game will close and start the new version.",
+			updater_latest_version, HALO_VERSION);
 	{
 		SDL_MessageBoxData question = { SDL_MESSAGEBOX_INFORMATION, window, "DamnationCE: new version", message,
 			3, question_buttons, NULL };
