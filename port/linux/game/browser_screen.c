@@ -10,7 +10,9 @@ the user interface's tags.
 X on the System Link screen opens it (ui_widget.c; the list screen marks
 when it is up, ui_widget_game_data_input_functions.c). Up and down pick a
 game, left and right turn the page, A joins it through its invite, as a web
-page's Join or an invite link would, and B goes back. Once the invite's host
+page's Join or an invite link would, and B goes back. Its buttons along the
+foot (JOIN, CREATE GAME, REFRESH, SORT, PROFILE, BACK) are clicked, and each
+shows the key that does the same; the header's sort tabs are clicked too. Once the invite's host
 answers, its game shows in the System Link list through the tunnel, to be
 picked there as any.
 
@@ -151,6 +153,8 @@ static struct
 	/* (the games are fetched every frame: their maps are looked up once) */
 	struct known_map known_maps[MAXIMUM_KNOWN_MAPS];
 	short known_map_count;
+	/* the button the mouse is over, or NONE */
+	short button_hovered;
 } browser_screen;
 
 /* ---------- private code */
@@ -495,6 +499,7 @@ void browser_screen_open(
 	browser_screen.active = TRUE;
 	browser_screen.selected = 0;
 	browser_screen.status[0] = 0;
+	browser_screen.button_hovered = NONE;
 	browser_screen.connecting = FALSE;
 	browser_screen.opened_time = system_milliseconds();
 	/* (maps may have been added since it was last up) */
@@ -520,6 +525,58 @@ static void create_game(
 		close_screen();
 	else
 		set_status("Could not create a game.");
+}
+
+/* ---------- the screen's actions: its keys' and its buttons' */
+
+static boolean settled(void)
+{
+	return !browser_screen.connecting && system_milliseconds() - browser_screen.opened_time > OPEN_SETTLE;
+}
+
+static void action_join(void)
+{
+	if (settled())
+		join_selected();
+}
+
+static void action_create(void)
+{
+	if (settled())
+		create_game();
+}
+
+static void action_refresh(void)
+{
+	p2p_lobby_refresh();
+	fetch_games();
+	set_status("Refreshed");
+}
+
+static void action_sort(short step)
+{
+	browser_screen.sort = (short)((browser_screen.sort + NUMBER_OF_SORTS + step) % NUMBER_OF_SORTS);
+	fetch_games();
+}
+
+static void action_sort_next(void)
+{
+	action_sort(1);
+}
+
+static void action_profile(void)
+{
+	browser_open_profile();
+	set_status("Opening your profile in the web browser");
+}
+
+/* (while a host is waited for: the wait given up) */
+static void action_back(void)
+{
+	if (browser_screen.connecting)
+		browser_screen.connecting = FALSE;
+	else
+		leave();
 }
 
 void browser_screen_process(
@@ -552,40 +609,19 @@ void browser_screen_process(
 			case _gamepad_binary_button_dpad_down: move = 1; break;
 			case _gamepad_binary_button_dpad_left: move = -ROWS_PER_PAGE; break;
 			case _gamepad_binary_button_dpad_right: move = ROWS_PER_PAGE; break;
-			case _gamepad_analog_button_a:
-				if (!browser_screen.connecting && system_milliseconds() - browser_screen.opened_time > OPEN_SETTLE)
-					join_selected();
-				break;
-			case _gamepad_binary_button_start:
-				browser_open_profile();
-				set_status("Opening your profile in the web browser");
-				break;
-			case _gamepad_analog_button_x:
-				p2p_lobby_refresh();
-				fetch_games();
-				set_status("Refreshed");
-				break;
-			case _gamepad_analog_button_y:
-				if (!browser_screen.connecting && system_milliseconds() - browser_screen.opened_time > OPEN_SETTLE)
-					create_game();
-				break;
+			case _gamepad_analog_button_a: action_join(); break;
+			case _gamepad_binary_button_start: action_profile(); break;
+			case _gamepad_analog_button_x: action_refresh(); break;
+			case _gamepad_analog_button_y: action_create(); break;
 			case _gamepad_analog_button_left_trigger:
 			case _gamepad_analog_button_white:
-				browser_screen.sort = (short)((browser_screen.sort + NUMBER_OF_SORTS - 1) % NUMBER_OF_SORTS);
-				fetch_games();
+				action_sort(-1);
 				break;
 			case _gamepad_analog_button_right_trigger:
 			case _gamepad_analog_button_black:
-				browser_screen.sort = (short)((browser_screen.sort + 1) % NUMBER_OF_SORTS);
-				fetch_games();
+				action_sort(1);
 				break;
-			case _gamepad_analog_button_b:
-				/* (B while a host is waited for: the wait given up) */
-				if (browser_screen.connecting)
-					browser_screen.connecting = FALSE;
-				else
-					leave();
-				break;
+			case _gamepad_analog_button_b: action_back(); break;
 			default: break;
 			}
 		}
@@ -678,12 +714,132 @@ static short row_at(
 
 /* the mouse: the row under it is the selected one, a click there joins it,
 the wheel turns the page and the right button goes back */
+/* the buttons along the foot: each its action, and the key that does it too
+(the sort's label is its order's) */
+struct browser_button
+{
+	char const *label;
+	short key;
+	void (*action)(void);
+};
+static struct browser_button const browser_buttons[] =
+{
+	{ "JOIN", UI_BUTTON_A, action_join },
+	{ "CREATE GAME", UI_BUTTON_Y, action_create },
+	{ "REFRESH", UI_BUTTON_X, action_refresh },
+	{ NULL, UI_BUTTON_RIGHT_TRIGGER, action_sort_next },
+	{ "PROFILE", UI_BUTTON_START, action_profile },
+	{ "BACK", UI_BUTTON_B, action_back },
+};
+
+enum
+{
+	BUTTON_Y = 450, BUTTON_HEIGHT = 22, BUTTON_GAP = 8, BUTTON_KEY_SIZE = 13, BUTTON_PADDING = 7,
+	BUTTON_TEXT_SIZE = 10,
+};
+
+static char const *const sort_names[NUMBER_OF_SORTS] = { "PLAYERS", "NAME", "MAP", "TYPE" };
+
+static void button_label(short index, char *label, long size)
+{
+	if (browser_buttons[index].label)
+		snprintf(label, (size_t)size, "%s", browser_buttons[index].label);
+	else
+		snprintf(label, (size_t)size, "SORT: %s", sort_names[browser_screen.sort]);
+}
+
+static float button_width(short index)
+{
+	char label[32];
+
+	button_label(index, label, sizeof(label));
+	return BUTTON_PADDING + ui_overlay_button_width(browser_buttons[index].key, BUTTON_KEY_SIZE) + 4 +
+		ui_overlay_text_width(UI_FONT_BOLD, BUTTON_TEXT_SIZE, label) + BUTTON_PADDING;
+}
+
+/* where the buttons begin: at the left, or (Vanilla) centred */
+static float buttons_left(boolean centred)
+{
+	float width = -BUTTON_GAP;
+	short index;
+
+	if (!centred)
+		return LIST_X;
+	for (index = 0; index < NUMBEROF(browser_buttons); index++)
+		width += button_width(index) + BUTTON_GAP;
+	return 320 - width / 2;
+}
+
+/* the button at a point of the 640x480 layout, or NONE */
+static short button_at(boolean centred, short x, short y)
+{
+	float left = buttons_left(centred);
+	short index;
+
+	if (y < BUTTON_Y || y >= BUTTON_Y + BUTTON_HEIGHT)
+		return NONE;
+	for (index = 0; index < NUMBEROF(browser_buttons); index++)
+	{
+		float width = button_width(index);
+
+		if (x >= left && x < left + width)
+			return index;
+		left += width + BUTTON_GAP;
+	}
+	return NONE;
+}
+
+/* the header's sort tab at a point, or NONE (laid out as render_header draws them) */
+static short sort_tab_at(short x, short y)
+{
+	float right = TABS_RIGHT;
+	short sort;
+
+	if (y < TABS_Y - 4 || y >= TABS_Y + 16)
+		return NONE;
+	for (sort = NUMBER_OF_SORTS - 1; sort >= 0; sort--)
+	{
+		float width = ui_overlay_text_width(UI_FONT_BOLD, 9.0f, sort_names[sort]);
+
+		if (x >= right - width && x < right)
+			return sort;
+		right -= width + 14;
+	}
+	return NONE;
+}
+
+static boolean theme_vanilla(void)
+{
+	return !strcmp(config_string("display.theme"), "vanilla");
+}
+
 void browser_screen_pointer(
 	struct halo_ui_pointer const *pointer)
 {
 	short page_first = (short)(browser_screen.selected - browser_screen.selected % ROWS_PER_PAGE);
+	boolean centred = theme_vanilla();
 	short row;
 
+	if (pointer->moved)
+		browser_screen.button_hovered = button_at(centred, pointer->x, pointer->y);
+	if (pointer->left_clicks)
+	{
+		short button = button_at(centred, pointer->click_x, pointer->click_y);
+		short sort = sort_tab_at(pointer->click_x, pointer->click_y);
+
+		/* (while a host is waited for, BACK alone: the wait given up) */
+		if (button != NONE && (!browser_screen.connecting || browser_buttons[button].action == action_back))
+		{
+			browser_buttons[button].action();
+			return;
+		}
+		if (sort != NONE && !browser_screen.connecting)
+		{
+			browser_screen.sort = sort;
+			fetch_games();
+			return;
+		}
+	}
 	if (browser_screen.connecting)
 		return;
 	if (pointer->wheel_steps)
@@ -704,8 +860,6 @@ void browser_screen_pointer(
 	if (pointer->right_clicks)
 		leave();
 }
-
-static char const *const sort_names[NUMBER_OF_SORTS] = { "PLAYERS", "NAME", "MAP", "TYPE" };
 
 static char const *type_name(
 	struct browser_game const *game,
@@ -874,7 +1028,7 @@ void browser_screen_render(
 	short page_first, page_count, row;
 	long players = 0, index;
 	char text[64];
-	float x, width, margin = (float)((halo_screen_width() - 640) / 2 + 2);
+	float x, margin = (float)((halo_screen_width() - 640) / 2 + 2);
 	struct browser_game const *selected = browser_screen.count ? &browser_screen.games[browser_screen.selected] : NULL;
 
 	if (!ui_overlay_available())
@@ -921,20 +1075,25 @@ void browser_screen_render(
 	}
 	render_details(selected);
 
-	/* the buttons */
+	/* the buttons, the one the mouse is over lit */
 	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
-	width = overlay_prompt_width(UI_BUTTON_A, "=JOIN") + overlay_prompt_width(UI_BUTTON_B, "=BACK") +
-		overlay_prompt_width(UI_BUTTON_X, "=REFRESH") + overlay_prompt_width(UI_BUTTON_Y, "=CREATE GAME") +
-		overlay_prompt_width(UI_BUTTON_LEFT_TRIGGER, "") + overlay_prompt_width(UI_BUTTON_RIGHT_TRIGGER, "=SORT") - 20 - 3;
-	x = 37;
-	if (!palette->glassed)
-		x = 320 - width / 2;
-	x = overlay_prompt(UI_BUTTON_A, "=JOIN", x, COLOR_PROMPT);
-	x = overlay_prompt(UI_BUTTON_B, "=BACK", x, COLOR_PROMPT);
-	x = overlay_prompt(UI_BUTTON_X, "=REFRESH", x, COLOR_PROMPT);
-	x = overlay_prompt(UI_BUTTON_Y, "=CREATE GAME", x, COLOR_PROMPT);
-	x += ui_overlay_button(UI_BUTTON_LEFT_TRIGGER, 15.0f, x, 455.0f, 0xFFFFFFFF);
-	overlay_prompt(UI_BUTTON_RIGHT_TRIGGER, "=SORT", x, COLOR_PROMPT);
+	x = buttons_left(!palette->glassed);
+	for (index = 0; index < NUMBEROF(browser_buttons); index++)
+	{
+		char label[32];
+		float width = button_width(index);
+		boolean lit = index == browser_screen.button_hovered;
+		boolean usable = !browser_screen.connecting || browser_buttons[index].action == action_back;
+
+		button_label(index, label, sizeof(label));
+		ui_overlay_rect(x, BUTTON_Y, width, BUTTON_HEIGHT, palette->radius, lit && usable ? COLOR_ROW_SELECTED : COLOR_PANEL);
+		ui_overlay_outline(x, BUTTON_Y, width, BUTTON_HEIGHT, palette->radius, 0.75f, COLOR_PANEL_EDGE);
+		ui_overlay_button(browser_buttons[index].key, BUTTON_KEY_SIZE, x + BUTTON_PADDING, BUTTON_Y + 4, 0xFFFFFFFF);
+		ui_overlay_text(UI_FONT_BOLD, BUTTON_TEXT_SIZE,
+			x + BUTTON_PADDING + ui_overlay_button_width(browser_buttons[index].key, BUTTON_KEY_SIZE) + 4, BUTTON_Y + 5,
+			UI_ALIGN_LEFT, usable ? (lit ? COLOR_TITLE : COLOR_PROMPT) : COLOR_DIM, label);
+		x += width + BUTTON_GAP;
+	}
 
 	if (browser_screen.connecting)
 	{
