@@ -34,7 +34,8 @@ from tools.version import base_version, release_build, version  # noqa: E402
 # what each port's build leaves, and what goes into dist/
 OUTPUTS = {
     "linux": ["build/linux/halo"],
-    "windows": ["build/windows/halo.exe", "build/windows/SDL3.dll"],
+    # (halo.pdb names the functions of a crash's stack in debug.txt: port/windows/src/win32_symbols.c)
+    "windows": ["build/windows/halo.exe", "build/windows/halo.pdb", "build/windows/SDL3.dll"],
     "android": [],  # the APK, below
     # the application (universal and self-contained: --portable), whole
     "macos": ["build/macos/DamnationCE.app"],
