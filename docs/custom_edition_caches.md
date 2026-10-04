@@ -254,8 +254,11 @@ changed:
   its strip copied unchanged; the game's own `rasterizer_vertex_buffer_new`
   and `rasterizer_triangle_buffer_new` make its buffers, and the tags become
   `mode` tags. Before any of that, every index a part holds is checked
-  against what it names (shaders, nodes, parts, vertices), and a model with
-  44 nodes or more is refused, since this build's renderer skins at most 43.
+  against what it names (shaders, nodes, parts, vertices). This build's
+  renderer skins at most 43 nodes at once, so a model of more is drawn a
+  part's own nodes at a time: a model of more whose parts have no local
+  nodes is given them, each part the nodes its vertices name, and is refused
+  only when a part's vertices name more than a part holds.
 - **Structure BSPs.** When the game loads a BSP, every material's vertices
   are compressed the same way (environment and lightmap vertices), and the
   material gets buffers and the compressed vertices the game reads for
@@ -687,8 +690,10 @@ every layout used was then checked against the sample maps.
   and encoded again as Xbox ADPCM in memory
   (`port/linux/game/custom_edition_sounds.c`); one that cannot be decoded is
   silenced, as all were before.
-- **Models of 44 nodes or more** cannot be drawn by this build's renderer:
-  such maps are refused (`celer_exile_odst_v2.yelo`).
+- **Models of 44 nodes or more** are drawn a part's nodes at a time, given
+  local nodes when they have none; one whose part's vertices name more
+  nodes than a part holds is still refused (`celer_exile_odst_v2.yelo` was
+  refused before the local nodes were made, and was not tried since).
 - **Linear bitmaps whose rows are not a multiple of 64 bytes** (the 6 known
   are in `extinctionrevanepic2.map`) are drawn with their rows' padded
   pitch: the texture header rounds it up, as the rows are padded

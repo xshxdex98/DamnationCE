@@ -182,7 +182,7 @@ boolean custom_edition_models_convert(
 	byte *tag_cache,
 	unsigned long loaded_bytes,
 	struct custom_edition_load_report const *report,
-	byte const *model_data);
+	byte *model_data);
 void custom_edition_models_dispose(
 	void);
 

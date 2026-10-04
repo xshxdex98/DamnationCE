@@ -267,6 +267,107 @@ static boolean model_has_many_nodes(
 	return model->nodes.count >= RASTERIZER_MAXIMUM_NODES_PER_MODEL;
 }
 
+/* The nodes the part's vertices name, at most
+MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART of them, into `nodes`: their count, or
+NONE when there are more, or a vertex names a node the model lacks. */
+static long part_nodes_used(
+	struct model const *model,
+	struct custom_edition_model_part const *part,
+	struct model_vertex_uncompressed const *vertices,
+	byte nodes[MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART])
+{
+	long count = 0;
+	long vertex_index;
+
+	for (vertex_index = 0; vertex_index < part->vertex_count; vertex_index++)
+	{
+		long slot;
+
+		for (slot = 0; slot < 2; slot++)
+		{
+			short node = vertices[vertex_index].nodes[slot];
+			long index;
+
+			if (node < 0 || node >= model->nodes.count)
+				return NONE;
+			for (index = 0; index < count && nodes[index] != node; index++)
+				;
+			if (index == count)
+			{
+				if (count == MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART)
+					return NONE;
+				nodes[count++] = (byte)node;
+			}
+		}
+	}
+
+	return count;
+}
+
+/* Halo PC skins a model's nodes all at once; this build's renderer at most
+RASTERIZER_MAXIMUM_NODES_PER_MODEL - 1, so a model of more is drawn a part's
+own nodes at a time (local nodes). A model of more whose parts have none is
+given them here: each part the nodes its vertices name, its vertices naming
+them by their place there. FALSE, with nothing changed, when a part's
+vertices name more than one part holds. */
+static boolean model_local_nodes_make(
+	struct model *model,
+	byte *model_data)
+{
+	long pass;
+
+	/* (every part checked before any is changed) */
+	for (pass = 0; pass < 2; pass++)
+	{
+		long geometry_index;
+
+		for (geometry_index = 0; geometry_index < model->geometries.count; geometry_index++)
+		{
+			struct model_geometry const *geometry = TAG_BLOCK_GET_ELEMENT(
+				&model->geometries,
+				geometry_index,
+				struct model_geometry);
+			long part_index;
+
+			for (part_index = 0; part_index < geometry->parts.count; part_index++)
+			{
+				struct custom_edition_model_part *part = TAG_BLOCK_GET_ELEMENT(
+					&geometry->parts,
+					part_index,
+					struct custom_edition_model_part);
+				struct model_vertex_uncompressed *vertices =
+					(struct model_vertex_uncompressed *)(model_data + part->vertex_offset);
+				byte nodes[MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART];
+				long count = part_nodes_used(model, part, vertices, nodes);
+				long vertex_index;
+
+				if (count == NONE)
+					return FALSE;
+				if (pass == 0)
+					continue;
+				for (vertex_index = 0; vertex_index < part->vertex_count; vertex_index++)
+				{
+					long slot;
+
+					for (slot = 0; slot < 2; slot++)
+					{
+						short local = 0;
+
+						while (nodes[local] != vertices[vertex_index].nodes[slot])
+							local++;
+						vertices[vertex_index].nodes[slot] = local;
+					}
+				}
+				part->local_node_count = (byte)count;
+				csmemcpy(part->local_node_indices, nodes, (size_t)count);
+			}
+		}
+	}
+	SET_FLAG(model->flags, _gbxmodel_parts_have_local_nodes_bit, TRUE);
+
+	return TRUE;
+}
+
 /* Whether this build can draw `model`: every part must pass
 custom_edition_model_part_verify, and a model of more nodes than the
 renderer skins at once must have local nodes (each part few enough). Adds
@@ -594,7 +695,7 @@ boolean custom_edition_models_convert(
 	byte *tag_cache,
 	unsigned long loaded_bytes,
 	struct custom_edition_load_report const *report,
-	byte const *model_data)
+	byte *model_data)
 {
 	struct custom_edition_geometry_globals *globals = &custom_edition_geometry_globals;
 	struct model_geometry_totals totals = { 0, 0, 0, 0 };
@@ -608,6 +709,12 @@ boolean custom_edition_models_convert(
 	assert(!globals->model_parts && !globals->model_geometry);
 	while ((model = custom_edition_cache_tag_next(tag_cache, loaded_bytes, GBXMODEL_GROUP_TAG, sizeof(*model), &tag_index)) != NULL)
 	{
+		if (model_has_many_nodes(model) && !TEST_FLAG(model->flags, _gbxmodel_parts_have_local_nodes_bit) &&
+			model->nodes.count <= MAXIMUM_NODES_PER_MODEL && model_local_nodes_make(model, model_data))
+		{
+			error(_error_silent, "custom edition: the model '%s', of %ld nodes, is drawn a part's nodes at a time",
+				custom_edition_cache_tag_name(tag_cache, loaded_bytes, tag_index), model->nodes.count);
+		}
 		if (!custom_edition_model_verify(
 			model,
 			custom_edition_cache_tag_name(tag_cache, loaded_bytes, tag_index),
