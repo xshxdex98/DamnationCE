@@ -508,7 +508,8 @@ static boolean actor_state_apply(
 		TEST_FLAG(state->flags, _distributed_actor_running_blindly_bit));
 	if (TEST_FLAG(state->flags, _distributed_actor_running_blindly_bit))
 		unit->unit.run_blindly_angle = distributed_angle_unpack(state->run_blindly_angle, FALSE);
-	if (unit->object.parent_object_index == NONE)
+	/* (a vehicle is placed by the host's object states alone: network_objects.c) */
+	if (unit->object.parent_object_index == NONE && unit->object.type != _object_type_vehicle)
 	{
 		real dx = state->position.x - unit->object.position.x;
 		real dy = state->position.y - unit->object.position.y;

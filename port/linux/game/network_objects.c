@@ -2363,6 +2363,12 @@ void network_objects_handle_states(
 
 			if (blend_distance > 0.0f)
 				blend_distance = REMOTE_VEHICLE_BLEND_DISTANCE;
+			/* (one no player drives follows every move the host sends, however small) */
+			if (distributed_vehicle_unsteered(state->object_index))
+			{
+				tolerance = 0.0f;
+				angle_tolerance = 2.0f;
+			}
 			if (vehicle->unit.driver_object_index != NONE &&
 				distributed_player_is_local(unit_get(vehicle->unit.driver_object_index)->unit.player_index))
 			{
