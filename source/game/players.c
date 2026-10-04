@@ -2679,14 +2679,57 @@ static long player_spawnable_beside(
 do, so that they aren't put inside a vehicle it has only just left. */
 #define COOP_DISEMBARK_TICKS (4 * TICKS_PER_SECOND)
 
-/* How long a player on foot can be outside the structure BSP before it is
-brought beside a teammate inside it (a BSP switch settles in a tick or
-two; a moment longer tells a player left behind from one passing a seam). */
+/* Where the player was at the last checkpoint, or where anyone was for a
+player who joined since; NULL when that checkpoint was on another structure
+BSP or there is none. */
+static real_point3d const *players_checkpoint_position(
+	long player_index)
+{
+	short index = DATUM_INDEX_TO_ABSOLUTE_INDEX(player_index);
+
+	if (!players_checkpoint.valid || players_checkpoint.structure_bsp_index != global_structure_bsp_index_get())
+		return NULL;
+	if (players_checkpoint.has_position[index])
+		return &players_checkpoint.positions[index];
+	for (index = 0; index < NETWORK_GAME_MAXIMUM_PLAYER_COUNT; index++)
+	{
+		if (players_checkpoint.has_position[index])
+			return &players_checkpoint.positions[index];
+	}
+
+	return NULL;
+}
+
+/* Whether the unit is stranded outside the structure BSP loaded, where it
+falls forever: on foot, or riding a vehicle nobody drives or a player
+drives. A vehicle the AI drives is left alone: the intro Pelicans fly
+outside the BSP on purpose. */
+static boolean players_coop_unit_stranded(
+	long unit_index)
+{
+	long vehicle_index = object_get_ultimate_parent(unit_index);
+	long driver_index;
+
+	if (players_coop_unit_in_structure(unit_index))
+		return FALSE;
+	if (vehicle_index == unit_index)
+		return TRUE;
+	driver_index = object_try_and_get_and_verify_type(vehicle_index, _object_mask_unit) ?
+		unit_get(vehicle_index)->unit.driver_object_index : NONE;
+	return driver_index == NONE || unit_get(driver_index)->unit.player_index != NONE;
+}
+
+/* How long a player can be stranded before it is brought back (a BSP
+switch settles in a tick or two; a moment longer tells a player left behind
+from one passing a seam). */
 #define COOP_STRANDED_TICKS TICKS_PER_SECOND
 
-/* Co-op host, each tick: a player on foot left outside the structure BSP
-for COOP_STRANDED_TICKS is brought beside a teammate who has ground inside
-it (players_coop_unit_grounded). */
+/* Co-op host, each tick: a player stranded for COOP_STRANDED_TICKS is
+brought beside a teammate with ground inside the BSP, else any teammate
+inside it, else to the last checkpoint. Not while the scripts hold the
+controls, as they place the players in cutscenes. A BSP switch moves
+everyone already (players_reconnect_to_structure_bsp); this catches
+whoever it couldn't place. */
 static void players_coop_rescue_stranded(
 	void)
 {
@@ -2700,10 +2743,9 @@ static void players_coop_rescue_stranded(
 	{
 		long *since = &players_coop_state.stranded_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
 		long teammate_index;
+		boolean rescued;
 
-		/* (one riding a vehicle goes where the vehicle goes) */
-		if (player->unit_index == NONE || players_coop_unit_in_structure(player->unit_index) ||
-			object_get_ultimate_parent(player->unit_index) != player->unit_index)
+		if (player->unit_index == NONE || !player_input_enabled() || !players_coop_unit_stranded(player->unit_index))
 		{
 			*since = 0;
 			continue;
@@ -2713,11 +2755,21 @@ static void players_coop_rescue_stranded(
 		if (game_time_get() + 1 - *since < COOP_STRANDED_TICKS)
 			continue;
 		teammate_index = players_coop_unit_where(players_coop_unit_grounded);
-		if (teammate_index != NONE &&
-			player_teleport(iterator.datum_index, teammate_index, &object_get(teammate_index)->object.bounding_sphere_center))
+		if (teammate_index == NONE)
+			teammate_index = players_coop_unit_where(players_coop_unit_in_structure);
+		if (teammate_index != NONE)
 		{
-			*since = 0;
+			rescued = player_teleport(iterator.datum_index, teammate_index,
+				&object_get(teammate_index)->object.bounding_sphere_center);
 		}
+		else
+		{
+			real_point3d const *position = players_checkpoint_position(iterator.datum_index);
+
+			rescued = position && player_teleport(iterator.datum_index, NONE, position);
+		}
+		if (rescued)
+			*since = 0;
 	}
 }
 
@@ -2818,29 +2870,18 @@ void players_respawn_at_checkpoint(
 {
 	struct data_iterator iterator;
 	struct player_datum *player;
-	real_point3d const *anyone = NULL;
-	short index;
 
-	if (players_checkpoint.structure_bsp_index != global_structure_bsp_index_get())
-		players_checkpoint.valid = FALSE;
-	/* a player who joined after the checkpoint goes next to someone else */
-	for (index = 0; players_checkpoint.valid && !anyone && index < NETWORK_GAME_MAXIMUM_PLAYER_COUNT; index++)
-	{
-		if (players_checkpoint.has_position[index])
-			anyone = &players_checkpoint.positions[index];
-	}
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
+		real_point3d const *position;
+
 		if (player->unit_index != NONE)
 			continue;
 		player_spawn(iterator.datum_index);
-		index = DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index);
-		if (player->unit_index != NONE && anyone)
-		{
-			player_teleport(iterator.datum_index, NONE,
-				players_checkpoint.has_position[index] ? &players_checkpoint.positions[index] : anyone);
-		}
+		position = players_checkpoint_position(iterator.datum_index);
+		if (player->unit_index != NONE && position)
+			player_teleport(iterator.datum_index, NONE, position);
 	}
 
 	return;
@@ -2926,13 +2967,13 @@ void players_reconnect_to_structure_bsp(
 	long source_unit_index;
 	boolean teleport_position_valid;
 	boolean found_player;
-	short local_player_index;
 	short cutscene_flag_index;
-	long player_index;
 	long player_unit_index;
 
+	/* port: and on a network co-op host, whose other players are remote */
 	if (players_globals->pending_teleport_starting_location_index != NONE &&
-		players_globals->local_player_count > 1)
+		(players_globals->local_player_count > 1 ||
+			(network_coop_active() && game_connection() == _game_connection_network_server)))
 	{
 		scenario = global_scenario_get();
 		bsp_switch = TAG_BLOCK_GET_ELEMENT(
@@ -3017,23 +3058,22 @@ void players_reconnect_to_structure_bsp(
 			0x63E,
 			found_player,
 			"no players in the bsp");
+		/* port: every player, not only the local ones (in split screen
+		they are the same) */
 		if (found_player)
 		{
-			local_player_index = local_player_get_next(NONE);
-			while (local_player_index != NONE)
+			data_iterator_new(&iterator, player_data);
+			while ((player = data_iterator_next(&iterator)) != NULL)
 			{
-				player_index = local_player_get_player_index(local_player_index);
-				player = player_get(player_index);
 				if (player->unit_index != NONE &&
 					player->unit_index != source_unit_index)
 				{
 					player_teleport_on_bsp_switch(
-						player_index,
+						iterator.datum_index,
 						source_unit_index,
 						&teleport_position);
-					player_get(player_index)->cluster_index = NONE;
+					player->cluster_index = NONE;
 				}
-				local_player_index = local_player_get_next(local_player_index);
 			}
 		}
 		players_globals->pending_teleport_starting_location_index = NONE;
