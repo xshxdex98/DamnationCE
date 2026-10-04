@@ -29,7 +29,8 @@ The menus are data in `port/assets/menus`.
 | `shell_art.py` | Draws the left-hand menu pictures. |
 | `port_settings.py` | The port's own settings screens. |
 | `menu_preview.py` | Renders a menu screen to a PNG, so you can check a layout without running the game. |
-| `title_assets.py`, `title_font.py`, `hud_assets.py`, `app_icon.py` | Generate titles, the title font, high-res HUD textures and the app icon. |
+| `title_assets.py`, `title_font.py`, `hud_assets.py` | Generate titles, the title font and high-res HUD textures. |
+| `app_icon.py` | Makes the README logo and the macOS and Android icons from `port/assets/logo.png` (then run `android_icon.py`). |
 
 After changing `shell_skin.py` or `shell_art.py`, rerun it and commit the
 files it writes.

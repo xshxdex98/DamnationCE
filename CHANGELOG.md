@@ -13,6 +13,7 @@ in co-op games.
   mission timer (like the countdown on The Maw), screen shake, nav points,
   HUD elements the scripts hide or show, and characters' cutscene
   animations.
+- **New logo**, on GitHub and as the macOS and Android app icon.
 
 ## 0.2.0
 
