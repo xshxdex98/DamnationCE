@@ -3739,6 +3739,7 @@ void network_distributed_handle_message(
 	case _distributed_message_hit_reports:
 	case _distributed_message_vehicle_prediction:
 	case _distributed_message_player_inputs:
+	case _distributed_message_coop_skip_vote:
 		if (machine_index == NONE || game_connection() != _game_connection_network_server)
 			return;
 		break;
