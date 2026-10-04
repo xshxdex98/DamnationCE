@@ -2,7 +2,7 @@
 <menus root="main_menu/main_menu">
 	<widget name="main_menu/blueline" controller="1" width="192" height="2" bitmap="bitmaps/blue">
 	</widget>
-	<widget name="main_menu/build_number" type="text" controller="1" width="150" height="20" font="ui\small_ui" color="#FFFF8000">
+	<widget name="main_menu/build_number" type="text" controller="1" width="150" height="20" font="ui\small_ui" color="#FF3CC8C0">
 		<data input="build number textbox only" />
 	</widget>
 	<widget name="main_menu/current_profile_name" type="text" controller="1" left="10" top="446" width="340" height="34" font="ui\large_ui" color="#FFCCCCCC">
