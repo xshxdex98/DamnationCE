@@ -315,12 +315,9 @@ static void antenna_update_attachment(
 	delta.i = attachment_point->x - antenna->last_attachment_location.x;
 	delta.j = attachment_point->y - antenna->last_attachment_location.y;
 	delta.k = attachment_point->z - antenna->last_attachment_location.z;
-	/*
-	 * (as the original: the integer truncation makes this a two-unit threshold)
-	 */
-	if ((real)abs((long)delta.i) > 1.0f ||
-		(real)abs((long)delta.j) > 1.0f ||
-		(real)abs((long)delta.k) > 1.0f)
+	if (fabsf(delta.i) > 1.0f ||
+		fabsf(delta.j) > 1.0f ||
+		fabsf(delta.k) > 1.0f)
 	{
 		short vertex_index;
 
