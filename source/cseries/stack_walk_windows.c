@@ -392,11 +392,23 @@ void stack_walk_with_context(
 			unsigned long routine_address = routine_addresses[frame_number] + *(long *)(routine_addresses[frame_number] - sizeof(long));
 #endif
 			char const *symbol_name;
+#if defined(_MSC_VER) && !defined(HALO_ANDROID)
+			/* port: the native Windows build names the call (the byte before the
+			return address) from halo.pdb (port/windows/src/win32_symbols.c) */
+			extern int win32_describe_address(unsigned long address, char *text, unsigned long size);
+			char call_site[256];
+#endif
 
 			if (stack_walk_globals.symbol_table.number_of_symbols && !stack_walk_globals.disregard_symbol_names)
 			{
 				symbol_name = symbol_name_from_address(routine_address, &stack_walk_globals.symbol_table);
 			}
+#if defined(_MSC_VER) && !defined(HALO_ANDROID)
+			else if (win32_describe_address(routine_addresses[frame_number] - 1, call_site, sizeof(call_site)))
+			{
+				symbol_name = call_site;
+			}
+#endif
 			else
 			{
 				symbol_name = "?????";
