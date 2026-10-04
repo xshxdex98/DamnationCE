@@ -8653,7 +8653,16 @@ enum
 /* port: the melee damage of a unit with no weapon (a gametype's loadout of
 none): its own, else (a player's biped has none: players always had a
 weapon) the blow of the globals' first multiplayer weapon, the assault
-rifle's. network_damage.c takes it as the player's. */
+rifle's. Campaign maps have no multiplayer weapons, and then there is none.
+network_damage.c takes it as the player's. */
+/* port: the globals' first multiplayer weapon, or NONE on a map without
+any (a campaign map) */
+static long unit_first_multiplayer_weapon(
+	void)
+{
+	return scenario_get_game_globals()->weapon_list.count > 0 ? list_index_to_weapon_definition_index(0) : NONE;
+}
+
 long unit_unarmed_melee_damage(
 	long unit_index)
 {
@@ -8662,7 +8671,7 @@ long unit_unarmed_melee_damage(
 
 	if (unit_definition->unit.melee_damage.index!=NONE)
 		return unit_definition->unit.melee_damage.index;
-	weapon_definition_index = list_index_to_weapon_definition_index(0);
+	weapon_definition_index = unit_first_multiplayer_weapon();
 	return weapon_definition_index!=NONE ?
 		weapon_definition_get(weapon_definition_index)->weapon.melee_attack_damage.index : NONE;
 }
@@ -8840,7 +8849,7 @@ void unit_cause_player_melee_damage(
 		response */
 		if (melee_damage_effect_index==NONE)
 		{
-			long weapon_definition_index = list_index_to_weapon_definition_index(0);
+			long weapon_definition_index = unit_first_multiplayer_weapon();
 
 			melee_damage_effect_index = unit_unarmed_melee_damage(unit_index);
 			if (weapon_definition_index!=NONE && melee_response_effect_index==NONE)

@@ -5,6 +5,7 @@
 - Fixed a crash about four seconds into setting up any network game (LAN or
   internet, co-op or PvP), for example while picking a map. It came in with
   0.2.0.
+- Fixed a crash when a co-op game starts loading a campaign level.
 - Co-op code no longer runs in the menus while a game is being set up. It
   used to stop the menu background's scripts for joining players.
 
