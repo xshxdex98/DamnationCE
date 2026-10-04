@@ -797,8 +797,6 @@ void game_engine_playlist_next(
 
 static void game_engine_build_lighting(
 	void);
-static long game_engine_get_type(
-	void);
 
 static boolean is_place_tied(
 	struct statistic_buffer const *entry);
@@ -3117,29 +3115,6 @@ static real game_engine_get_friendly_bonus(
 	return rating * 3.0f + 1.0f;
 }
 
-/* port: whether any of the map's starting locations for this game type is
-the team's. Some Custom Edition maps give every one to team 0, which left
-the other team's players waiting to spawn for good. */
-static boolean team_has_starting_locations(
-	short team_index)
-{
-	short count = player_get_starting_location_count();
-	short index;
-
-	for (index = 0; index < count; index++)
-	{
-		struct player_starting_location const *starting_location = player_get_starting_location(index);
-
-		if (starting_location && starting_location->team_index == team_index &&
-			match_game_type(game_engine_get_type(), 4, starting_location->game_types))
-		{
-			return TRUE;
-		}
-	}
-
-	return FALSE;
-}
-
 static real default_starting_location_rate_function(
 	long player_index,
 	struct player_starting_location const *starting_location)
@@ -3147,11 +3122,9 @@ static real default_starting_location_rate_function(
 	struct player_datum *player = player_get(player_index);
 	real rating = 1.0f;
 
-	/* (port: a team with none of its own spawns at any) */
 	if (game_engine_running() &&
 		game_engine_test_flag(0) &&
-		player->team_index != starting_location->team_index &&
-		team_has_starting_locations(player->team_index))
+		player->team_index != starting_location->team_index)
 	{
 		rating = 0.0f;
 	}
