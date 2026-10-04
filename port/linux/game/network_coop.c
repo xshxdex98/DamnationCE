@@ -56,12 +56,14 @@ index and tag, since the map placed them at the same index everywhere.
 #include "camera/observer.h"
 #include "cutscene/cinematics.h"
 #include "devices/devices.h"
+#include "effects/effect_definitions.h"
 #include "effects/player_effects.h"
 #include "game/game.h"
 #include "game/game_engine.h"
 #include "game/players.h"
 #include "game/player_queues_new.h"
 #include "hs/hs.h"
+#include "hs/hs_library_external.h"
 #include "interface/hud.h"
 #include "interface/hud_definitions.h"
 #include "interface/hud_messaging.h"
@@ -69,6 +71,9 @@ index and tag, since the map placed them at the same index everywhere.
 #include "interface/hud_weapon.h"
 #include "main/main.h"
 #include "models/model_animation_definitions.h"
+#include "models/model_definitions.h"
+#include "models/models.h"
+#include "objects/object_definitions.h"
 #include "objects/objects.h"
 #include "objects/object_types.h"
 #include "objects/scenery.h"
@@ -124,6 +129,15 @@ enum
 	_coop_event_nav_point,
 	_coop_event_unit_animation,
 	_coop_event_scenery_animation,
+	_coop_event_effect,
+};
+
+/* distributed_coop_event.type of an effect: at a cutscene flag (value), or on
+an object's marker (value: its index in the object's model's markers) */
+enum
+{
+	_coop_effect_at_flag,
+	_coop_effect_on_marker,
 };
 
 /* which of a device's two groups an entry is */
@@ -924,6 +938,32 @@ static void client_apply_sound(
 	}
 }
 
+static void client_apply_effect(
+	struct distributed_coop_event const *event)
+{
+	long object_index;
+	struct object_datum *object;
+	struct model *model;
+
+	if (!distributed_tag_of_group(event->tag_index, EFFECT_DEFINITION_TAG))
+		return;
+	if (event->type == _coop_effect_at_flag)
+	{
+		if (event->value >= 0 && event->value < global_scenario_get()->cutscene_flags.count)
+			hs_effect_new(event->tag_index, event->value);
+		return;
+	}
+	object_index = object_find(event->name_index, event->object_index, event->definition_index, _object_mask_all);
+	object = object_index != NONE ? object_get(object_index) : NULL;
+	model = object && object_definition_get(object->definition_index)->object.model.index != NONE ?
+		model_definition_get(object_definition_get(object->definition_index)->object.model.index) : NULL;
+	if (model && event->value >= 0 && event->value < model->markers.count)
+	{
+		hs_effect_new_from_object_marker(event->tag_index, object_index,
+			TAG_BLOCK_GET_ELEMENT(&model->markers, event->value, struct model_marker)->name);
+	}
+}
+
 static void client_apply_event(
 	struct distributed_coop_event const *event)
 {
@@ -950,6 +990,9 @@ static void client_apply_event(
 		break;
 	case _coop_event_scenery_animation:
 		client_apply_scenery_animation(event);
+		break;
+	case _coop_event_effect:
+		client_apply_effect(event);
 		break;
 	default:
 		break;
@@ -1150,6 +1193,39 @@ void network_coop_note_scenery_animation(
 	event->tag_index = animation_graph_index;
 	event->value = animation_index;
 	event->frame = frame_index;
+}
+
+void network_coop_note_effect(
+	long effect_definition_index,
+	short cutscene_flag_index)
+{
+	struct distributed_coop_event *event = event_new(_coop_event_effect);
+
+	if (!event)
+		return;
+	event->type = _coop_effect_at_flag;
+	event->tag_index = effect_definition_index;
+	event->value = cutscene_flag_index;
+}
+
+void network_coop_note_object_effect(
+	long effect_definition_index,
+	long object_index,
+	char const *marker_name)
+{
+	struct object_datum *object = object_try_and_get(object_index);
+	long model_index = object ? object_definition_get(object->definition_index)->object.model.index : NONE;
+	short marker_index = model_index != NONE ? model_find_marker(model_index, marker_name) : NONE;
+	struct distributed_coop_event *event;
+
+	if (marker_index == NONE || !(event = event_new(_coop_event_effect)))
+		return;
+	event->type = _coop_effect_on_marker;
+	event->tag_index = effect_definition_index;
+	event->object_index = object_index;
+	event->name_index = object->object.name_index;
+	event->definition_index = object->definition_index;
+	event->value = marker_index;
 }
 
 boolean network_coop_skip_offered(

@@ -104,6 +104,7 @@ symbols in this file:
 #include "sound/sound_definitions.h"
 #include "units/units.h"
 #include "object_lists.h"
+#include "network_coop.h" /* port: port/linux/game/network_coop.c */
 
 /* ---------- constants */
 
@@ -674,6 +675,8 @@ void hs_effect_new(
 	struct scenario_cutscene_flag *cutscene_flag;
 	real_vector3d forward;
 
+	/* port: and on network co-op's clients (port/linux/game/network_coop.c) */
+	network_coop_note_effect(effect_definition_index, cutscene_flag_index);
 	cutscene_flag = TAG_BLOCK_GET_ELEMENT(
 		&global_scenario_get()->cutscene_flags,
 		cutscene_flag_index,
@@ -706,6 +709,9 @@ void hs_effect_new_from_object_marker(
 		if (object_index != NONE)
 		{
 			struct object_marker marker;
+
+			/* port: and on network co-op's clients (port/linux/game/network_coop.c) */
+			network_coop_note_object_effect(effect_definition_index, object_index, marker_name);
 
 			if (object_get_marker_by_name(
 				object_index,
