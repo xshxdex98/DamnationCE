@@ -1,6 +1,7 @@
 """The server list as a picture in the Glassed theme's look (tools/shell_skin.py):
 dark glass in white hairlines over the busiest game's map, in Rajdhani.
-discord_feeds.py attaches it to the server tracker's message.
+discord_feeds.py attaches it to the server tracker's message, and a
+release's banner (release_banner) to its changelog's.
 
 It is wide and always the same size: Discord fits a picture into a box
 wider than it is tall, so a wide one is shown largest, and a constant size
@@ -67,11 +68,11 @@ def spaced(text):
 
 
 class Card:
-    def __init__(self, backdrop):
-        size = (WIDTH, HEIGHT)
+    def __init__(self, backdrop, size=(WIDTH, HEIGHT), blur=18, dim=0.62):
+        """backdrop blurred by blur and darkened by dim (0 to 1) behind it all"""
         if backdrop:
-            image = cover(backdrop, size).filter(ImageFilter.GaussianBlur(18))
-            image = Image.blend(image, Image.new("RGB", size, SHADE), 0.62)
+            image = cover(backdrop, size).filter(ImageFilter.GaussianBlur(blur))
+            image = Image.blend(image, Image.new("RGB", size, SHADE), dim)
         else:
             image = Image.new("RGB", size, (14, 20, 30))
         self.image = image.convert("RGBA")
@@ -202,3 +203,29 @@ def wrap(draw, names, typeface, width):
         else:
             lines.append(name)
     return lines
+
+
+# a release's banner: wide and short, so Discord shows it the width of the message
+BANNER_SIZE = (1600, 400)
+STRIP_TOP, STRIP_BOTTOM = 64, 336
+
+
+def release_banner(product, version, date, backdrop_path, user_agent):
+    """a release's banner: its version large on the Glassed theme's strip of
+    dark glass between two hairlines (tools/shell_skin.py), over a map"""
+    width, height = BANNER_SIZE
+    # (the map shows more than behind the server list, which has text all over it)
+    card = Card(fetch_art(backdrop_path, user_agent), BANNER_SIZE, blur=9, dim=0.3)
+    draw = card.draw
+    draw.rectangle((0, STRIP_TOP, width, STRIP_BOTTOM), fill=SHADE + (140,))
+    for y in (STRIP_TOP, STRIP_BOTTOM):
+        draw.line((0, y, width, y), fill=WHITE + (90,), width=2)
+
+    middle = (STRIP_TOP + STRIP_BOTTOM) // 2
+    draw.text((MARGIN * 2, middle - 58), spaced(product), font=font("SemiBold", 40), fill=WHITE + (190,), anchor="ls")
+    draw.text((MARGIN * 2, middle + 82), version, font=font("Bold", 150), fill=WHITE + (240,), anchor="ls")
+    draw.text((width - MARGIN * 2, middle - 58), spaced("Release notes"), font=font("SemiBold", 40),
+              fill=WHITE + (150,), anchor="rs")
+    draw.text((width - MARGIN * 2, middle + 82), date.upper(), font=font("SemiBold", 48), fill=WHITE + (190,),
+              anchor="rs")
+    return card.png()

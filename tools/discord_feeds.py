@@ -188,14 +188,33 @@ def unwrap(markdown):
     return "\n".join(lines)
 
 
+def release_banner(tag):
+    """the release's banner (discord_card.py) over one of the Xbox maps, the
+    same for a version each time; None without Pillow"""
+    try:
+        import discord_card
+    except ImportError:
+        return None
+    maps = sorted(XBOX_MAPS)
+    backdrop = map_art(maps[sum(map(ord, tag)) % len(maps)])
+    date = time.strftime("%d %B %Y", time.gmtime()).lstrip("0")
+    return discord_card.release_banner("DamnationCE", tag.lstrip("v"), date, backdrop, USER_AGENT)
+
+
 def post_release(tag, notes_path):
     webhook = os.environ["DISCORD_RELEASES_WEBHOOK"]
     with open(notes_path, encoding="utf-8") as notes:
-        text = f"**DamnationCE {tag}**\n" + unwrap(notes.read())
+        changelog = unwrap(notes.read())
+    banner = release_banner(tag)
+    # (the banner names the version; without it, a line does)
+    parts = message_parts(changelog if banner else f"**DamnationCE {tag}**\n" + changelog)
     # (a long changelog goes on in further messages)
-    for part in message_parts(text):
-        request(webhook, "POST", {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS,
-                                  "allowed_mentions": {"parse": []}})
+    for index, part in enumerate(parts):
+        body = {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS, "allowed_mentions": {"parse": []}}
+        files = [("release.png", banner)] if banner and index == 0 else []
+        if files:
+            body["attachments"] = [{"id": 0, "filename": "release.png"}]
+        request(webhook, "POST", body, files)
 
 
 def main():
