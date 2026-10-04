@@ -33,7 +33,7 @@ import java.util.zip.ZipInputStream;
  * release's tag, v<version>, by DamnationCE's release workflow) knows its
  * version (BuildConfig.HALO_VERSION, 0.5.0b); nightlies and other builds
  * never look. When
- * update.auto in config.toml is true (the default), the game asks GitHub for
+ * update.check in config.toml is true (the default), the game asks GitHub for
  * the latest release when it starts, on a thread of its own, and if it is
  * newer asks the player whether to update:
  *
@@ -41,7 +41,7 @@ import java.util.zip.ZipInputStream;
  *   downloaded and handed to Android's package installer, which replaces the
  *   game (closing it) and offers to open the new version.
  * - No: nothing, until the next start.
- * - Do not ask again: after the player confirms it, update.auto = false is
+ * - Do not ask again: after the player confirms it, update.check = false is
  *   written to config.toml.
  *
  * Every release and nightly is signed with the same key (the release
@@ -60,7 +60,7 @@ final class Updater {
     static void start(Activity activity) {
         File config = configFile(activity);
 
-        if (!BuildConfig.HALO_RELEASE_BUILD || config == null || !autoUpdate(config))
+        if (!BuildConfig.HALO_RELEASE_BUILD || config == null || !checksForUpdates(config))
             return;
         new Thread(() -> {
             String latest = latestRelease();
@@ -76,9 +76,11 @@ final class Updater {
         return root != null ? new File(root, "config.toml") : null;
     }
 
-    /* ---------- config.toml's update.auto */
+    /* ---------- config.toml's update.check (named check, not auto as it was
+     * while it defaulted to false: a config.toml written then holds
+     * auto = false, which no longer counts) */
 
-    private static boolean autoUpdate(File config) {
+    private static boolean checksForUpdates(File config) {
         String section = "";
 
         for (String line : readLines(config)) {
@@ -86,15 +88,15 @@ final class Updater {
 
             if (trimmed.startsWith("[") && trimmed.contains("]")) {
                 section = trimmed.substring(1, trimmed.indexOf(']')).trim();
-            } else if (section.equals("update") && isKey(trimmed, "auto")) {
+            } else if (section.equals("update") && isKey(trimmed, "check")) {
                 return !trimmed.substring(trimmed.indexOf('=') + 1).trim().startsWith("false");
             }
         }
         return true;
     }
 
-    /** update.auto = false written into config.toml (only its line changed) */
-    static boolean writeAutoUpdateOff(File config) {
+    /** update.check = false written into config.toml (only its line changed) */
+    static boolean writeCheckOff(File config) {
         List<String> lines = readLines(config);
         List<String> out = new ArrayList<>();
         String section = "";
@@ -105,13 +107,13 @@ final class Updater {
 
             if (trimmed.startsWith("[") && trimmed.contains("]")) {
                 if (inSection && !written) {
-                    out.add("auto = false");
+                    out.add("check = false");
                     written = true;
                 }
                 section = trimmed.substring(1, trimmed.indexOf(']')).trim();
                 inSection = section.equals("update");
-            } else if (inSection && !written && isKey(trimmed, "auto")) {
-                out.add("auto = false");
+            } else if (inSection && !written && isKey(trimmed, "check")) {
+                out.add("check = false");
                 written = true;
                 continue;
             }
@@ -122,7 +124,7 @@ final class Updater {
                 out.add("");
                 out.add("[update]");
             }
-            out.add("auto = false");
+            out.add("check = false");
         }
         StringBuilder text = new StringBuilder();
         for (String line : out)
@@ -248,7 +250,7 @@ final class Updater {
                 File config = configFile(activity);
 
                 if (config != null)
-                    writeAutoUpdateOff(config);
+                    writeCheckOff(config);
             })
             .setNegativeButton("No", null)
             .show();
