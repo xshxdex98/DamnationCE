@@ -10,10 +10,14 @@ It lists the games from two sources that share invite codes: the game list
 (port/linux/src/browser.c) and the internet lobby (port/linux/src/p2p_lobby.c).
 A game in both is shown once.
 
+The games are a list with a column each for name, map, mode, players and
+ping, and the selected game's details (map picture, settings, who is in it)
+are on the right.
+
 Controls: arrow keys pick a game (left and right turn the page), A or Enter
 joins it, and Escape (B) goes back. Everything else is clicked: a game, the
 buttons along the bottom (JOIN, CREATE GAME, REFRESH, SORT, PROFILE, BACK)
-and the sort tabs in the header.
+and the column headings, which sort by that column.
 
 Joining opens a tunnel to the host through the invite; once the host's game
 is advertised through it, we join and open its lobby (wait_for_host).
@@ -55,7 +59,7 @@ can't be joined, since the map would fail to load.
 
 enum
 {
-	ROWS_PER_PAGE = 7,
+	ROWS_PER_PAGE = 14,
 	/* milliseconds a status message stays up */
 	STATUS_DURATION = 6000,
 	/* give up on a host that hasn't answered after this many milliseconds */
@@ -109,6 +113,7 @@ enum
 	SORT_NAME,
 	SORT_MAP,
 	SORT_TYPE,
+	SORT_PING,
 
 	NUMBER_OF_SORTS
 };
@@ -389,6 +394,8 @@ static long compare_games(
 		break;
 	}
 	case SORT_TYPE: order = (long)a->engine * 2 + a->teams - ((long)b->engine * 2 + b->teams); break;
+	/* lowest first; not measured goes last */
+	case SORT_PING: order = (a->ping < 0 ? SHORT_MAX : a->ping) - (long)(b->ping < 0 ? SHORT_MAX : b->ping); break;
 	default: order = (long)b->players - (long)a->players; break;
 	}
 	return order ? order : compare_names(a->name, b->name);
@@ -416,8 +423,12 @@ static void add_lobby_games(
 		for (index = 0; index < browser_screen.count && strcmp(browser_screen.games[index].invite, invite); index++)
 		{
 		}
+		/* listed already: only the lobby knows the ping */
 		if (index < browser_screen.count)
+		{
+			browser_screen.games[index].ping = listing->ping;
 			continue;
+		}
 		game = &browser_screen.games[browser_screen.count++];
 		csmemset(game, 0, sizeof(*game));
 		csstrcpy(game->invite, invite);
@@ -431,6 +442,7 @@ static void add_lobby_games(
 		game->maximum_players = listing->maximum_player_count;
 		game->open = listing->open;
 		game->teams = listing->has_teams;
+		game->ping = listing->ping;
 	}
 }
 
@@ -649,18 +661,39 @@ enum
 	COLOR_BLUE_TEAM = 0x6BB0FFFF,
 	/* notices, and what can't be joined: a full or closed game, a missing map */
 	COLOR_NOTICE = 0x3CC8C0FF,
+	/* a game open to join (its row's dot), and a ping's quality */
+	COLOR_GOOD = 0x5ED38CFF,
+	COLOR_FAIR = 0xE8C547FF,
+	COLOR_POOR = 0xE86A5AFF,
 };
 
-/* the layout, in the menus' 640x480: game cards down the left, the selected
-game's details on the right */
+/* The list's columns: each spans a share of the list's width, and the
+numbers are right-aligned. Clicking a heading sorts by it. */
+struct browser_column
+{
+	char const *heading;
+	short sort;
+	float left, right;
+	boolean numeric;
+};
+static struct browser_column const columns[] =
+{
+	{ "NAME", SORT_NAME, 0.035f, 0.41f, FALSE },
+	{ "MAP", SORT_MAP, 0.43f, 0.65f, FALSE },
+	{ "MODE", SORT_TYPE, 0.67f, 0.81f, FALSE },
+	{ "PLAYERS", SORT_PLAYERS, 0.81f, 0.91f, TRUE },
+	{ "PING", SORT_PING, 0.92f, 0.985f, TRUE },
+};
+
+/* the layout, in the menus' 640x480: a list of games on the left under its
+column headings, the selected game's details on the right */
 enum
 {
 	GLASS_TOP = 66, GLASS_BOTTOM = 446,
-	LIST_Y = 78, CARD_HEIGHT = 44,
-	CARD_PICTURE_WIDTH = 42, CARD_PICTURE_HEIGHT = 34, FULLNESS_WIDTH = 56,
-	DETAIL_Y = 78, DETAIL_WIDTH = 183, DETAIL_PICTURE_HEIGHT = 149,
+	COLUMNS_Y = 74, LIST_Y = 92, ROW_HEIGHT = 22,
+	FOOTER_Y = LIST_Y + ROWS_PER_PAGE * ROW_HEIGHT + 6,
+	DETAIL_Y = 78, DETAIL_WIDTH = 183, DETAIL_PICTURE_HEIGHT = 112,
 	ROSTER_COLUMNS = 2, ROSTER_ROWS = 8,
-	TABS_Y = 44,
 	/* Glassed: the gap to the screen's edges and between list and details,
 	and the widest the list gets on a very wide screen */
 	EDGE_GAP = 24, COLUMN_GAP = 24, MAXIMUM_LIST_WIDTH = 560,
@@ -703,7 +736,7 @@ static short row_at(
 	short x,
 	short y)
 {
-	short row = (short)((y - LIST_Y) / CARD_HEIGHT);
+	short row = (short)((y - LIST_Y) / ROW_HEIGHT);
 
 	if (x < layout.list_x || x >= layout.list_x + layout.list_width || y < LIST_Y || row >= ROWS_PER_PAGE)
 		return NONE;
@@ -732,7 +765,7 @@ enum
 	CANCEL_Y = 234,
 };
 
-static char const *const sort_names[NUMBER_OF_SORTS] = { "PLAYERS", "NAME", "MAP", "TYPE" };
+static char const *const sort_names[NUMBER_OF_SORTS] = { "PLAYERS", "NAME", "MAP", "MODE", "PING" };
 static char const *const cancel_label[] = { "CANCEL" };
 
 /* the bar's labels; SORT shows the current order */
@@ -770,27 +803,34 @@ static unsigned long buttons_disabled(void)
 	return browser_screen.connecting ? ~FLAG(BUTTON_BACK) : 0;
 }
 
-/* the header's sort tab at a point, or NONE (laid out as render_header draws them) */
-static short sort_tab_at(short x, short y)
+/* a column's edges in the 640x480 layout */
+static float column_left(struct browser_column const *column)
 {
-	float right = layout.right;
-	short sort;
+	return layout.list_x + column->left * layout.list_width;
+}
 
-	if (y < TABS_Y - 4 || y >= TABS_Y + 16)
+static float column_right(struct browser_column const *column)
+{
+	return layout.list_x + column->right * layout.list_width;
+}
+
+/* the sort of the column heading at a point, or NONE */
+static short sort_heading_at(short x, short y)
+{
+	short index;
+
+	if (y < COLUMNS_Y - 3 || y >= LIST_Y)
 		return NONE;
-	for (sort = NUMBER_OF_SORTS - 1; sort >= 0; sort--)
+	for (index = 0; index < NUMBEROF(columns); index++)
 	{
-		float width = ui_overlay_text_width(UI_FONT_BOLD, 9.0f, sort_names[sort]);
-
-		if (x >= right - width && x < right)
-			return sort;
-		right -= width + 14;
+		if (x >= column_left(&columns[index]) - 4 && x < column_right(&columns[index]) + 4)
+			return columns[index].sort;
 	}
 	return NONE;
 }
 
-/* The mouse: hovering a card selects it and clicking joins it; the wheel
-moves the selection; the buttons and sort tabs are clicked. */
+/* The mouse: hovering a row selects it and clicking joins it; the wheel
+moves the selection; the buttons and column headings are clicked. */
 void browser_screen_pointer(
 	struct halo_ui_pointer const *pointer)
 {
@@ -811,7 +851,7 @@ void browser_screen_pointer(
 	{
 		short button = overlay_button_at(buttons.labels, NUMBER_OF_BUTTONS, buttons_left(&buttons), OVERLAY_BUTTON_Y,
 			pointer->click_x, pointer->click_y);
-		short sort = sort_tab_at(pointer->click_x, pointer->click_y);
+		short sort = sort_heading_at(pointer->click_x, pointer->click_y);
 
 		if (browser_screen.connecting &&
 			overlay_button_at(cancel_label, 1, cancel_left(), CANCEL_Y, pointer->click_x, pointer->click_y) != NONE)
@@ -871,76 +911,138 @@ static char const *type_name(
 	return text;
 }
 
-/* a map picture with an outline */
-static void map_picture(
-	char const *map,
+
+/* Draws text cut to a width, ending in an ellipsis if it doesn't fit. */
+static void text_fitted(
+	int font,
+	float size,
 	float x,
 	float y,
 	float width,
-	float height)
+	unsigned int color,
+	char const *text)
 {
-	overlay_map_picture(overlay_map_display_index(map), x, y, width, height);
-	ui_overlay_outline(x, y, width, height, 0, 0.75f, COLOR_PANEL_EDGE);
+	char fitted[128];
+	size_t length;
+
+	snprintf(fitted, sizeof(fitted), "%s", text);
+	length = strlen(fitted);
+	if (ui_overlay_text_width(font, size, fitted) > width)
+	{
+		/* drop whole UTF-8 characters until it fits with the ellipsis */
+		while (length > 0)
+		{
+			do
+				length--;
+			while (length > 0 && (fitted[length] & 0xC0) == 0x80);
+			snprintf(fitted + length, sizeof(fitted) - length, "\xE2\x80\xA6");
+			if (ui_overlay_text_width(font, size, fitted) <= width)
+				break;
+		}
+	}
+	ui_overlay_text(font, size, x, y, UI_ALIGN_LEFT, color, fitted);
 }
 
-/* the title, the game and player counts, and the sort tabs (the current
-order bright and underlined) */
+/* the title, and how many games and players there are */
 static void render_header(
 	long players)
 {
 	char text[96];
-	float x = layout.right;
-	short sort;
 
-	ui_overlay_text(UI_FONT_BOLD, 30.0f, layout.list_x, 15, UI_ALIGN_LEFT, COLOR_TITLE, "ONLINE");
+	ui_overlay_text(UI_FONT_BOLD, 24.0f, layout.list_x, 22, UI_ALIGN_LEFT, COLOR_TITLE, "ONLINE GAMES");
 	snprintf(text, sizeof(text), "%d %s  \xC2\xB7  %ld %s", browser_screen.count, browser_screen.count == 1 ? "GAME" : "GAMES",
 		players, players == 1 ? "PLAYER" : "PLAYERS");
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 2, 50, UI_ALIGN_LEFT, COLOR_DIM, text);
-	for (sort = NUMBER_OF_SORTS - 1; sort >= 0; sort--)
-	{
-		boolean shown = sort == browser_screen.sort;
-		float width = ui_overlay_text_width(UI_FONT_BOLD, 9.0f, sort_names[sort]);
-
-		x -= width;
-		ui_overlay_text(UI_FONT_BOLD, 9.0f, x, TABS_Y, UI_ALIGN_LEFT, shown ? COLOR_TITLE : COLOR_DIM, sort_names[sort]);
-		if (shown)
-			ui_overlay_rect(x, TABS_Y + 13, width, 1.0f, 0, COLOR_TITLE);
-		x -= 14;
-	}
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 1, 50, UI_ALIGN_LEFT, COLOR_DIM, text);
 }
 
-/* a game's card: map picture, name, map and rules, and a fullness bar */
-static void render_card(
+/* the column headings, the one sorted by bright and underlined */
+static void render_columns(
+	void)
+{
+	short index;
+
+	for (index = 0; index < NUMBEROF(columns); index++)
+	{
+		struct browser_column const *column = &columns[index];
+		boolean sorted = column->sort == browser_screen.sort;
+		float width = ui_overlay_text_width(UI_FONT_BOLD, 8.0f, column->heading);
+		float x = column->numeric ? column_right(column) - width : column_left(column);
+
+		ui_overlay_text(UI_FONT_BOLD, 8.0f, x, COLUMNS_Y, UI_ALIGN_LEFT, sorted ? COLOR_TITLE : COLOR_DIM, column->heading);
+		if (sorted)
+			ui_overlay_rect(x, COLUMNS_Y + 11, width, 1.0f, 0, COLOR_TITLE);
+	}
+	ui_overlay_rect(layout.list_x, LIST_Y - 2, layout.list_width, 0.75f, 0, COLOR_ROW_RULE);
+}
+
+static unsigned int ping_color(
+	short ping)
+{
+	return ping < 0 ? COLOR_DIM : ping < 80 ? COLOR_GOOD : ping < 160 ? COLOR_FAIR : COLOR_POOR;
+}
+
+/* A game's row: a dot for whether it can be joined, then a column each for
+its name, map, mode, players and ping. */
+static void render_row(
 	struct browser_game const *game,
-	float y,
+	short row,
 	boolean chosen)
 {
 	struct known_map const *map = known_map(game->map);
-	char name[64], line[112], rules[32];
+	float y = (float)(LIST_Y + row * ROW_HEIGHT);
+	float text_y = y + 5;
+	boolean full = game->players >= game->maximum_players && game->maximum_players > 0;
 	unsigned int color = game->open ? COLOR_TEXT : COLOR_DIM;
-	float right = layout.list_x + layout.list_width - 10;
-	float filled = game->maximum_players > 0 ? (float)game->players / (float)game->maximum_players : 0.0f;
+	unsigned int dot = !map->installed ? COLOR_NOTICE : game->open && !full ? COLOR_GOOD : COLOR_DIM;
+	char text[96];
+	float x;
 
 	if (chosen)
 	{
-		ui_overlay_rect(layout.list_x, y + 1, layout.list_width, CARD_HEIGHT - 2, palette->radius, COLOR_ROW_SELECTED);
+		ui_overlay_rect(layout.list_x, y, layout.list_width, ROW_HEIGHT - 1, palette->radius / 2, COLOR_ROW_SELECTED);
 		if (palette->glassed)
-			ui_overlay_rect(layout.list_x, y + 1, 1.5f, CARD_HEIGHT - 2, 0, 0xFFFFFFFF);
+			ui_overlay_rect(layout.list_x, y, 1.5f, ROW_HEIGHT - 1, 0, 0xFFFFFFFF);
 	}
-	map_picture(game->map, layout.list_x + 7, y + 5, CARD_PICTURE_WIDTH, CARD_PICTURE_HEIGHT);
-	overlay_utf8(game->name, NUMBEROF(game->name), name, sizeof(name));
-	ui_overlay_text(UI_FONT_BOLD, 11.0f, layout.list_x + 58, y + 7, UI_ALIGN_LEFT, chosen ? COLOR_TITLE : color, name);
-	snprintf(line, sizeof(line), "%s%s  \xC2\xB7  %s", map->name,
-		!map->installed ? " (not installed)" : map->kind == MAP_CUSTOM_EDITION ? " (CE)" : "",
-		type_name(game, rules, sizeof(rules)));
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 58, y + 24, UI_ALIGN_LEFT,
-		map->installed ? COLOR_DIM : COLOR_NOTICE, line);
+	else if (row % 2)
+	{
+		ui_overlay_rect(layout.list_x, y, layout.list_width, ROW_HEIGHT - 1, 0, COLOR_ROW_RULE);
+	}
+	ui_overlay_rect(layout.list_x + 0.013f * layout.list_width - 2.5f, y + ROW_HEIGHT / 2 - 3, 5, 5, 2.5f, dot);
 
-	snprintf(line, sizeof(line), "%d/%d", game->players, game->maximum_players);
-	ui_overlay_text(UI_FONT_BOLD, 11.0f, right, y + 7, UI_ALIGN_RIGHT, game->open ? color : COLOR_NOTICE, line);
-	ui_overlay_rect(right - FULLNESS_WIDTH, y + 27, FULLNESS_WIDTH, 2.0f, 0, COLOR_ROW_RULE);
-	ui_overlay_rect(right - FULLNESS_WIDTH, y + 27, FULLNESS_WIDTH * MIN(filled, 1.0f), 2.0f, 0,
-		game->open ? COLOR_TEXT : COLOR_NOTICE);
+	overlay_utf8(game->name, NUMBEROF(game->name), text, sizeof(text));
+	text_fitted(UI_FONT_BOLD, 10.0f, column_left(&columns[0]), text_y - 1,
+		column_right(&columns[0]) - column_left(&columns[0]), chosen ? COLOR_TITLE : color, text);
+
+	/* a Custom Edition map gets a CE tag after its name; a missing one is
+	marked in the notice color */
+	x = column_left(&columns[1]);
+	if (map->kind == MAP_CUSTOM_EDITION && map->installed)
+	{
+		float tag = ui_overlay_text_width(UI_FONT_BOLD, 7.0f, "CE") + 6;
+
+		ui_overlay_outline(column_right(&columns[1]) - tag, y + 5, tag, 11, 2.0f, 0.75f, COLOR_DIM);
+		ui_overlay_text(UI_FONT_BOLD, 7.0f, column_right(&columns[1]) - tag + 3, y + 6.5f, UI_ALIGN_LEFT, COLOR_DIM, "CE");
+		text_fitted(UI_FONT_REGULAR, 9.5f, x, text_y, column_right(&columns[1]) - x - tag - 4, color, map->name);
+	}
+	else
+	{
+		text_fitted(UI_FONT_REGULAR, 9.5f, x, text_y, column_right(&columns[1]) - x,
+			map->installed ? color : COLOR_NOTICE, map->name);
+	}
+
+	text_fitted(UI_FONT_REGULAR, 9.5f, column_left(&columns[2]), text_y,
+		column_right(&columns[2]) - column_left(&columns[2]), color, type_name(game, text, sizeof(text)));
+
+	snprintf(text, sizeof(text), "%d/%d", game->players, game->maximum_players);
+	ui_overlay_text(UI_FONT_REGULAR, 9.5f, column_right(&columns[3]), text_y, UI_ALIGN_RIGHT,
+		full ? COLOR_POOR : color, text);
+
+	if (game->ping >= 0)
+		snprintf(text, sizeof(text), "%d", game->ping);
+	else
+		snprintf(text, sizeof(text), "\xE2\x80\x93");
+	ui_overlay_text(UI_FONT_REGULAR, 9.5f, column_right(&columns[4]), text_y, UI_ALIGN_RIGHT,
+		ping_color(game->ping), text);
 }
 
 /* The selected game's details: map, settings, and the roster if the host
@@ -955,7 +1057,9 @@ static void render_details(
 	ui_overlay_rect(layout.detail_x - 6, DETAIL_Y - 4, DETAIL_WIDTH + 12, GLASS_BOTTOM - DETAIL_Y - 6, palette->radius, COLOR_PANEL);
 	if (!game)
 		return;
-	map_picture(game->map, layout.detail_x, DETAIL_Y, DETAIL_WIDTH, DETAIL_PICTURE_HEIGHT);
+	overlay_map_picture(overlay_map_display_index(game->map), layout.detail_x, DETAIL_Y, DETAIL_WIDTH,
+		DETAIL_PICTURE_HEIGHT);
+	ui_overlay_outline(layout.detail_x, DETAIL_Y, DETAIL_WIDTH, DETAIL_PICTURE_HEIGHT, 0, 0.75f, COLOR_PANEL_EDGE);
 	overlay_utf8(game->name, NUMBEROF(game->name), name, sizeof(name));
 	ui_overlay_text(UI_FONT_BOLD, 13.0f, layout.detail_x, y, UI_ALIGN_LEFT, COLOR_TITLE, name);
 	y += 20;
@@ -970,11 +1074,18 @@ static void render_details(
 			known_map(game->map)->kind == MAP_CUSTOM_EDITION ? "Custom Edition" :
 			known_map(game->map)->kind == MAP_CAMPAIGN ? "Campaign" : "Custom");
 	}
-	DETAIL_LINE("Rules", type_name(game, text, sizeof(text)));
+	DETAIL_LINE("Mode", type_name(game, text, sizeof(text)));
+	snprintf(text, sizeof(text), "%d of %d", game->players, game->maximum_players);
+	DETAIL_LINE("Players", text);
 	if (game->score_limit)
 	{
 		snprintf(text, sizeof(text), "%d", game->score_limit);
 		DETAIL_LINE("Score limit", text);
+	}
+	if (game->ping >= 0)
+	{
+		snprintf(text, sizeof(text), "%d ms", game->ping);
+		DETAIL_LINE("Ping", text);
 	}
 #undef DETAIL_LINE
 
@@ -1045,7 +1156,11 @@ void browser_screen_render(
 	page_first = (short)(browser_screen.selected - browser_screen.selected % ROWS_PER_PAGE);
 	page_count = (short)MAX(1, (browser_screen.count + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE);
 	if (!palette->glassed)
-		ui_overlay_rect(layout.list_x - 4, LIST_Y - 4, layout.list_width + 8, ROWS_PER_PAGE * CARD_HEIGHT + 8, palette->radius, COLOR_PANEL);
+	{
+		ui_overlay_rect(layout.list_x - 4, COLUMNS_Y - 6, layout.list_width + 8, FOOTER_Y - COLUMNS_Y + 4,
+			palette->radius, COLOR_PANEL);
+	}
+	render_columns();
 	if (!browser_screen.count)
 	{
 		ui_overlay_text(UI_FONT_BOLD, 12.0f, layout.list_x + 10, LIST_Y + 20, UI_ALIGN_LEFT, COLOR_TEXT, "No games right now");
@@ -1053,15 +1168,11 @@ void browser_screen_render(
 			"Host one with Create Game, and it shows here for everyone.");
 	}
 	for (row = 0; row < ROWS_PER_PAGE && page_first + row < browser_screen.count; row++)
-	{
-		render_card(&browser_screen.games[page_first + row], (float)(LIST_Y + row * CARD_HEIGHT),
-			page_first + row == browser_screen.selected);
-	}
+		render_row(&browser_screen.games[page_first + row], row, page_first + row == browser_screen.selected);
 	if (page_count > 1)
 	{
 		snprintf(text, sizeof(text), "\xE2\x80\xB9  %d / %d  \xE2\x80\xBA", page_first / ROWS_PER_PAGE + 1, page_count);
-		ui_overlay_text(UI_FONT_BOLD, 9.0f, layout.list_x + layout.list_width, LIST_Y + ROWS_PER_PAGE * CARD_HEIGHT + 6, UI_ALIGN_RIGHT,
-			COLOR_DIM, text);
+		ui_overlay_text(UI_FONT_BOLD, 9.0f, layout.list_x + layout.list_width, FOOTER_Y, UI_ALIGN_RIGHT, COLOR_DIM, text);
 	}
 	render_details(selected);
 
@@ -1089,11 +1200,10 @@ void browser_screen_render(
 		overlay_buttons_draw(cancel_label, 1, cancel_left(), CANCEL_Y, browser_screen.cancel_hovered ? 0 : NONE, 0,
 			&colors);
 	}
-	/* under the list, clear of the cards, the details and the buttons */
+	/* under the list, left of the page number */
 	else if (browser_screen.status[0] && system_milliseconds() - browser_screen.status_time < STATUS_DURATION)
 	{
-		ui_overlay_text(UI_FONT_REGULAR, 11.0f, layout.list_x, LIST_Y + ROWS_PER_PAGE * CARD_HEIGHT + 26, UI_ALIGN_LEFT,
-			COLOR_NOTICE, browser_screen.status);
+		ui_overlay_text(UI_FONT_REGULAR, 10.0f, layout.list_x, FOOTER_Y, UI_ALIGN_LEFT, COLOR_NOTICE, browser_screen.status);
 	}
 }
 
