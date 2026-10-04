@@ -49,7 +49,7 @@ PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 # the overlay's fonts (the game browser's; posix_ui_font.c), in its order
 UI_FONTS = Path("port/linux/ui/fonts")
 UI_FONT_FILES = ["NotoSans-Regular.ttf", "NotoSans-Bold.ttf", "input_xbox.ttf", "input_playstation.ttf",
-                 "input_nintendo.ttf", "input_keyboard.ttf"]
+                 "input_nintendo.ttf", "input_keyboard.ttf", "Rajdhani-Medium.ttf", "Rajdhani-Bold.ttf"]
 
 
 def font_files() -> List[str]:
@@ -238,7 +238,8 @@ def main() -> None:
         index = files.index(font["file"])
         tag = font["tag"].replace("\\", "\\\\")
         size = (ROOT / FONT_ASSETS / font["file"]).stat().st_size
-        lines.append(f'\t{{ "{tag}", "{font["file"]}", font{index}, {size} }},')
+        theme = f'"{font["theme"]}"' if font.get("theme") else "0"
+        lines.append(f'\t{{ "{tag}", "{font["file"]}", font{index}, {size}, {theme} }},')
     if not fonts:
         lines.append("\t{ 0 },")
     lines.append("};")

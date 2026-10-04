@@ -14,6 +14,7 @@ atlas texture as they are first drawn at a size, and drawn as quads too.
 #ifdef HALO_GAME_BROWSER
 
 #include "platform.h"
+#include "port_config.h"
 #include "gl.h"
 #include "xgpu.h"
 #include "ui_font.h"
@@ -221,8 +222,25 @@ static unsigned int next_codepoint(const char **cursor)
 	return codepoint;
 }
 
+/* whether the menus' theme is Glassed, read again when the settings change */
+static int theme_glassed(void)
+{
+	static int glassed;
+	static unsigned long read_at = (unsigned long)-1;
+
+	if (read_at != config_changes())
+	{
+		read_at = config_changes();
+		glassed = strcmp(config_string("display.theme"), "vanilla") != 0;
+	}
+	return glassed;
+}
+
+/* the face for a font: Rajdhani in the Glassed theme, else Noto Sans */
 static int posix_font(int font)
 {
+	if (theme_glassed())
+		return font == UI_FONT_BOLD ? POSIX_UI_FONT_GLASSED_BOLD : POSIX_UI_FONT_GLASSED_REGULAR;
 	return font == UI_FONT_BOLD ? POSIX_UI_FONT_BOLD : POSIX_UI_FONT_REGULAR;
 }
 

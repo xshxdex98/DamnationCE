@@ -1,8 +1,11 @@
 {
- "comment": "Which font draws each of the maps' font tags (port/linux/src/text_hires.c).",
+ "comment": "Which font draws each of the maps' font tags (port/linux/src/text_hires.c). An entry with a theme is that menu theme's (display.theme); the others are for every theme.",
  "fonts": [
   {"tag": "ui\\large_ui", "file": "Overpass-900.ttf"},
   {"tag": "ui\\interstate", "file": "Overpass-900.ttf"},
-  {"tag": "ui\\small_ui", "file": "Overpass-750.ttf"}
+  {"tag": "ui\\small_ui", "file": "Overpass-750.ttf"},
+  {"tag": "ui\\large_ui", "file": "Rajdhani-Bold.ttf", "theme": "glassed"},
+  {"tag": "ui\\interstate", "file": "Rajdhani-Bold.ttf", "theme": "glassed"},
+  {"tag": "ui\\small_ui", "file": "Rajdhani-SemiBold.ttf", "theme": "glassed"}
  ]
 }

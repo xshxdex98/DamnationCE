@@ -7,6 +7,7 @@ profile):
 | Font | License |
 | --- | --- |
 | `NotoSans-Regular.ttf`, `NotoSans-Bold.ttf` (Google) | SIL Open Font License 1.1, `OFL.txt` |
+| `Rajdhani-Medium.ttf`, `Rajdhani-Bold.ttf` (Indian Type Foundry), the Glassed theme's, Latin subsets (port/assets/fonts/README.md) | SIL Open Font License 1.1, `Rajdhani-OFL.txt` |
 | `input_xbox.ttf`, `input_playstation.ttf`, `input_nintendo.ttf`, `input_keyboard.ttf`: Kenney's Input Prompts | CC0, `KENNEY-CC0.txt` |
 
 The Input Prompts fonts draw a controller's (or the keyboard's) buttons as

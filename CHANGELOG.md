@@ -22,6 +22,8 @@
   open.
 - The Glassed server browser uses the whole screen: games down the left edge,
   the selected game's details at the right edge.
+- The Glassed theme's text is now set in Rajdhani, a free font in the style of
+  Conduit. Vanilla keeps its fonts.
 - Co-op code no longer runs in the menus while a game is being set up. It
   used to stop the menu background's scripts for joining players.
 

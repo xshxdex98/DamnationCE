@@ -4,7 +4,8 @@ TEXT_HIRES.C
 The game's text drawn with fonts at the display's resolution (text_hires.h).
 
 Each font tag the fonts draw (port/assets/fonts/fonts.json) gets its font
-sized so that its capitals are as tall as the tag's: the game's layout,
+(the menus' theme's own, if it has one) sized so that its capitals are as
+tall as the tag's: the game's layout,
 from the tag's character widths, is kept, and the fonts were chosen to fit
 those widths. A glyph is rasterized when first drawn, at the display's
 pixels per unit of the 480 lines, into an 8-bit atlas; the GL texture the
@@ -28,7 +29,7 @@ scale (a window made fullscreen) or a full atlas starts it over.
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../../third_party/stb/stb_truetype.h"
 
-#define MAXIMUM_FONTS 8
+#define MAXIMUM_FONTS 16
 #define ATLAS_SIZE 2048
 /* clear texels around each glyph, so that filtering never reaches the next */
 #define ATLAS_PADDING 2
@@ -37,6 +38,8 @@ scale (a window made fullscreen) or a full atlas starts it over.
 static struct
 {
 	char tag[64];
+	/* the menus' theme it was found for */
+	char theme[16];
 	stbtt_fontinfo info;
 	/* font units to units of the 480 lines */
 	float scale;
@@ -86,6 +89,40 @@ static int text_enabled(void)
 	return enabled;
 }
 
+/* the menus' theme (display.theme), read again when the settings change */
+static const char *text_theme(void)
+{
+	static char theme[16];
+	static unsigned long read_at = (unsigned long)-1;
+
+	if (read_at != config_changes())
+	{
+		read_at = config_changes();
+		snprintf(theme, sizeof(theme), "%s", config_string("display.theme"));
+	}
+	return theme;
+}
+
+/* the embedded font for a tag: the theme's own, else the one for every theme */
+static const struct text_hires_embedded *embedded_font(char const *tag_name, char const *theme)
+{
+	const struct text_hires_embedded *any_theme = NULL;
+	unsigned int index;
+
+	for (index = 0; index < text_hires_embedded_count; index++)
+	{
+		const struct text_hires_embedded *embedded = &text_hires_embedded[index];
+
+		if (!embedded->tag || names_differ(embedded->tag, tag_name))
+			continue;
+		if (embedded->theme && !names_differ(embedded->theme, theme))
+			return embedded;
+		if (!embedded->theme && !any_theme)
+			any_theme = embedded;
+	}
+	return any_theme;
+}
+
 /* the atlas emptied: every glyph to be rasterized again */
 static void atlas_reset(float scale)
 {
@@ -105,7 +142,8 @@ static void atlas_reset(float scale)
 
 long text_hires_font(char const *tag_name, float cap_height, float oversample)
 {
-	unsigned int index;
+	const struct text_hires_embedded *embedded;
+	const char *theme = text_theme();
 	long font;
 	int x0, y0, x1, y1;
 
@@ -116,31 +154,34 @@ long text_hires_font(char const *tag_name, float cap_height, float oversample)
 		oversample = 1.0f;
 	for (font = 0; font < font_count; font++)
 	{
-		if (!names_differ(fonts[font].tag, tag_name) && fonts[font].oversample == oversample)
+		if (!names_differ(fonts[font].tag, tag_name) && fonts[font].oversample == oversample &&
+			!strcmp(fonts[font].theme, theme))
+		{
 			return fonts[font].scale > 0.0f ? font : -1;
+		}
 	}
 	if (font_count >= MAXIMUM_FONTS)
 		return -1;
 	font = font_count++;
 	snprintf(fonts[font].tag, sizeof(fonts[font].tag), "%s", tag_name);
+	snprintf(fonts[font].theme, sizeof(fonts[font].theme), "%s", theme);
 	fonts[font].scale = 0.0f;
 	fonts[font].oversample = oversample;
-	for (index = 0; index < text_hires_embedded_count; index++)
+	embedded = embedded_font(tag_name, theme);
+	if (embedded)
 	{
-		const struct text_hires_embedded *embedded = &text_hires_embedded[index];
 		const unsigned char *data = (const unsigned char *)embedded->data;
 
-		if (!embedded->tag || names_differ(embedded->tag, tag_name))
-			continue;
 		if (!stbtt_InitFont(&fonts[font].info, data, stbtt_GetFontOffsetForIndex(data, 0)) ||
 			!stbtt_GetCodepointBox(&fonts[font].info, 'H', &x0, &y0, &x1, &y1) || y1 <= y0)
 		{
 			platform_log("high-res text: could not read %s for %s", embedded->file, tag_name);
-			break;
 		}
-		fonts[font].scale = cap_height / (float)(y1 - y0);
-		platform_log("high-res text: %s drawn with %s", tag_name, embedded->file);
-		break;
+		else
+		{
+			fonts[font].scale = cap_height / (float)(y1 - y0);
+			platform_log("high-res text: %s drawn with %s", tag_name, embedded->file);
+		}
 	}
 	return fonts[font].scale > 0.0f ? font : -1;
 }
