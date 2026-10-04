@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.4
+
+### Co-op
+
+- On Pillar of Autumn the other players no longer wait for the first
+  checkpoint. They watch the host's cryo tube from the front, then spawn
+  beside the host four seconds after it is out of the tube and can move.
+- The tutorial goes on for whichever player does what it asks, and looking
+  around with the mouse counts as well as the right stick.
+- When the level's scripts hold the host's controls, they hold every
+  player's.
+
 ## 0.2.3
 
 ### Co-op
