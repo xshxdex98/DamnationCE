@@ -32,6 +32,19 @@ static struct
 	stbtt_fontinfo info;
 } fonts[POSIX_UI_FONT_COUNT];
 
+/* Rajdhani's capitals are shorter than Noto Sans's for the same pixel
+height (cap height over ascent plus descent: 0.504 against 0.524), so it
+is drawn this much bigger to keep the overlay's text the same size */
+#define GLASSED_SIZE_SCALE 1.04f
+
+/* the scale from font units to pixels for a pixel height */
+static float pixel_scale(stbtt_fontinfo *info, int font, float pixel_height)
+{
+	if (font == POSIX_UI_FONT_GLASSED_REGULAR || font == POSIX_UI_FONT_GLASSED_BOLD)
+		pixel_height *= GLASSED_SIZE_SCALE;
+	return stbtt_ScaleForPixelHeight(info, pixel_height);
+}
+
 static stbtt_fontinfo *face(int font)
 {
 	if (font < 0 || font >= POSIX_UI_FONT_COUNT)
@@ -54,7 +67,7 @@ int posix_ui_font_metrics(int font, float pixel_height, float *ascent, float *de
 
 	if (!info)
 		return 0;
-	scale = stbtt_ScaleForPixelHeight(info, pixel_height);
+	scale = pixel_scale(info, font, pixel_height);
 	stbtt_GetFontVMetrics(info, &ascent_units, &descent_units, &gap_units);
 	*ascent = (float)ascent_units * scale;
 	*descent = (float)-descent_units * scale;
@@ -76,7 +89,7 @@ float posix_ui_font_advance(int font, float pixel_height, unsigned int codepoint
 
 	if (!info)
 		return 0.0f;
-	scale = stbtt_ScaleForPixelHeight(info, pixel_height);
+	scale = pixel_scale(info, font, pixel_height);
 	stbtt_GetCodepointHMetrics(info, (int)codepoint, &advance, &bearing);
 	width = (float)advance * scale;
 	if (previous)
@@ -92,7 +105,7 @@ unsigned char *posix_ui_font_glyph(int font, float pixel_height, unsigned int co
 	*width = *height = *x_offset = *y_offset = 0;
 	if (!info)
 		return NULL;
-	return stbtt_GetCodepointBitmap(info, 0, stbtt_ScaleForPixelHeight(info, pixel_height), (int)codepoint,
+	return stbtt_GetCodepointBitmap(info, 0, pixel_scale(info, font, pixel_height), (int)codepoint,
 		width, height, x_offset, y_offset);
 }
 

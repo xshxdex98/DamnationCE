@@ -20,6 +20,8 @@ struct text_hires_embedded
 	const char *file;
 	const unsigned int *data;
 	unsigned int size;
+	/* the menus' theme (display.theme) it is for, or NULL for every theme */
+	const char *theme;
 };
 
 extern const struct text_hires_embedded text_hires_embedded[];
