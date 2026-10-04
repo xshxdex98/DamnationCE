@@ -68,6 +68,7 @@ machine (their datum identifiers need not be).
 #include "units/units.h"
 #include "units/biped_definitions.h"
 #include "units/bipeds.h"
+#include "network_coop.h"
 #include "network_distributed.h"
 
 #include <limits.h>
@@ -2961,7 +2962,7 @@ static void distributed_handle_structure_bsp(
 {
 	short index = structure_bsp->structure_bsp_index;
 
-	if (!game_engine_running() && index >= 0 && index < global_scenario_get()->structure_bsp_references.count &&
+	if (network_coop_active() && index >= 0 && index < global_scenario_get()->structure_bsp_references.count &&
 		index != global_structure_bsp_index_get())
 	{
 		main_switch_structure_bsp(index);
@@ -3217,7 +3218,7 @@ void network_distributed_tick(
 			distributed_send_pings();
 		distributed_host_send_players();
 		network_actors_host_tick();
-		if (!game_engine_running() && game_time_get() % STRUCTURE_BSP_INTERVAL_TICKS == 0)
+		if (network_coop_active() && game_time_get() % STRUCTURE_BSP_INTERVAL_TICKS == 0)
 			distributed_send_structure_bsp();
 		network_coop_host_tick();
 		distributed_send_pickups();

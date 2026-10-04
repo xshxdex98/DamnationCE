@@ -4055,7 +4055,7 @@ void players_update_after_game(
 			/* port: a co-op client switches BSP when the host does
 			(network_distributed.c) */
 			if (!TEST_FLAG(root_object->object.flags, _object_outside_of_map_bit) &&
-				(!network_game_distributed_client() || game_engine_running()))
+				!(network_game_distributed_client() && network_coop_active()))
 			{
 				scenario = global_scenario_get();
 				for (bsp_switch_trigger_volume_index = 0;

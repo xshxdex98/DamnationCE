@@ -93,8 +93,7 @@ static boolean next_pressed(short controller_index)
 boolean coop_spectating(
 	void)
 {
-	return game_connection() != _game_connection_local && game_connection() != _game_connection_film_playback &&
-		!game_engine_running();
+	return network_coop_active();
 }
 
 long coop_spectate_unit(

@@ -330,7 +330,7 @@ static struct
 static boolean coop_game(
 	void)
 {
-	return !game_engine_running();
+	return network_coop_active();
 }
 
 static boolean coop_host(
@@ -988,6 +988,18 @@ void network_coop_new_game(
 	skip_vote.offered = FALSE;
 	skip_vote.voters = 0;
 	skip_vote.cooldown_until = 0;
+}
+
+/* A network game on a campaign scenario with no game engine. Checking the
+scenario matters: the main menu's scene keeps running while a network game
+is set up, also with no game engine, and it is not co-op. */
+boolean network_coop_active(
+	void)
+{
+	short connection = game_connection();
+
+	return (connection == _game_connection_network_server || connection == _game_connection_network_client) &&
+		global_scenario && global_scenario->type == _scenario_type_solo && !game_engine_running();
 }
 
 boolean network_coop_devices_remote(
