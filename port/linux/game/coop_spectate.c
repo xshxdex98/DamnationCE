@@ -39,10 +39,10 @@ turn toward the unit's facing it makes each frame */
 #define SPECTATE_PITCH -0.3f
 #define SPECTATE_TURN 0.15f
 
-/* a passenger (riding a Pelican) is watched from just in front of them,
-facing them, so the camera stays inside the vehicle */
-#define SPECTATE_PASSENGER_DISTANCE 0.5f
-#define SPECTATE_PASSENGER_PITCH -0.1f
+/* a passenger (riding a Pelican) is watched from in front of them, above
+and looking down, so the camera stays inside the vehicle and sees all of them */
+#define SPECTATE_PASSENGER_DISTANCE 1.0f
+#define SPECTATE_PASSENGER_PITCH -0.5f
 
 /* ---------- globals */
 

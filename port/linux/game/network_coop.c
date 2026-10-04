@@ -77,6 +77,7 @@ index and tag, since the map placed them at the same index everywhere.
 #include "objects/objects.h"
 #include "objects/object_types.h"
 #include "objects/scenery.h"
+#include "rasterizer/rasterizer_cinematics.h"
 #include "saved games/game_state.h"
 #include "scenario/scenario.h"
 #include "scenario/scenario_definitions.h"
@@ -855,6 +856,87 @@ static void host_send_object_looks(
 	}
 }
 
+/* ---------- the cinematic screen effect
+
+The scripts' full-screen effects (cinematic_screen_effect_*: blur, warp,
+light enhancement, desaturation, the video effect) are state the host's
+scripts set and a client's never do. The host sends it when it changes and
+every OBJECT_REFRESH_TICKS, for a client that joined since or missed it. */
+
+struct distributed_coop_screen_effect_message
+{
+	struct distributed_message_header header;
+	struct rasterizer_screen_effect_port_state state;
+};
+
+/* host: the state last sent */
+static struct rasterizer_screen_effect_port_state host_sent_screen_effect;
+
+static void host_send_screen_effect(
+	void)
+{
+	struct distributed_coop_screen_effect_message message;
+
+	rasterizer_screen_effect_port_get(&message.state);
+	if (game_time_get() % OBJECT_REFRESH_TICKS != 0 &&
+		!csmemcmp(&message.state, &host_sent_screen_effect, sizeof(message.state)))
+	{
+		return;
+	}
+	host_sent_screen_effect = message.state;
+	distributed_send(&message, _distributed_message_coop_screen_effect, 1,
+		(word)(sizeof(message.header) + sizeof(message.state)), _distributed_to_clients);
+}
+
+word network_coop_screen_effect_entry_size(
+	void)
+{
+	return sizeof(struct rasterizer_screen_effect_port_state);
+}
+
+void network_coop_handle_screen_effect(
+	void const *entries,
+	short count)
+{
+	struct rasterizer_screen_effect_port_state state;
+	real const *reals = (real const *)&state.filter_desaturation_tint;
+	short index;
+
+	if (!coop_client() || count != 1)
+		return;
+	csmemcpy(&state, entries, sizeof(state));
+	/* (its reals, from the tint to the end) */
+	for (index = 0; index < (short)((sizeof(state) - offsetof(struct rasterizer_screen_effect_port_state,
+		filter_desaturation_tint)) / sizeof(real)); index++)
+	{
+		if (!distributed_real_valid(reals[index]))
+			return;
+	}
+	/* (the game stops rather than blur more than one window: split screen goes without) */
+	if (main_get_window_count() > 1)
+	{
+		state.convolution_type = 0;
+		state.convolution_radius[0] = state.convolution_radius[1] = 0.0f;
+	}
+	rasterizer_screen_effect_port_set(&state);
+}
+
+/* host: what its scripts have attached, sent again every
+OBJECT_REFRESH_TICKS for a client that joined since */
+enum
+{
+	MAXIMUM_ATTACHMENTS = 32,
+};
+
+static struct
+{
+	long parent_index;
+	long child_index;
+	short parent_marker_index;
+	short child_marker_index;
+} host_attachments[MAXIMUM_ATTACHMENTS];
+static short host_attachment_count;
+
 static void host_send_object_names(
 	void)
 {
@@ -1263,6 +1345,9 @@ static void client_apply_attach(
 
 	if (parent_index == NONE || child_index == NONE || parent_index == child_index)
 		return;
+	/* (an attach sent again for a late joiner, which this machine has) */
+	if (event->type == _coop_attach && object_get(child_index)->object.parent_object_index == parent_index)
+		return;
 	if (event->type == _coop_detach)
 		objects_scripting_detach(parent_index, child_index);
 	else
@@ -1343,6 +1428,8 @@ void network_coop_new_game(
 	csmemset(client_names_differing, 0, sizeof(client_names_differing));
 	csmemset(host_sent_transforms, 0, sizeof(host_sent_transforms));
 	csmemset(host_sent_looks, 0, sizeof(host_sent_looks));
+	csmemset(&host_sent_screen_effect, 0, sizeof(host_sent_screen_effect));
+	host_attachment_count = 0;
 	skip_vote_clear();
 	skip_vote.offered = FALSE;
 	skip_vote.voters = 0;
@@ -1508,13 +1595,13 @@ void network_coop_note_scenery_animation(
 	event->frame = frame_index;
 }
 
-/* an attach (marker names given) or a detach (NULL names) */
-static void note_attach(
+/* An attach (with the markers' indexes) or a detach (NONE markers). */
+static void send_attach(
 	byte type,
 	long parent_index,
-	char const *parent_marker_name,
+	short parent_marker_index,
 	long child_index,
-	char const *child_marker_name)
+	short child_marker_index)
 {
 	struct object_datum *parent = object_try_and_get(parent_index);
 	struct object_datum *child = object_try_and_get(child_index);
@@ -1529,8 +1616,44 @@ static void note_attach(
 	event->target = child_index;
 	event->tag_index = child->definition_index;
 	event->reals[0] = child->object.name_index;
-	event->value = object_marker_index(parent_index, parent_marker_name);
-	event->frame = object_marker_index(child_index, child_marker_name);
+	event->value = parent_marker_index;
+	event->frame = child_marker_index;
+}
+
+/* the child's attachment in host_attachments, or NONE */
+static short host_attachment_find(
+	long child_index)
+{
+	short index;
+
+	for (index = 0; index < host_attachment_count; index++)
+	{
+		if (host_attachments[index].child_index == child_index)
+			return index;
+	}
+	return NONE;
+}
+
+static void host_send_attachments(
+	void)
+{
+	short index;
+
+	if (game_time_get() % OBJECT_REFRESH_TICKS != 0)
+		return;
+	for (index = 0; index < host_attachment_count; index++)
+	{
+		struct object_datum *child = object_try_and_get(host_attachments[index].child_index);
+
+		/* (gone, or moved on to another parent: forgotten) */
+		if (!child || child->object.parent_object_index != host_attachments[index].parent_index)
+		{
+			host_attachments[index--] = host_attachments[--host_attachment_count];
+			continue;
+		}
+		send_attach(_coop_attach, host_attachments[index].parent_index, host_attachments[index].parent_marker_index,
+			host_attachments[index].child_index, host_attachments[index].child_marker_index);
+	}
 }
 
 void network_coop_note_attach(
@@ -1539,14 +1662,35 @@ void network_coop_note_attach(
 	long child_index,
 	char const *child_marker_name)
 {
-	note_attach(_coop_attach, parent_index, parent_marker_name, child_index, child_marker_name);
+	short parent_marker_index, child_marker_index, index;
+
+	if (!object_try_and_get(parent_index) || !object_try_and_get(child_index))
+		return;
+	parent_marker_index = object_marker_index(parent_index, parent_marker_name);
+	child_marker_index = object_marker_index(child_index, child_marker_name);
+	send_attach(_coop_attach, parent_index, parent_marker_index, child_index, child_marker_index);
+
+	index = host_attachment_find(child_index);
+	if (index == NONE && coop_host() && host_attachment_count < MAXIMUM_ATTACHMENTS)
+		index = host_attachment_count++;
+	if (index != NONE)
+	{
+		host_attachments[index].parent_index = parent_index;
+		host_attachments[index].child_index = child_index;
+		host_attachments[index].parent_marker_index = parent_marker_index;
+		host_attachments[index].child_marker_index = child_marker_index;
+	}
 }
 
 void network_coop_note_detach(
 	long parent_index,
 	long child_index)
 {
-	note_attach(_coop_detach, parent_index, NULL, child_index, NULL);
+	short index = host_attachment_find(child_index);
+
+	send_attach(_coop_detach, parent_index, NONE, child_index, NONE);
+	if (index != NONE)
+		host_attachments[index] = host_attachments[--host_attachment_count];
 }
 
 void network_coop_note_effect(
@@ -1658,6 +1802,8 @@ void network_coop_host_tick(
 		host_send_object_names();
 	host_send_object_transforms();
 	host_send_object_looks();
+	host_send_screen_effect();
+	host_send_attachments();
 	host_send_events();
 }
 

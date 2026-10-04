@@ -100,6 +100,9 @@ enum
 	/* the flinch and death animations the host picked for its units, which a
 	client plays rather than its own picks (network_objects.c) */
 	_distributed_message_damage_animations = 75,
+	/* co-op: the host's cinematic screen effect (blur, filters, video), when
+	it changes and every two seconds (network_coop.c) */
+	_distributed_message_coop_screen_effect = 76,
 
 	NUMBER_OF_DISTRIBUTED_MESSAGES
 };
@@ -275,6 +278,8 @@ void network_coop_handle_object_names(void const *entries);
 word network_coop_object_transform_entry_size(void);
 word network_coop_object_look_entry_size(void);
 void network_coop_handle_object_looks(void const *entries, short count);
+word network_coop_screen_effect_entry_size(void);
+void network_coop_handle_screen_effect(void const *entries, short count);
 word network_actors_damage_entry_size(void);
 void network_actors_handle_damage(void const *entries, short count);
 void network_coop_handle_object_transforms(void const *entries, short count);
