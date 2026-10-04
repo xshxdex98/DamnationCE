@@ -56,11 +56,14 @@ machine (their datum identifiers need not be).
 #include "game/game.h"
 #include "game/game_globals.h"
 #include "game/players.h"
+#include "game/game_engine.h"
+#include "main/main.h"
 #include "game/player_queues_new.h"
 #include "networking/network_game_globals.h"
 #include "objects/objects.h"
 #include "objects/damage.h"
 #include "scenario/scenario.h"
+#include "scenario/scenario_definitions.h"
 #include "structures/structure_bsp_definitions.h"
 #include "units/units.h"
 #include "units/biped_definitions.h"
@@ -2926,6 +2929,45 @@ static void distributed_send_pings(
 	}
 }
 
+/* co-op (a campaign map, no game engine): the host's structure BSP, which
+a client switches to (its own trigger volumes switch it no more, players.c);
+sent this often, so a client that lost one or joined since has it soon */
+#define STRUCTURE_BSP_INTERVAL_TICKS (TICKS_PER_SECOND / 2)
+
+struct distributed_structure_bsp
+{
+	short structure_bsp_index;
+	short pad;
+};
+
+struct distributed_structure_bsp_message
+{
+	struct distributed_message_header header;
+	struct distributed_structure_bsp structure_bsp;
+};
+
+static void distributed_send_structure_bsp(
+	void)
+{
+	struct distributed_structure_bsp_message message;
+
+	message.structure_bsp.structure_bsp_index = global_structure_bsp_index_get();
+	message.structure_bsp.pad = 0;
+	distributed_send(&message, _distributed_message_structure_bsp, 1, (word)sizeof(message), _distributed_to_clients);
+}
+
+static void distributed_handle_structure_bsp(
+	struct distributed_structure_bsp const *structure_bsp)
+{
+	short index = structure_bsp->structure_bsp_index;
+
+	if (!game_engine_running() && index >= 0 && index < global_scenario_get()->structure_bsp_references.count &&
+		index != global_structure_bsp_index_get())
+	{
+		main_switch_structure_bsp(index);
+	}
+}
+
 /* the players' statistics that changed since they were last sent, and when
 refreshing, STATISTICS_REFRESH_PLAYERS more whatever they are, round them
 all (a client that lost a change has it again within eight seconds) */
@@ -3174,6 +3216,8 @@ void network_distributed_tick(
 			distributed_send_pings();
 		distributed_host_send_players();
 		network_actors_host_tick();
+		if (!game_engine_running() && game_time_get() % STRUCTURE_BSP_INTERVAL_TICKS == 0)
+			distributed_send_structure_bsp();
 		distributed_send_pickups();
 		if (game_time_get() % GAME_STATE_INTERVAL_TICKS == 0)
 			distributed_send_game_state(NONE);
@@ -3213,6 +3257,7 @@ static boolean distributed_message_stale(
 	case _distributed_message_damage_events:
 	case _distributed_message_pings:
 	case _distributed_message_actor_states:
+	case _distributed_message_structure_bsp:
 		break;
 	default:
 		return FALSE;
@@ -3651,6 +3696,7 @@ void network_distributed_handle_message(
 	case _distributed_message_player_statistics: entry_size = sizeof(struct distributed_player_statistics); break;
 	case _distributed_message_pings: entry_size = sizeof(struct distributed_player_ping); break;
 	case _distributed_message_actor_states: entry_size = network_actors_entry_size(); break;
+	case _distributed_message_structure_bsp: entry_size = sizeof(struct distributed_structure_bsp); break;
 	case _distributed_message_pickups: entry_size = sizeof(struct distributed_pickup); break;
 	case _distributed_message_player_inputs: entry_size = sizeof(struct distributed_player_input); break;
 	case _distributed_message_relayed_actions: entry_size = DISTRIBUTED_RELAYED_ACTION_MINIMUM_SIZE; break;
@@ -3717,6 +3763,9 @@ void network_distributed_handle_message(
 		break;
 	case _distributed_message_actor_states:
 		network_actors_handle_states(entries, header.count);
+		break;
+	case _distributed_message_structure_bsp:
+		distributed_handle_structure_bsp((struct distributed_structure_bsp const *)entries);
 		break;
 	case _distributed_message_player_statistics:
 	{

@@ -1935,6 +1935,8 @@ static void main_save_map_private(
 
 		if (save_map)
 		{
+			/* port: where the players are, for co-op over the network */
+			players_note_checkpoint();
 			hud_autosave(TRUE);
 			main_globals.save_map_completed = TRUE;
 			main_globals.saving_map = FALSE;
@@ -1962,7 +1964,12 @@ static void main_lost_map_private(
 		{
 			main_globals.lost_map = FALSE;
 			main_globals.loss_timer = 0;
-			game_state_revert();
+			/* port: co-op over the network goes back to no checkpoint, which
+			every machine would have to: its players come back there */
+			if (game_connection() == _game_connection_network_server)
+				players_respawn_at_checkpoint();
+			else
+				game_state_revert();
 		}
 	}
 	return;

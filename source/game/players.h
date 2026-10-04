@@ -375,6 +375,12 @@ short players_get_respawn_failure(
 
 boolean players_respawn_coop(
 	void);
+/* port: co-op over the network (players.c): where the players were at the
+last checkpoint, and every dead player back there */
+void players_note_checkpoint(
+	void);
+void players_respawn_at_checkpoint(
+	void);
 void players_reconnect_to_structure_bsp(
 	void);
 

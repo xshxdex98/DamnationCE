@@ -70,6 +70,9 @@ enum
 	it drops the message as a kind it does not know, so the network version
 	stays upstream's and its players join as before */
 	_distributed_message_actor_states = 64,
+	/* co-op (a campaign map, no game engine): the host's structure BSP,
+	twice a second, for a client to switch to; numbered as actor_states */
+	_distributed_message_structure_bsp,
 
 	NUMBER_OF_DISTRIBUTED_MESSAGES
 };
