@@ -216,7 +216,9 @@ static struct
 	short difficulty;
 	/* hosting a network game: starts at COOPERATIVE | PVP */
 	boolean hosting;
-	/* opened by Online Games' CREATE GAME, which backing out returns to */
+	/* the hosted game was made by Online Games' CREATE GAME, which backing out
+	returns to; kept as the lobby is left back to the picker, until the server
+	goes (map_screen_server_disposed) */
 	boolean from_online_games;
 	char **level_names;
 	short level_count;
@@ -352,10 +354,14 @@ static void keep_in_view(void)
 
 static void leave(void)
 {
+	/* (read first: going back ends the hosted game, which clears it) */
+	boolean to_online_games = map_screen.from_online_games;
+
 	map_screen.active = FALSE;
 	map_screen.xbox_list = NULL;
+	map_screen.from_online_games = FALSE;
 	ui_widget_port_go_back_from_top();
-	if (map_screen.from_online_games)
+	if (to_online_games)
 		browser_screen_open();
 }
 
@@ -652,6 +658,12 @@ static char const *step_title(void)
 
 /* ---------- public code */
 
+/* network_game_server_dispose: the hosted game is gone */
+void map_screen_server_disposed(void)
+{
+	map_screen.from_online_games = FALSE;
+}
+
 boolean map_screen_active(void)
 {
 	return map_screen.active;
@@ -670,7 +682,8 @@ boolean map_screen_open(void)
 	map_screen.repeat.held = FALSE;
 	map_screen.button_hovered = NONE;
 	map_screen.hosting = global_network_game_server_get() != NULL && !network_game_is_splitscreen_local();
-	map_screen.from_online_games = browser_screen_take_create();
+	if (browser_screen_take_create())
+		map_screen.from_online_games = TRUE;
 	map_screen.step = map_screen.hosting ? STEP_KINDS : STEP_CATEGORIES;
 	map_screen.kind_selected = 0;
 	map_screen.cooperative_selected = 0;
