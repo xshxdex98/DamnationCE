@@ -377,9 +377,13 @@ boolean players_respawn_coop(
 	void);
 /* port: network co-op checkpoints (players.c): remember where the players
 were at the last checkpoint, and respawn everyone there. Players other than
-the first wait for the level's first checkpoint to spawn. */
+the first are held back from spawning on a new level: on Pillar of Autumn
+until its first checkpoint, elsewhere until its opening cutscene ends and a
+teammate has room for them. */
 boolean players_coop_waiting_to_start(
 	long player_index);
+boolean players_coop_waits_for_checkpoint(
+	void);
 void players_note_checkpoint(
 	void);
 void players_respawn_at_checkpoint(

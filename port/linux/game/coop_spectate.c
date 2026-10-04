@@ -173,12 +173,17 @@ void coop_spectate_draw(
 {
 	long watched = coop_spectate_watched[local_player_index];
 	wchar_t text[96];
+	wchar_t const *hint;
 
 	if (watched == NONE || !player_try_and_get(watched))
 		return;
-	usnprintf(text, NUMBEROF(text) - 1, L"SPECTATING %.12s   (A: NEXT)\r\n%s", player_get(watched)->name,
-		players_coop_waiting_to_start(local_player_get_player_index(local_player_index)) ?
-			L"You join them at the level's first checkpoint" : L"You come back beside them once it is safe");
+	if (!players_coop_waiting_to_start(local_player_get_player_index(local_player_index)))
+		hint = L"You come back beside them once it is safe";
+	else if (players_coop_waits_for_checkpoint())
+		hint = L"You join them at the level's first checkpoint";
+	else
+		hint = L"You join them once there is room";
+	usnprintf(text, NUMBEROF(text) - 1, L"SPECTATING %.12s   (A: NEXT)\r\n%s", player_get(watched)->name, hint);
 	text[NUMBEROF(text) - 1] = 0;
 	draw_bottom_text(text);
 }
