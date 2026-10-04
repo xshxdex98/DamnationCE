@@ -35,11 +35,12 @@ enum
 {
 	ROW_LEFT = 24, ROW_TOP = 92, ROW_HEIGHT = 24, ROW_WIDTH = 380, ROWS = 13,
 	BUTTONS_TOP = 448, BUTTON_WIDTH = 104, BUTTON_HEIGHT = 22,
-	NUMBER_OF_BUTTONS = 3,
+	NUMBER_OF_BUTTONS = 4,
 };
-static short const button_lefts[NUMBER_OF_BUTTONS] = { 288, 400, 512 };
-static char const *const button_names[NUMBER_OF_BUTTONS] = { "lobby_button_team", "lobby_button_start", "lobby_button_leave" };
-static char const *const button_labels[NUMBER_OF_BUTTONS] = { "SWITCH TEAM", "START NOW", "LEAVE" };
+static short const button_lefts[NUMBER_OF_BUTTONS] = { 176, 288, 400, 512 };
+static char const *const button_names[NUMBER_OF_BUTTONS] =
+	{ "lobby_button_team", "lobby_button_start", "lobby_button_add", "lobby_button_leave" };
+static char const *const button_labels[NUMBER_OF_BUTTONS] = { "SWITCH TEAM", "START NOW", "ADD PLAYER", "LEAVE" };
 
 /* the rest of the layout, in the menus' 640x480 */
 enum
@@ -63,6 +64,7 @@ short network_game_client_get_seconds_to_game_start(void *client);
 struct widget_instance *ui_widget_port_top(void);
 /* menu_functions.c */
 short pc_menu_lobby_players(struct network_player *const **players, short *first);
+wchar_t const *pc_menu_lobby_join_help(void);
 
 /* ---------- private code */
 
@@ -314,6 +316,22 @@ static void render_buttons(
 	}
 }
 
+/* how another player joins (split screen), left of the buttons */
+static void render_join_help(
+	struct overlay_palette const *palette)
+{
+	wchar_t const *help = pc_menu_lobby_join_help();
+	char text[64];
+	size_t length;
+
+	/* (its text is ASCII) */
+	for (length = 0; help[length] && length < sizeof(text) - 1; length++)
+		text[length] = (char)help[length];
+	text[length] = 0;
+	if (length)
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, ROW_LEFT, BUTTONS_TOP + 6, UI_ALIGN_LEFT, palette->dim, text);
+}
+
 /* ---------- public code */
 
 /* whether the lobby is the screen up, which this draws over (Glassed only:
@@ -342,6 +360,7 @@ void lobby_screen_render(
 	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, palette->rule);
 	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, palette->rule);
 	render_buttons(palette, list);
+	render_join_help(palette);
 	if (!game)
 	{
 		ui_overlay_text(UI_FONT_BOLD, 24.0f, ROW_LEFT, 22, UI_ALIGN_LEFT, palette->title, "LOBBY");
