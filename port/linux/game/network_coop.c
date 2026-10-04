@@ -712,20 +712,28 @@ static void host_send_device_groups(
 	}
 }
 
+/* how often the host sends again every scenery or machine that has moved,
+and every object whose looks changed: for a client that joined since, or
+missed one */
+#define OBJECT_REFRESH_TICKS (2 * TICKS_PER_SECOND)
+
 /* host: where each scenery or machine was last sent, by its absolute
-index; an object that moves from there is sent again */
+index, and whether it has moved since the map placed it */
 static struct
 {
 	long object_index;
+	boolean moved;
 	real_point3d position;
 	real_vector3d forward;
 } host_sent_transforms[MAXIMUM_OBJECTS_PER_MAP];
 
-/* host, each tick: the scenery and machines that moved */
+/* host, each tick: the scenery and machines that moved (and, every
+OBJECT_REFRESH_TICKS, all that ever have) */
 static void host_send_object_transforms(
 	void)
 {
 	struct distributed_coop_object_transforms_message message;
+	boolean refresh = game_time_get() % OBJECT_REFRESH_TICKS == 0;
 	struct object_iterator iterator;
 	struct object_datum *object;
 	short count = 0;
@@ -735,6 +743,7 @@ static void host_send_object_transforms(
 	{
 		short absolute_index = DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.index);
 		struct distributed_coop_object_transform *transform;
+		boolean moving;
 
 		if (object->object.parent_object_index != NONE || absolute_index < 0 || absolute_index >= MAXIMUM_OBJECTS_PER_MAP)
 			continue;
@@ -742,15 +751,16 @@ static void host_send_object_transforms(
 		{
 			/* (an object first seen is where the map placed it, as on every machine) */
 			host_sent_transforms[absolute_index].object_index = iterator.index;
+			host_sent_transforms[absolute_index].moved = FALSE;
 			host_sent_transforms[absolute_index].position = object->object.position;
 			host_sent_transforms[absolute_index].forward = object->object.forward;
 			continue;
 		}
-		if (distance_squared3d(&host_sent_transforms[absolute_index].position, &object->object.position) < 0.0001f &&
-			dot_product3d(&host_sent_transforms[absolute_index].forward, &object->object.forward) > 0.9999f)
-		{
+		moving = distance_squared3d(&host_sent_transforms[absolute_index].position, &object->object.position) >= 0.0001f ||
+			dot_product3d(&host_sent_transforms[absolute_index].forward, &object->object.forward) <= 0.9999f;
+		if (!moving && !(refresh && host_sent_transforms[absolute_index].moved))
 			continue;
-		}
+		host_sent_transforms[absolute_index].moved = TRUE;
 		host_sent_transforms[absolute_index].position = object->object.position;
 		host_sent_transforms[absolute_index].forward = object->object.forward;
 		transform = &message.transforms[count++];
@@ -762,7 +772,11 @@ static void host_send_object_transforms(
 		distributed_vector_pack(&object->object.forward, DISTRIBUTED_UNIT_SCALE, &transform->forward);
 		distributed_vector_pack(&object->object.up, DISTRIBUTED_UNIT_SCALE, &transform->up);
 		if (count == MAXIMUM_OBJECT_TRANSFORMS_PER_MESSAGE)
-			break;
+		{
+			distributed_send(&message, _distributed_message_coop_object_transforms, count,
+				(word)(sizeof(message.header) + count * sizeof(message.transforms[0])), _distributed_to_clients);
+			count = 0;
+		}
 	}
 	if (count > 0)
 	{
@@ -771,46 +785,55 @@ static void host_send_object_transforms(
 	}
 }
 
-/* host: how each object looked when last sent, by its absolute index */
+/* host: how each object looked when last sent, by its absolute index, and
+whether that has changed since it was made */
 static struct
 {
 	long object_index;
+	boolean changed;
 	byte region_permutations[MAXIMUM_REGIONS_PER_OBJECT];
 	real scale;
 } host_sent_looks[MAXIMUM_OBJECTS_PER_MAP];
 
-/* host, each tick: the objects whose looks changed */
+/* host, each tick: the objects whose looks changed (and, every
+OBJECT_REFRESH_TICKS, all whose looks ever have) */
 static void host_send_object_looks(
 	void)
 {
 	struct distributed_coop_object_looks_message message;
+	boolean refresh = game_time_get() % OBJECT_REFRESH_TICKS == 0;
 	struct object_iterator iterator;
 	struct object_datum *object;
 	short count = 0;
 
 	object_iterator_new(&iterator, _object_mask_all, 0);
-	while ((object = object_iterator_next(&iterator)) != NULL && count < MAXIMUM_OBJECT_LOOKS_PER_MESSAGE)
+	while ((object = object_iterator_next(&iterator)) != NULL)
 	{
 		short absolute_index = DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.index);
 		struct distributed_coop_object_look *look;
-		boolean first_seen;
+		boolean changing;
 
 		if (absolute_index < 0 || absolute_index >= MAXIMUM_OBJECTS_PER_MAP)
 			continue;
-		first_seen = host_sent_looks[absolute_index].object_index != iterator.index;
-		if (!first_seen && host_sent_looks[absolute_index].scale == object->object.scale &&
-			!csmemcmp(host_sent_looks[absolute_index].region_permutations, object->object.region_permutations,
-				sizeof(object->object.region_permutations)))
+		if (host_sent_looks[absolute_index].object_index != iterator.index)
 		{
+			/* (an object first seen looks as the map, or its creation, made it on every machine) */
+			host_sent_looks[absolute_index].object_index = iterator.index;
+			host_sent_looks[absolute_index].changed = FALSE;
+			host_sent_looks[absolute_index].scale = object->object.scale;
+			csmemcpy(host_sent_looks[absolute_index].region_permutations, object->object.region_permutations,
+				sizeof(object->object.region_permutations));
 			continue;
 		}
-		host_sent_looks[absolute_index].object_index = iterator.index;
+		changing = host_sent_looks[absolute_index].scale != object->object.scale ||
+			csmemcmp(host_sent_looks[absolute_index].region_permutations, object->object.region_permutations,
+				sizeof(object->object.region_permutations));
+		if (!changing && !(refresh && host_sent_looks[absolute_index].changed))
+			continue;
+		host_sent_looks[absolute_index].changed = TRUE;
 		host_sent_looks[absolute_index].scale = object->object.scale;
 		csmemcpy(host_sent_looks[absolute_index].region_permutations, object->object.region_permutations,
 			sizeof(object->object.region_permutations));
-		/* (an object first seen looks as the map, or its creation, made it on every machine) */
-		if (first_seen)
-			continue;
 		look = &message.looks[count++];
 		look->name_index = object->object.name_index;
 		look->pad = 0;
@@ -818,6 +841,12 @@ static void host_send_object_looks(
 		look->definition_index = object->definition_index;
 		csmemcpy(look->region_permutations, object->object.region_permutations, sizeof(look->region_permutations));
 		look->scale = object->object.scale;
+		if (count == MAXIMUM_OBJECT_LOOKS_PER_MESSAGE)
+		{
+			distributed_send(&message, _distributed_message_coop_object_looks, count,
+				(word)(sizeof(message.header) + count * sizeof(message.looks[0])), _distributed_to_clients);
+			count = 0;
+		}
 	}
 	if (count > 0)
 	{
