@@ -379,7 +379,7 @@ boolean players_respawn_coop(
 were at the last checkpoint, and respawn everyone there. Players other than
 the first are held back from spawning on a new level: on Pillar of Autumn
 until its first checkpoint, elsewhere until its opening cutscene ends and a
-teammate has room for them. */
+teammate is on foot (not riding a vehicle). */
 boolean players_coop_waiting_to_start(
 	long player_index);
 boolean players_coop_waits_for_checkpoint(
