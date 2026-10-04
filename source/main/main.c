@@ -377,6 +377,8 @@ symbols in this file:
 #include "bink/bink_playback.h"
 #include "main/d3d_intimacy.h"
 #include "networking/network_game_globals.h"
+#include "networking/network_game_manager.h"
+#include "networking/network_server_manager.h" /* port: a co-op game's level won */
 #include "camera/director.h"
 #include "camera/observer.h"
 #include "cutscene/cinematics.h"
@@ -2128,6 +2130,20 @@ static void main_won_map_private(
 {
 	short level;
 	short local_player_index;
+
+	/* port: a co-op game's level won over the network: the round ends for
+	everyone, as a multiplayer game's does, and the next is the campaign's
+	next level (the last: the same again) */
+	if (game_connection() == _game_connection_network_server)
+	{
+		struct network_game *game = network_game_get_game();
+
+		main_globals.won_map = FALSE;
+		level = game ? main_get_solo_level_from_name(game->map.name) + 1 : NONE;
+		player_profile_save_level_completed(0);
+		network_game_server_port_cooperative_won(level > 0 && level < 10 ? main_get_solo_level_name(level) : NULL);
+		return;
+	}
 	main_globals.want_to_be_at_main_menu = TRUE;
 	main_globals.won_map = FALSE;
 	level = main_get_solo_level_from_name(main_globals.soloplayer_map_name) + 1;
