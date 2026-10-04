@@ -59,6 +59,8 @@ same datum index (identifier and all), so that any message can name one:
 #include "items/weapons.h"
 #include "items/weapon_definitions.h"
 #include "items/equipment_definitions.h"
+#include "cutscene/cinematics.h"
+#include "network_coop.h"
 #include "network_distributed.h"
 
 #include <math.h>
@@ -658,7 +660,9 @@ static void distributed_object_move(
 		object->object.translational_velocity = *velocity;
 	if (angular_velocity)
 		object->object.angular_velocity = *angular_velocity;
-	render_interpolation_correct_object(object_index, &offset);
+	/* (not in a co-op cutscene, where it keeps up with the host's camera) */
+	if (!(network_coop_active() && cinematic_in_progress()))
+		render_interpolation_correct_object(object_index, &offset);
 }
 
 void network_objects_correct(
@@ -703,10 +707,16 @@ boolean network_objects_reconcile(
 		distributed_object_move(object_index, position, &valid_forward, &valid_up, velocity, angular_velocity);
 		return TRUE;
 	}
-	/* (half of the way: the tick's snapshots draw it moving, no jump) */
-	blended.x = object->object.position.x + dx * 0.5f;
-	blended.y = object->object.position.y + dy * 0.5f;
-	blended.z = object->object.position.z + dz * 0.5f;
+	/* (half of the way: the tick's snapshots draw it moving, no jump; in a
+	co-op cutscene all the way, so it keeps up with the host's camera) */
+	if (network_coop_active() && cinematic_in_progress())
+		blended = *position;
+	else
+	{
+		blended.x = object->object.position.x + dx * 0.5f;
+		blended.y = object->object.position.y + dy * 0.5f;
+		blended.z = object->object.position.z + dz * 0.5f;
+	}
 	object_set_position(object_index, &blended, &valid_forward, &valid_up);
 	if (velocity)
 		object->object.translational_velocity = *velocity;
