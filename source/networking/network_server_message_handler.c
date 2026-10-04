@@ -2351,6 +2351,14 @@ static boolean network_game_server_handle_message_client_game_start_request(
 			/* (a short on the wire: the rest of the long is not written) */
 			short countdown_event = (short)game_start_request.countdown_time;
 
+			/* port: a host by itself starts at once with its faster: there is
+			no countdown to shorten, and no one to wait for */
+			if (countdown_event == _network_game_server_countdown_event_player_joined &&
+				network_game_server_client_machine_is_local(server, client_machine) &&
+				network_game_server_host_alone(server))
+			{
+				countdown_event = _network_game_server_countdown_event_start_immediately;
+			}
 			/* port: the pregame screen's faster and slower, from any machine;
 			to stop the countdown or start at once (a script's), the host's own
 			(the Xbox game took any event from any machine, and a machine

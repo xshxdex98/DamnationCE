@@ -56,6 +56,10 @@ void network_game_server_client_machine_heard(
 boolean network_game_server_client_machine_is_local(
 	struct network_game_server *server,
 	struct network_game_server_client_machine *machine);
+/* the host's machine the only one in the game (no dedicated server): its
+players may start any game alone */
+boolean network_game_server_host_alone(
+	struct network_game_server *server);
 /* (network_server_message_handler.c) to one client machine, reliably */
 boolean network_game_server_send_message_to_client_machine(
 	struct network_game_server *server,
