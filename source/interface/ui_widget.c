@@ -701,6 +701,8 @@ void lobby_screen_render(void);
 /* (ONLINE GAMES, below: its list moves focus item by item) */
 boolean ui_widget_online_games_list(struct widget_instance *widget);
 #endif
+/* port/linux/game/menu_tags.c: the PC menus' screen standing for an Xbox one, by name */
+char const *pc_menus_screen(char const *name);
 #include "custom_edition_maps.h"
 
 /* (port/linux/game/menu_tags.c: a menus theme chosen, put on at the start of
@@ -4130,8 +4132,10 @@ struct widget_instance *ui_widget_load_by_name_or_tag(
 		"c:\\halo\\SOURCE\\interface\\ui_widget.c",
 		379,
 		(widget_stack>=0) && (widget_stack<MAXIMUM_GAMEPADS));
+	/* port: the PC menus' own screen in place of the Xbox's it stands for
+	(the pregame lobby), whoever asks for it by name */
 	if (tag_index == NONE)
-		tag_index = tag_loaded(UI_WIDGET_DEFINITION_TAG, name);
+		tag_index = tag_loaded(UI_WIDGET_DEFINITION_TAG, pc_menus_screen(name));
 	if (tag_index != NONE)
 	{
 		definition = ui_widget_definition_get(tag_index);
@@ -4840,7 +4844,6 @@ void display_error_damaged_media(
 }
 
 /* port: menu_tags.c's */
-char const *pc_menus_screen(char const *name);
 
 void network_game_reset_to_pregame_ui(
 	void)
@@ -4874,7 +4877,7 @@ void network_game_reset_to_pregame_ui(
 			network_game_server_pause_countdown(global_network_game_server_get(), TRUE);
 			/* port: with the PC version's menus, theirs (port/linux/game/menu_tags.c) */
 			if (!ui_widget_load_by_name_or_tag(
-				pc_menus_screen("ui\\shell\\main_menu\\multiplayer_type_select\\connected\\connected_map_select_postgame_wrapper"),
+				"ui\\shell\\main_menu\\multiplayer_type_select\\connected\\connected_map_select_postgame_wrapper",
 				NONE, NULL, NONE, NONE, NONE, NONE))
 			{
 				error(_error_silent, "failed to load map select postgame screen");
@@ -4883,7 +4886,7 @@ void network_game_reset_to_pregame_ui(
 		else
 		{
 			if (!ui_widget_load_by_name_or_tag(
-				pc_menus_screen("ui\\shell\\main_menu\\multiplayer_type_select\\connected\\pregame\\connected_pregame_screen"),
+				"ui\\shell\\main_menu\\multiplayer_type_select\\connected\\pregame\\connected_pregame_screen",
 				NONE, NULL, NONE, NONE, NONE, NONE))
 			{
 				error(_error_silent, "failed to load networked pregame status screen");
