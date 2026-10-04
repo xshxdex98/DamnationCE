@@ -328,6 +328,9 @@ static struct
 	long cooldown_until;
 	/* host: the vote passed and main_skip_cinematic was called once */
 	boolean requested;
+	/* host: the save the script makes as the cutscene becomes skippable is
+	written (a skip reverts to it) */
+	boolean skip_save_written;
 } skip_vote;
 
 /* ---------- private code */
@@ -682,12 +685,21 @@ static void host_count_skip_votes(
 	long machine_indices[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
 	short machine_count = distributed_client_machines(machine_indices, HALO_PORT_MAXIMUM_NETWORK_MACHINES);
 	long now = game_time_get();
+	boolean skippable = cinematic_in_progress() && cinematic_can_be_skipped();
+	boolean was_offered = skip_vote.offered;
 	short index;
 
-	/* not while the cinematic's save is still being written: reverting then
-	would go back to the save before it */
-	skip_vote.offered = cinematic_in_progress() && cinematic_can_be_skipped() && !main_saving_map() &&
-		now >= skip_vote.cooldown_until;
+	/* Not until the save the script makes as the cutscene becomes skippable
+	is written: reverting before then would go back to the save before it.
+	A save asked for later in the cutscene doesn't hold the vote up (the
+	skip cancels it, as in a solo game). */
+	if (!skippable)
+		skip_vote.skip_save_written = FALSE;
+	else if (!main_saving_map())
+		skip_vote.skip_save_written = TRUE;
+	skip_vote.offered = skippable && skip_vote.skip_save_written && now >= skip_vote.cooldown_until;
+	if (skip_vote.offered && !was_offered)
+		error(_error_silent, "co-op: the cutscene can be skipped");
 	if (!skip_vote.offered)
 	{
 		skip_vote_clear();
@@ -1009,6 +1021,7 @@ void network_coop_new_game(
 	skip_vote.offered = FALSE;
 	skip_vote.voters = 0;
 	skip_vote.cooldown_until = 0;
+	skip_vote.skip_save_written = FALSE;
 }
 
 /* A network game on a campaign scenario with no game engine. Checking the
