@@ -4001,16 +4001,9 @@ void players_update_before_game(
 						game_engine_prespawn_player_update(iterator.datum_index);
 						player_spawn(iterator.datum_index);
 						if (player->unit_index != NONE)
-						{
 							game_engine_postspawn_player_update(iterator.datum_index);
-						}
 						else
-						{
 							player->respawn_timer = 1;
-							/* port: why ("Waiting for space to clear" otherwise says nothing) */
-							game_engine_log_spawn_failure(iterator.datum_index,
-								find_best_starting_location_index(iterator.datum_index) != NONE);
-						}
 					}
 					else if (network_game_distributed_client())
 						game_engine_client_respawn_countdown(iterator.datum_index);
