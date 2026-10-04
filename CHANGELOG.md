@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.8
+
+### Co-op
+
+- When the level moves on to its next part, every player is brought along,
+  not only the host. Before, the others were left where the old part was
+  and fell into the void until the rescue caught them.
+- A player left outside the map in a vehicle is brought back too, unless
+  the AI is flying it (the intro Pelicans fly outside the map on purpose).
+- A player left outside the map with no teammate standing on ground is
+  brought beside any teammate inside it, or to the last checkpoint.
+
 ## 0.2.7
 
 ### Co-op
