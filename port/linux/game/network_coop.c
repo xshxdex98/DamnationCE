@@ -90,6 +90,13 @@ index and tag, since the map placed them at the same index everywhere.
 
 /* ---------- constants */
 
+/* A player with nothing to watch yet (joining, before its teammates'
+units have reached it) sees the host's view from this far behind and above
+the host's eyes, turning a share of the way to it each tick. */
+#define WATCH_HOST_DISTANCE 3.0f
+#define WATCH_HOST_HEIGHT 1.0f
+#define WATCH_HOST_FOLLOW 0.2f
+
 enum
 {
 	/* the farthest an object the cutscene camera films can be from it
@@ -358,6 +365,11 @@ static struct
 	/* looking through the host's camera: its scripted cutscene camera, or
 	its view for a player with nothing else to look at */
 	boolean host_camera;
+	/* the view from behind the host, while there is nothing else to
+	watch (watching_host_valid FALSE until the first) */
+	boolean watching_host_valid;
+	real_point3d watching_host_position;
+	real_vector3d watching_host_forward;
 	long heard_time;
 	long fade_start_time;
 } coop_presentation;
@@ -1122,6 +1134,45 @@ static void client_cinematic_end(
 		return;
 	coop_presentation.cinematic_started = FALSE;
 	cinematic_stop();
+}
+
+/* client, with nothing else to watch: the host's view (position, forward
+and up, which this changes) seen from behind and above the host's eyes, as
+a spectator sees a teammate, eased toward it so the host's looking around
+doesn't throw it about */
+static void client_watch_host_from_behind(
+	real_point3d *position,
+	real_vector3d *forward,
+	real_vector3d *up)
+{
+	real_point3d behind;
+	real_vector3d level = { forward->i, forward->j, 0.0f };
+
+	if (normalize3d(&level) == 0.0f)
+		level = *forward;
+	point_from_line3d(position, &level, -WATCH_HOST_DISTANCE, &behind);
+	behind.z += WATCH_HOST_HEIGHT;
+	if (!coop_presentation.watching_host_valid)
+	{
+		coop_presentation.watching_host_valid = TRUE;
+		coop_presentation.watching_host_position = behind;
+		coop_presentation.watching_host_forward = *forward;
+	}
+	else
+	{
+		points_interpolate(&coop_presentation.watching_host_position, &behind, WATCH_HOST_FOLLOW,
+			&coop_presentation.watching_host_position);
+		vectors_interpolate(&coop_presentation.watching_host_forward, forward, WATCH_HOST_FOLLOW,
+			&coop_presentation.watching_host_forward);
+		normalize3d(&coop_presentation.watching_host_forward);
+	}
+	*position = coop_presentation.watching_host_position;
+	*forward = coop_presentation.watching_host_forward;
+	/* (up from the forward, upright) */
+	up->i = 0.0f;
+	up->j = 0.0f;
+	up->k = 1.0f;
+	distributed_axes_make_valid(forward, up);
 }
 
 /* client: looks through the host's camera, or with its own */
@@ -2103,9 +2154,15 @@ void network_coop_handle_presentation(
 		}
 		if (distributed_point_valid(&position, UNIT_WORLD_BOUND) && distributed_axes_make_valid(&forward, &up))
 		{
+			if (!(coop_presentation.cinematic_started && presentation->camera_scripted))
+				client_watch_host_from_behind(&position, &forward, &up);
 			scripted_camera_set_camera_point_relative(&position, &forward, &up,
 				(real)presentation->camera_field_of_view / FIELD_OF_VIEW_SCALE, 0, NONE);
 		}
+	}
+	else
+	{
+		coop_presentation.watching_host_valid = FALSE;
 	}
 
 	/* start each new fade, backdated to when the host started it */

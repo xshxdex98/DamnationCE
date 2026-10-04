@@ -465,13 +465,13 @@ static void player_handle_powerup_equipment(
 
 /* ---------- globals */
 
-/* port: network co-op. When each player was last free to move on foot (the
-game time plus one; 0 while it rides a vehicle, the scripts hold its
-controls, or it has no unit), by absolute index: the level's other players
-spawn beside it a while after (players_coop_room_to_spawn). */
+/* port: network co-op. Since when each player has been somewhere the
+level's other players can spawn beside (player_spawnable_beside: the game
+time plus one, 0 while it isn't), by absolute index: they spawn beside it a
+while after (players_coop_room_to_spawn). */
 static struct
 {
-	long on_foot_since[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
+	long spawnable_since[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
 } players_coop_start;
 
 /* port: where each player was at the last checkpoint, in network co-op
@@ -2615,19 +2615,32 @@ static boolean players_respawn_network_coop(
 	return result;
 }
 
-/* whether the player has a unit and it is on foot (not riding a vehicle) */
-static boolean player_on_foot(
+/* Where a new player can spawn beside the player: the unit on foot, or the
+vehicle it rides when a player drives it (a Warthog, round which the new
+player is put); NONE while the scripts hold the controls (Pillar of
+Autumn's cryo tube) or it rides a vehicle nobody plays (Silent
+Cartographer's Pelican), which would put the new player inside. */
+static long player_spawnable_beside(
 	struct player_datum const *player)
 {
-	return player->unit_index != NONE && object_get_ultimate_parent(player->unit_index) == player->unit_index;
+	long vehicle_index;
+	long driver_index;
+
+	if (player->unit_index == NONE || !player_input_enabled())
+		return NONE;
+	vehicle_index = object_get_ultimate_parent(player->unit_index);
+	if (vehicle_index == player->unit_index)
+		return vehicle_index;
+	driver_index = object_try_and_get_and_verify_type(vehicle_index, _object_mask_unit) ?
+		unit_get(vehicle_index)->unit.driver_object_index : NONE;
+	return driver_index != NONE && unit_get(driver_index)->unit.player_index != NONE ? vehicle_index : NONE;
 }
 
-/* How long a teammate has been free on foot before the others spawn beside
-it: out of the vehicle it rode, so they aren't put inside it, and with the
-controls the scripts held (Pillar of Autumn's cryo tube) back. */
+/* How long a teammate has been somewhere to spawn beside before the others
+do, so that they aren't put inside a vehicle it has only just left. */
 #define COOP_DISEMBARK_TICKS (4 * TICKS_PER_SECOND)
 
-/* co-op, each tick: notes when each player became free on foot */
+/* co-op, each tick: notes when each player became somewhere to spawn beside */
 static void players_coop_note_on_foot(
 	void)
 {
@@ -2639,9 +2652,9 @@ static void players_coop_note_on_foot(
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
-		long *since = &players_coop_start.on_foot_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
+		long *since = &players_coop_start.spawnable_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
 
-		if (!player_on_foot(player) || !player_input_enabled())
+		if (player_spawnable_beside(player) == NONE)
 			*since = 0;
 		else if (*since == 0)
 			*since = game_time_get() + 1;
@@ -2649,9 +2662,10 @@ static void players_coop_note_on_foot(
 }
 
 /* Co-op host: whether a new player has somewhere to go: beside a teammate
-that has been free on foot for COOP_DISEMBARK_TICKS. While every teammate
-rides a vehicle (Silent Cartographer's Pelican) or is held by the scripts
-(Pillar of Autumn's cryo tube) the others spectate. */
+that has been somewhere to spawn beside for COOP_DISEMBARK_TICKS. While
+every teammate rides a vehicle nobody plays (Silent Cartographer's Pelican)
+or is held by the scripts (Pillar of Autumn's cryo tube) the others
+spectate. */
 static boolean players_coop_room_to_spawn(
 	void)
 {
@@ -2661,19 +2675,20 @@ static boolean players_coop_room_to_spawn(
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
-		long since = players_coop_start.on_foot_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
+		long since = players_coop_start.spawnable_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
 
-		if (player_on_foot(player) && since != 0 && game_time_get() + 1 - since >= COOP_DISEMBARK_TICKS)
+		if (player_spawnable_beside(player) != NONE && since != 0 && game_time_get() + 1 - since >= COOP_DISEMBARK_TICKS)
 			return TRUE;
 	}
 
 	return FALSE;
 }
 
-/* Co-op host: puts a newly spawned player beside a teammate on foot
-(player_teleport tries a few spots round each). Every teammate is tried in
-turn, so a big lobby spreads round the whole group; if none has room the
-player stays where it spawned. */
+/* Co-op host: puts a newly spawned player beside a teammate on foot or in
+a vehicle a player drives (player_spawnable_beside; player_teleport tries a
+few spots round each, round the vehicle for one riding it). Every teammate
+is tried in turn, so a big lobby spreads round the whole group; if none has
+room the player stays where it spawned. */
 static void player_place_beside_teammate(
 	long player_index)
 {
@@ -2685,7 +2700,7 @@ static void player_place_beside_teammate(
 	data_iterator_new(&iterator, player_data);
 	while ((other = data_iterator_next(&iterator)) != NULL)
 	{
-		if (iterator.datum_index != player_index && player_on_foot(other) &&
+		if (iterator.datum_index != player_index && player_spawnable_beside(other) != NONE &&
 			player_teleport(player_index, other->unit_index, &object_get(other->unit_index)->object.bounding_sphere_center))
 		{
 			return;
