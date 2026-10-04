@@ -1,0 +1,67 @@
+# Changelog
+
+## 0.2.0
+
+### Campaign co-op online
+
+You can now play the campaign with friends over LAN or the internet, with
+up to 128 players.
+
+- **Create Game** asks whether you want **Cooperative** or **PvP**. Under
+  Cooperative, pick Campaign, then either the stock levels or Custom
+  Edition campaign maps from your maps folder. Then choose a level and a
+  difficulty, name the game in Server Setup, and go to the lobby.
+- Co-op games appear in the server browser as "Co-op", with their level
+  and difficulty.
+- The host runs the campaign. Everyone sees the same AI, cutscenes,
+  camera moves, fades, dialogue and music, doors, elevators, switches, and
+  objects the level's scripts create or remove.
+- When you die, you watch a living teammate (A or jump switches between
+  them). You respawn beside a teammate once it's safe.
+- If everyone dies, you all respawn where you were at the last checkpoint.
+- When the level is finished, everyone moves on to the next one together.
+- Players who join a game already in progress spawn next to the others.
+
+### AI sync
+
+- Enemies and allies now move, aim, shoot, throw grenades and animate the
+  same way on every machine, not just on the host.
+
+### Server browser
+
+- It now also lists public games from the internet lobby.
+- Games on Custom Edition maps show the map's name and picture, and say so
+  when you don't have the map.
+- Plain buttons along the bottom for Join, Create Game, Refresh, Sort,
+  Profile and Back. Escape goes back.
+
+### Map picker
+
+- The keyboard prompts are now clickable buttons (Back, Grid/List view,
+  Difficulty). Escape goes back.
+- It starts from the first step every time you host, rather than where you
+  left off.
+- Campaign level pictures now fit their frames.
+
+### Fixes
+
+- A LAN host can start a game alone.
+- Loading a Custom Edition map with Ogg Vorbis sounds no longer crashes.
+- Custom Edition maps use the Xbox pause menu, so Resume and Quit work.
+- Better frame rates on Custom Edition maps: their geometry stays on the
+  GPU, and lens flares out of view are no longer tested or drawn.
+- The invite link for internet co-op games shows correctly instead of
+  "LAN game".
+
+### For developers
+
+- `AGENTS.md` files explain the layout, the build, and the rules for
+  changing the code. `port/linux/NETCODE.md` covers co-op and AI sync.
+- `debug.gpu_stats` and `debug.gpu_trace_heavy` help track down slow
+  frames.
+
+## 0.1.0
+
+The first DamnationCE release: OpenCE with ChupathingyCE's features, the
+Glassed and Vanilla menu themes, and Custom Edition map support, for
+Windows, Linux, macOS and Android.
