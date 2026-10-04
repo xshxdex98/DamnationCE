@@ -1,120 +1,83 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <menus>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_screen" width="640" height="480" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/gradient">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_screen" width="640" height="480" flags="pass_unhandled_to_focused_child">
 		<on event="created" run="net server accept conx" />
 		<on event="created" run="net server allow start" />
 		<on event="b" run="net game unjoin player" back="true" />
 		<on event="back" run="net game unjoin player" back="true" />
-		<child widget="main_menu/new_select/sel_list_desc_bkd" />
 		<child widget="main_menu/multiplayer_type_select/lobby/lobby_list" />
-		<child widget="main_menu/multiplayer_type_select/lobby/header_lobby" />
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/lobby/header_lobby" controller="1" left="35" top="11" width="363" height="59" bitmap="main_menu/multiplayer_type_select/lobby/header_lobby">
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_0" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd_top">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_0" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_1" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_1" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_2" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_2" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_3" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_3" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_4" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_4" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_5" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_5" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_6" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_6" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_7" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_7" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_8" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_8" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_9" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_9" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_10" controller="1" width="360" height="28" bitmap="bitmaps/sel_list_item_bkd">
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" x="14" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_you" x="196" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_red" x="262" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_blue" x="262" />
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_10" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_text" type="text" controller="1" width="180" height="28" font="ui\large_ui" color="#FFD2D6DA" text_flags="no_focus_test" text_y="3">
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_11" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_you" type="text" controller="1" width="56" height="28" font="ui\small_ui" color="#FF3CC8C0" align="right" text_flags="no_focus_test" text_y="8">
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_12" controller="1" width="380" height="23">
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_text" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_red" type="text" controller="1" width="84" height="28" font="ui\small_ui" color="#FFFF6B6B" align="right" text_flags="no_focus_test" text_y="8">
+	<widget name="main_menu/multiplayer_type_select/lobby/list_item_text" type="text" controller="1" width="380" height="23" color="#00000000" text_flags="no_focus_test">
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/list_item_blue" type="text" controller="1" width="84" height="28" font="ui\small_ui" color="#FF6BB0FF" align="right" text_flags="no_focus_test" text_y="8">
-	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children" description="main_menu/multiplayer_type_select/lobby/lobby_desc">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children">
 		<data input="net splitscreen prejoin players" />
 		<data input="port lobby update" />
 		<on event="left right" run="swap player team" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_0" x="20" y="73" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_1" x="20" y="103" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_2" x="20" y="133" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_3" x="20" y="163" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_4" x="20" y="193" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_5" x="20" y="223" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_6" x="20" y="253" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_7" x="20" y="283" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_8" x="20" y="313" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_9" x="20" y="343" />
-		<child widget="main_menu/multiplayer_type_select/lobby/list_item_10" x="20" y="373" />
-		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_bar" y="414" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_0" x="24" y="92" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_1" x="24" y="116" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_2" x="24" y="140" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_3" x="24" y="164" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_4" x="24" y="188" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_5" x="24" y="212" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_6" x="24" y="236" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_7" x="24" y="260" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_8" x="24" y="284" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_9" x="24" y="308" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_10" x="24" y="332" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_11" x="24" y="356" />
+		<child widget="main_menu/multiplayer_type_select/lobby/list_item_12" x="24" y="380" />
+		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_bar" y="448" />
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/lobby/lobby_desc" width="640" height="480">
 		<child widget="main_menu/current_profile_name" />
 		<child widget="main_menu/multiplayer_type_select/lobby/lobby_right_item" x="22" y="2" />
-		<child widget="main_menu/multiplayer_type_select/lobby/lobby_countdown" />
-	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_countdown" type="text" controller="1" left="406" top="30" width="184" height="36" font="ui\large_ui" color="#FF3CC8C0" align="center" text_flags="no_focus_test">
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/lobby/lobby_right_item" controller="1" left="406" top="75" width="162" height="326" bitmap="bitmaps/spinner_list_3_wide_item_background">
 		<child widget="main_menu/multiplayer_type_select/lobby/lobby_map_pic" />
 		<child widget="main_menu/multiplayer_type_select/lobby/lobby_map_name" />
 		<child widget="main_menu/multiplayer_type_select/lobby/lobby_info_labels" />
 		<child widget="main_menu/multiplayer_type_select/lobby/lobby_info_values" />
-		<child widget="main_menu/multiplayer_type_select/lobby/lobby_note" />
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/lobby/lobby_map_pic" controller="1" left="419" top="87" width="140" height="114" bitmap="ui\shell\bitmaps\mp_map_grafix">
 	</widget>
@@ -124,24 +87,22 @@
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/lobby/lobby_info_values" type="text" controller="1" left="417" top="252" width="146" height="80" font="ui\small_ui" color="#FFD2D6DA" align="right" text_flags="no_focus_test">
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_note" type="text" controller="1" left="417" top="350" width="146" height="44" font="ui\small_ui" color="#FFA8ACB0" text_flags="no_focus_test">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_bar" type="column_list" width="640" height="22" flags="pass_unhandled_to_focused_child left_right_tabs_items">
+		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_team" x="288" />
+		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_start" x="400" />
+		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_leave" x="512" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_bar" type="column_list" width="640" height="28" flags="pass_unhandled_to_focused_child left_right_tabs_items">
-		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_team" x="250" y="1" />
-		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_start" x="380" y="1" />
-		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_leave" x="510" y="1" />
-	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_team" type="text" width="128" height="24" bitmap="bitmaps/text_button_background" text="SWITCH TEAM" font="ui\small_ui" color="#FFFFFFFF" align="center" text_y="2">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_team" type="text" width="104" height="22" color="#00000000">
 		<on event="a" run="swap player team" />
 		<on event="start" run="swap player team" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_start" type="text" width="128" height="24" bitmap="bitmaps/text_button_background" text="START NOW" font="ui\small_ui" color="#FFFFFFFF" align="center" text_y="2">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_start" type="text" width="104" height="22" color="#00000000">
 		<on event="a" run="net game speed start" />
 		<on event="start" run="net game speed start" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_leave" type="text" width="128" height="24" bitmap="bitmaps/text_button_background" text="LEAVE" font="ui\small_ui" color="#FFFFFFFF" align="center" text_y="2">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_leave" type="text" width="104" height="22" color="#00000000">
 		<on event="a" run="mouse emit back event" />
 		<on event="start" run="mouse emit back event" />
 		<on event="left_mouse" run="mouse emit accept event" />

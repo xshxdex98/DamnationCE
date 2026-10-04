@@ -2,7 +2,8 @@
 OVERLAY_SCREENS.H
 
 Helpers shared by the screens drawn over the menus: Online Games
-(browser_screen.c) and the map picker (map_screen.c).
+(browser_screen.c), the map picker (map_screen.c) and the lobby
+(lobby_screen.c).
 */
 
 #ifndef __OVERLAY_SCREENS_H
@@ -35,6 +36,28 @@ struct overlay_button_colors
 {
 	unsigned int fill, fill_lit, edge, text, text_lit, text_disabled;
 	float radius;
+};
+
+/* The list screens' colors (0xRRGGBBAA) in a theme: Glassed darkens a band
+over the scene, Vanilla covers the screen in the Xbox's blues. */
+struct overlay_palette
+{
+	boolean glassed;
+	unsigned int backdrop, backdrop_bottom, rule, title, panel, panel_edge, panel_head, head, row_selected, row_rule;
+	unsigned int text, dim, label, prompt, connecting;
+	float radius;
+};
+
+/* the same in both themes */
+enum
+{
+	OVERLAY_COLOR_RED_TEAM = 0xFF6B6BFF,
+	OVERLAY_COLOR_BLUE_TEAM = 0x6BB0FFFF,
+	/* notices, and what can't be joined */
+	OVERLAY_COLOR_NOTICE = 0x3CC8C0FF,
+	OVERLAY_COLOR_GOOD = 0x5ED38CFF,
+	OVERLAY_COLOR_FAIR = 0xE8C547FF,
+	OVERLAY_COLOR_POOR = 0xE86A5AFF,
 };
 
 /* ---------- prototypes */
@@ -74,6 +97,34 @@ short overlay_button_at(
 	float y,
 	short point_x,
 	short point_y);
+
+/* the palette of the theme in use (display.theme) */
+struct overlay_palette const *overlay_palette_current(
+	void);
+
+/* Draws UTF-8 text left-aligned at x, cut to `width` with an ellipsis if it
+doesn't fit. */
+void overlay_text_fitted(
+	int font,
+	float size,
+	float x,
+	float y,
+	float width,
+	unsigned int color,
+	char const *text);
+
+/* An Xbox multiplayer level's display name by its file name ("bloodgulch":
+"Blood Gulch"), or NULL for any other map. */
+char const *overlay_xbox_map_name(
+	char const *file_name);
+
+/* A map's display name, for a map path such as levels\test\<name>\<name>:
+an Xbox level's, a Custom Edition map's or campaign level's own, else its
+file name. */
+void overlay_map_name(
+	char const *map_name,
+	char *out,
+	long size);
 
 /* The display index (custom_edition_maps.h) for a map path such as
 levels\test\<name>\<name>. Unknown maps get the unknown level's frame. */

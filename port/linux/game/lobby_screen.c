@@ -1,0 +1,305 @@
+/*
+LOBBY_SCREEN.C
+
+The pregame lobby, drawn in the server browser's style (browser_screen.c):
+the players down the left, their names in their team's color in a team
+game; the map, the game's details and the countdown on the right; the
+buttons along the foot.
+
+The lobby's widgets (tools/port_settings.py, _lobby) still run it. They
+are invisible, with no pictures and clear text, but they update the lobby
+("port lobby update" in menu_functions.c), take the keyboard's focus and
+catch the mouse. This draws over them, in the same places, and lights the
+row or button that has the focus.
+*/
+
+#ifdef HALO_GAME_BROWSER
+
+#include "cseries.h"
+#include "game/players.h"
+#include "interface/ui_widget.h"
+#include "interface/ui_widget_instance.h"
+#include "networking/network_game_manager.h"
+
+#include "custom_edition_maps.h"
+#include "overlay_screens.h"
+#include "../src/p2p.h"
+#include "../src/ui_overlay.h"
+
+#include <string.h>
+
+/* ---------- constants */
+
+/* the widgets' places (tools/port_settings.py: LOBBY_ROW_*, LOBBY_BUTTON*) */
+enum
+{
+	ROW_LEFT = 24, ROW_TOP = 92, ROW_HEIGHT = 24, ROW_WIDTH = 380, ROWS = 13,
+	BUTTONS_TOP = 448, BUTTON_WIDTH = 104, BUTTON_HEIGHT = 22,
+	NUMBER_OF_BUTTONS = 3,
+};
+static short const button_lefts[NUMBER_OF_BUTTONS] = { 288, 400, 512 };
+static char const *const button_names[NUMBER_OF_BUTTONS] = { "lobby_button_team", "lobby_button_start", "lobby_button_leave" };
+static char const *const button_labels[NUMBER_OF_BUTTONS] = { "SWITCH TEAM", "START NOW", "LEAVE" };
+
+/* the rest of the layout, in the menus' 640x480 */
+enum
+{
+	GLASS_TOP = 66, GLASS_BOTTOM = 446,
+	HEADING_Y = 74,
+	PANEL_X = 420, PANEL_WIDTH = 196, PANEL_TOP = 78, PICTURE_HEIGHT = 118,
+	RIGHT = PANEL_X + PANEL_WIDTH,
+};
+
+static char const *const engine_names[] = { "Game", "CTF", "Slayer", "Oddball", "King of the Hill", "Race" };
+static char const *const difficulty_names[] = { "Easy", "Normal", "Heroic", "Legendary" };
+
+/* ---------- prototypes */
+
+void *global_network_game_client_get(void);
+void *global_network_game_server_get(void);
+struct network_game *network_game_client_get_game(void *client);
+short network_game_client_get_local_machine_index(void);
+short network_game_client_get_seconds_to_game_start(void *client);
+struct widget_instance *ui_widget_port_top(void);
+/* menu_functions.c */
+short pc_menu_lobby_players(struct network_player *const **players, short *first);
+
+/* ---------- private code */
+
+/* the child of a widget with this name, or NULL */
+static struct widget_instance *child_named(
+	struct widget_instance *widget,
+	char const *name)
+{
+	struct widget_instance *child;
+
+	for (child = widget ? widget->child : NULL; child; child = child->next)
+	{
+		if (child->name && !strcmp(child->name, name))
+			return child;
+	}
+	return NULL;
+}
+
+/* the lobby's list (its rows and button bar), when the lobby is the screen
+up */
+static struct widget_instance *lobby_list(
+	void)
+{
+	struct widget_instance *top = ui_widget_port_top();
+
+	if (!top || !top->name || strcmp(top->name, "lobby_screen"))
+		return NULL;
+	return child_named(top, "lobby_list");
+}
+
+static boolean game_cooperative(
+	struct network_game const *game)
+{
+	return !game->variant.game_engine_index &&
+		custom_edition_maps_campaign(custom_edition_maps_display_index(game->map.name));
+}
+
+/* one of the panel's lines: a label, and its value right-aligned */
+static float detail_line(
+	struct overlay_palette const *palette,
+	float y,
+	char const *label,
+	char const *value)
+{
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, PANEL_X, y, UI_ALIGN_LEFT, palette->dim, label);
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, RIGHT, y, UI_ALIGN_RIGHT, palette->text, value);
+	return y + 14;
+}
+
+/* the title, and the countdown (or what the game waits for) at the right */
+static void render_header(
+	struct overlay_palette const *palette,
+	struct network_game const *game,
+	void *client,
+	short player_count)
+{
+	short seconds = network_game_client_get_seconds_to_game_start(client);
+	char description[64], text[96];
+
+	overlay_utf8((unsigned short const *)game->variant.human_readable_game_description,
+		NUMBEROF(game->variant.human_readable_game_description), description, sizeof(description));
+	ui_overlay_text(UI_FONT_BOLD, 24.0f, ROW_LEFT, 22, UI_ALIGN_LEFT, palette->title, "LOBBY");
+	snprintf(text, sizeof(text), "%s  \xC2\xB7  %d / %d PLAYERS", description, player_count, game->maximum_players);
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, ROW_LEFT + 1, 50, UI_ALIGN_LEFT, palette->dim, text);
+	if (seconds > 0)
+	{
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, RIGHT, 22, UI_ALIGN_RIGHT, palette->dim, "STARTING IN");
+		snprintf(text, sizeof(text), "%d", seconds);
+		ui_overlay_text(UI_FONT_BOLD, 26.0f, RIGHT, 32, UI_ALIGN_RIGHT, OVERLAY_COLOR_NOTICE, text);
+	}
+	else
+	{
+		ui_overlay_text(UI_FONT_BOLD, 10.0f, RIGHT, 40, UI_ALIGN_RIGHT, palette->dim,
+			game->machine_count < 2 ? "WAITING FOR PLAYERS" : "READY");
+	}
+}
+
+/* The players: a row each, the one with the focus lit, a name in its team's
+color in a team game, and YOU on this machine's players. */
+static void render_players(
+	struct overlay_palette const *palette,
+	struct widget_instance *list,
+	struct network_game const *game)
+{
+	struct network_player *const *players;
+	short first, count = pc_menu_lobby_players(&players, &first);
+	short local_machine = network_game_client_get_local_machine_index();
+	boolean teams = game->variant.universal_variant.teams;
+	struct widget_instance *row = list->child;
+	char text[64];
+	short index;
+
+	ui_overlay_text(UI_FONT_BOLD, 8.0f, ROW_LEFT + 10, HEADING_Y, UI_ALIGN_LEFT, palette->dim, "PLAYERS");
+	if (count > ROWS)
+	{
+		snprintf(text, sizeof(text), "%d\xE2\x80\x93%d OF %d", first + 1, MIN(first + ROWS, count), count);
+		ui_overlay_text(UI_FONT_BOLD, 8.0f, ROW_LEFT + ROW_WIDTH - 10, HEADING_Y, UI_ALIGN_RIGHT, palette->dim, text);
+	}
+	ui_overlay_rect(ROW_LEFT, ROW_TOP - 2, ROW_WIDTH, 0.75f, 0, palette->row_rule);
+	for (index = 0; index < ROWS && first + index < count; index++, row = row ? row->next : NULL)
+	{
+		struct network_player const *player = players[first + index];
+		float y = (float)(ROW_TOP + index * ROW_HEIGHT);
+		boolean focused = row && list->focused_child == row;
+		unsigned int color = !teams ? (focused ? palette->title : palette->text) :
+			player->team_index ? OVERLAY_COLOR_BLUE_TEAM : OVERLAY_COLOR_RED_TEAM;
+
+		if (focused)
+		{
+			ui_overlay_rect(ROW_LEFT, y, ROW_WIDTH, ROW_HEIGHT - 1, palette->radius / 2, palette->row_selected);
+			if (palette->glassed)
+				ui_overlay_rect(ROW_LEFT, y, 1.5f, ROW_HEIGHT - 1, 0, 0xFFFFFFFF);
+		}
+		else if (index % 2)
+		{
+			ui_overlay_rect(ROW_LEFT, y, ROW_WIDTH, ROW_HEIGHT - 1, 0, palette->row_rule);
+		}
+		overlay_utf8((unsigned short const *)player->name, NUMBEROF(player->name), text, sizeof(text));
+		overlay_text_fitted(UI_FONT_BOLD, 11.0f, ROW_LEFT + 10, y + 5, ROW_WIDTH - 70, color, text);
+		if (player->machine_index == local_machine)
+		{
+			ui_overlay_text(UI_FONT_BOLD, 8.0f, ROW_LEFT + ROW_WIDTH - 10, y + 7, UI_ALIGN_RIGHT,
+				OVERLAY_COLOR_NOTICE, "YOU");
+		}
+	}
+}
+
+/* the map's picture and name, the game's details, and the invite note */
+static void render_panel(
+	struct overlay_palette const *palette,
+	struct network_game const *game,
+	short player_count)
+{
+	boolean cooperative = game_cooperative(game);
+	char text[96];
+	char link[256];
+	float y = PANEL_TOP + PICTURE_HEIGHT + 8;
+
+	ui_overlay_rect(PANEL_X - 6, PANEL_TOP - 4, PANEL_WIDTH + 12, GLASS_BOTTOM - PANEL_TOP - 6, palette->radius,
+		palette->panel);
+	overlay_map_picture(overlay_map_display_index(game->map.name), PANEL_X, PANEL_TOP, PANEL_WIDTH, PICTURE_HEIGHT);
+	ui_overlay_outline(PANEL_X, PANEL_TOP, PANEL_WIDTH, PICTURE_HEIGHT, 0, 0.75f, palette->panel_edge);
+	overlay_map_name(game->map.name, text, sizeof(text));
+	overlay_text_fitted(UI_FONT_BOLD, 13.0f, PANEL_X, y, PANEL_WIDTH, palette->title, text);
+	y += 22;
+
+	overlay_utf8((unsigned short const *)game->variant.human_readable_game_description,
+		NUMBEROF(game->variant.human_readable_game_description), text, sizeof(text));
+	y = detail_line(palette, y, "Game", text);
+	if (cooperative)
+		y = detail_line(palette, y, "Difficulty", difficulty_names[PIN(game->difficulty, 0, NUMBEROF(difficulty_names) - 1)]);
+	else
+		y = detail_line(palette, y, "Mode", engine_names[PIN(game->variant.game_engine_index, 0, NUMBEROF(engine_names) - 1)]);
+	if (!cooperative)
+		y = detail_line(palette, y, "Teams", game->variant.universal_variant.teams ? "Yes" : "No");
+	snprintf(text, sizeof(text), "%d of %d", player_count, game->maximum_players);
+	detail_line(palette, y, "Players", text);
+
+	if (global_network_game_server_get() && p2p_invite_link(link, sizeof(link)))
+	{
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, PANEL_X, GLASS_BOTTOM - 40, UI_ALIGN_LEFT, OVERLAY_COLOR_NOTICE,
+			"Invite link copied");
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, PANEL_X, GLASS_BOTTOM - 27, UI_ALIGN_LEFT, palette->dim,
+			"Paste it to friends to bring them in.");
+	}
+}
+
+/* the buttons, where the widgets are; the one with the focus lit */
+static void render_buttons(
+	struct overlay_palette const *palette,
+	struct widget_instance *list)
+{
+	struct widget_instance *bar = child_named(list, "lobby_button_bar");
+	short index;
+
+	for (index = 0; bar && index < NUMBER_OF_BUTTONS; index++)
+	{
+		struct widget_instance *button = child_named(bar, button_names[index]);
+		boolean lit = button && list->focused_child == bar && bar->focused_child == button;
+		float x = (float)button_lefts[index];
+
+		if (!button || !button->visible)
+			continue;
+		ui_overlay_rect(x, BUTTONS_TOP, BUTTON_WIDTH, BUTTON_HEIGHT, palette->radius / 2,
+			lit ? palette->row_selected : palette->panel);
+		ui_overlay_outline(x, BUTTONS_TOP, BUTTON_WIDTH, BUTTON_HEIGHT, palette->radius / 2, 0.75f, palette->panel_edge);
+		ui_overlay_text(UI_FONT_BOLD, 10.0f, x + BUTTON_WIDTH / 2, BUTTONS_TOP + 5, UI_ALIGN_CENTER,
+			lit ? palette->title : palette->prompt, button_labels[index]);
+	}
+}
+
+/* ---------- public code */
+
+/* whether the lobby is the screen up, which this draws over */
+boolean lobby_screen_active(
+	void)
+{
+	return ui_overlay_available() && lobby_list() != NULL;
+}
+
+/* ui_widget.c, after the menus are drawn */
+void lobby_screen_render(
+	void)
+{
+	struct overlay_palette const *palette = overlay_palette_current();
+	struct widget_instance *list = lobby_list();
+	void *client = global_network_game_client_get();
+	struct network_game *game = client ? network_game_client_get_game(client) : NULL;
+	struct network_player *const *players;
+	short first, player_count = pc_menu_lobby_players(&players, &first);
+	float margin = (float)((halo_screen_width() - 640) / 2 + 2);
+
+	if (!list)
+		return;
+	if (palette->glassed)
+	{
+		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
+		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, palette->rule);
+		ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, palette->rule);
+	}
+	else
+	{
+		ui_overlay_gradient(-margin, 0, 640 + 2 * margin, 480, 0, palette->backdrop, palette->backdrop_bottom);
+		ui_overlay_rect(ROW_LEFT - 4, HEADING_Y - 6, ROW_WIDTH + 8, ROW_TOP - HEADING_Y + ROWS * ROW_HEIGHT + 8,
+			palette->radius, palette->panel);
+	}
+	render_buttons(palette, list);
+	if (!game)
+	{
+		ui_overlay_text(UI_FONT_BOLD, 24.0f, ROW_LEFT, 22, UI_ALIGN_LEFT, palette->title, "LOBBY");
+		ui_overlay_text(UI_FONT_REGULAR, 10.0f, ROW_LEFT + 10, ROW_TOP + 6, UI_ALIGN_LEFT, palette->dim,
+			"Joining the game\xE2\x80\xA6");
+		return;
+	}
+	render_header(palette, game, client, player_count);
+	render_players(palette, list, game);
+	render_panel(palette, game, player_count);
+}
+
+#endif
