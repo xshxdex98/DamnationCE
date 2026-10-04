@@ -34,8 +34,8 @@
 - Server browser notices (missing maps, refreshing) and full or closed games
   are teal, and notices sit under the game list instead of over the header.
   The main menu's version number is teal too.
-- The main menu's background no longer freezes or jumps back when some
-  menus open.
+- The main menu's background keeps moving behind every menu; it used to
+  freeze or jump back in most of them.
 
 ## 0.2.1
 
