@@ -76,6 +76,8 @@ enum
 	/* co-op: the host's cinematic, camera and screen fade, every tick
 	(network_coop.c) */
 	_distributed_message_coop_presentation,
+	/* co-op: the sounds the host's scripts played (network_coop.c) */
+	_distributed_message_coop_sounds,
 
 	NUMBER_OF_DISTRIBUTED_MESSAGES
 };
@@ -239,6 +241,17 @@ void network_coop_client_tick(void);
 word network_coop_presentation_entry_size(void);
 /* (a client) the host's, shown here */
 void network_coop_handle_presentation(void const *entries);
+/* (the host) a sound its scripts played (game_sound.c), for its clients */
+enum
+{
+	_coop_sound_impulse,
+	_coop_sound_looping_start,
+	_coop_sound_looping_stop,
+};
+void network_coop_note_sound(short kind, long definition_index, long object_index, real scale);
+word network_coop_sound_entry_size(void);
+/* (a client) the host's scripts' sounds, played here */
+void network_coop_handle_sounds(void const *entries, short count);
 
 /* ---------- prototypes/NETWORK_OBJECTS.C */
 
