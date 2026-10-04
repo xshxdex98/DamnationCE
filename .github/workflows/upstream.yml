@@ -1,0 +1,75 @@
+name: Upstream builds
+
+# OpenCE's builds (cybersecurity/halo-ce-universal, tagged build-<n>) offered
+# for merging, a day after they're out at most. For the newest build main
+# doesn't have yet:
+#
+# - if it merges without conflicts, a pull request "Merge upstream
+#   build-<n>" from the branch upstream/build-<n>, with its build started
+#   (a pull request this workflow opens starts no workflow by itself);
+# - if it conflicts, an issue naming the files, for a merge by hand.
+#
+# Either is opened once. Nothing reaches main without a person merging it:
+# a merge can need this client's own wiring (both themes' menus), and every
+# push to main is offered to players as an update.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: upstream
+  cancel-in-progress: false
+
+jobs:
+  offer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      UPSTREAM: https://github.com/cybersecurity/halo-ce-universal.git
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Offer the newest build
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --quiet "$UPSTREAM" "refs/tags/build-*:refs/tags/build-*"
+
+          # the newest build (merging it brings any before it main lacks)
+          build="$(git tag --list 'build-*' | sort -t- -k2 -n | tail -n 1)"
+          if git merge-base --is-ancestor "$build" HEAD; then
+            echo "main has every upstream build"
+            exit 0
+          fi
+          title="Merge upstream $build"
+          if [ -n "$(gh pr list --state all --search "\"$title\" in:title" --json number --jq '.[].number')" ] ||
+             [ -n "$(gh issue list --state all --search "\"$title\" in:title" --json number --jq '.[].number')" ]; then
+            echo "$build has been offered already"
+            exit 0
+          fi
+
+          branch="upstream/$build"
+          git switch --quiet -c "$branch"
+          if git merge --no-ff --no-edit "$build" -m "$title"; then
+            git push --quiet origin "$branch"
+            gh pr create --head "$branch" --base main --title "$title" --body \
+              "OpenCE's [$build](https://github.com/cybersecurity/halo-ce-universal/releases/tag/$build) merged into main without conflicts. Its build is running; check both themes' menus for anything it adds before merging."
+            gh workflow run build.yml --ref "$branch"
+          else
+            conflicts="$(git diff --name-only --diff-filter=U | sed 's/^/- /')"
+            git merge --abort
+            gh issue create --title "$title" --body \
+              "OpenCE's [$build](https://github.com/cybersecurity/halo-ce-universal/releases/tag/$build) conflicts with main, so it needs a merge by hand. The conflicting files:
+
+          $conflicts"
+          fi
