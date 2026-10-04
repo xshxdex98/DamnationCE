@@ -2145,19 +2145,18 @@ static void main_won_map_private(
 	short local_player_index;
 
 	/* port: when a network co-op level is won, the round ends for everyone as
-	in multiplayer, and the next round is the campaign's next level (the
-	last level repeats) */
+	in multiplayer, back to the lobby, and the next round is the campaign's
+	next level, The Maw's The Pillar of Autumn. A Custom Edition campaign map
+	has no next level: it repeats. */
 	if (game_connection() == _game_connection_network_server)
 	{
 		struct network_game *game = network_game_get_game();
 
 		main_globals.won_map = FALSE;
-		/* match the stock level by exact name, so a Custom Edition campaign map
-		just repeats */
 		level = game ? custom_edition_maps_campaign_level(custom_edition_maps_display_index(game->map.name)) : NONE;
 		player_profile_save_level_completed(0);
-		network_game_server_port_cooperative_won(level != NONE && level + 1 < 10 ? main_get_solo_level_name(level + 1) :
-			NULL);
+		network_game_server_port_cooperative_won(level != NONE ?
+			main_get_solo_level_name((level + 1) % NUMBER_OF_SINGLE_PLAYER_LEVELS) : NULL);
 		return;
 	}
 	main_globals.want_to_be_at_main_menu = TRUE;
