@@ -3140,39 +3140,6 @@ static boolean team_has_starting_locations(
 	return FALSE;
 }
 
-/* port: why a player couldn't spawn, logged at most every five seconds
-(players.c): the game type, the player's team, and the map's starting
-locations for them */
-void game_engine_log_spawn_failure(
-	long player_index,
-	boolean found_location)
-{
-	static unsigned long last_time;
-	struct player_datum *player = player_get(player_index);
-	short count = player_get_starting_location_count();
-	short matching = 0, own_team = 0, index;
-	unsigned long now = system_milliseconds();
-
-	if (last_time && now - last_time < 5000)
-		return;
-	last_time = now;
-	for (index = 0; index < count; index++)
-	{
-		struct player_starting_location const *starting_location = player_get_starting_location(index);
-
-		if (starting_location && match_game_type(game_engine_get_type(), 4, starting_location->game_types))
-		{
-			matching++;
-			own_team += starting_location->team_index == player->team_index;
-		}
-	}
-	error(_error_silent, "player %ld (team %d) can't spawn: %s; game type %ld, %d of %d starting locations for it, "
-		"%d of them the team's%s",
-		DATUM_INDEX_TO_ABSOLUTE_INDEX(player_index), player->team_index,
-		found_location ? "its unit could not be made" : "no starting location rated above 0",
-		game_engine_get_type(), matching, count, own_team, game_engine_test_flag(0) ? " (team spawns)" : "");
-}
-
 static real default_starting_location_rate_function(
 	long player_index,
 	struct player_starting_location const *starting_location)
