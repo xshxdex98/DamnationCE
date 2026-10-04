@@ -700,9 +700,19 @@ void updater_start(void)
 	updater_clean_up();
 	/* (not for builds other than a release's, the player's no, or runs nobody
 	is watching, but for a test with its answer) */
-	if ((!HALO_RELEASE_BUILD && !updater_rolling()) || !config_boolean("update.check") ||
-		(!config_string("debug.update_answer")[0] && (config_boolean("debug.hidden_window") ||
-			config_real("debug.exit_after") > 0.0 || config_string("debug.network_test")[0])))
+	if (!HALO_RELEASE_BUILD && !updater_rolling())
+	{
+		platform_log("update: not looked for: only GitHub's release and main builds update themselves (this is %s)",
+			HALO_VERSION);
+		return;
+	}
+	if (!config_boolean("update.check"))
+	{
+		platform_log("update: not looked for: update.check is false");
+		return;
+	}
+	if (!config_string("debug.update_answer")[0] && (config_boolean("debug.hidden_window") ||
+		config_real("debug.exit_after") > 0.0 || config_string("debug.network_test")[0]))
 	{
 		return;
 	}
