@@ -43,13 +43,13 @@ support and synced AI on top.
 **Multiplayer**
 - AI synced to every player in a game (no "ghost" AI)
 
-## You need your own copy of Halo
+## I Don't Provide Game Copies.
 
 DamnationCE doesn't include the game's maps, sounds or art. You need an Xbox
 disc image (`.iso` or `.xiso`) of Halo: Combat Evolved. The first time it
 starts, it asks for the image and copies the game's `maps` folder out of it.
 
-### Custom Edition maps
+### Custom Edition Map Support
 
 Put these from a Halo Custom Edition install's `maps` folder into the game's
 `maps` folder:
@@ -64,7 +64,7 @@ A map's picture is `<name>.bmp` beside it and its description `<name>.txt`.
 To use an install where it is instead of copying, set `paths.custom_edition`
 in `config.toml`.
 
-## Playing online
+## Online Multiplayer
 
 | You want to | Do this |
 | --- | --- |
@@ -75,7 +75,7 @@ in `config.toml`.
 The game list and stats are ChupathingyCE's service,
 [halo.milenko.org](https://halo.milenko.org).
 
-## Building it yourself
+## Building
 
 You need Python 3, [ninja](https://ninja-build.org/) and clang.
 
