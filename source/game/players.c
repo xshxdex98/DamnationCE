@@ -465,15 +465,12 @@ static void player_handle_powerup_equipment(
 
 /* ---------- globals */
 
-/* port: network co-op. Whether the level's other players may spawn yet
-(players_coop_may_spawn), and how long the level has gone without a cutscene
-while they wait. */
+/* port: network co-op. When each player was last free to move on foot (the
+game time plus one; 0 while it rides a vehicle, the scripts hold its
+controls, or it has no unit), by absolute index: the level's other players
+spawn beside it a while after (players_coop_room_to_spawn). */
 static struct
 {
-	boolean released;
-	long quiet_ticks;
-	/* when each player got out of the vehicle it rode (the game time plus
-	one; 0 while it rides one or has no unit), by absolute index */
 	long on_foot_since[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
 } players_coop_start;
 
@@ -2453,22 +2450,8 @@ that in step. Instead the players respawn where they were at the last
 checkpoint (main_save_map_private records it), or at the map's start if
 that was on another BSP. */
 
-/* If Pillar of Autumn hasn't saved after this long without a cutscene, the
-players waiting for its first checkpoint spawn anyway. */
-#define COOP_START_FALLBACK_TICKS (3 * 60 * TICKS_PER_SECOND)
-
 static boolean players_coop_room_to_spawn(
 	void);
-
-/* whether the level keeps its other players out until its first checkpoint:
-Pillar of Autumn, whose cryo tube and tutorial drive the first player alone */
-static boolean players_coop_level_waits_for_checkpoint(
-	void)
-{
-	char const *name = global_scenario_index != NONE ? tag_get_name(global_scenario_index) : NULL;
-
-	return name && !csstrcmp(tag_name_strip_path(name), "a10");
-}
 
 /* The level's first seconds, when the extra players don't spawn yet: its
 opening cutscene starts a tick or so in, and the first player may still be
@@ -2476,14 +2459,12 @@ somewhere with no room beside it (Halo's drop pod). */
 #define COOP_LEVEL_START_TICKS (2 * TICKS_PER_SECOND)
 
 /* Co-op: whether the players after the first are held back from spawning:
-on Pillar of Autumn until its first checkpoint, in the level's first
-seconds, while a cutscene plays, or while no teammate is on foot
-(players_coop_room_to_spawn). */
+in the level's first seconds, while a cutscene plays, or until a teammate
+has been free on foot a while (players_coop_room_to_spawn). */
 static boolean players_coop_extras_held(
 	void)
 {
-	return (players_coop_level_waits_for_checkpoint() && !players_coop_start.released) ||
-		game_time_get() < COOP_LEVEL_START_TICKS || cinematic_in_progress() || !players_coop_room_to_spawn();
+	return game_time_get() < COOP_LEVEL_START_TICKS || cinematic_in_progress() || !players_coop_room_to_spawn();
 }
 
 /* Co-op host: whether a player who hasn't spawned on this level yet may
@@ -2507,21 +2488,6 @@ static boolean players_coop_may_spawn(
 	return TRUE;
 }
 
-/* co-op host, each tick: the fallback for a Pillar of Autumn that never saves */
-static void players_coop_start_update(
-	void)
-{
-	if (players_coop_start.released || game_connection() != _game_connection_network_server ||
-		!network_coop_active() || !players_coop_level_waits_for_checkpoint())
-	{
-		return;
-	}
-	if (!cinematic_in_progress())
-		players_coop_start.quiet_ticks++;
-	if (players_coop_start.quiet_ticks >= COOP_START_FALLBACK_TICKS)
-		players_coop_start.released = TRUE;
-}
-
 /* whether this player hasn't spawned on the level yet and is held back
 (players_coop_extras_held); it watches a teammate meanwhile */
 boolean players_coop_waiting_to_start(
@@ -2531,14 +2497,6 @@ boolean players_coop_waiting_to_start(
 
 	return player && player->unit_index == NONE && player->statistics.deaths == 0 && network_coop_active() &&
 		players_coop_extras_held();
-}
-
-/* whether this level holds its other players back until its first
-checkpoint (Pillar of Autumn): what coop_spectate.c tells a waiting player */
-boolean players_coop_waits_for_checkpoint(
-	void)
-{
-	return players_coop_level_waits_for_checkpoint() && !players_coop_start.released;
 }
 
 /* how close a projectile, a grenade throw or a dying unit makes a teammate
@@ -2655,11 +2613,12 @@ static boolean player_on_foot(
 	return player->unit_index != NONE && object_get_ultimate_parent(player->unit_index) == player->unit_index;
 }
 
-/* how long a teammate has been out of its vehicle before the others spawn
-beside it, so they aren't put inside the vehicle it left */
+/* How long a teammate has been free on foot before the others spawn beside
+it: out of the vehicle it rode, so they aren't put inside it, and with the
+controls the scripts held (Pillar of Autumn's cryo tube) back. */
 #define COOP_DISEMBARK_TICKS (4 * TICKS_PER_SECOND)
 
-/* co-op, each tick: notes when each player got out of its vehicle */
+/* co-op, each tick: notes when each player became free on foot */
 static void players_coop_note_on_foot(
 	void)
 {
@@ -2673,7 +2632,7 @@ static void players_coop_note_on_foot(
 	{
 		long *since = &players_coop_start.on_foot_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
 
-		if (!player_on_foot(player))
+		if (!player_on_foot(player) || !player_input_enabled())
 			*since = 0;
 		else if (*since == 0)
 			*since = game_time_get() + 1;
@@ -2681,8 +2640,9 @@ static void players_coop_note_on_foot(
 }
 
 /* Co-op host: whether a new player has somewhere to go: beside a teammate
-that has been on foot for COOP_DISEMBARK_TICKS. While every teammate rides
-a vehicle (Silent Cartographer's Pelican) the others spectate. */
+that has been free on foot for COOP_DISEMBARK_TICKS. While every teammate
+rides a vehicle (Silent Cartographer's Pelican) or is held by the scripts
+(Pillar of Autumn's cryo tube) the others spectate. */
 static boolean players_coop_room_to_spawn(
 	void)
 {
@@ -2732,8 +2692,6 @@ void players_note_checkpoint(
 
 	csmemset(&players_checkpoint, 0, sizeof(players_checkpoint));
 	players_checkpoint.structure_bsp_index = global_structure_bsp_index_get();
-	/* the level's first checkpoint lets everyone else in */
-	players_coop_start.released = TRUE;
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
@@ -4035,7 +3993,6 @@ void players_update_before_game(
 	short action_index;
 
 	profile_enter(PLAYERS_UPDATE_BEFORE_GAME_PROFILE);
-	players_coop_start_update();
 	players_coop_note_on_foot();
 	if (update_client_dequeue(actions) || players_idle_actions(actions))
 	{
