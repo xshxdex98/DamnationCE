@@ -3172,6 +3172,7 @@ void network_distributed_new_game(
 	network_objects_new_game();
 	network_damage_new_game();
 	network_actors_new_game();
+	network_coop_new_game();
 }
 
 /* after each tick (game_time.c) */
@@ -3218,6 +3219,7 @@ void network_distributed_tick(
 		network_actors_host_tick();
 		if (!game_engine_running() && game_time_get() % STRUCTURE_BSP_INTERVAL_TICKS == 0)
 			distributed_send_structure_bsp();
+		network_coop_host_tick();
 		distributed_send_pickups();
 		if (game_time_get() % GAME_STATE_INTERVAL_TICKS == 0)
 			distributed_send_game_state(NONE);
@@ -3229,6 +3231,7 @@ void network_distributed_tick(
 		distributed_client_send_predictions();
 		network_objects_client_tick();
 		network_damage_client_tick();
+		network_coop_client_tick();
 	}
 	distributed_batches_flush();
 	distributed_machines.in_tick = FALSE;
@@ -3258,6 +3261,7 @@ static boolean distributed_message_stale(
 	case _distributed_message_pings:
 	case _distributed_message_actor_states:
 	case _distributed_message_structure_bsp:
+	case _distributed_message_coop_presentation:
 		break;
 	default:
 		return FALSE;
@@ -3697,6 +3701,7 @@ void network_distributed_handle_message(
 	case _distributed_message_pings: entry_size = sizeof(struct distributed_player_ping); break;
 	case _distributed_message_actor_states: entry_size = network_actors_entry_size(); break;
 	case _distributed_message_structure_bsp: entry_size = sizeof(struct distributed_structure_bsp); break;
+	case _distributed_message_coop_presentation: entry_size = network_coop_presentation_entry_size(); break;
 	case _distributed_message_pickups: entry_size = sizeof(struct distributed_pickup); break;
 	case _distributed_message_player_inputs: entry_size = sizeof(struct distributed_player_input); break;
 	case _distributed_message_relayed_actions: entry_size = DISTRIBUTED_RELAYED_ACTION_MINIMUM_SIZE; break;
@@ -3766,6 +3771,9 @@ void network_distributed_handle_message(
 		break;
 	case _distributed_message_structure_bsp:
 		distributed_handle_structure_bsp((struct distributed_structure_bsp const *)entries);
+		break;
+	case _distributed_message_coop_presentation:
+		network_coop_handle_presentation(entries);
 		break;
 	case _distributed_message_player_statistics:
 	{
