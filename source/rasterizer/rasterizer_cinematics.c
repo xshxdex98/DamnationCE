@@ -508,12 +508,13 @@ void rasterizer_screen_effect_port_get(
 	csmemset(state, 0, sizeof(*state));
 	if (!globals)
 		return;
-	state->has_control = (byte)(globals->has_control != FALSE);
-	state->initialized = (byte)(globals->initialized != FALSE);
-	state->video_on = (byte)(globals->parameters.video_on != FALSE);
-	state->filter_flags = (byte)((globals->parameters.filter_desaturation_is_additive ? FLAG(0) : 0) |
-		(globals->parameters.filter_light_enhancement_uses_convolution_mask ? FLAG(1) : 0) |
-		(globals->parameters.filter_desaturation_uses_convolution_mask ? FLAG(2) : 0));
+	state->has_control = globals->has_control;
+	state->initialized = globals->initialized;
+	state->video_on = globals->parameters.video_on;
+	state->filter_desaturation_is_additive = globals->parameters.filter_desaturation_is_additive;
+	state->filter_light_enhancement_uses_convolution_mask =
+		globals->parameters.filter_light_enhancement_uses_convolution_mask;
+	state->filter_desaturation_uses_convolution_mask = globals->parameters.filter_desaturation_uses_convolution_mask;
 	state->convolution_extra_passes = globals->parameters.convolution_extra_passes;
 	state->convolution_type = globals->parameters.convolution_type;
 	state->video_overbright_mode = globals->parameters.video_overbright_mode;
@@ -530,8 +531,16 @@ void rasterizer_screen_effect_port_get(
 	state->near_clip_distance = globals->near_clip_distance;
 }
 
-/* port: the host's state put in place on a client; the video effect's
-bitmaps are this machine's own, as rasterizer_screen_effect_set_video finds them */
+/* port: the first bitmap of one of the video effect's bitmap groups, as
+rasterizer_screen_effect_set_video uses it */
+static struct bitmap_data *screen_effect_video_bitmap(
+	long bitmap_group_index)
+{
+	return TAG_BLOCK_GET_ELEMENT(&bitmap_group_get(bitmap_group_index)->bitmaps, 0, struct bitmap_data);
+}
+
+/* port: the host's state put in place on a client, with the video effect's
+bitmaps found on this machine */
 void rasterizer_screen_effect_port_set(
 	struct rasterizer_screen_effect_port_state const *state)
 {
@@ -542,25 +551,24 @@ void rasterizer_screen_effect_port_set(
 
 	if (!globals)
 		return;
-	globals->has_control = state->has_control != 0;
-	globals->initialized = state->initialized != 0;
+	globals->has_control = state->has_control;
+	globals->initialized = state->initialized;
 	globals->parameters.convolution_extra_passes = state->convolution_extra_passes;
 	globals->parameters.convolution_type = state->convolution_type;
 	globals->parameters.convolution_mask = NULL;
 	globals->parameters.filter_desaturation_tint = state->filter_desaturation_tint;
-	globals->parameters.filter_desaturation_is_additive = TEST_FLAG(state->filter_flags, 0);
-	globals->parameters.filter_light_enhancement_uses_convolution_mask = TEST_FLAG(state->filter_flags, 1);
-	globals->parameters.filter_desaturation_uses_convolution_mask = TEST_FLAG(state->filter_flags, 2);
+	globals->parameters.filter_desaturation_is_additive = state->filter_desaturation_is_additive;
+	globals->parameters.filter_light_enhancement_uses_convolution_mask =
+		state->filter_light_enhancement_uses_convolution_mask;
+	globals->parameters.filter_desaturation_uses_convolution_mask = state->filter_desaturation_uses_convolution_mask;
 	globals->parameters.video_on = video;
 	globals->parameters.video_overbright_mode = state->video_overbright_mode;
 	globals->parameters.video_noise_intensity = state->video_noise_intensity;
 	globals->parameters.video_noise_map_scale = video ? 1.0f : 0.0f;
-	globals->parameters.video_scanline_map = video ? TAG_BLOCK_GET_ELEMENT(
-		&bitmap_group_get(global_rasterizer_data->screen_effect_video_scanline_map.index)->bitmaps, 0,
-		struct bitmap_data) : NULL;
-	globals->parameters.video_noise_map = video ? TAG_BLOCK_GET_ELEMENT(
-		&bitmap_group_get(global_rasterizer_data->screen_effect_video_noise_map.index)->bitmaps, 0,
-		struct bitmap_data) : NULL;
+	globals->parameters.video_scanline_map =
+		video ? screen_effect_video_bitmap(global_rasterizer_data->screen_effect_video_scanline_map.index) : NULL;
+	globals->parameters.video_noise_map =
+		video ? screen_effect_video_bitmap(global_rasterizer_data->screen_effect_video_noise_map.index) : NULL;
 	csmemcpy(globals->convolution_radius, state->convolution_radius, sizeof(globals->convolution_radius));
 	csmemcpy(globals->convolution_time, state->convolution_time, sizeof(globals->convolution_time));
 	csmemcpy(globals->filter_light_enhancement_intensity, state->filter_light_enhancement_intensity,
