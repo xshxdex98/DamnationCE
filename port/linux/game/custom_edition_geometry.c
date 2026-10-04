@@ -36,6 +36,7 @@ Edition vertices (docs/custom_edition_caches.md).
 
 #include <math.h>
 #include <stdlib.h>
+#include <xtl.h>
 
 /* ---------- constants */
 
@@ -170,6 +171,7 @@ struct custom_edition_geometry_globals
 	struct model_geometry_part **model_parts;
 	long model_part_count;
 	byte *model_geometry;
+	boolean model_geometry_contiguous;
 	/* the parts of the models of many nodes, in the order they were converted */
 	struct part_palette *palettes;
 	long palette_count;
@@ -178,6 +180,7 @@ struct custom_edition_geometry_globals
 	vertices those were made from */
 	struct structure_bsp *structure_bsp;
 	byte *structure_bsp_vertices;
+	boolean structure_bsp_vertices_contiguous;
 };
 
 /* ---------- globals */
@@ -502,6 +505,37 @@ static void structure_bsp_buffers_release(
 /* Gives `material` compressed vertices at `vertices` and buffers made from
 them. Its uncompressed vertices (cache_file_formats.c checked their size and
 place) stay where they are. */
+/* geometry the renderer draws from: in the Xbox's contiguous memory, as the
+game's own vertex and index buffers are (physical_memory_map.c), which the
+renderer keeps on the GPU (d3d8_gl.c's mirror: anything outside it is sent
+again at every draw); in the game's heap when that memory is spent */
+static void *geometry_allocate(
+	unsigned long size,
+	boolean *contiguous)
+{
+	void *geometry = XPhysicalAlloc(size, (unsigned long)-1, 0, PAGE_READWRITE);
+
+	*contiguous = geometry != NULL;
+	if (!geometry)
+	{
+		error(_error_silent, "custom edition: 0x%lX bytes of geometry drawn from outside contiguous memory (slower)",
+			size);
+		geometry = system_malloc(size);
+	}
+
+	return geometry;
+}
+
+static void geometry_free(
+	void *geometry,
+	boolean contiguous)
+{
+	if (contiguous)
+		XPhysicalFree(geometry);
+	else
+		system_free(geometry);
+}
+
 static boolean structure_material_convert(
 	struct structure_material *material,
 	byte *vertices)
@@ -587,9 +621,10 @@ boolean custom_edition_models_convert(
 
 	globals->model_parts = malloc((totals.part_count + 1) * sizeof(*globals->model_parts));
 	globals->palettes = malloc((totals.many_node_part_count + 1) * sizeof(*globals->palettes));
-	globals->model_geometry = malloc(
+	globals->model_geometry = geometry_allocate(
 		totals.vertex_count * rasterizer_geometry_get_vertex_size(_rasterizer_vertex_type_model_compressed) +
-		totals.strip_index_count * sizeof(*strips) + 1);
+		totals.strip_index_count * sizeof(*strips) + 1,
+		&globals->model_geometry_contiguous);
 	scratch = malloc(totals.largest_part_vertex_count * sizeof(*scratch) + 1);
 	if (!globals->model_parts || !globals->model_geometry || !globals->palettes || !scratch)
 	{
@@ -665,7 +700,7 @@ void custom_edition_models_dispose(
 	}
 	if (globals->model_geometry)
 	{
-		free(globals->model_geometry);
+		geometry_free(globals->model_geometry, globals->model_geometry_contiguous);
 	}
 	if (globals->palettes)
 	{
@@ -723,8 +758,9 @@ boolean custom_edition_structure_bsp_load(
 	}
 
 	globals->structure_bsp = structure_bsp;
-	/* (the game's heap: the material points at them by Xbox address) */
-	globals->structure_bsp_vertices = system_malloc(vertices_size + 1);
+	/* (in Xbox memory either way: the material points at them by Xbox address) */
+	globals->structure_bsp_vertices = geometry_allocate(vertices_size + 1,
+		&globals->structure_bsp_vertices_contiguous);
 	if (!globals->structure_bsp_vertices)
 	{
 		error(_error_silent, "custom edition: out of memory for 0x%lX bytes of structure BSP vertices", vertices_size);
@@ -775,7 +811,7 @@ void custom_edition_structure_bsp_unload(
 	if (globals->structure_bsp)
 	{
 		structure_bsp_buffers_release(globals->structure_bsp);
-		system_free(globals->structure_bsp_vertices);
+		geometry_free(globals->structure_bsp_vertices, globals->structure_bsp_vertices_contiguous);
 		globals->structure_bsp = NULL;
 		globals->structure_bsp_vertices = NULL;
 	}
