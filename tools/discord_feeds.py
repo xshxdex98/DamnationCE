@@ -28,7 +28,6 @@ import urllib.request
 import uuid
 
 LIST_URL = "https://halo.milenko.org/v1/games.txt"
-SITE_URL = "https://halo.milenko.org"
 # (Discord turns away requests without a user agent of its form)
 USER_AGENT = "DiscordBot (https://github.com/xshxdex98/DamnationCE, 1)"
 
@@ -52,9 +51,6 @@ CAMPAIGN_MAPS = {
 # (Discord's limit on a message's text)
 MESSAGE_LENGTH = 2000
 
-COLOUR_LIVE = 0x3BA55D
-COLOUR_QUIET = 0x5865F2
-COLOUR_DOWN = 0xED4245
 
 # a message's flags: no link previews, and no notification (as @silent)
 SUPPRESS_EMBEDS = 1 << 2
@@ -133,40 +129,24 @@ def mode_name(game):
     return "Team " + name if game["teams"] and game["engine"] != 1 else name
 
 
-def servers_embed(games, error=None):
-    """the list's embed: how many are playing and when it was drawn, over
-    the card of its games; games is None while the list server can't be
-    reached"""
-    updated = f"-# Updated <t:{int(time.time())}:R>"
-    embed = {"title": "OpenCE Servers", "url": SITE_URL}
-    if games is None:
-        embed["color"] = COLOUR_DOWN
-        embed["description"] = f"The server list can't be reached right now ({error}).\n{updated}"
-        return embed
-    players = sum(game["players"] for game in games)
-    servers = sum(1 for game in games if game["players"] > 0)
-    embed["color"] = COLOUR_LIVE if players else COLOUR_QUIET
-    embed["description"] = (f"**{players}** {'player' if players == 1 else 'players'} on "
-                            f"**{servers}** {'server' if servers == 1 else 'servers'}\n{updated}")
-    embed["image"] = {"url": "attachment://servers.png"}
-    return embed
-
-
 def update_servers():
     # (here, not at the top: the card needs Pillow, which a release's post goes without)
     import discord_card
 
     webhook = os.environ["DISCORD_SERVERS_WEBHOOK"]
     message_id = os.environ.get("DISCORD_SERVERS_MESSAGE", "")
+    # (a picture of its own rather than an embed's, which Discord shows smaller)
+    updated = f"-# Updated <t:{int(time.time())}:R>"
     try:
         games = parse_games(request(LIST_URL))
-        embed = servers_embed(games)
+        text = updated
         files = [("servers.png", discord_card.server_card(games, map_name, mode_name, map_art, USER_AGENT))]
     except (urllib.error.URLError, TimeoutError) as error:
-        embed = servers_embed(None, error=type(error).__name__)
+        text = f"The server list can't be reached right now ({type(error).__name__}).\n{updated}"
         files = []
     # (the attachments listed replace the message's last ones)
-    body = {"embeds": [embed], "attachments": [{"id": index, "filename": name} for index, (name, _) in enumerate(files)],
+    body = {"content": text, "embeds": [],
+            "attachments": [{"id": index, "filename": name} for index, (name, _) in enumerate(files)],
             "allowed_mentions": {"parse": []}}
 
     if message_id:
