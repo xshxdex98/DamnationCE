@@ -86,9 +86,11 @@ their handlers open opens.
 void platform_log(char const *format, ...);
 void platform_request_quit(void);
 #ifdef HALO_GAME_BROWSER
-/* the game list's screen (browser_screen.c) */
+/* the game list's screen (browser_screen.c) and the map picker (map_screen.c) */
 void browser_screen_open(void);
 boolean map_screen_open(void);
+void map_screen_note_online_games(void);
+void map_screen_go_back(void);
 #endif
 char const *pc_menu_function_name(long function_index);
 char const *pc_menu_game_data_input_name(long function_index);
@@ -517,6 +519,7 @@ reached, and (map_data) a saved game on the level */
 #define MAXIMUM_PROFILES 32
 #define SOUND_ERROR 4
 #define SOUND_FORWARD 2
+#define SOUND_BACK 3
 
 /* (an index whose profile reads: saved_game_files.c's) */
 #define PROFILE_VALID_BIT 0x80000000UL
@@ -679,6 +682,18 @@ static void rows_update(struct widget_instance *list, short count, void (*row_te
 		if (named(row, "scroll_down_button", 0))
 			named(row, "scroll_down_button", 0)->visible = FALSE;
 	}
+}
+
+/* the list's rows: its first children, named list_item_N (the stock lobby
+has 11, Glassed's 13) */
+static short list_row_count(struct widget_instance *list)
+{
+	struct widget_instance *row;
+	short count = 0;
+
+	for (row = list->child; row && !strncmp(row->name, "list_item_", 10); row = row->next)
+		count++;
+	return count;
 }
 
 /* player 1's profile, read again (the active one, else the one last used,
@@ -1760,8 +1775,6 @@ Xbox's networking, run by the engine's port entry points
 (ui_widget_event_handler_functions.c) on our lists */
 
 #define MAXIMUM_ADVERTISED_GAMES 9
-#define MULTIPLAYER_MAP_COUNT 13
-#define MAP_ROWS 11
 #define GAMETYPE_ROWS 10
 #define MAXIMUM_GAMETYPES 100
 #define BROWSER_ROWS 15
@@ -1770,6 +1783,7 @@ Xbox's networking, run by the engine's port entry points
 /* (a key stroke's modifier, as input_xbox.c has them: shift, control) */
 #define KEY_MODIFIER_CONTROL_BIT 1
 #define LOBBY_NAME "pc\\main_menu\\multiplayer_type_select\\lobby\\lobby_screen"
+#define SERVER_SETUP_NAME "pc\\main_menu\\multiplayer_type_select\\server_settings\\server_settings_screen"
 #define PREVIEW_NAME "pc\\main_menu\\multiplayer_type_select\\lobby\\preview_screen"
 /* the lobby's panel's text: its details' labels and values, a line each */
 #define LOBBY_TEXT_LENGTH (ROW_TEXT_LENGTH * 4)
@@ -1821,7 +1835,12 @@ typedef char verify_advertised_game_open_offset[offsetof(struct advertised_game,
 
 /* the engine's (port) */
 short ui_widget_port_multiplayer_maps(char const *const **names, short *last_used);
-boolean ui_widget_port_multiplayer_map_choose(short level_index);
+char **ui_widget_port_multiplayer_levels(short *count, short *xbox_count);
+boolean ui_widget_port_multiplayer_level_choose(char const *map_name);
+boolean ui_widget_port_cooperative_level_choose(char const *map_name, short difficulty);
+boolean ui_widget_port_open_from_top(char const *name);
+void ui_widget_port_go_back_from_top(void);
+boolean network_game_is_splitscreen_local(void);
 short ui_widget_port_gametypes(long *indices, short maximum, short *last_used);
 boolean ui_widget_port_gametype_choose(long profile_index);
 boolean ui_widget_port_host(struct widget_instance *widget, struct event_record *event, boolean *widget_deleted);
@@ -1864,8 +1883,7 @@ static short const maximum_players[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 12
 static struct
 {
 	short mode;
-	/* Create Game's map and gametype lists */
-	short map_first, map_chosen;
+	/* Create Game's gametype list */
 	long gametypes[MAXIMUM_GAMETYPES];
 	short gametype_count;
 	/* (those of the bank the list's spinner shows: STANDARD, CUSTOM) */
@@ -2053,41 +2071,247 @@ void pc_menu_host_internet(void)
 	multiplayer_hosting_begin();
 }
 
-/* ---- the map list */
+/* ---- the map list (the Map screen's): when hosting, its rows first offer
+CO-OP CAMPAIGN or MULTIPLAYER, then their categories, then the maps or
+levels (and a level's difficulty), each a step that B goes back from. Split
+screen starts at the multiplayer categories. In Glassed the map picker
+(map_screen.c) is drawn over it and picks instead. */
+
+enum
+{
+	MAP_STEP_KINDS,
+	MAP_STEP_CATEGORIES,
+	MAP_STEP_MAPS,
+	MAP_STEP_CAMPAIGN_CATEGORIES,
+	MAP_STEP_LEVELS,
+	MAP_STEP_DIFFICULTIES,
+};
+
+#define MAXIMUM_MAP_ENTRIES 256
+
+static wchar_t const *const map_kind_names[] = { L"CO-OP CAMPAIGN", L"MULTIPLAYER" };
+static wchar_t const *const map_category_names[] = { L"VANILLA MAPS", L"CUSTOM MAPS" };
+static wchar_t const *const campaign_category_names[] = { L"CAMPAIGN", L"CUSTOM CAMPAIGN" };
+
+static struct
+{
+	short step;
+	boolean hosting;
+	/* the multiplayer levels (the Xbox's, then Custom Edition maps) */
+	char **levels;
+	short level_count, xbox_count;
+	/* the step's rows: a map's level index (NONE for a campaign level) and
+	display index (custom_edition_maps.h) */
+	short count;
+	short entry_levels[MAXIMUM_MAP_ENTRIES], entry_displays[MAXIMUM_MAP_ENTRIES];
+	short first, chosen;
+	/* what the earlier steps chose */
+	short category, campaign_display;
+} map_list;
+
+/* whether a multiplayer level is listed as VANILLA: an Xbox level, or one of
+Halo PC's own maps */
+static boolean map_level_vanilla(short level)
+{
+	return level < map_list.xbox_count || custom_edition_maps_stock(custom_edition_maps_level_display_index(level));
+}
+
+static short map_step_count(void)
+{
+	switch (map_list.step)
+	{
+	case MAP_STEP_KINDS: return NUMBEROF(map_kind_names);
+	case MAP_STEP_CATEGORIES: return NUMBEROF(map_category_names);
+	case MAP_STEP_CAMPAIGN_CATEGORIES: return NUMBEROF(campaign_category_names);
+	case MAP_STEP_DIFFICULTIES: return NUMBER_OF_GAME_DIFFICULTY_LEVELS;
+	default: return map_list.count;
+	}
+}
+
+/* opens a step at its first row (or, given, the row of the entry shown) */
+static void map_step_open(struct widget_instance *list, short step, short row)
+{
+	short rows = list_row_count(list), count;
+
+	map_list.step = step;
+	count = map_step_count();
+	map_list.chosen = (short)PIN(row, 0, MAX(count - 1, 0));
+	map_list.first = (short)PIN(map_list.chosen - rows / 2, 0, MAX(count - rows, 0));
+	focus_row(list, (short)(map_list.chosen - map_list.first));
+}
+
+/* the multiplayer maps of a category, or the campaign levels of one */
+static void map_entries_read(boolean campaign, short category)
+{
+	short level, index;
+
+	map_list.count = 0;
+	if (!campaign)
+	{
+		for (level = 0; level < map_list.level_count && map_list.count < MAXIMUM_MAP_ENTRIES; level++)
+		{
+			if (map_level_vanilla(level) == (category == 0))
+			{
+				map_list.entry_levels[map_list.count] = level;
+				map_list.entry_displays[map_list.count++] = custom_edition_maps_level_display_index(level);
+			}
+		}
+		return;
+	}
+	if (category == 0)
+	{
+		for (index = 0; index < NUMBER_OF_SINGLE_PLAYER_LEVELS; index++)
+			map_list.entry_displays[index] = custom_edition_maps_display_index(main_get_solo_level_name(index));
+		map_list.count = NUMBER_OF_SINGLE_PLAYER_LEVELS;
+	}
+	else
+		map_list.count = custom_edition_maps_custom_campaigns(map_list.entry_displays, MAXIMUM_MAP_ENTRIES);
+	for (index = 0; index < map_list.count; index++)
+		map_list.entry_levels[index] = NONE;
+}
 
 static void map_row_text(short row, wchar_t *text)
 {
-	string_get("pc\\main_menu\\mp_map_list", (short)(multiplayer.map_first + row), text);
+	short index = (short)(map_list.first + row);
+
+	switch (map_list.step)
+	{
+	case MAP_STEP_KINDS: ustrncpy(text, map_kind_names[index], ROW_TEXT_LENGTH - 1); break;
+	case MAP_STEP_CATEGORIES: ustrncpy(text, map_category_names[index], ROW_TEXT_LENGTH - 1); break;
+	case MAP_STEP_CAMPAIGN_CATEGORIES: ustrncpy(text, campaign_category_names[index], ROW_TEXT_LENGTH - 1); break;
+	case MAP_STEP_DIFFICULTIES:
+		string_get("pc\\main_menu\\player_profiles_select\\difficulty_names", index, text);
+		break;
+	default:
+		/* (a Custom Edition map's or campaign level's name is past the list's end: text_group.c) */
+		string_get("pc\\main_menu\\mp_map_list", map_list.entry_displays[index], text);
+		break;
+	}
+	text[ROW_TEXT_LENGTH - 1] = 0;
 }
 
 /* "mp level list initialize" */
 static boolean map_list_initialize(struct widget_instance *list)
 {
-	char const *const *names;
-
-	ui_widget_port_multiplayer_maps(&names, &multiplayer.map_chosen);
-	multiplayer.map_first = (short)PIN(multiplayer.map_chosen - MAP_ROWS / 2, 0, MULTIPLAYER_MAP_COUNT - MAP_ROWS);
-	focus_row(list, (short)(multiplayer.map_chosen - multiplayer.map_first));
+	map_list.levels = ui_widget_port_multiplayer_levels(&map_list.level_count, &map_list.xbox_count);
+	map_list.hosting = global_network_game_server_get() != NULL && !network_game_is_splitscreen_local();
+#ifdef HALO_GAME_BROWSER
+	map_screen_note_online_games();
+#endif
+	map_step_open(list, map_list.hosting ? MAP_STEP_KINDS : MAP_STEP_CATEGORIES, 0);
 	return TRUE;
 }
 
-/* "mp map list update" */
+/* "mp map list update": the step's rows, and beside a map or level its
+picture, name and words */
 static void map_list_update(struct widget_instance *list)
 {
 	struct widget_instance *description = list->parameters.list.extended_description;
+	short rows = list_row_count(list), count = map_step_count();
+	short row = list_scroll(list, &map_list.first, count, rows);
+	boolean shows_map = map_list.step == MAP_STEP_MAPS || map_list.step == MAP_STEP_LEVELS ||
+		map_list.step == MAP_STEP_DIFFICULTIES;
+	short display = NONE;
 	struct widget_instance *widget;
-	short map = list_scroll(list, &multiplayer.map_first, MULTIPLAYER_MAP_COUNT, MAP_ROWS);
 
-	if (map != NONE)
-		multiplayer.map_chosen = map;
-	rows_update(list, MAP_ROWS, map_row_text);
-	if ((widget = named(description, "mp_map_right_name", 0)) != NULL)
-		widget->parameters.text_box.string_list_index = multiplayer.map_chosen;
-	if ((widget = named(description, "mp_map_right_pic", 0)) != NULL)
-		widget->animation.current_frame_index = multiplayer.map_chosen;
-	if ((widget = named(description, "mp_map_right_data", 0)) != NULL)
-		widget->parameters.text_box.string_list_index = multiplayer.map_chosen;
+	if (row != NONE && row < count)
+		map_list.chosen = row;
+	rows_update(list, (short)MIN(count, rows), map_row_text);
+	if (map_list.step == MAP_STEP_DIFFICULTIES)
+		display = map_list.campaign_display;
+	else if (shows_map && map_list.chosen < map_list.count)
+		display = map_list.entry_displays[map_list.chosen];
+	visible_set(named(description, "mp_map_right_item", 0), display != NONE);
+	if (display != NONE)
+	{
+		if ((widget = named(description, "mp_map_right_name", 0)) != NULL)
+			widget->parameters.text_box.string_list_index = display;
+		if ((widget = named(description, "mp_map_right_pic", 0)) != NULL)
+			widget->animation.current_frame_index = display;
+		if ((widget = named(description, "mp_map_right_data", 0)) != NULL)
+			widget->parameters.text_box.string_list_index = display;
+	}
 	profile_name_show(description);
+}
+
+/* "mp level select" (the list's OK): the next step, or the map or level
+chosen. FALSE stays on the Map screen (the gametypes open on TRUE). */
+static boolean map_list_choose(struct widget_instance *list, boolean *widget_deleted)
+{
+	short chosen = map_list.chosen;
+
+	ui_play_audio_feedback_sound(SOUND_FORWARD);
+	switch (map_list.step)
+	{
+	case MAP_STEP_KINDS:
+		map_step_open(list, chosen == 0 ? MAP_STEP_CAMPAIGN_CATEGORIES : MAP_STEP_CATEGORIES, 0);
+		return FALSE;
+	case MAP_STEP_CATEGORIES:
+		map_list.category = chosen;
+		map_entries_read(FALSE, chosen);
+		map_step_open(list, MAP_STEP_MAPS, 0);
+		return FALSE;
+	case MAP_STEP_CAMPAIGN_CATEGORIES:
+		map_list.category = chosen;
+		map_entries_read(TRUE, chosen);
+		map_step_open(list, MAP_STEP_LEVELS, 0);
+		return FALSE;
+	case MAP_STEP_LEVELS:
+		if (chosen >= map_list.count)
+			return campaign_fail();
+		map_list.campaign_display = map_list.entry_displays[chosen];
+		map_step_open(list, MAP_STEP_DIFFICULTIES, (short)PIN(main_get_difficulty(), 0, NUMBER_OF_GAME_DIFFICULTY_LEVELS - 1));
+		return FALSE;
+	case MAP_STEP_DIFFICULTIES:
+		/* the co-op game set up, then Server Setup (no gametypes) */
+		if (!ui_widget_port_cooperative_level_choose(custom_edition_maps_level_name(map_list.campaign_display), chosen))
+			return campaign_fail();
+		ui_widget_port_open_from_top(SERVER_SETUP_NAME);
+		*widget_deleted = TRUE;
+		return TRUE;
+	default:
+		if (chosen >= map_list.count)
+			return campaign_fail();
+		return ui_widget_port_multiplayer_level_choose(map_list.levels[map_list.entry_levels[chosen]]);
+	}
+}
+
+/* "port map list back" (Vanilla's B on the list): the step before, or out
+of the Map screen from the first */
+static boolean map_list_back(struct widget_instance *list, boolean *widget_deleted)
+{
+	short first = map_list.hosting ? MAP_STEP_KINDS : MAP_STEP_CATEGORIES;
+
+	ui_play_audio_feedback_sound(SOUND_BACK);
+	switch (map_list.step)
+	{
+	case MAP_STEP_CATEGORIES:
+	case MAP_STEP_CAMPAIGN_CATEGORIES:
+		if (map_list.step != first)
+		{
+			map_step_open(list, MAP_STEP_KINDS, map_list.step == MAP_STEP_CATEGORIES ? 1 : 0);
+			return TRUE;
+		}
+		break;
+	case MAP_STEP_MAPS:
+		map_step_open(list, MAP_STEP_CATEGORIES, map_list.category);
+		return TRUE;
+	case MAP_STEP_LEVELS:
+		map_step_open(list, MAP_STEP_CAMPAIGN_CATEGORIES, map_list.category);
+		return TRUE;
+	case MAP_STEP_DIFFICULTIES:
+		map_step_open(list, MAP_STEP_LEVELS, 0);
+		return TRUE;
+	default:
+		break;
+	}
+#ifdef HALO_GAME_BROWSER
+	map_screen_go_back();
+#else
+	ui_widget_port_go_back_from_top();
+#endif
+	*widget_deleted = TRUE;
+	return TRUE;
 }
 
 /* (the gametype editor's: Server Setup's copy of the game's gametype) */
@@ -3196,18 +3420,6 @@ static void lobby_map_show(struct widget_instance *description, char const *map_
 		widget->parameters.text_box.string_list_index = map;
 }
 
-/* the list's rows: its first children, named list_item_N (the stock lobby
-has 11, Glassed's 13) */
-static short list_row_count(struct widget_instance *list)
-{
-	struct widget_instance *row;
-	short count = 0;
-
-	for (row = list->child; row && !strncmp(row->name, "list_item_", 10); row = row->next)
-		count++;
-	return count;
-}
-
 /* the stock lobby's panel (Vanilla): the map, and the game's details and
 countdown in one block of text. Glassed's lobby_screen.c draws its own. */
 static void lobby_panel_show(struct widget_instance *description, void *client, struct network_game *game,
@@ -4227,7 +4439,11 @@ boolean pc_menu_event_function_invoke(
 		}
 		else if (!strcmp(name, "mp level select"))
 		{
-			return ui_widget_port_multiplayer_map_choose(multiplayer.map_chosen);
+			return map_list_choose(widget, widget_deleted);
+		}
+		else if (!strcmp(name, "port map list back"))
+		{
+			return map_list_back(widget, widget_deleted);
 		}
 		else if (!strcmp(name, "mp profiles list initialize"))
 		{
