@@ -97,9 +97,9 @@ enum
 	/* co-op: how the host's objects look (their permutations, scale), when
 	that changes (network_coop.c) */
 	_distributed_message_coop_object_looks,
-	/* the death animations the host chose for its units, which a client
-	plays rather than one of its own (network_objects.c) */
-	_distributed_message_death_animations = 75,
+	/* the flinch and death animations the host picked for its units, which a
+	client plays rather than its own picks (network_objects.c) */
+	_distributed_message_damage_animations = 75,
 
 	NUMBER_OF_DISTRIBUTED_MESSAGES
 };
@@ -294,8 +294,8 @@ void network_coop_note_sound(short kind, long definition_index, long object_inde
 void network_objects_new_game(void);
 /* after each tick */
 void network_objects_host_tick(void);
-word network_objects_death_animation_entry_size(void);
-void network_objects_handle_death_animations(void const *entries, short count);
+word network_objects_damage_animation_entry_size(void);
+void network_objects_handle_damage_animations(void const *entries, short count);
 void network_objects_client_tick(void);
 /* (the host) a client has loaded the game and asks for the host's objects:
 again, having failed to make one of them */

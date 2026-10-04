@@ -803,52 +803,57 @@ static long distributed_driven_vehicle(
 		object_get(unit_index)->object.parent_object_index : NONE;
 }
 
-/* ---------- death animations
+/* ---------- damage animations
 
-A unit's death animation depends on where the damage came from and on a
-random pick among its permutations, so a client replaying the host's damage
-could choose another. The host sends its choice (each in three ticks'
-messages, in case one is lost); a client plays it when it kills its copy,
-or switches to it if its copy has only just started falling. */
+A unit's flinches and deaths are animations picked by where the damage came
+from and at random among their permutations, so a client replaying the
+host's damage could pick others. The host sends its picks (each in three
+ticks' messages, in case one is lost). A client plays the host's pick when
+it gets there first, or switches to it if its own has only just begun
+(unit_port_correct_damage_animation). */
 
 enum
 {
-	DEATH_ANIMATION_SENDS = 3,
-	MAXIMUM_QUEUED_DEATH_ANIMATIONS = 32,
-	/* how long a client keeps the host's choice for a unit it hasn't killed yet */
-	DEATH_ANIMATION_KEPT_TICKS = 5 * TICKS_PER_SECOND,
-	/* how far into its own death animation a client's copy still switches to the host's */
-	DEATH_ANIMATION_SWITCH_TICKS = 10,
+	DAMAGE_ANIMATION_SENDS = 3,
+	MAXIMUM_QUEUED_DAMAGE_ANIMATIONS = 32,
+	/* how long a client keeps the host's pick for a hit it hasn't replayed yet */
+	DAMAGE_ANIMATION_KEPT_TICKS = 2 * TICKS_PER_SECOND,
 };
 
-struct distributed_death_animation
+/* type: units.h's _unit_damage_animation_soft_ping and the rest; number:
+the pick's, so a client tells a pick sent again from a new one */
+struct distributed_damage_animation
 {
 	long unit_index;
 	short animation_index;
-	short pad;
+	byte type;
+	byte number;
 };
 
-struct distributed_death_animations_message
+struct distributed_damage_animations_message
 {
 	struct distributed_message_header header;
-	struct distributed_death_animation deaths[MAXIMUM_QUEUED_DEATH_ANIMATIONS];
+	struct distributed_damage_animation animations[MAXIMUM_QUEUED_DAMAGE_ANIMATIONS];
 };
 
-/* host: the deaths still to be sent */
+/* host: the picks still to be sent */
 static struct
 {
-	struct distributed_death_animation death;
+	struct distributed_damage_animation animation;
 	short sends;
-} host_death_animations[MAXIMUM_QUEUED_DEATH_ANIMATIONS];
-static short host_death_animation_count;
+} host_damage_animations[MAXIMUM_QUEUED_DAMAGE_ANIMATIONS];
+static short host_damage_animation_count;
+static byte host_damage_animation_number;
 
-/* client: the host's choice for each unit, by absolute index, and when it came */
+/* client: the host's latest pick of each type for each unit, by absolute
+index: its number, and when it came (NONE once played) */
 static struct
 {
 	long unit_index;
-	short animation_index;
-	long time;
-} client_death_animations[MAXIMUM_TRACKED_OBJECTS];
+	short animation_index[NUMBER_OF_UNIT_DAMAGE_ANIMATIONS];
+	byte number[NUMBER_OF_UNIT_DAMAGE_ANIMATIONS];
+	long time[NUMBER_OF_UNIT_DAMAGE_ANIMATIONS];
+} client_damage_animations[MAXIMUM_TRACKED_OBJECTS];
 
 /* whether the animation is one of the unit's graph */
 static boolean distributed_unit_has_animation(
@@ -861,95 +866,109 @@ static boolean distributed_unit_has_animation(
 		animation_index < animation_graph_definition_get(graph_index)->animations.count;
 }
 
-/* units.c, as a unit dies: the host notes the animation it chose and keeps
-it; a client gets the host's choice when it has one */
-short network_objects_death_animation(
+/* units.c, as a unit flinches or dies: the host notes the animation it
+picked; a client takes the host's pick when it has one */
+short network_objects_damage_animation(
 	long unit_index,
+	short type,
 	short animation_index)
 {
 	short connection = game_connection();
+	long absolute_index = DATUM_INDEX_TO_ABSOLUTE_INDEX(unit_index);
 
+	if (type < 0 || type >= NUMBER_OF_UNIT_DAMAGE_ANIMATIONS)
+		return animation_index;
 	if (connection == _game_connection_network_server && animation_index != NONE &&
-		host_death_animation_count < MAXIMUM_QUEUED_DEATH_ANIMATIONS)
+		host_damage_animation_count < MAXIMUM_QUEUED_DAMAGE_ANIMATIONS)
 	{
-		host_death_animations[host_death_animation_count].death.unit_index = unit_index;
-		host_death_animations[host_death_animation_count].death.animation_index = animation_index;
-		host_death_animations[host_death_animation_count].death.pad = 0;
-		host_death_animations[host_death_animation_count].sends = DEATH_ANIMATION_SENDS;
-		host_death_animation_count++;
-	}
-	else if (connection == _game_connection_network_client)
-	{
-		long absolute_index = DATUM_INDEX_TO_ABSOLUTE_INDEX(unit_index);
+		struct distributed_damage_animation *animation =
+			&host_damage_animations[host_damage_animation_count].animation;
 
-		if (absolute_index >= 0 && absolute_index < MAXIMUM_TRACKED_OBJECTS &&
-			client_death_animations[absolute_index].unit_index == unit_index &&
-			game_time_get() - client_death_animations[absolute_index].time < DEATH_ANIMATION_KEPT_TICKS &&
-			distributed_unit_has_animation(unit_index, client_death_animations[absolute_index].animation_index))
+		animation->unit_index = unit_index;
+		animation->animation_index = animation_index;
+		animation->type = (byte)type;
+		animation->number = ++host_damage_animation_number;
+		host_damage_animations[host_damage_animation_count++].sends = DAMAGE_ANIMATION_SENDS;
+	}
+	else if (connection == _game_connection_network_client && absolute_index >= 0 &&
+		absolute_index < MAXIMUM_TRACKED_OBJECTS && client_damage_animations[absolute_index].unit_index == unit_index)
+	{
+		long *time = &client_damage_animations[absolute_index].time[type];
+
+		if (*time != NONE && game_time_get() - *time < DAMAGE_ANIMATION_KEPT_TICKS)
 		{
-			return client_death_animations[absolute_index].animation_index;
+			*time = NONE;
+			return client_damage_animations[absolute_index].animation_index[type];
 		}
 	}
 	return animation_index;
 }
 
-/* host, each tick: the deaths still to be sent, to every client */
-static void distributed_host_send_death_animations(
+/* host, each tick: the picks still to be sent, to every client */
+static void distributed_host_send_damage_animations(
 	void)
 {
-	struct distributed_death_animations_message message;
+	struct distributed_damage_animations_message message;
 	short count = 0;
 	short index;
 
-	for (index = 0; index < host_death_animation_count; index++)
+	for (index = 0; index < host_damage_animation_count; index++)
 	{
-		message.deaths[count++] = host_death_animations[index].death;
-		if (--host_death_animations[index].sends <= 0)
-			host_death_animations[index--] = host_death_animations[--host_death_animation_count];
+		message.animations[count++] = host_damage_animations[index].animation;
+		if (--host_damage_animations[index].sends <= 0)
+			host_damage_animations[index--] = host_damage_animations[--host_damage_animation_count];
 	}
 	if (count > 0)
 	{
-		distributed_send(&message, _distributed_message_death_animations, count,
-			(word)(sizeof(message.header) + count * sizeof(message.deaths[0])), _distributed_to_clients);
+		distributed_send(&message, _distributed_message_damage_animations, count,
+			(word)(sizeof(message.header) + count * sizeof(message.animations[0])), _distributed_to_clients);
 	}
 }
 
-word network_objects_death_animation_entry_size(
+word network_objects_damage_animation_entry_size(
 	void)
 {
-	return sizeof(struct distributed_death_animation);
+	return sizeof(struct distributed_damage_animation);
 }
 
-void network_objects_handle_death_animations(
+void network_objects_handle_damage_animations(
 	void const *entries,
 	short count)
 {
-	struct distributed_death_animation const *deaths = entries;
+	struct distributed_damage_animation const *animations = entries;
 	short index;
 
 	for (index = 0; index < count; index++)
 	{
-		long unit_index = deaths[index].unit_index;
-		long absolute_index = DATUM_INDEX_TO_ABSOLUTE_INDEX(unit_index);
-		struct unit_datum *unit;
+		struct distributed_damage_animation const *animation = &animations[index];
+		long absolute_index = DATUM_INDEX_TO_ABSOLUTE_INDEX(animation->unit_index);
+		short type;
 
-		if (!distributed_object_index_valid(unit_index) || absolute_index >= MAXIMUM_TRACKED_OBJECTS ||
-			!network_objects_client_has(unit_index) ||
-			!(unit = (struct unit_datum *)object_try_and_get_and_verify_type(unit_index, _object_mask_unit)) ||
-			!distributed_unit_has_animation(unit_index, deaths[index].animation_index))
+		if (!distributed_object_index_valid(animation->unit_index) || absolute_index >= MAXIMUM_TRACKED_OBJECTS ||
+			animation->type >= NUMBER_OF_UNIT_DAMAGE_ANIMATIONS || !network_objects_client_has(animation->unit_index) ||
+			!object_try_and_get_and_verify_type(animation->unit_index, _object_mask_unit) ||
+			!distributed_unit_has_animation(animation->unit_index, animation->animation_index))
 		{
 			continue;
 		}
-		client_death_animations[absolute_index].unit_index = unit_index;
-		client_death_animations[absolute_index].animation_index = deaths[index].animation_index;
-		client_death_animations[absolute_index].time = game_time_get();
-		/* (dead here already, on an animation of its own: the host's, if it has only just begun) */
-		if (TEST_FLAG(unit->object.damage_flags, _object_dead_bit) &&
-			unit->object.animation.state.index != deaths[index].animation_index &&
-			unit->object.animation.state.frame_index < DEATH_ANIMATION_SWITCH_TICKS)
+		if (client_damage_animations[absolute_index].unit_index != animation->unit_index)
 		{
-			unit_port_set_death_animation(unit_index, deaths[index].animation_index);
+			csmemset(&client_damage_animations[absolute_index], 0, sizeof(client_damage_animations[absolute_index]));
+			client_damage_animations[absolute_index].unit_index = animation->unit_index;
+			for (type = 0; type < NUMBER_OF_UNIT_DAMAGE_ANIMATIONS; type++)
+				client_damage_animations[absolute_index].time[type] = NONE;
 		}
+		/* (a pick sent again) */
+		else if (client_damage_animations[absolute_index].number[animation->type] == animation->number)
+		{
+			continue;
+		}
+		client_damage_animations[absolute_index].number[animation->type] = animation->number;
+		client_damage_animations[absolute_index].animation_index[animation->type] = animation->animation_index;
+		/* (replayed here already: switched to the host's if it has only just begun) */
+		client_damage_animations[absolute_index].time[animation->type] =
+			unit_port_correct_damage_animation(animation->unit_index, animation->type, animation->animation_index) ?
+			NONE : game_time_get();
 	}
 }
 
@@ -1846,7 +1865,7 @@ void network_objects_host_tick(
 	distributed_host_send_states();
 	if (game_time_get() % INVENTORY_INTERVAL_TICKS == 0)
 		distributed_host_send_inventories();
-	distributed_host_send_death_animations();
+	distributed_host_send_damage_animations();
 }
 
 /* ---------- a client */
@@ -2865,8 +2884,8 @@ void network_objects_new_game(
 	short index;
 
 	csmemset(objects_host_inventories, 0, sizeof(objects_host_inventories));
-	host_death_animation_count = 0;
-	csmemset(client_death_animations, 0, sizeof(client_death_animations));
+	host_damage_animation_count = 0;
+	csmemset(client_damage_animations, 0, sizeof(client_damage_animations));
 	for (absolute_index = 0; absolute_index < MAXIMUM_TRACKED_OBJECTS; absolute_index++)
 	{
 		objects_host_told[absolute_index] = NONE;

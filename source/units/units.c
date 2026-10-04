@@ -699,8 +699,8 @@ void network_actors_note_control(long unit_index, struct unit_control_data const
 void network_actors_note_impulse(long unit_index, short animation_impulse, real_vector2d const *alignment_vector);
 void network_actors_note_melee(long unit_index, real_vector2d const *alignment_vector);
 void network_actors_note_leap(long unit_index, real_vector2d const *alignment_vector);
-/* port/linux/game/network_objects.c: the host's choice of a death animation */
-short network_objects_death_animation(long unit_index, short animation_index);
+/* port/linux/game/network_objects.c: the host's pick of a flinch or death animation */
+short network_objects_damage_animation(long unit_index, short type, short animation_index);
 void network_actors_note_user_animation(long unit_index, long animation_graph_index, short animation_index,
 	boolean interpolate);
 
@@ -745,14 +745,6 @@ enum
 enum
 {
 	_unit_debug_function_active_bit = 2,
-};
-
-enum
-{
-	_unit_damage_animation_soft_ping = 0,
-	_unit_damage_animation_hard_ping,
-	_unit_damage_animation_soft_kill,
-	_unit_damage_animation_hard_kill,
 };
 
 enum
@@ -4114,17 +4106,43 @@ void unit_stop_custom_animation(
 	return;
 }
 
-/* port: a dead unit's death animation switched to the given one (the
-host's, port/linux/game/network_objects.c), from its start */
-void unit_port_set_death_animation(
+/* how far into its own flinch or death animation a client's unit still
+switches to the host's pick */
+#define DAMAGE_ANIMATION_SWITCH_TICKS 10
+
+/* port: whether the unit plays a flinch or death animation of the type
+(the host's pick, port/linux/game/network_objects.c): it is switched to the
+host's if its own has only just begun. FALSE if it plays none. */
+boolean unit_port_correct_damage_animation(
 	long unit_index,
+	short type,
 	short animation_index)
 {
 	struct unit_datum *unit = unit_get(unit_index);
+	long animation_graph_index = unit_definition_get(unit->definition_index)->object.animation_graph.index;
 
-	unit_set_animation(unit_index, unit_definition_get(unit->definition_index)->object.animation_graph.index,
-		animation_index);
-	object_compute_node_matrices_recursive(unit_index);
+	if (type == _unit_damage_animation_soft_ping)
+	{
+		/* (an overlay, beside the unit's animation) */
+		if (unit->unit.animation.soft_ping_animation.index == NONE)
+			return FALSE;
+		if (unit->unit.animation.soft_ping_animation.frame_index < DAMAGE_ANIMATION_SWITCH_TICKS)
+			unit->unit.animation.soft_ping_animation.index = animation_index;
+		return TRUE;
+	}
+	if (type == _unit_damage_animation_hard_ping ?
+		unit->unit.animation.state != _unit_state_hard_ping :
+		unit->unit.animation.state != _unit_state_dying && unit->unit.animation.state != _unit_state_dying_airborne)
+	{
+		return FALSE;
+	}
+	if (unit->object.animation.state.index != animation_index &&
+		unit->object.animation.state.frame_index < DAMAGE_ANIMATION_SWITCH_TICKS)
+	{
+		unit_set_animation(unit_index, animation_graph_index, animation_index);
+		object_compute_node_matrices_recursive(unit_index);
+	}
+	return TRUE;
 }
 
 /* port: a co-op client plays the custom animation the host's unit started
@@ -6454,6 +6472,9 @@ static void unit_ping_animation(
 					animation_graph_index,
 					selected_damage_animation_index);
 			}
+			/* port: the host's pick on every machine (port/linux/game/network_objects.c) */
+			animation_index = network_objects_damage_animation(unit_index, _unit_damage_animation_soft_ping,
+				animation_index);
 
 			if (animation_index==NONE)
 			{
@@ -6578,9 +6599,8 @@ static void unit_ping_animation(
 					animation_graph_index,
 					selected_damage_animation_index);
 			}
-			/* port: the host's choice on every machine (port/linux/game/network_objects.c) */
-			if (killed)
-				animation_index = network_objects_death_animation(unit_index, animation_index);
+			/* port: the host's pick on every machine (port/linux/game/network_objects.c) */
+			animation_index = network_objects_damage_animation(unit_index, damage_animation_type, animation_index);
 
 			if (animation_index!=NONE)
 			{
