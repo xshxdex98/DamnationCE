@@ -5,7 +5,7 @@ glass in white hairlines over a map, in Rajdhani. discord_feeds.py posts them.
   Discord fits a picture into a box wider than it is tall, so a wide one is
   shown largest, and a constant size keeps the message from jumping as games
   come and go.
-- document_card: a release's changelog, or the rules.
+- document_pages: a release's changelog, or the rules, as pages.
 """
 
 import functools
@@ -218,21 +218,21 @@ def wrap(draw, names, typeface, width):
 
 # ---------- documents: a release's changelog, the rules
 
-# A document is a card of its own: a heading on the Glassed theme's strip of
-# dark glass between two hairlines (tools/shell_skin.py), over its text on a
-# pane of glass. A long one flows into two columns, so the card stays wide
-# enough for Discord to show it large.
-DOCUMENT_WIDTH = 1600
-STRIP_TOP, STRIP_BOTTOM = 30, 250
-PANE_PADDING = 48
-TEXT_COLUMN_GAP = 64
-# (text taller than this goes into two columns)
-ONE_COLUMN_HEIGHT = 700
-TEXT_SIZE = 34
-LINE_HEIGHT = 46
-BLOCK_GAP = 12
-HEADING_HEIGHT, HEADING_GAP = 58, 26
-INDENTS = {"paragraph": 0, "item": 44, "numbered": 56}
+# A document is drawn as pages: each a heading on the Glassed theme's strip of
+# dark glass between two hairlines (tools/shell_skin.py), over two columns of
+# its text on a pane of glass. Discord shows a picture no wider than about a
+# third of these, so the text is set large and a long document takes more
+# pages, each as wide as it is tall at most, which Discord shows largest.
+PAGE_WIDTH, PAGE_HEIGHT = 1600, 1000
+STRIP_TOP, STRIP_BOTTOM = 24, 196
+PANE_TOP = STRIP_BOTTOM + 32
+PANE_PADDING = 40
+TEXT_COLUMN_GAP = 56
+TEXT_SIZE = 48
+LINE_HEIGHT = 64
+BLOCK_GAP = 14
+HEADING_HEIGHT, HEADING_GAP = 64, 22
+INDENTS = {"paragraph": 0, "item": 52, "numbered": 64}
 
 
 def text_font(bold):
@@ -282,91 +282,141 @@ def parse_blocks(markdown):
     return blocks
 
 
-def lay_out(draw, block, width, starts_column):
-    """a block as (height, kind, lines or heading, number, starts_column)"""
-    kind, text, number = block
-    if kind == "heading":
-        return (HEADING_HEIGHT + (0 if starts_column else HEADING_GAP), kind, spaced(text), None, starts_column)
-    lines = wrap_text(draw, text, width - INDENTS[kind])
-    return (len(lines) * LINE_HEIGHT + BLOCK_GAP, kind, lines, number, starts_column)
+def groups_of(draw, blocks, width):
+    """the blocks as groups of rows that go down a column together: a block's
+    rows, or a heading's and the block's after it. A row is ("heading",
+    text), ("line", kind, pieces, marker) with the marker (a bullet or
+    number) on an item's first line, or ("gap",) before a block."""
+    groups = []
+    for kind, text, number in blocks:
+        rows = [("gap",)] if groups else []
+        if kind == "heading":
+            rows.append(("heading", spaced(text)))
+        else:
+            marker = "•" if kind == "item" else number
+            rows += [("line", kind, line, marker if index == 0 else None)
+                     for index, line in enumerate(wrap_text(draw, text, width - INDENTS[kind]))]
+        if groups and groups[-1][-1][0] == "heading":
+            groups[-1] += rows[1:]
+        else:
+            groups.append(rows)
+    return groups
 
 
-def draw_block(draw, block, x, y, width):
-    _, kind, content, number, starts_column = block
-    if kind == "heading":
-        y += 0 if starts_column else HEADING_GAP
-        draw.text((x, y + 6), content, font=font("SemiBold", 28), fill=WHITE + (170,))
-        draw.line((x, y + 46, x + width, y + 46), fill=WHITE + (70,), width=2)
-        return
-    if kind == "item":
-        draw.text((x + 8, y), "•", font=text_font(True), fill=GREEN + (220,))
-    elif kind == "numbered":
-        draw.text((x, y), number, font=text_font(True), fill=GREEN + (230,))
-    for line in content:
+def row_height(row, top_of_column):
+    if row[0] == "gap":
+        return 0 if top_of_column else BLOCK_GAP
+    if row[0] == "heading":
+        return HEADING_HEIGHT + (0 if top_of_column else HEADING_GAP)
+    return LINE_HEIGHT
+
+
+def column_height_of(rows):
+    return sum(row_height(row, index == 0) for index, row in enumerate(rows))
+
+
+def lines_in(rows):
+    return sum(1 for row in rows if row[0] == "line")
+
+
+def flow(groups, column_height):
+    """the groups down columns no taller than column_height. A group that
+    doesn't fit goes on in the next column if two of its lines or more stay
+    and go, and no heading is left at a column's foot; else it moves whole."""
+    columns, column = [], []
+    for group in groups:
+        while group:
+            if column_height_of(column + group) <= column_height:
+                column += group
+                break
+            fit = 0
+            while fit < len(group) and column_height_of(column + group[:fit + 1]) <= column_height:
+                fit += 1
+            # (one line short of what fits, rather than one left to go on alone)
+            while fit > 0 and lines_in(group[fit:]) < 2:
+                fit -= 1
+            splits = lines_in(group[:fit]) >= 2 and lines_in(group[fit:]) >= 2 and group[fit - 1][0] != "heading"
+            if splits or not column:
+                # (a group taller than a whole column is split wherever it has to be)
+                fit = fit if splits else max(fit, 1)
+                column += group[:fit]
+                group = group[fit:]
+            columns.append(column)
+            column = []
+    return columns + [column] if column else columns
+
+
+def draw_row(draw, row, x, y, width, top_of_column):
+    if row[0] == "heading":
+        y += 0 if top_of_column else HEADING_GAP
+        draw.text((x, y + 8), row[1], font=font("SemiBold", 34), fill=WHITE + (175,))
+        draw.line((x, y + 52, x + width, y + 52), fill=WHITE + (70,), width=2)
+    elif row[0] == "line":
+        _, kind, pieces, marker = row
+        if marker:
+            draw.text((x + (8 if kind == "item" else 0), y), marker, font=text_font(True), fill=GREEN + (230,))
         line_x = x + INDENTS[kind]
-        for piece, bold in line:
-            draw.text((line_x, y), piece, font=text_font(bold), fill=WHITE + ((245,) if bold else (215,)))
+        for piece, bold in pieces:
+            draw.text((line_x, y), piece, font=text_font(bold), fill=WHITE + ((245,) if bold else (220,)))
             line_x += draw.textlength(piece, font=text_font(bold))
-        y += LINE_HEIGHT
 
 
-def split_columns(blocks):
-    """the blocks' indexes in two columns of about equal height, a heading
-    never left at the foot of the first"""
-    total, running, split = sum(block[0] for block in blocks), 0, len(blocks)
-    for index, block in enumerate(blocks):
-        if running + block[0] / 2 > total / 2:
-            split = index
-            break
-        running += block[0]
-    while 0 < split < len(blocks) and blocks[split - 1][1] == "heading":
-        split -= 1
-    return [range(split), range(split, len(blocks))]
-
-
-def document_card(label, title, aside_label, aside, markdown, backdrop_path, user_agent):
-    """a document's card: label (small, spaced) over title (large), and
-    aside_label over aside, on its strip; then its markdown's text"""
+def document_pages(label, title, aside_label, aside, markdown, backdrop_path, user_agent):
+    """a document's pages as PNGs: label (small, spaced) over title (large),
+    and aside_label over aside, on each page's strip; then its markdown's
+    text, two columns a page. The last page is as tall as its text needs."""
     measure = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
-    pane_width = DOCUMENT_WIDTH - 2 * MARGIN
-    parsed = parse_blocks(markdown)
+    blocks = parse_blocks(markdown)
+    column_height = PAGE_HEIGHT - PANE_TOP - MARGIN - 2 * PANE_PADDING
+    # (a document that fits one column the page's width is set so; else in two)
+    column_width = PAGE_WIDTH - 2 * MARGIN - 2 * PANE_PADDING
+    columns = flow(groups_of(measure, blocks, column_width), column_height)
+    if len(columns) > 1:
+        column_width = (column_width - TEXT_COLUMN_GAP) // 2
+        columns = flow(groups_of(measure, blocks, column_width), column_height)
+    pages = [columns[index:index + 2] for index in range(0, len(columns), 2)]
+    # (the last page's two columns as near the same height as they go)
+    if len(pages[-1]) == 2:
+        rows = pages[-1][0] + pages[-1][1]
+        # (its groups again: each begins at a gap)
+        groups = [[]]
+        for row in rows:
+            if row[0] == "gap" and groups[-1]:
+                groups.append([])
+            groups[-1].append(row)
+        height = column_height_of(rows) // 2
+        while len(flow(groups, height)) > 2:
+            height += LINE_HEIGHT // 4
+        pages[-1] = flow(groups, height)
+    backdrop = fetch_art(backdrop_path, user_agent)
 
-    column_width = pane_width - 2 * PANE_PADDING
-    blocks = [lay_out(measure, block, column_width, index == 0) for index, block in enumerate(parsed)]
-    columns = [range(len(blocks))]
-    if sum(block[0] for block in blocks) > ONE_COLUMN_HEIGHT:
-        column_width = (pane_width - 2 * PANE_PADDING - TEXT_COLUMN_GAP) // 2
-        blocks = [lay_out(measure, block, column_width, index == 0) for index, block in enumerate(parsed)]
-        columns = split_columns(blocks)
-        # (the second column's first block starts it, with no gap above)
-        if columns[1]:
-            first = columns[1][0]
-            blocks[first] = lay_out(measure, parsed[first], column_width, True)
-    body_height = max(sum(blocks[index][0] for index in column) for column in columns)
+    images = []
+    for number, page in enumerate(pages, 1):
+        text_height = max(column_height_of(column) for column in page)
+        height = PAGE_HEIGHT if number < len(pages) else PANE_TOP + text_height + 2 * PANE_PADDING + MARGIN
+        card = Card(backdrop, (PAGE_WIDTH, height), blur=9, dim=0.45)
+        draw = card.draw
 
-    pane_top = STRIP_BOTTOM + 40
-    height = pane_top + body_height + 2 * PANE_PADDING + MARGIN
-    card = Card(fetch_art(backdrop_path, user_agent), (DOCUMENT_WIDTH, height), blur=9, dim=0.45)
-    draw = card.draw
+        # the heading on its strip
+        draw.rectangle((0, STRIP_TOP, PAGE_WIDTH, STRIP_BOTTOM), fill=SHADE + (140,))
+        for y in (STRIP_TOP, STRIP_BOTTOM):
+            draw.line((0, y, PAGE_WIDTH, y), fill=WHITE + (90,), width=2)
+        middle = (STRIP_TOP + STRIP_BOTTOM) // 2
+        left, right = MARGIN * 2, PAGE_WIDTH - MARGIN * 2
+        page_label = aside_label + (f"   {number} / {len(pages)}" if len(pages) > 1 else "")
+        draw.text((left, middle - 40), spaced(label), font=font("SemiBold", 34), fill=WHITE + (190,), anchor="ls")
+        draw.text((left, middle + 60), title, font=title_font(100), fill=WHITE + (240,), anchor="ls")
+        draw.text((right, middle - 40), spaced(page_label), font=font("SemiBold", 34), fill=WHITE + (150,), anchor="rs")
+        draw.text((right, middle + 50), aside.upper(), font=font("SemiBold", 44), fill=WHITE + (190,), anchor="rs")
 
-    # the heading on its strip
-    draw.rectangle((0, STRIP_TOP, DOCUMENT_WIDTH, STRIP_BOTTOM), fill=SHADE + (140,))
-    for y in (STRIP_TOP, STRIP_BOTTOM):
-        draw.line((0, y, DOCUMENT_WIDTH, y), fill=WHITE + (90,), width=2)
-    middle = (STRIP_TOP + STRIP_BOTTOM) // 2
-    left, right = MARGIN * 2, DOCUMENT_WIDTH - MARGIN * 2
-    draw.text((left, middle - 52), spaced(label), font=font("SemiBold", 38), fill=WHITE + (190,), anchor="ls")
-    draw.text((left, middle + 74), title, font=title_font(120), fill=WHITE + (240,), anchor="ls")
-    draw.text((right, middle - 52), spaced(aside_label), font=font("SemiBold", 38), fill=WHITE + (150,), anchor="rs")
-    draw.text((right, middle + 60), aside.upper(), font=font("SemiBold", 46), fill=WHITE + (190,), anchor="rs")
-
-    # the text on its pane
-    draw.rectangle((MARGIN, pane_top, DOCUMENT_WIDTH - MARGIN, height - MARGIN), fill=SHADE + (150,),
-                   outline=WHITE + (70,))
-    for number, column in enumerate(columns):
-        x = MARGIN + PANE_PADDING + number * (column_width + TEXT_COLUMN_GAP)
-        y = pane_top + PANE_PADDING
-        for index in column:
-            draw_block(draw, blocks[index], x, y, column_width)
-            y += blocks[index][0]
-    return card.png()
+        # the text on its pane
+        draw.rectangle((MARGIN, PANE_TOP, PAGE_WIDTH - MARGIN, height - MARGIN), fill=SHADE + (150,),
+                       outline=WHITE + (70,))
+        for side, column in enumerate(page):
+            x = MARGIN + PANE_PADDING + side * (column_width + TEXT_COLUMN_GAP)
+            y = PANE_TOP + PANE_PADDING
+            for index, row in enumerate(column):
+                draw_row(draw, row, x, y, column_width, index == 0)
+                y += row_height(row, index == 0)
+        images.append(card.png())
+    return images
