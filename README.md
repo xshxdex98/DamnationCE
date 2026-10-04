@@ -6,7 +6,6 @@
 
 <p align="center">
 <a href="https://github.com/xshxdex98/DamnationCE/releases/latest">Download</a> ·
-<a href="https://halo.milenko.org">Games online now</a>
 </p>
 
 > **Plays with [OpenCE](https://github.com/cybersecurity/halo-ce-universal) build-76 through build-82 (network version 11)** and with ChupathingyCE, both ways.
