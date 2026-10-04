@@ -59,6 +59,10 @@ boolean custom_edition_cache_playable(
 	char const *map_name);
 /* The same, for a map of a multiplayer scenario (the multiplayer menus,
 custom_edition_maps.c). */
+/* Whether it is a Custom Edition cache of a campaign map (a solo scenario),
+which a co-op game plays. */
+boolean custom_edition_cache_campaign(
+	char const *map_name);
 boolean custom_edition_cache_multiplayer(
 	char const *map_name);
 

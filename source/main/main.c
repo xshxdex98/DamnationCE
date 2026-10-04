@@ -379,6 +379,7 @@ symbols in this file:
 #include "networking/network_game_globals.h"
 #include "networking/network_game_manager.h"
 #include "networking/network_server_manager.h" /* port: a co-op game's level won */
+#include "custom_edition_maps.h" /* port: a co-op game's campaign level */
 #include "camera/director.h"
 #include "camera/observer.h"
 #include "cutscene/cinematics.h"
@@ -2139,9 +2140,12 @@ static void main_won_map_private(
 		struct network_game *game = network_game_get_game();
 
 		main_globals.won_map = FALSE;
-		level = game ? main_get_solo_level_from_name(game->map.name) + 1 : NONE;
+		/* (the campaign's level by its exact name: a Custom Edition campaign
+		map, whatever its name, plays again) */
+		level = game ? custom_edition_maps_campaign_level(custom_edition_maps_display_index(game->map.name)) : NONE;
 		player_profile_save_level_completed(0);
-		network_game_server_port_cooperative_won(level > 0 && level < 10 ? main_get_solo_level_name(level) : NULL);
+		network_game_server_port_cooperative_won(level != NONE && level + 1 < 10 ? main_get_solo_level_name(level + 1) :
+			NULL);
 		return;
 	}
 	main_globals.want_to_be_at_main_menu = TRUE;

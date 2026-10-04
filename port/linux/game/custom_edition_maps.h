@@ -10,7 +10,8 @@ index into the strings and frames of their own tags; these maps get display
 indices beyond those, and text_group.c and ui_widget.c ask this unit for
 their names, descriptions and pictures (custom_edition_maps.c). The
 campaign's levels, which co-op games are played on, have display indices of
-their own as well, for the same menus to show them.
+their own as well, for the same menus to show them, and so do the Custom
+Edition campaign maps (solo scenarios) found beside the multiplayer ones.
 */
 
 #ifndef __CUSTOM_EDITION_MAPS_H
@@ -42,8 +43,24 @@ names none of them; the maps are looked for the first time this is asked. */
 short custom_edition_maps_display_index(
 	char const *level_name);
 
-/* Whether the display index is a campaign level's (a co-op game's). */
+/* Whether the display index is a campaign level's (a co-op game's): one of
+the campaign's, or a Custom Edition campaign map. */
 boolean custom_edition_maps_campaign(
+	short display_index);
+
+/* The campaign's level (0 for the first) the display index is, or NONE for
+any other (a Custom Edition campaign map's). */
+short custom_edition_maps_campaign_level(
+	short display_index);
+
+/* The display indices of the Custom Edition campaign maps found, in the
+order of their names; returns how many (at most `maximum`). */
+short custom_edition_maps_custom_campaigns(
+	short *display_indices,
+	short maximum);
+
+/* The level name of a display index's map, to play it, or NULL. */
+char const *custom_edition_maps_level_name(
 	short display_index);
 
 /* Whether the display index is one of Halo PC's own multiplayer maps (Ice

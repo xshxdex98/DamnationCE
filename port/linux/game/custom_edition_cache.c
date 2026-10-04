@@ -464,6 +464,15 @@ boolean custom_edition_cache_playable(
 	return custom_edition_cache_identify(map_name, &identity);
 }
 
+boolean custom_edition_cache_campaign(
+	char const *map_name)
+{
+	struct cache_file_identity identity;
+
+	return custom_edition_cache_identify(map_name, &identity) &&
+		identity.scenario_type == _scenario_type_solo;
+}
+
 boolean custom_edition_cache_multiplayer(
 	char const *map_name)
 {
