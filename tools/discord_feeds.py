@@ -130,7 +130,7 @@ def servers_embed(games, error=None):
     busiest first, then the empty ones' names in small print; games is None
     while the list server can't be reached"""
     updated = f"-# Updated <t:{int(time.time())}:R>"
-    embed = {"title": "DamnationCE servers", "url": SITE_URL, "footer": {"text": "Join from the server browser in game"}}
+    embed = {"title": "OpenCE Servers", "url": SITE_URL, "footer": {"text": "Join from the server browser in game"}}
     if games is None:
         embed["color"] = COLOUR_DOWN
         embed["description"] = f"The server list can't be reached right now ({error}).\n{updated}"
