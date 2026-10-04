@@ -313,8 +313,8 @@ changed:
   `switch_bsp`. A compiled script also keeps every name, in its string data,
   so every call and every engine global is found again by name with the
   game's own `hs_find_function_by_name` and `hs_find_global_by_name`
-  (`custom_edition_scripts.c`); a map whose scripts use one this build does
-  not have is refused and the names logged. The value types are numbered
+  (`custom_edition_scripts.c`); one this build does not have does nothing
+  and is logged by name (Limits, below). The value types are numbered
   alike in both builds.
 - **Multiplayer vehicle placement.** This build places a multiplayer game's
   vehicles by type: only the first three of the globals' multiplayer
@@ -711,12 +711,14 @@ every layout used was then checked against the sample maps.
   logs `attempt to play a sound that was not a mono 22k compressed sound
   ...`, which the game also prints on the screen, in the release build too.
 - **Scripts that use what this build does not have.** A call of a function
-  this build lacks that gives nothing, a boolean or a number does nothing:
-  it becomes a constant of its type's default, logged by name
-  (`custom_edition_scripts.c`); `extinctionrevanepic2.map`'s four calls of
-  OpenSauce's `pp_set_effect_instance_active` are such. A call giving a
-  string, an object or a tag, and an engine global this build lacks, still
-  refuse the map. OpenSauce's other runtime features (`project_yellow`) do
+  this build lacks, or a read of an engine global it lacks, does nothing:
+  it becomes a constant of its type's harmless value, logged by name
+  (`custom_edition_scripts.c`): nothing, false or 0, an enumeration's first
+  value, the empty string, or none of an object, a tag or a scenario list.
+  A `set` of such a global writes nothing. `extinctionrevanepic2.map`'s
+  four calls of OpenSauce's `pp_set_effect_instance_active` are such. Only
+  a call or global giving a script's index, which has no such value, still
+  refuses the map. OpenSauce's other runtime features (`project_yellow`) do
   not exist here.
 - **The map list** offers up to 1024 Custom Edition maps, whose file names
   may be up to 56 characters (a name longer than 25 is the level

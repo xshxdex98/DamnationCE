@@ -14,15 +14,17 @@ playback). A compiled script also keeps every name, in its string data:
 each call and each engine global is found again here by that name, with
 the game's own hs_find_function_by_name and hs_find_global_by_name.
 
-A call of a function this build does not have (OpenSauce's, as its
-post-processing effects) does nothing: it becomes a constant of its value
-type with that type's default, which the interpreter evaluates as any
-constant (hs_evaluate), when the type is one whose default is harmless:
-nothing, a boolean, a number. A map calling one that gives a string, an
-object or a tag, which a script may go on to use, is refused, as is one
-using an engine global this build does not have. The value
-types of both builds are numbered alike: every call in the maps examined
-has its function's type here (docs/custom_edition_caches.md).
+What this build does not have does nothing (missing_value): a call of a
+function it lacks (OpenSauce's, as its post-processing effects) becomes a
+constant of the call's type, and so does a read of an engine global it
+lacks; a set of such a global becomes a constant of its value, so nothing
+is written. The interpreter evaluates them as any constant (hs_evaluate).
+The constant is the type's default (nothing, false, 0), the first value of
+an enumeration, the empty string, or none (NONE) of an object, a tag or a
+scenario's list. Only a script's index has no such value, and a map that
+would need one is refused. The value types of both builds are numbered
+alike: every call in the maps examined has its function's type here
+(docs/custom_edition_caches.md).
 */
 
 /* ---------- headers */
@@ -54,10 +56,6 @@ enum
 designator (hs_find_global_by_name) */
 #define HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT 15
 
-/* the value types (hs.h) from _hs_type_void to _hs_type_long_integer,
-whose default (nothing, false, 0, 0.0) a missing function may give */
-#define INERT_CALL_TYPE(type) ((type) >= _hs_type_void && (type) <= _hs_type_long_integer)
-
 /* missing names are logged up to this many times */
 #define MAXIMUM_MISSING_NAME_MESSAGES 8
 
@@ -69,10 +67,14 @@ struct scripts_conversion
 	long node_count;
 	char const *strings;
 	unsigned long string_bytes;
+	/* where the empty string at the end of the string data is (an Xbox
+	address, as a string constant's value is), or 0 */
+	long empty_string;
 	long functions_renumbered;
 	long globals_renumbered;
+	/* what is missing and has no harmless value: the map can't run */
 	long missing_count;
-	long calls_made_inert;
+	long made_inert;
 };
 
 /* ---------- private code */
@@ -90,18 +92,75 @@ static char const *script_string_get(
 		NULL;
 }
 
-static void script_name_missing(
+/* the harmless value of a value type, which a call of a function this build
+lacks or a read of an engine global it lacks gives instead; FALSE for a
+script's index, which has none */
+static boolean missing_value(
+	struct scripts_conversion const *conversion,
+	short type,
+	long *value)
+{
+	if (type >= _hs_type_void && type <= _hs_type_long_integer)
+		*value = 0;
+	else if (type == _hs_type_string)
+		*value = conversion->empty_string;
+	else if (type >= _hs_type_enum_game_difficulty && type <= _hs_type_enum_hud_corner)
+		*value = 0;
+	else if (type != _hs_type_script && hs_type_valid(type))
+		*value = NONE;
+	else
+		return FALSE;
+	return type != _hs_type_string || conversion->empty_string;
+}
+
+/* The node (a call, or a reference to an engine global) made a constant of
+its own type, for the missing function or global `name`; logged, and
+counted as missing when its type has no harmless value. */
+static void node_make_inert(
 	struct scripts_conversion *conversion,
+	struct hs_syntax_node *node,
 	char const *kind,
 	char const *name)
 {
-	if (conversion->missing_count < MAXIMUM_MISSING_NAME_MESSAGES)
-	{
-		error(_error_silent, "custom edition: the scripts use the %s '%s', which this build does not have", kind, name);
-	}
-	conversion->missing_count++;
+	long value;
 
-	return;
+	if (!missing_value(conversion, node->type, &value))
+	{
+		if (conversion->missing_count < MAXIMUM_MISSING_NAME_MESSAGES)
+		{
+			error(_error_silent, "custom edition: the scripts use the %s '%s', which this build does not have", kind,
+				name);
+		}
+		conversion->missing_count++;
+		return;
+	}
+	if (conversion->made_inert < MAXIMUM_MISSING_NAME_MESSAGES)
+	{
+		error(_error_silent, "custom edition: the scripts use the %s '%s', which this build does not have: it does nothing",
+			kind, name);
+	}
+	node->flags = FLAG(_hs_syntax_node_primitive_bit);
+	node->constant_type = node->type;
+	node->data = value;
+	conversion->made_inert++;
+}
+
+/* whether the node refers to an engine global this build does not have */
+static boolean engine_global_missing(
+	struct scripts_conversion const *conversion,
+	struct hs_syntax_node const *node)
+{
+	char const *name = script_string_get(conversion, node->string_offset);
+	short designator;
+
+	if (!name || !TEST_FLAG(node->flags, _hs_syntax_node_primitive_bit) ||
+		!TEST_FLAG(node->flags, _hs_syntax_node_global_bit) ||
+		!TEST_FLAG(node->short_value, HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT))
+	{
+		return FALSE;
+	}
+	designator = hs_find_global_by_name(name);
+	return designator == NONE || !TEST_FLAG(designator, HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT);
 }
 
 /* A call names its function with its first child, which has the function's
@@ -126,20 +185,20 @@ static boolean function_call_convert(
 		return FALSE;
 	}
 	function_index = hs_find_function_by_name(name);
-	if (function_index == NONE && INERT_CALL_TYPE(call->type))
+	if (function_index == NONE)
 	{
-		if (conversion->calls_made_inert < MAXIMUM_MISSING_NAME_MESSAGES)
-		{
-			error(_error_silent, "custom edition: the scripts call '%s', which this build does not have: it does nothing", name);
-		}
-		call->flags = FLAG(_hs_syntax_node_primitive_bit);
-		call->constant_type = call->type;
-		call->data = 0;
-		conversion->calls_made_inert++;
+		node_make_inert(conversion, call, "function", name);
 	}
-	else if (function_index == NONE)
+	/* (a set of an engine global this build lacks writes nothing: its first
+	argument is the global, which the interpreter would write by its index) */
+	else if (!strcmp(name, "set") && name_node->next_node_index != NONE &&
+		DATUM_INDEX_TO_ABSOLUTE_INDEX(name_node->next_node_index) < conversion->node_count &&
+		engine_global_missing(conversion,
+			&conversion->nodes[DATUM_INDEX_TO_ABSOLUTE_INDEX(name_node->next_node_index)]))
 	{
-		script_name_missing(conversion, "function", name);
+		node_make_inert(conversion, call, "engine global",
+			script_string_get(conversion,
+				conversion->nodes[DATUM_INDEX_TO_ABSOLUTE_INDEX(name_node->next_node_index)].string_offset));
 	}
 	else if (call->function_index != function_index)
 	{
@@ -166,7 +225,7 @@ static boolean engine_global_convert(
 	designator = hs_find_global_by_name(name);
 	if (designator == NONE || !TEST_FLAG(designator, HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT))
 	{
-		script_name_missing(conversion, "engine global", name);
+		node_make_inert(conversion, reference, "engine global", name);
 	}
 	else if (reference->short_value != designator)
 	{
@@ -196,6 +255,10 @@ static boolean scenario_scripts_convert(
 	}
 	conversion.strings = custom_edition_cache_data_get(tag_cache, loaded_bytes, &scenario->hs_string_constants, &string_bytes);
 	conversion.string_bytes = conversion.strings ? string_bytes : 0;
+	/* (every string in the data ends with a 0, so the last byte is one, read
+	as the empty string) */
+	if (conversion.string_bytes && !conversion.strings[conversion.string_bytes - 1])
+		conversion.empty_string = (long)scenario->hs_string_constants.address + (long)conversion.string_bytes - 1;
 	if (syntax_bytes < sizeof(*syntax) ||
 		syntax->size != sizeof(struct hs_syntax_node) ||
 		syntax->count < 0 ||
@@ -214,25 +277,27 @@ static boolean scenario_scripts_convert(
 	conversion.nodes = (struct hs_syntax_node *)(syntax + 1);
 	conversion.node_count = syntax->count;
 
-	for (node_index = 0; node_index < conversion.node_count; node_index++)
+	/* the calls first, then the engine globals: a set of a global this build
+	lacks is found while its global is still a reference */
+	for (node_index = 0; node_index < 2 * conversion.node_count; node_index++)
 	{
-		struct hs_syntax_node *node = &conversion.nodes[node_index];
+		boolean globals = node_index >= conversion.node_count;
+		struct hs_syntax_node *node = &conversion.nodes[node_index % conversion.node_count];
 		boolean converted = TRUE;
 
 		if (!node->datum_header)
 		{
 			continue;
 		}
-		if (!TEST_FLAG(node->flags, _hs_syntax_node_primitive_bit))
+		/* (a call of one of the scenario's scripts names it by the scenario's
+		own index) */
+		if (!globals && !TEST_FLAG(node->flags, _hs_syntax_node_primitive_bit) &&
+			!TEST_FLAG(node->flags, _hs_syntax_node_script_bit))
 		{
-			/* a call of one of the scenario's scripts names it by the
-			scenario's own index */
-			if (!TEST_FLAG(node->flags, _hs_syntax_node_script_bit))
-			{
-				converted = function_call_convert(&conversion, node);
-			}
+			converted = function_call_convert(&conversion, node);
 		}
-		else if (TEST_FLAG(node->flags, _hs_syntax_node_global_bit) &&
+		else if (globals && TEST_FLAG(node->flags, _hs_syntax_node_primitive_bit) &&
+			TEST_FLAG(node->flags, _hs_syntax_node_global_bit) &&
 			TEST_FLAG(node->short_value, HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT))
 		{
 			converted = engine_global_convert(&conversion, node);
@@ -242,7 +307,7 @@ static boolean scenario_scripts_convert(
 			error(
 				_error_silent,
 				"custom edition: script syntax node %ld of '%s' does not name what it uses",
-				node_index,
+				node_index % conversion.node_count,
 				custom_edition_cache_tag_name(tag_cache, loaded_bytes, tag_index));
 			return FALSE;
 		}
@@ -256,7 +321,7 @@ static boolean scenario_scripts_convert(
 	{
 		error(
 			_error_silent,
-			"custom edition: the scripts use %ld functions or engine globals this build does not have, and cannot run",
+			"custom edition: the scripts use %ld functions or engine globals this build does not have, giving script indices, and cannot run",
 			conversion.missing_count);
 		return FALSE;
 	}
