@@ -2474,7 +2474,7 @@ somewhere with no room beside it (Halo's drop pod). */
 
 /* Co-op: whether the players after the first are held back from spawning:
 on Pillar of Autumn until its first checkpoint, in the level's first
-seconds, while a cutscene plays, or while no teammate has room for them
+seconds, while a cutscene plays, or while no teammate is on foot
 (players_coop_room_to_spawn). */
 static boolean players_coop_extras_held(
 	void)
@@ -2486,8 +2486,8 @@ static boolean players_coop_extras_held(
 /* Co-op host: whether a player who hasn't spawned on this level yet may
 spawn now. The first player spawns at once (the level's script places it).
 The others spawn when nothing holds them back (players_coop_extras_held),
-beside a teammate or in a vehicle's seat (player_place_beside_teammate): as
-the opening cutscene ends or is skipped, or at once if they join later. */
+beside a teammate on foot (player_place_beside_teammate): as the opening
+cutscene ends or is skipped, or at once if they join later. */
 static boolean players_coop_may_spawn(
 	void)
 {
@@ -2645,67 +2645,16 @@ static boolean players_respawn_network_coop(
 	return result;
 }
 
-/* the vehicle a unit rides, or NONE if it is on foot */
-static long player_ridden_vehicle(
-	long unit_index)
+/* whether the player has a unit and it is on foot (not riding a vehicle) */
+static boolean player_on_foot(
+	struct player_datum const *player)
 {
-	long root_index = object_get_ultimate_parent(unit_index);
-
-	return root_index != unit_index && object_try_and_get_and_verify_type(root_index, _object_mask_vehicle) ?
-		root_index : NONE;
+	return player->unit_index != NONE && object_get_ultimate_parent(player->unit_index) == player->unit_index;
 }
 
-/* a vehicle's passenger seats: not a driver's or gunner's */
-static boolean player_passenger_seat(
-	struct unit_seat const *seat)
-{
-	return !TEST_FLAG(seat->flags, _unit_seat_driver_bit) && !TEST_FLAG(seat->flags, _unit_seat_gunner_bit);
-}
-
-/* whether a vehicle has an empty passenger seat */
-static boolean player_free_passenger_seat(
-	long vehicle_index)
-{
-	struct unit_definition *vehicle_definition = unit_definition_get(unit_get(vehicle_index)->definition_index);
-	short seat_index;
-
-	for (seat_index = 0; seat_index < vehicle_definition->unit.seats.count; seat_index++)
-	{
-		if (player_passenger_seat(TAG_BLOCK_GET_ELEMENT(&vehicle_definition->unit.seats, seat_index, struct unit_seat)) &&
-			!unit_seat_filled(vehicle_index, seat_index))
-		{
-			return TRUE;
-		}
-	}
-
-	return FALSE;
-}
-
-/* co-op host: seats a unit in an empty passenger seat of the vehicle; FALSE
-if there is none */
-static boolean player_take_passenger_seat(
-	long unit_index,
-	long vehicle_index)
-{
-	struct unit_definition *vehicle_definition = unit_definition_get(unit_get(vehicle_index)->definition_index);
-	short seat_index;
-
-	for (seat_index = 0; seat_index < vehicle_definition->unit.seats.count; seat_index++)
-	{
-		if (player_passenger_seat(TAG_BLOCK_GET_ELEMENT(&vehicle_definition->unit.seats, seat_index, struct unit_seat)) &&
-			unit_enter_seat(unit_index, vehicle_index, seat_index))
-		{
-			return TRUE;
-		}
-	}
-
-	return FALSE;
-}
-
-/* Co-op host: whether a new player has somewhere to go: a teammate on foot,
-or one riding a vehicle with an empty passenger seat. While every teammate
-rides a full vehicle (a big lobby on Silent Cartographer's Pelican), the
-others wait until someone gets out. */
+/* Co-op host: whether a new player has somewhere to go: beside a teammate
+on foot. While every teammate rides a vehicle (Silent Cartographer's
+Pelican) the others spectate, and spawn once someone gets out. */
 static boolean players_coop_room_to_spawn(
 	void)
 {
@@ -2715,47 +2664,30 @@ static boolean players_coop_room_to_spawn(
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
-		long vehicle_index;
-
-		if (player->unit_index == NONE)
-			continue;
-		vehicle_index = player_ridden_vehicle(player->unit_index);
-		if (vehicle_index == NONE || player_free_passenger_seat(vehicle_index))
+		if (player_on_foot(player))
 			return TRUE;
 	}
 
 	return FALSE;
 }
 
-/* Co-op host: puts a newly spawned player with the living ones: in an empty
-passenger seat of a vehicle a teammate rides (Silent Cartographer's
-Pelican), else beside a teammate on foot (player_teleport tries a few spots
-round each). Every teammate is tried in turn, so a big lobby spreads round
-the whole group; if none has room the player stays where it spawned. */
+/* Co-op host: puts a newly spawned player beside a teammate on foot
+(player_teleport tries a few spots round each). Every teammate is tried in
+turn, so a big lobby spreads round the whole group; if none has room the
+player stays where it spawned. */
 static void player_place_beside_teammate(
 	long player_index)
 {
-	long unit_index = player_get(player_index)->unit_index;
 	struct data_iterator iterator;
 	struct player_datum *other;
 
-	if (unit_index == NONE)
+	if (player_get(player_index)->unit_index == NONE)
 		return;
 	data_iterator_new(&iterator, player_data);
 	while ((other = data_iterator_next(&iterator)) != NULL)
 	{
-		long vehicle_index;
-
-		if (iterator.datum_index == player_index || other->unit_index == NONE)
-			continue;
-		vehicle_index = player_ridden_vehicle(other->unit_index);
-		if (vehicle_index != NONE)
-		{
-			if (player_take_passenger_seat(unit_index, vehicle_index))
-				return;
-		}
-		else if (player_teleport(player_index, other->unit_index,
-			&object_get(other->unit_index)->object.bounding_sphere_center))
+		if (iterator.datum_index != player_index && player_on_foot(other) &&
+			player_teleport(player_index, other->unit_index, &object_get(other->unit_index)->object.bounding_sphere_center))
 		{
 			return;
 		}

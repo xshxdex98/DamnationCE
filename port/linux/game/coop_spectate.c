@@ -182,7 +182,7 @@ void coop_spectate_draw(
 	else if (players_coop_waits_for_checkpoint())
 		hint = L"You join them at the level's first checkpoint";
 	else
-		hint = L"You join them once there is room";
+		hint = L"You join them when they're on foot";
 	usnprintf(text, NUMBEROF(text) - 1, L"SPECTATING %.12s   (A: NEXT)\r\n%s", player_get(watched)->name, hint);
 	text[NUMBEROF(text) - 1] = 0;
 	draw_bottom_text(text);
