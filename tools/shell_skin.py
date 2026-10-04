@@ -34,6 +34,7 @@ import zlib
 from pathlib import Path
 
 import numpy as np
+from scipy import ndimage
 from PIL import Image, ImageFilter
 
 import port_settings
@@ -114,42 +115,54 @@ CHILD_CHANGES = {
 HANDLER_ADDITIONS = {
     "main_menu/multiplayer_type_select/mp_map_select/mp_map_select_screen": [{"event": "created", "run": "port map select"}],
 }
+# Vanilla's: B on the Map screen's list steps back through it (menu_functions.c)
+VANILLA_HANDLER_ADDITIONS = {
+    "main_menu/multiplayer_type_select/mp_map_select/mp_map_select_list_2": [
+        {"event": "b", "run": "port map list back"}, {"event": "back", "run": "port map list back"}],
+}
 
 # ---------- the Vanilla layer
 
-# the MENUS button, under the stock main menu's QUIT, and the screen it opens
+# The MENUS item, under the stock main menu's QUIT, and the screen it opens,
+# whose GLASSED and VANILLA items are set out as the main menu's. Their
+# pictures are drawn as the stock items' are (stock_item_picture).
+VANILLA_ITEM_X, VANILLA_ITEM_TOP, VANILLA_ITEM_SPACING = 192, 247, 36
 VANILLA_MENUS_ITEM = """
-<widget name="main_menu/main_menu_item_menus" type="text" width="128" height="32" bitmap="bitmaps/text_button_background"
- text="MENUS" font="ui\\large_ui" color="#FF2896FF" align="center" text_y="4">
+<widget name="main_menu/main_menu_item_menus" type="text" width="256" height="33" bitmap="main_menu/menu_menus">
  <on event="a start" open="main_menu/themes_screen"/>
  <on event="left_mouse" run="mouse emit accept event"/>
 </widget>"""
-VANILLA_THEMES_SCREEN = """
+VANILLA_THEMES_SCREEN = f"""
 <menus>
-<widget name="main_menu/themes_title" type="text" controller="1" width="300" height="34" text="MENUS"
- font="ui\\large_ui" color="#FF2896FF" align="center"/>
-<widget name="main_menu/theme_glassed" type="text" width="128" height="32" bitmap="bitmaps/text_button_background"
- text="GLASSED" font="ui\\large_ui" color="#FFFFFFFF" align="center" text_y="4">
+<widget name="main_menu/theme_glassed" type="text" width="256" height="33" bitmap="main_menu/menu_glassed">
  <on event="a start" run="port theme glassed"/>
  <on event="left_mouse" run="mouse emit accept event"/>
 </widget>
-<widget name="main_menu/theme_vanilla" type="text" width="128" height="32" bitmap="bitmaps/text_button_background"
- text="VANILLA" font="ui\\large_ui" color="#FFFFFFFF" align="center" text_y="4">
+<widget name="main_menu/theme_vanilla" type="text" width="256" height="33" bitmap="main_menu/menu_vanilla">
  <on event="a start" run="port theme vanilla"/>
  <on event="left_mouse" run="mouse emit accept event"/>
 </widget>
 <widget name="main_menu/themes_list" type="column_list" width="640" height="480"
  flags="pass_unhandled_to_focused_child up_down_tabs_items" description="main_menu/main_menu_list_ext_desc">
- <child widget="main_menu/theme_glassed" x="256" y="230"/>
- <child widget="main_menu/theme_vanilla" x="256" y="270"/>
+ <data input="main menu fake animate"/>
+ <child widget="main_menu/theme_glassed" x="{VANILLA_ITEM_X}" y="{VANILLA_ITEM_TOP}"/>
+ <child widget="main_menu/theme_vanilla" x="{VANILLA_ITEM_X}" y="{VANILLA_ITEM_TOP + VANILLA_ITEM_SPACING}"/>
 </widget>
-<widget name="main_menu/themes_screen" width="640" height="480" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/gradient">
+<widget name="main_menu/themes_screen" width="640" height="480" flags="pass_unhandled_to_focused_child">
  <on event="b back" back="true"/>
  <child widget="main_menu/halo_logo" y="28"/>
- <child widget="main_menu/themes_title" x="170" y="190"/>
  <child widget="main_menu/themes_list"/>
 </widget>
 </menus>"""
+VANILLA_ITEM_PICTURES = {"main_menu/menu_menus": "MENUS", "main_menu/menu_glassed": "GLASSED",
+                         "main_menu/menu_vanilla": "VANILLA"}
+# the stock items' pictures (1024x256, the text centred on x 520, its capitals
+# 27 to 103 high), whose glow is fitted from SETTINGS's
+STOCK_ITEM = MENUS / "ce" / "shell" / "main_menu"
+STOCK_ITEM_CENTRE, STOCK_ITEM_CAP_TOP, STOCK_ITEM_CAP_HEIGHT = 520, 27, 77
+STOCK_ITEM_BLUE = (39, 148, 255, 119)
+STOCK_ITEM_GLOW = (38, 149, 255)
+TITLE_FONT = MENUS.parent / "fonts" / "OpenCE-Regular.ttf"
 
 
 class Picture:
@@ -293,9 +306,9 @@ def enlarged(pixels, scale):
     return image.filter(ImageFilter.UnsharpMask(radius=2, percent=60, threshold=2))
 
 
-def add_handlers(widget):
-    """Appends the widget's HANDLER_ADDITIONS after its own handlers. Returns True if it had any."""
-    additions = HANDLER_ADDITIONS.get(widget.get("name"), [])
+def add_handlers(widget, table=HANDLER_ADDITIONS):
+    """Appends the widget's additions in the table after its own handlers. Returns True if it had any."""
+    additions = table.get(widget.get("name"), [])
     for attributes in additions:
         handlers = widget.findall("on")
         at = list(widget).index(handlers[-1]) + 1 if handlers else 0
@@ -364,9 +377,51 @@ def glassed_layer():
     print(f"Glassed: {pictures} pictures, {screens} screens")
 
 
+def stock_item_glow():
+    """The stock items' glow when selected, fitted to SETTINGS's: a blur of
+    the letters (its sigma) times a gain, clipped. Returns (sigma, gain)."""
+    image = np.asarray(Image.open(STOCK_ITEM / "menu_settings__1.png").convert("RGBA")).astype(float) / 255
+    letters = (image[..., 3] > 0.99) & (image[..., :3].min(axis=-1) > 0.99)
+    around = ~ndimage.binary_dilation(letters, iterations=2) & (image[..., 3] > 0)
+    best = None
+    for sigma in np.arange(2.0, 30.0, 0.5):
+        blur = ndimage.gaussian_filter(letters.astype(float), sigma)[around]
+        gain = float((blur * image[..., 3][around]).sum() / max((blur * blur).sum(), 1e-9))
+        error = float(((np.minimum(1, gain * blur) - image[..., 3][around]) ** 2).sum())
+        if best is None or error < best[0]:
+            best = (error, sigma, gain)
+    return best[1], best[2]
+
+
+def stock_item_picture(text, glow):
+    """A main menu item's two pictures as the stock items are drawn: the text
+    in translucent blue, and selected, white with a blue glow"""
+    from PIL import ImageDraw, ImageFont
+    probe = ImageFont.truetype(str(TITLE_FONT), 1000)
+    left, top, right, bottom = probe.getbbox("H")
+    font = ImageFont.truetype(str(TITLE_FONT), round(STOCK_ITEM_CAP_HEIGHT * 1000 / (bottom - top)))
+    origin = (STOCK_ITEM_CENTRE - font.getlength(text) / 2, STOCK_ITEM_CAP_TOP - font.getbbox("H")[1])
+    mask = Image.new("L", (1024, 256), 0)
+    ImageDraw.Draw(mask).text(origin, text, font=font, fill=255)
+    letters = np.asarray(mask).astype(float) / 255
+    plain = np.zeros((256, 1024, 4), np.uint8)
+    plain[..., :3] = STOCK_ITEM_BLUE[:3]
+    plain[..., 3] = np.round(letters * STOCK_ITEM_BLUE[3]).astype(np.uint8)
+    sigma, gain = glow
+    halo = np.minimum(1, gain * ndimage.gaussian_filter(letters, sigma))
+    alpha = letters + halo * (1 - letters)
+    selected = np.zeros((256, 1024, 4), np.uint8)
+    for channel in range(3):
+        colour = 255 * letters + STOCK_ITEM_GLOW[channel] * halo * (1 - letters)
+        selected[..., channel] = np.round(np.divide(colour, alpha, out=np.zeros_like(colour), where=alpha > 0))
+    selected[..., 3] = np.round(alpha * 255).astype(np.uint8)
+    return Image.fromarray(plain, "RGBA"), Image.fromarray(selected, "RGBA")
+
+
 def vanilla_layer():
     """skin/vanilla/ce: the stock main menu, this theme's main menu (root),
-    with a MENUS button under QUIT and the screen it opens."""
+    with a MENUS item under QUIT and the screen it opens, drawn as the stock
+    items are."""
     if VANILLA.exists():
         shutil.rmtree(VANILLA)
     tree = ET.parse(MENUS / "ce" / "main_menu.xml")
@@ -375,13 +430,27 @@ def vanilla_layer():
     for widget in menus.iter("widget"):
         if widget.get("name") == "main_menu/build_number":
             widget.set("color", VERSION_COLOR)
+    glow = stock_item_glow()
+    for name, text in VANILLA_ITEM_PICTURES.items():
+        bitmap = ET.SubElement(menus, "bitmap", {"name": name})
+        for index, picture in enumerate(stock_item_picture(text, glow)):
+            png = f"ce/port/{name}__{index}.png"
+            (VANILLA / png).parent.mkdir(parents=True, exist_ok=True)
+            picture.save(VANILLA / png, optimize=True)
+            ET.SubElement(bitmap, "frame", {"png": png, "width": "256", "height": "64"})
     menus.append(ET.fromstring(VANILLA_MENUS_ITEM.strip()))
     for widget in ET.fromstring(VANILLA_THEMES_SCREEN.strip()):
         menus.append(widget)
     rows = next(widget for widget in menus.iter("widget") if widget.get("name") == "main_menu/main_menu_select_list")
-    rows.append(ET.Element("child", {"widget": "main_menu/main_menu_item_menus", "x": "256", "y": "431"}))
+    last = max(int(child.get("y")) for child in rows.findall("child"))
+    rows.append(ET.Element("child", {"widget": "main_menu/main_menu_item_menus", "x": str(VANILLA_ITEM_X),
+                                     "y": str(last + VANILLA_ITEM_SPACING)}))
     write_xml(tree, VANILLA / "ce" / "main_menu.xml")
-    print("Vanilla: the main menu")
+    for file in sorted((MENUS / "ce").glob("*.xml")):
+        tree = ET.parse(file)
+        if any([add_handlers(widget, VANILLA_HANDLER_ADDITIONS) for widget in tree.getroot().iter("widget")]):
+            write_xml(tree, VANILLA / "ce" / file.name)
+    print(f"Vanilla: the main menu, glow sigma {glow[0]:.1f} gain {glow[1]:.2f}")
 
 
 def maps_layer(folder):

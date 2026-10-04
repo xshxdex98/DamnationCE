@@ -349,6 +349,7 @@ static char const *const port_function_names[] =
 	"port setup edit",
 	"port online games",
 	"port map select",
+	"port map list back",
 	"port theme glassed",
 	"port theme vanilla",
 	"port pause end game",

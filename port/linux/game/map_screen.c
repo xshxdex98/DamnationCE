@@ -166,6 +166,8 @@ void ui_widget_port_go_back_from_top(void);
 /* browser_screen.c */
 boolean browser_screen_take_create(void);
 void browser_screen_open(void);
+/* (below) */
+void map_screen_go_back(void);
 
 /* ---------- structures */
 
@@ -346,15 +348,9 @@ static void keep_in_view(void)
 
 static void leave(void)
 {
-	/* (read first: going back ends the hosted game, which clears it) */
-	boolean to_online_games = map_screen.from_online_games;
-
 	map_screen.active = FALSE;
 	map_screen.xbox_list = NULL;
-	map_screen.from_online_games = FALSE;
-	ui_widget_port_go_back_from_top();
-	if (to_online_games)
-		browser_screen_open();
+	map_screen_go_back();
 }
 
 static void pick(void)
@@ -650,6 +646,27 @@ void map_screen_server_disposed(void)
 	map_screen.from_online_games = FALSE;
 }
 
+/* A map list opening (this picker, or Vanilla's stock one: menu_functions.c)
+notes whether Online Games' CREATE GAME made the hosted game. */
+void map_screen_note_online_games(void)
+{
+	if (browser_screen_take_create())
+		map_screen.from_online_games = TRUE;
+}
+
+/* Backs out of a map list: to the screen before it, and on to Online Games
+if that made the game. */
+void map_screen_go_back(void)
+{
+	/* (read first: going back ends the hosted game, which clears it) */
+	boolean to_online_games = map_screen.from_online_games;
+
+	map_screen.from_online_games = FALSE;
+	ui_widget_port_go_back_from_top();
+	if (to_online_games)
+		browser_screen_open();
+}
+
 boolean map_screen_active(void)
 {
 	return map_screen.active;
@@ -668,8 +685,7 @@ boolean map_screen_open(void)
 	map_screen.repeat.held = FALSE;
 	map_screen.button_hovered = NONE;
 	map_screen.hosting = global_network_game_server_get() != NULL && !network_game_is_splitscreen_local();
-	if (browser_screen_take_create())
-		map_screen.from_online_games = TRUE;
+	map_screen_note_online_games();
 	map_screen.step = map_screen.hosting ? STEP_KINDS : STEP_CATEGORIES;
 	map_screen.kind_selected = 0;
 	map_screen.cooperative_selected = 0;
