@@ -48,6 +48,8 @@ struct browser_game
 	unsigned char teams;
 	unsigned short version;
 	short score_limit;
+	/* milliseconds to the host, -1 if not known (only the internet lobby measures it) */
+	short ping;
 	/* who is in it, as its host announces it (none from hosts that do not:
 	OpenCE's, and links added on the site); roster_count may be more than
 	the players kept */

@@ -647,6 +647,7 @@ static int parse_game(char *line, struct browser_game *game)
 	game->maximum_players = (short)atoi(fields[5]);
 	game->open = (unsigned char)(atoi(fields[6]) != 0);
 	game->version = (unsigned short)atoi(fields[7]);
+	game->ping = -1;
 	/* (a server from before these: none) */
 	if (count >= 11)
 	{
