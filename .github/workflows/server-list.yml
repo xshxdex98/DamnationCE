@@ -33,6 +33,7 @@ jobs:
             tools/discord_feeds.py
             tools/discord_card.py
             port/assets/fonts/Rajdhani-*.ttf
+            port/assets/fonts/OpenCE-Regular.ttf
           sparse-checkout-cone-mode: false
 
       # (Pillow draws the list's card)
