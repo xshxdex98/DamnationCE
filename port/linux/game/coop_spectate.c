@@ -168,8 +168,9 @@ void coop_spectate_draw(
 
 	if (watched == NONE || !player_try_and_get(watched))
 		return;
-	usnprintf(text, NUMBEROF(text) - 1, L"SPECTATING %.12s   (A: NEXT)\r\nYou come back beside them once it is safe",
-		player_get(watched)->name);
+	usnprintf(text, NUMBEROF(text) - 1, L"SPECTATING %.12s   (A: NEXT)\r\n%s", player_get(watched)->name,
+		players_coop_waiting_to_start(local_player_get_player_index(local_player_index)) ?
+			L"You join them at the level's first checkpoint" : L"You come back beside them once it is safe");
 	text[NUMBEROF(text) - 1] = 0;
 	draw_bottom_text(text);
 }

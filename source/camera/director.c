@@ -701,8 +701,12 @@ static void director_choose_camera_game(
 	}
 	else
 	{
-		struct player_datum *player = player_get(local_player_get_player_index(local_player_index));
-		boolean use_dead_camera = player->unit_index == NONE && player->statistics.deaths > 0;
+		long player_index = local_player_get_player_index(local_player_index);
+		struct player_datum *player = player_get(player_index);
+		/* port: and a network co-op player who hasn't spawned yet, waiting for
+		the level's first checkpoint, watches too */
+		boolean use_dead_camera = player->unit_index == NONE &&
+			(player->statistics.deaths > 0 || players_coop_waiting_to_start(player_index));
 
 		/* (port: not a client in another's game, the host's rules: a flying
 		camera would see all of it, and one behind the player round its
