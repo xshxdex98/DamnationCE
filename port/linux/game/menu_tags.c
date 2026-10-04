@@ -1808,9 +1808,11 @@ boolean pc_menus_theme_apply(
 		return FALSE;
 	theme_chosen[0] = 0;
 	ui_widgets_close_all();
+	/* (flushed first: the cache's textures point at the menus' bitmaps, which
+	the unload frees) */
+	texture_cache_flush();
 	menu_tags_unloaded();
 	menu_tags_loaded("ui");
-	texture_cache_flush();
 	ui_widget_load_by_name_or_tag(pc_menus_root_name(), NONE, NULL, 0, NONE, NONE, NONE);
 	return TRUE;
 }

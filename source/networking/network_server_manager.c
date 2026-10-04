@@ -475,6 +475,9 @@ symbols in this file:
 #include "cache/cache_files.h"
 #ifdef HALO_GAME_BROWSER
 #include "../../port/linux/src/browser.h"
+/* port: the map picker forgets the game Online Games created
+(port/linux/game/map_screen.c) */
+void map_screen_server_disposed(void);
 #endif
 #include "interface/player_ui.h"
 #include "tag_files/tag_files.h"
@@ -1285,6 +1288,9 @@ void network_game_server_dispose(
 	network_game_server_memory_do_not_use_directly_in_use = FALSE;
 
 	p2p_set_game_player_counts(0, 0);
+#ifdef HALO_GAME_BROWSER
+	map_screen_server_disposed();
+#endif
 	network_event("network server disposed");
 
 	return;
