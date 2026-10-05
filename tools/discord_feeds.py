@@ -21,6 +21,13 @@
       Message ID, with Developer Mode on).
         DISCORD_RELEASES_WEBHOOK  the changelog channel's webhook URL
 
+  discord_feeds.py upstream <build> <status> <commits file> [<details>]
+      An OpenCE build the upstream merger took (upstream.yml): a heading card,
+      what became of it (status: merged, unpublished, ours, failed or conflict, with
+      details: a link or the files), and its commits' titles, one a line in
+      the file. Posted silently.
+        DISCORD_UPSTREAM_WEBHOOK  the upstream channel's webhook URL
+
   discord_feeds.py rules
       The rules channel's picture, of discord_rules.md: posted, or with
       DISCORD_RULES_MESSAGE that message edited to match the file.
@@ -202,17 +209,22 @@ def unwrap(markdown):
     return "\n".join(lines)
 
 
-def release_heading(tag):
-    """the release's heading (discord_card.py) over one of the Xbox maps, the
-    same for a version each time; None without Pillow"""
+def heading(label, title, aside_label):
+    """a heading (discord_card.py) over one of the Xbox maps, the same for a
+    title each time, dated today; None without Pillow"""
     try:
         import discord_card
     except ImportError:
         return None
     maps = sorted(XBOX_MAPS)
-    backdrop = map_art(maps[sum(map(ord, tag)) % len(maps)])
+    backdrop = map_art(maps[sum(map(ord, title)) % len(maps)])
     date = time.strftime("%d %B %Y", time.gmtime()).lstrip("0")
-    return discord_card.heading_card("DamnationCE", tag.lstrip("v"), "Release notes", date, backdrop, USER_AGENT)
+    return discord_card.heading_card(label, title, aside_label, date, backdrop, USER_AGENT)
+
+
+def release_heading(tag):
+    """the release's heading"""
+    return heading("DamnationCE", tag.lstrip("v"), "Release notes")
 
 
 def post_card(webhook, name, card):
@@ -250,6 +262,36 @@ def edit_release(tag, notes_path, message_id):
     print(f"Edited {tag}'s text, message {message_id}")
 
 
+# what became of an OpenCE build the upstream merger took
+UPSTREAM_STATUSES = {
+    "merged": "Merged into DamnationCE and built on every platform: players get it as the latest build.",
+    "ours": "It's DamnationCE's own work coming back from OpenCE, which DamnationCE already has, so nothing changed.",
+    "unpublished": "Merged into DamnationCE, but the build offering it to players failed: {details}",
+    "failed": "It merged cleanly but didn't build, so it wasn't merged: {details}",
+    "conflict": "It conflicts with DamnationCE's own changes, so it's waiting for a merge by hand. The files: {details}",
+}
+# the most of a build's commits listed
+UPSTREAM_COMMITS = 25
+
+
+def post_upstream(build, status, commits_path, details=""):
+    webhook = os.environ["DISCORD_UPSTREAM_WEBHOOK"]
+    with open(commits_path, encoding="utf-8") as commits_file:
+        commits = [line.strip() for line in commits_file if line.strip()]
+    lines = [f"**[OpenCE {build}](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/{build})**",
+             UPSTREAM_STATUSES[status].format(details=details)]
+    if commits:
+        lines += ["", "What's in it:"] + [f"- {commit}" for commit in commits[:UPSTREAM_COMMITS]]
+        if len(commits) > UPSTREAM_COMMITS:
+            lines.append(f"- and {len(commits) - UPSTREAM_COMMITS} more")
+    card = heading("OpenCE", build, "Upstream update")
+    if card:
+        post_card(webhook, "upstream.png", card)
+    for part in message_parts("\n".join(lines)):
+        request(webhook, "POST", {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS,
+                                  "allowed_mentions": {"parse": []}})
+
+
 def update_rules():
     import discord_card
 
@@ -276,6 +318,8 @@ def main():
         post_release(sys.argv[2], sys.argv[3])
     elif sys.argv[1:2] == ["release-edit"] and len(sys.argv) == 5:
         edit_release(sys.argv[2], sys.argv[3], sys.argv[4])
+    elif sys.argv[1:2] == ["upstream"] and len(sys.argv) in (5, 6) and sys.argv[3] in UPSTREAM_STATUSES:
+        post_upstream(*sys.argv[2:])
     elif sys.argv[1:2] == ["rules"]:
         update_rules()
     else:
