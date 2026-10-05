@@ -427,7 +427,10 @@ struct hs_thread_datum
 	long previous_sleep_until;
 	struct hs_stack_frame *stack;
 	long result;
-	byte stack_data[0x200];
+	/* port: sized by the limit the stack checks allow (the Xbox's 0x200 on
+	the 32-bit builds). With 0x200 here, a 64-bit build's script deeper than
+	that passed the checks and wrote over the next thread. */
+	byte stack_data[HS_THREAD_STACK_SIZE];
 };
 #ifndef HALO_64BIT
 
@@ -2137,11 +2140,8 @@ void hs_evaluate_inspect(
 		if (hs_type_inspectors[expression->type])
 		{
 			hs_type_inspectors[expression->type](expression->type, *value, string);
-			/* BUG (preserved for exact matching): the inspected value's text is passed as the
-			 * format (January 0x4bc840 +0xdd..+0xe6), so inspecting a string that contains '%'
-			 * reads arguments that were never passed. A corrected build should print it through
-			 * "%s". Source-policy approval pending (2026-09-27 audit). */
-			console_printf(FALSE, string);
+			/* port: printed as an argument, not used as the format (see hs_print) */
+			console_printf(FALSE, "%s", string);
 		}
 
 		hs_return(thread_index, 0);
@@ -2548,9 +2548,9 @@ static void hs_thread_main(
 	hs_runtime_globals.executing_thread_index = (short)thread_index;
 	if (thread->type==_hs_thread_type_script)
 	{
-		/* port: a corrupted thread's script index halted the whole game from
-	   the assert inside tag_block_get_element (observed on a10 with the
-	   sound cache under pressure); drop the bad thread and keep running */
+		/* port: a thread whose script index is corrupt is dropped, and the
+		game keeps running; the bad index halted the game in
+		tag_block_get_element (seen on a10 with the sound cache busy) */
 		if (thread->script_index<0 ||
 			thread->script_index>=global_scenario_get()->hs_scripts.count)
 		{
