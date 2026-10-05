@@ -1861,9 +1861,10 @@ short object_get_marker_by_name(
 
 	struct object_datum const *object = object_get(object_index);
 	struct object_definition const *object_definition = object_definition_get(object->definition_index);
-	/* port: while a frame is drawn, the pose the object is drawn in, so what
-	is placed at a marker (names and triangles over players' heads) moves
-	with it smoothly, not a tick ahead (object_get_node_matrices) */
+	/* port: the matrices the renderer draws with, so a marker an effect, a
+	particle system or a contrail hangs off moves as the object does, between
+	the ticks too (port/linux/game/render_interpolation.c). While a tick runs,
+	which is when the game asks for markers, this is the same array. */
 	real_matrix4x3 const *matrices = object_get_node_matrices(object_index);
 
 	marker = model_get_marker_by_name(
