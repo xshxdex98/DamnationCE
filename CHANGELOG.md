@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.2
+
+### Co-op
+
+- Crossing into a new part of a level always brings the players left
+  behind along, even when whoever crossed hasn't fully arrived, so nobody is
+  left standing where they would switch the level straight back.
+- Levels that move every player at once by script (The Library, Two
+  Betrayals, Keyes, The Maw) spread the players around the spot instead of
+  stacking them on top of each other.
+- A player who respawns can no longer be left at the start of the level
+  when there's no room beside the teammate they were meant to join.
+- When everyone dies after reaching a new part of a level but before its
+  next checkpoint, everyone comes back where they last stood instead of
+  falling out of the world.
+- Players who joined since the last checkpoint come back beside the others
+  instead of on top of one of them.
+- Someone joining in progress sees the current objective and waypoints.
+- The playable Elite and the lobby's PLAYER button are gone; everyone plays
+  as a Spartan in their own profile colour.
+
 ## 0.3.1
 
 ### Co-op
