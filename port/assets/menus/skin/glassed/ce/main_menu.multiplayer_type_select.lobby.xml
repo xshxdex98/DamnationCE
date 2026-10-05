@@ -84,7 +84,13 @@
 		<child widget="main_menu/multiplayer_type_select/lobby/list_item_10" x="24" y="332" />
 		<child widget="main_menu/multiplayer_type_select/lobby/list_item_11" x="24" y="356" />
 		<child widget="main_menu/multiplayer_type_select/lobby/list_item_12" x="24" y="380" />
+		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_model" x="420" y="276" />
 		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_bar" y="448" />
+	</widget>
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_model" type="text" width="196" height="22" font="ui\small_ui" color="#00000000">
+		<on event="a" run="port lobby player model" />
+		<on event="start" run="port lobby player model" />
+		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/lobby/lobby_desc" width="640" height="480">
 		<child widget="main_menu/current_profile_name" />

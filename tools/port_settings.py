@@ -692,6 +692,12 @@ CLEAR = "#00000000"
 SMALL_FONT = "ui\\small_ui"
 # (SWITCH TEAM first: hidden in a game without teams, which moves the focus
 # to the first shown, START NOW; at the end it traps none)
+# the co-op lobby's PLAYER: SPARTAN / ELITE (menu_functions.c's lobby_player_model_toggle),
+# under the game's details: Glassed's place (lobby_screen.c's MODEL_BUTTON_*), and Vanilla's
+LOBBY_MODEL_BUTTON_LEFT, LOBBY_MODEL_BUTTON_TOP, LOBBY_MODEL_BUTTON_WIDTH = 420, 276, 196
+LOBBY_MODEL_HANDLERS = ['<on event="a" run="port lobby player model"/>',
+                        '<on event="start" run="port lobby player model"/>',
+                        '<on event="left_mouse" run="mouse emit accept event"/>']
 LOBBY_BUTTONS = (
     ("team", "SWITCH TEAM", ['<on event="a" run="swap player team"/>', '<on event="start" run="swap player team"/>']),
     ("start", "START NOW", ['<on event="a" run="net game speed start"/>',
@@ -737,7 +743,13 @@ def _lobby_rows(base: str) -> list:
                                             ("description", f"{base}/lobby_desc")],
                      ['<data input="net splitscreen prejoin players"/>', '<data input="port lobby update"/>',
                       *rows,
+                      f'<child widget="{base}/lobby_button_model" x="417" y="370"/>',
                       f'<child widget="{base}/lobby_button_bar" y="414"/>'])
+    lines += _widget(f"{base}/lobby_button_model", [("type", "text"), ("width", 146), ("height", 24),
+                                                    ("bitmap", "bitmaps/text_button_background"),
+                                                    ("text", "PLAYER: SPARTAN"), ("font", "ui\\small_ui"),
+                                                    ("color", "#FFFFFFFF"), ("align", "center"), ("text_y", 2)],
+                     LOBBY_MODEL_HANDLERS)
     for index in range(11):
         lines += _widget(f"{base}/list_item_{index}",
                          [("width", 390), ("height", 28),
@@ -773,7 +785,13 @@ def _lobby_overlay_rows(base: str) -> list:
     lines += _widget(f"{base}/lobby_list", [("type", "column_list"), ("width", 640), ("height", 480),
                                             ("flags", "pass_unhandled_to_focused_child up_down_tabs_children")],
                      ['<data input="net splitscreen prejoin players"/>', '<data input="port lobby update"/>',
-                      *rows, f'<child widget="{base}/lobby_button_bar" y="{LOBBY_BUTTONS_TOP}"/>'])
+                      *rows,
+                      f'<child widget="{base}/lobby_button_model" x="{LOBBY_MODEL_BUTTON_LEFT}" '
+                      f'y="{LOBBY_MODEL_BUTTON_TOP}"/>',
+                      f'<child widget="{base}/lobby_button_bar" y="{LOBBY_BUTTONS_TOP}"/>'])
+    lines += _widget(f"{base}/lobby_button_model", [("type", "text"), ("width", LOBBY_MODEL_BUTTON_WIDTH),
+                                                    ("height", LOBBY_BUTTON_HEIGHT), ("font", SMALL_FONT),
+                                                    ("color", CLEAR)], LOBBY_MODEL_HANDLERS)
     return lines
 
 
@@ -836,8 +854,9 @@ def _lobby(overlay: bool = False) -> list:
                                                        ("color", "#FF2896FF"), ("align", "right"),
                                                        ("text_flags", "no_focus_test")], [])
     else:
+        # (down to the co-op lobby's player model button, at 370)
         lines += _widget(f"{base}/lobby_game_data", [("type", "text"), ("controller", 1), ("left", 417), ("top", 250),
-                                                     ("width", 146), ("height", 144), ("font", "ui\\small_ui"),
+                                                     ("width", 146), ("height", 116), ("font", "ui\\small_ui"),
                                                      ("color", "#FF2896FF")], [])
     lines += _lobby_buttons(base, overlay)
     # a split screen player's profile, chosen as they join the lobby (any
