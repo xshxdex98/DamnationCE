@@ -249,6 +249,13 @@ overlays, whose first field names an animation of the graph or none */
 #define ANIMATION_GRAPH_ANIMATIONS_OFFSET 0x74
 #define ANIMATION_GRAPH_NODES_OFFSET 0x68
 #define ANIMATION_GRAPH_NODE_BYTES 0x40
+/* an animation: its node count, then its frame info, default data and
+frame data, which the game reads where they are. The game poses an
+animation's nodes in arrays of 64 (model_animation_definitions.h,
+MAXIMUM_NODES_PER_ANIMATION), so a graph or animation of more is refused. */
+#define ANIMATION_BYTES 0xB4
+#define ANIMATION_NODE_COUNT_OFFSET 0x2C
+#define MAXIMUM_NODES_PER_ANIMATION 64
 #define GBXMODEL_BYTES 0xE8
 #define GBXMODEL_NODES_OFFSET 0xB8
 #define GBXMODEL_NODE_BYTES 0x9C
@@ -474,6 +481,12 @@ static enum cache_file_status sound_permutation_check(
 static enum cache_file_status gbxmodel_part_check(
 	struct load_state *state,
 	uint32_t element_offset);
+static enum cache_file_status animation_graph_check(
+	struct load_state *state,
+	uint32_t element_offset);
+static enum cache_file_status animation_check(
+	struct load_state *state,
+	uint32_t element_offset);
 
 /* ---------- globals */
 
@@ -675,6 +688,26 @@ static struct element_layout const gbxmodel_layout =
 	GBXMODEL_BYTES, gbxmodel_blocks, 5, NULL, 0, NULL
 };
 
+static uint32_t const animation_data[] =
+{
+	/* frame info, default data, frame data */
+	0x48, 0x8C, 0xA0,
+};
+static struct element_layout const animation_layout =
+{
+	ANIMATION_BYTES, NULL, 0, animation_data, 3, animation_check
+};
+static struct block_layout const animation_graph_blocks[] =
+{
+	/* nodes, animations */
+	{ ANIMATION_GRAPH_NODES_OFFSET, ANIMATION_GRAPH_NODE_BYTES, &plain_element_layout },
+	{ ANIMATION_GRAPH_ANIMATIONS_OFFSET, ANIMATION_BYTES, &animation_layout },
+};
+static struct element_layout const animation_graph_layout =
+{
+	ANIMATION_GRAPH_BYTES, animation_graph_blocks, 2, NULL, 0, animation_graph_check
+};
+
 static struct block_layout const transparent_chicago_blocks[] =
 {
 	/* extra layers (shader references), maps */
@@ -745,6 +778,7 @@ static char const *const cache_file_status_descriptions[NUMBER_OF_CACHE_FILE_STA
 	"a structure BSP header is not valid",
 	"a structure BSP's lightmaps or their materials do not have the documented layout",
 	"a model part's strip or vertices lie outside the model data or are not of the kind Custom Edition writes",
+	"an animation graph or one of its animations has more nodes than this build can pose",
 	"a shader's type is not the one Custom Edition gives its group",
 	"the scenario's scripts use more syntax nodes than this build has room for, or are not a syntax node array",
 	"a resource map header is not valid",
@@ -1321,6 +1355,34 @@ static enum cache_file_status gbxmodel_part_check(
 	return _cache_file_status_ok;
 }
 
+static enum cache_file_status animation_graph_check(
+	struct load_state *state,
+	uint32_t element_offset)
+{
+	uint8_t const *nodes = state->tag_cache + element_offset + ANIMATION_GRAPH_NODES_OFFSET;
+
+	if (read_s32(nodes + TAG_BLOCK_COUNT_OFFSET) > MAXIMUM_NODES_PER_ANIMATION)
+	{
+		return load_fail(state, _cache_file_status_bad_animation_nodes, element_offset);
+	}
+
+	return _cache_file_status_ok;
+}
+
+static enum cache_file_status animation_check(
+	struct load_state *state,
+	uint32_t element_offset)
+{
+	int16_t node_count = read_s16(state->tag_cache + element_offset + ANIMATION_NODE_COUNT_OFFSET);
+
+	if (node_count < 0 || node_count > MAXIMUM_NODES_PER_ANIMATION)
+	{
+		return load_fail(state, _cache_file_status_bad_animation_nodes, element_offset);
+	}
+
+	return _cache_file_status_ok;
+}
+
 /* Walks the element at `element_offset` of the tag cache and everything its
 blocks hold, requiring every block and every present tag data field to lie
 within the bytes in use. Tag data with a size but no address is data the
@@ -1694,6 +1756,8 @@ static struct element_layout const *checked_group_layout(
 	{
 	case GBXMODEL_GROUP_TAG:
 		return &gbxmodel_layout;
+	case ANIMATION_GRAPH_GROUP_TAG:
+		return &animation_graph_layout;
 	case TRANSPARENT_CHICAGO_GROUP_TAG:
 		return &transparent_chicago_layout;
 	case TRANSPARENT_CHICAGO_EXTENDED_GROUP_TAG:
