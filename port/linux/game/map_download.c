@@ -25,6 +25,7 @@ own folder.
 #include "cseries/cseries_windows.h"
 #include "errors.h"
 #include "tag_files/tag_groups.h"
+#include "tag_files/tag_files.h"
 #include "cache/cache_files.h"
 #include "main/main.h"
 #include "networking/network_game_globals.h"
