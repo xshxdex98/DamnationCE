@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.1
+
+### Co-op
+
+- Two players standing on different loading points no longer make the
+  level switch back and forth. That switching made textures flicker, AI
+  glitch and doors stay shut.
+- Every player gets the shield back at the Pillar of Autumn's charging
+  station, not only the host.
+- Cutscenes play smoothly on every machine, without the camera stuttering.
+- Someone joining in progress gets the doors, light bridges, moved scenery,
+  music and screen effects straight away, instead of falling through a
+  bridge that hadn't appeared yet.
+- A Pelican dropping a Warthog brings one Warthog for every four players,
+  up to five, so bigger games have enough rides.
+- Players' names and the markers over their heads move smoothly with them.
+
+### Menus
+
+- Clicking PLAYER: SPARTAN / ELITE in the lobby now changes it.
+
 ## 0.3.0
 
 ### Co-op
