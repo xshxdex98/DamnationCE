@@ -3176,13 +3176,37 @@ static void biped_snap_facing(
 	return;
 }
 
+/* port: The flags a biped moves by. A network co-op player's elite (see
+players.c, players_coop_animation_source) moves like the Spartan whose
+animations it uses. The elite's own tag is the AI's, which moves by its
+animations' root motion; the Spartan's animations have none because the
+Spartan uses player physics. Without this the elite stood still with some
+weapons, stopped while throwing grenades and couldn't strafe diagonally. */
+#define BIPED_MOVEMENT_FLAGS (FLAG(_biped_turns_without_animating_bit) | \
+	FLAG(_biped_uses_player_physics_bit) | FLAG(_biped_uses_old_player_physics_bit))
+
+static unsigned long biped_movement_flags(
+	long biped_index,
+	struct biped_definition const *definition)
+{
+	long source_index = players_coop_animation_source(biped_index);
+	unsigned long flags = definition->biped.flags;
+
+	if (source_index != NONE)
+	{
+		flags &= ~BIPED_MOVEMENT_FLAGS;
+		flags |= biped_definition_get(source_index)->biped.flags & BIPED_MOVEMENT_FLAGS;
+	}
+	return flags;
+}
+
 static void biped_update_turning(
 	long biped_index,
 	struct unit_animation_update_data *animation)
 {
 	struct biped_datum *biped = biped_get(biped_index);
 	struct biped_definition *definition = biped_definition_get(biped->definition_index);
-	unsigned long flags = definition->biped.flags;
+	unsigned long flags = biped_movement_flags(biped_index, definition);
 
 	if (TEST_FLAG(flags, _biped_flying_bit) &&
 		!TEST_FLAG(biped->object.damage_flags, _object_dead_bit))
@@ -3690,7 +3714,7 @@ static void biped_update_moving(
 		if (!TEST_FLAG(definition->biped.flags, _biped_flying_bit) ||
 			TEST_FLAG(biped->object.damage_flags, _object_dead_bit))
 		{
-			if (!TEST_FLAG(definition->biped.flags, _biped_uses_player_physics_bit) ||
+			if (!TEST_FLAG(biped_movement_flags(biped_index, definition), _biped_uses_player_physics_bit) ||
 				biped->unit.animation.state == _unit_state_user_animation)
 			{
 				if (!TEST_FLAG(biped->biped.flags, _biped_slipping_bit) &&
@@ -3721,7 +3745,7 @@ static void biped_update_moving(
 
 				if (cinematic_in_progress() ||
 					TEST_FLAG(
-						definition->biped.flags,
+						biped_movement_flags(biped_index, definition),
 						_biped_uses_old_player_physics_bit))
 				{
 					player_information_block = *player_information;
