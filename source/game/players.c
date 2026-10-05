@@ -480,6 +480,11 @@ static struct
 	/* no BSP switch trigger counts before this game time (one has just
 	switched, and the players are being brought into the new BSP) */
 	long bsp_switch_allowed_time;
+	/* where each player last stood on the ground, and on which BSP: where
+	everyone comes back when the last checkpoint was on another one */
+	short ground_structure_bsp_index;
+	boolean has_ground_position[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
+	real_point3d ground_positions[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
 } players_coop_state;
 
 /* port: where each player was at the last checkpoint, in network co-op
@@ -2547,6 +2552,8 @@ that was on another BSP. */
 
 static boolean players_coop_room_to_spawn(
 	void);
+static boolean player_place_beside_teammate(
+	long player_index);
 
 /* How long into a level the extra players wait before spawning. The opening
 cutscene starts a tick or so in, and the first player may still be somewhere
@@ -2722,9 +2729,13 @@ static boolean players_respawn_network_coop(
 			continue;
 		}
 		player_spawn(iterator.datum_index);
-		if (player->unit_index == NONE ||
-			!player_teleport(iterator.datum_index, safe_unit_index,
-				&object_get(safe_unit_index)->object.bounding_sphere_center))
+		if (player->unit_index == NONE)
+			result = FALSE;
+		/* (beside the safe teammate, else any with room: never left at the
+		level's start, where player_spawn put them) */
+		else if (!player_teleport(iterator.datum_index, safe_unit_index,
+				&object_get(safe_unit_index)->object.bounding_sphere_center) &&
+			!player_place_beside_teammate(iterator.datum_index))
 		{
 			result = FALSE;
 		}
@@ -2759,22 +2770,21 @@ static long player_spawnable_beside(
 spawn beside them, so nobody lands inside a vehicle they just left. */
 #define COOP_DISEMBARK_TICKS (4 * TICKS_PER_SECOND)
 
-/* The player's position at the last checkpoint, or any player's position
-for someone who joined after it. NULL if there is no checkpoint or it was on
-another structure BSP. */
+/* Where the player comes back: their position at the last checkpoint, or,
+when that was on another structure BSP (everyone died before the next one),
+where they last stood on the ground on this one. NULL if the player has
+neither (they joined since); they come back beside a teammate. */
 static real_point3d const *players_checkpoint_position(
 	long player_index)
 {
 	short index = DATUM_INDEX_TO_ABSOLUTE_INDEX(player_index);
 
-	if (!players_checkpoint.valid || players_checkpoint.structure_bsp_index != global_structure_bsp_index_get())
-		return NULL;
-	if (players_checkpoint.has_position[index])
-		return &players_checkpoint.positions[index];
-	for (index = 0; index < NETWORK_GAME_MAXIMUM_PLAYER_COUNT; index++)
+	if (players_checkpoint.valid && players_checkpoint.structure_bsp_index == global_structure_bsp_index_get())
+		return players_checkpoint.has_position[index] ? &players_checkpoint.positions[index] : NULL;
+	if (players_coop_state.ground_structure_bsp_index == global_structure_bsp_index_get() &&
+		players_coop_state.has_ground_position[index])
 	{
-		if (players_checkpoint.has_position[index])
-			return &players_checkpoint.positions[index];
+		return &players_coop_state.ground_positions[index];
 	}
 
 	return NULL;
@@ -2855,7 +2865,8 @@ static void players_coop_rescue_stranded(
 	}
 }
 
-/* co-op, each tick: records when each player became somewhere spawnable */
+/* co-op, each tick: records when each player became somewhere spawnable,
+and where each last stood on the ground */
 static void players_coop_note_on_foot(
 	void)
 {
@@ -2864,15 +2875,27 @@ static void players_coop_note_on_foot(
 
 	if (!network_coop_active())
 		return;
+	if (players_coop_state.ground_structure_bsp_index != global_structure_bsp_index_get())
+	{
+		players_coop_state.ground_structure_bsp_index = global_structure_bsp_index_get();
+		csmemset(players_coop_state.has_ground_position, 0, sizeof(players_coop_state.has_ground_position));
+	}
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
-		long *since = &players_coop_state.spawnable_since[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)];
+		short index = DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index);
+		long *since = &players_coop_state.spawnable_since[index];
 
 		if (player_spawnable_beside(player) == NONE)
 			*since = 0;
 		else if (*since == 0)
 			*since = game_time_get() + 1;
+		if (player->unit_index != NONE && object_get_ultimate_parent(player->unit_index) == player->unit_index &&
+			players_coop_unit_grounded(player->unit_index))
+		{
+			players_coop_state.ground_positions[index] = object_get(player->unit_index)->object.bounding_sphere_center;
+			players_coop_state.has_ground_position[index] = TRUE;
+		}
 	}
 }
 
@@ -2901,24 +2924,26 @@ static boolean players_coop_room_to_spawn(
 /* Co-op host: moves a newly spawned player beside a teammate who is on foot
 or in a player-driven vehicle (player_spawnable_beside). player_teleport tries
 a few spots around each. Teammates are tried in turn so a big lobby spreads
-out; if nobody has room the player stays where they spawned. */
-static void player_place_beside_teammate(
+out. FALSE if nobody has room; the player stays where they spawned. */
+static boolean player_place_beside_teammate(
 	long player_index)
 {
 	struct data_iterator iterator;
 	struct player_datum *other;
 
 	if (player_get(player_index)->unit_index == NONE)
-		return;
+		return FALSE;
 	data_iterator_new(&iterator, player_data);
 	while ((other = data_iterator_next(&iterator)) != NULL)
 	{
 		if (iterator.datum_index != player_index && player_spawnable_beside(other) != NONE &&
 			player_teleport(player_index, other->unit_index, &object_get(other->unit_index)->object.bounding_sphere_center))
 		{
-			return;
+			return TRUE;
 		}
 	}
+
+	return FALSE;
 }
 
 void players_note_checkpoint(
@@ -2945,11 +2970,15 @@ void players_note_checkpoint(
 	return;
 }
 
+/* Everyone back after all died: each where they were at the last checkpoint
+(players_checkpoint_position), then those with no such spot beside the
+others. Players who come back are spawned first, at the level's start. */
 void players_respawn_at_checkpoint(
 	void)
 {
 	struct data_iterator iterator;
 	struct player_datum *player;
+	boolean unplaced[NETWORK_GAME_MAXIMUM_PLAYER_COUNT] = { FALSE };
 
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
@@ -2960,8 +2989,14 @@ void players_respawn_at_checkpoint(
 			continue;
 		player_spawn(iterator.datum_index);
 		position = players_checkpoint_position(iterator.datum_index);
-		if (player->unit_index != NONE && position)
-			player_teleport(iterator.datum_index, NONE, position);
+		unplaced[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)] = player->unit_index != NONE &&
+			!(position && player_teleport(iterator.datum_index, NONE, position));
+	}
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		if (unplaced[DATUM_INDEX_TO_ABSOLUTE_INDEX(iterator.datum_index)])
+			player_place_beside_teammate(iterator.datum_index);
 	}
 
 	return;
