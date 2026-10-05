@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.3.0
+
+### Co-op
+
+- Elite players see their shield and health meter, and no longer freeze in
+  place after landing a jump.
+- An Elite player respawning no longer stops the game.
+- A client's view stops shaking when the host's cutscene shake ends, even
+  if the cutscene was skipped.
+- Fleeing enemies no longer run in place on clients.
+- Either co-op player can pick the level.
+- Split screen players can join a game that is already under way.
+
+### Custom Edition maps
+
+- Large maps such as Coldsnap have enough memory to load, and scripts that
+  use Halo PC's teammate-name and developer settings run.
+- Maps with damaged script threads, particles, shader layers, sounds,
+  bitmaps or animations play on instead of crashing or hanging.
+- Projectile trails show from a weapon's first shot.
+- A '%' in a map's script messages prints as written.
+- The first-person arms and other models drawn by parts are placed by the
+  right bone.
+- On 64-bit builds (Linux, macOS, Android), deeply nested scripts no longer
+  overwrite each other and crash the game.
+
 ## 0.2.9
 
 ### Co-op
