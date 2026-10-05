@@ -104,6 +104,10 @@ toward it each tick. */
 #define WATCH_HOST_HEIGHT 1.0f
 #define WATCH_HOST_FOLLOW 0.2f
 
+/* how often the host sends again the state a client that joined since, or
+missed a message, would lack (host_resend) */
+#define OBJECT_REFRESH_TICKS (2 * TICKS_PER_SECOND)
+
 enum
 {
 	/* the farthest an object the cutscene camera films can be from it
@@ -120,11 +124,6 @@ enum
 	FIELD_OF_VIEW_SCALE = 10000,
 
 	MAXIMUM_QUEUED_EVENTS = 128,
-
-	/* a Pelican's Warthog drop: one Warthog for every this many players,
-	at most this many in all */
-	PLAYERS_PER_DROPPED_VEHICLE = 4,
-	MAXIMUM_DROPPED_VEHICLES = 5,
 	/* each event is sent in this many ticks' messages */
 	EVENT_SENDS = 3,
 
@@ -145,6 +144,11 @@ enum
 	/* After a skip the cutscene stays skippable until the script reaches
 	cinematic_skip_stop; votes still in flight must not skip it again. */
 	SKIP_COOLDOWN_TICKS = 2 * TICKS_PER_SECOND,
+
+	/* a Pelican's Warthog drop: one Warthog for every this many players,
+	at most this many in all */
+	PLAYERS_PER_DROPPED_VEHICLE = 4,
+	MAXIMUM_DROPPED_VEHICLES = 5,
 };
 
 /* distributed_coop_event.kind */
@@ -434,6 +438,18 @@ static struct
 	struct distributed_coop_device_groups_message message;
 } host_devices;
 
+/* host: the client machines it had last tick. On the tick a new one
+appears, and every OBJECT_REFRESH_TICKS, the state a client that joined
+since would lack is sent again (refresh), and on the join every device that
+has moved since the map loaded too (joined). */
+static struct
+{
+	long machines[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
+	short machine_count;
+	boolean joined;
+	boolean refresh;
+} host_resend;
+
 /* client: the host's snap count last seen for each of its groups */
 static struct
 {
@@ -486,6 +502,40 @@ static boolean coop_client(
 	void)
 {
 	return game_connection() == _game_connection_network_client && coop_game();
+}
+
+/* host: sends count entries of entry_size in message to every client */
+static void send_to_clients(
+	void *message,
+	byte type,
+	short count,
+	word entry_size)
+{
+	distributed_send(message, type, count, (word)(sizeof(struct distributed_message_header) + count * entry_size),
+		_distributed_to_clients);
+}
+
+/* host, each tick: whether a client machine joined since the last, and so
+whether to resend this tick (host_resend) */
+static void host_resend_update(
+	void)
+{
+	long machines[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
+	short count = distributed_client_machines(machines, HALO_PORT_MAXIMUM_NETWORK_MACHINES);
+	short index, known;
+
+	host_resend.joined = FALSE;
+	for (index = 0; index < count && !host_resend.joined; index++)
+	{
+		for (known = 0; known < host_resend.machine_count && host_resend.machines[known] != machines[index]; known++)
+			;
+		host_resend.joined = known == host_resend.machine_count;
+	}
+	csmemcpy(host_resend.machines, machines, count * sizeof(machines[0]));
+	host_resend.machine_count = count;
+	host_resend.refresh = host_resend.joined || game_time_get() % OBJECT_REFRESH_TICKS == 0;
+	if (host_resend.joined)
+		error(_error_silent, "co-op: a machine joined; resending the game's state");
 }
 
 /* whether the object is a player's unit or carries one (scripts never delete those) */
@@ -596,8 +646,7 @@ static void host_send_events(
 	if (!coop_events.count)
 		return;
 	csmemcpy(message.events, coop_events.events, coop_events.count * sizeof(message.events[0]));
-	distributed_send(&message, _distributed_message_coop_events, coop_events.count,
-		(word)(sizeof(message.header) + coop_events.count * sizeof(message.events[0])), _distributed_to_clients);
+	send_to_clients(&message, _distributed_message_coop_events, coop_events.count, sizeof(message.events[0]));
 	/* drop the ones sent EVENT_SENDS times, keeping the rest in order */
 	for (index = 0; index < coop_events.count; )
 	{
@@ -770,7 +819,7 @@ static void host_send_device_groups(
 
 		if (host_devices.moved[group_index])
 		{
-			refresh = refresh ||
+			refresh = refresh || host_resend.joined ||
 				(moved_index - host_devices.moved_refresh_next + moved_count) % moved_count < DEVICE_GROUP_REFRESHES_PER_TICK;
 			moved_index++;
 		}
@@ -786,16 +835,8 @@ static void host_send_device_groups(
 	host_devices.moved_refresh_next = moved_count ?
 		(short)((host_devices.moved_refresh_next + DEVICE_GROUP_REFRESHES_PER_TICK) % moved_count) : 0;
 	if (sent)
-	{
-		distributed_send(&host_devices.message, _distributed_message_coop_device_groups, sent,
-			(word)(sizeof(host_devices.message.header) + sent * sizeof(entries[0])), _distributed_to_clients);
-	}
+		send_to_clients(&host_devices.message, _distributed_message_coop_device_groups, sent, sizeof(entries[0]));
 }
-
-/* how often the host sends again every scenery or machine that has moved,
-and every object whose looks changed: for a client that joined since, or
-missed one */
-#define OBJECT_REFRESH_TICKS (2 * TICKS_PER_SECOND)
 
 /* host: where each scenery or machine was last sent, by its absolute
 index, and whether it has moved since the map placed it */
@@ -813,7 +854,6 @@ static void host_send_object_transforms(
 	void)
 {
 	struct distributed_coop_object_transforms_message message;
-	boolean refresh = game_time_get() % OBJECT_REFRESH_TICKS == 0;
 	struct object_iterator iterator;
 	struct object_datum *object;
 	short count = 0;
@@ -839,7 +879,7 @@ static void host_send_object_transforms(
 		}
 		moving = distance_squared3d(&host_sent_transforms[absolute_index].position, &object->object.position) >= 0.0001f ||
 			dot_product3d(&host_sent_transforms[absolute_index].forward, &object->object.forward) <= 0.9999f;
-		if (!moving && !(refresh && host_sent_transforms[absolute_index].moved))
+		if (!moving && !(host_resend.refresh && host_sent_transforms[absolute_index].moved))
 			continue;
 		host_sent_transforms[absolute_index].moved = TRUE;
 		host_sent_transforms[absolute_index].position = object->object.position;
@@ -854,16 +894,12 @@ static void host_send_object_transforms(
 		distributed_vector_pack(&object->object.up, DISTRIBUTED_UNIT_SCALE, &transform->up);
 		if (count == MAXIMUM_OBJECT_TRANSFORMS_PER_MESSAGE)
 		{
-			distributed_send(&message, _distributed_message_coop_object_transforms, count,
-				(word)(sizeof(message.header) + count * sizeof(message.transforms[0])), _distributed_to_clients);
+			send_to_clients(&message, _distributed_message_coop_object_transforms, count, sizeof(message.transforms[0]));
 			count = 0;
 		}
 	}
 	if (count > 0)
-	{
-		distributed_send(&message, _distributed_message_coop_object_transforms, count,
-			(word)(sizeof(message.header) + count * sizeof(message.transforms[0])), _distributed_to_clients);
-	}
+		send_to_clients(&message, _distributed_message_coop_object_transforms, count, sizeof(message.transforms[0]));
 }
 
 /* host: how each object looked when last sent, by its absolute index, and
@@ -882,7 +918,6 @@ static void host_send_object_looks(
 	void)
 {
 	struct distributed_coop_object_looks_message message;
-	boolean refresh = game_time_get() % OBJECT_REFRESH_TICKS == 0;
 	struct object_iterator iterator;
 	struct object_datum *object;
 	short count = 0;
@@ -909,7 +944,7 @@ static void host_send_object_looks(
 		changing = host_sent_looks[absolute_index].scale != object->object.scale ||
 			csmemcmp(host_sent_looks[absolute_index].region_permutations, object->object.region_permutations,
 				sizeof(object->object.region_permutations));
-		if (!changing && !(refresh && host_sent_looks[absolute_index].changed))
+		if (!changing && !(host_resend.refresh && host_sent_looks[absolute_index].changed))
 			continue;
 		host_sent_looks[absolute_index].changed = TRUE;
 		host_sent_looks[absolute_index].scale = object->object.scale;
@@ -924,16 +959,12 @@ static void host_send_object_looks(
 		look->scale = object->object.scale;
 		if (count == MAXIMUM_OBJECT_LOOKS_PER_MESSAGE)
 		{
-			distributed_send(&message, _distributed_message_coop_object_looks, count,
-				(word)(sizeof(message.header) + count * sizeof(message.looks[0])), _distributed_to_clients);
+			send_to_clients(&message, _distributed_message_coop_object_looks, count, sizeof(message.looks[0]));
 			count = 0;
 		}
 	}
 	if (count > 0)
-	{
-		distributed_send(&message, _distributed_message_coop_object_looks, count,
-			(word)(sizeof(message.header) + count * sizeof(message.looks[0])), _distributed_to_clients);
-	}
+		send_to_clients(&message, _distributed_message_coop_object_looks, count, sizeof(message.looks[0]));
 }
 
 /* ---------- the cinematic screen effect
@@ -958,14 +989,10 @@ static void host_send_screen_effect(
 	struct distributed_coop_screen_effect_message message;
 
 	rasterizer_screen_effect_port_get(&message.state);
-	if (game_time_get() % OBJECT_REFRESH_TICKS != 0 &&
-		!csmemcmp(&message.state, &host_sent_screen_effect, sizeof(message.state)))
-	{
+	if (!host_resend.refresh && !csmemcmp(&message.state, &host_sent_screen_effect, sizeof(message.state)))
 		return;
-	}
 	host_sent_screen_effect = message.state;
-	distributed_send(&message, _distributed_message_coop_screen_effect, 1,
-		(word)(sizeof(message.header) + sizeof(message.state)), _distributed_to_clients);
+	send_to_clients(&message, _distributed_message_coop_screen_effect, 1, sizeof(message.state));
 }
 
 word network_coop_screen_effect_entry_size(
@@ -1048,7 +1075,7 @@ static void host_send_object_names(
 		if (object_index_from_name_index(name_index) != NONE)
 			names->present[name_index / 8] |= (byte)(1 << (name_index % 8));
 	}
-	distributed_send(&message, _distributed_message_coop_object_names, 1, (word)sizeof(message), _distributed_to_clients);
+	send_to_clients(&message, _distributed_message_coop_object_names, 1, sizeof(message.names));
 }
 
 static void skip_vote_clear(
@@ -1564,6 +1591,27 @@ static void client_apply_hud_state(
 	hud_messaging_port_timer_set(&timer);
 }
 
+/* the players in the game */
+static short coop_player_count(
+	void)
+{
+	struct data_iterator iterator;
+	short count = 0;
+
+	data_iterator_new(&iterator, player_data);
+	while (data_iterator_next(&iterator))
+		count++;
+
+	return count;
+}
+
+static boolean tag_name_has(
+	long definition_index,
+	char const *text)
+{
+	return definition_index != NONE && strstr(tag_get_name(definition_index), text) != NULL;
+}
+
 /* ---------- public code */
 
 void network_coop_new_game(
@@ -1577,6 +1625,7 @@ void network_coop_new_game(
 	csmemset(host_sent_transforms, 0, sizeof(host_sent_transforms));
 	csmemset(host_sent_looks, 0, sizeof(host_sent_looks));
 	csmemset(&host_sent_screen_effect, 0, sizeof(host_sent_screen_effect));
+	csmemset(&host_resend, 0, sizeof(host_resend));
 	host_attachment_count = 0;
 	host_looping_sound_count = 0;
 	skip_vote_clear();
@@ -1602,27 +1651,6 @@ boolean network_coop_devices_remote(
 	void)
 {
 	return coop_client();
-}
-
-/* the players in the game */
-static short coop_player_count(
-	void)
-{
-	struct data_iterator iterator;
-	short count = 0;
-
-	data_iterator_new(&iterator, player_data);
-	while (data_iterator_next(&iterator))
-		count++;
-
-	return count;
-}
-
-static boolean tag_name_has(
-	long definition_index,
-	char const *text)
-{
-	return definition_index != NONE && strstr(tag_get_name(definition_index), text) != NULL;
 }
 
 /* units.c: a vehicle left the vehicle carrying it. When a Pelican drops a
@@ -1697,7 +1725,7 @@ static void host_send_looping_sounds(
 {
 	short index = 0;
 
-	if (game_time_get() % OBJECT_REFRESH_TICKS != 0)
+	if (!host_resend.refresh)
 		return;
 	while (index < host_looping_sound_count)
 	{
@@ -1916,7 +1944,7 @@ static void host_send_attachments(
 {
 	short index = 0;
 
-	if (game_time_get() % OBJECT_REFRESH_TICKS != 0)
+	if (!host_resend.refresh)
 		return;
 	while (index < host_attachment_count)
 	{
@@ -2077,11 +2105,12 @@ void network_coop_host_tick(
 
 	if (!coop_game())
 		return;
+	host_resend_update();
 	host_count_skip_votes();
 	host_presentation(&message.presentation);
-	distributed_send(&message, _distributed_message_coop_presentation, 1, (word)sizeof(message), _distributed_to_clients);
+	send_to_clients(&message, _distributed_message_coop_presentation, 1, sizeof(message.presentation));
 	host_send_device_groups();
-	if (game_time_get() % OBJECT_NAMES_INTERVAL_TICKS == 0)
+	if (host_resend.joined || game_time_get() % OBJECT_NAMES_INTERVAL_TICKS == 0)
 		host_send_object_names();
 	host_send_object_transforms();
 	host_send_object_looks();
