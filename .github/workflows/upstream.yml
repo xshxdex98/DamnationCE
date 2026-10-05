@@ -1,7 +1,7 @@
 name: Upstream builds
 
 # OpenCE's builds (OpenCommunityEdition/OpenCE, tagged build-<n>) merged
-# into main with no one at the keyboard, every six hours, and told of in
+# into main with no one at the keyboard, every 15 minutes, and told of in
 # Discord's upstream channel. For the newest build main doesn't have yet:
 #
 # - if it merges without conflicts: the merge goes on the branch
@@ -24,7 +24,7 @@ name: Upstream builds
 # new version in the merge, as by hand (test_linux_port.py checks it).
 on:
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions:
