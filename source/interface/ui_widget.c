@@ -698,6 +698,7 @@ void map_screen_pointer(struct halo_ui_pointer const *pointer);
 /* port/linux/game/lobby_screen.c: drawn over the lobby's widgets */
 boolean lobby_screen_active(void);
 void lobby_screen_render(void);
+void overlay_lit_row_render(void);
 /* (ONLINE GAMES, below: its list moves focus item by item) */
 boolean ui_widget_online_games_list(struct widget_instance *widget);
 #endif
@@ -6693,6 +6694,7 @@ void render_ui_widgets(
 		/* port: the lobby is drawn over its own (invisible) widgets */
 		if (lobby_screen_active())
 			lobby_screen_render();
+		overlay_lit_row_render();
 #endif
 		if (widget_globals.fade_to_black >= 0.0f &&
 			widget_globals.fade_to_black <= 1.0f)
