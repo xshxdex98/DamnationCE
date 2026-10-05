@@ -58,7 +58,7 @@ struct players_vehicle_datum {struct {int unknown_state;} vehicle;};
 static struct players_vehicle_datum vehicle;
 struct data_iterator {long datum_index;int next;};
 static int player_data;
-/* (DamnationCE's network co-op paths, off: this is a local game) */
+/* (the network co-op paths, off: this is a local game) */
 enum {_game_connection_local,_game_connection_network_client,_game_connection_network_server};
 static short game_connection(void) {return _game_connection_local;}
 static boolean network_coop_active(void) {return FALSE;}
