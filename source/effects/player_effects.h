@@ -67,6 +67,10 @@ void player_effect_port_screen_fade_set(
 	short ticks,
 	boolean fading_out,
 	long start_time);
+/* port: whether the scripts' screen shake is running, and ending it at once
+(network co-op keeps a client's in step with the host's) */
+boolean player_effect_port_scripted_active(void);
+void player_effect_port_scripted_end(void);
 void player_effect_get_damage_indicators(
 	short local_player_index,
 	byte *damage_indicators);

@@ -491,6 +491,19 @@ void player_effect_port_screen_fade_set(
 	return;
 }
 
+boolean player_effect_port_scripted_active(
+	void)
+{
+	return TEST_FLAG(player_effect_globals->global_flags, _scripted_player_effect_active_bit);
+}
+
+void player_effect_port_scripted_end(
+	void)
+{
+	SET_FLAG(player_effect_globals->global_flags, _scripted_player_effect_active_bit, FALSE);
+	SET_FLAG(player_effect_globals->global_flags, _scripted_player_effect_stopping_bit, FALSE);
+}
+
 void player_effect_get_damage_indicators(
 	short local_player_index,
 	byte *damage_indicators)

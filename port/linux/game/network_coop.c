@@ -224,6 +224,11 @@ struct distributed_coop_presentation
 	timing may have a tick from the host's */
 	long camera_object_index;
 	real_vector3d camera_object_offset;
+	/* whether the scripts' screen shake is running on the host. A client
+	whose shake outlives it (the stop was skipped with a cutscene, or lost)
+	ends its own. */
+	byte scripted_shake;
+	byte pad[3];
 };
 
 struct distributed_coop_presentation_message
@@ -1140,6 +1145,7 @@ static void host_presentation(
 
 	presentation->camera_scripted = (byte)(*director_camera_scripted != FALSE);
 	presentation->input_disabled = (byte)!player_input_enabled();
+	presentation->scripted_shake = (byte)player_effect_port_scripted_active();
 	SET_FLAG(presentation->flags, _presentation_skippable_bit, skip_vote.offered);
 	presentation->skip_votes = (byte)MIN(skip_vote.votes, 255);
 	presentation->skip_voters = (byte)MIN(skip_vote.voters, 255);
@@ -2216,6 +2222,8 @@ void network_coop_handle_presentation(
 		return;
 	coop_presentation.heard_time = game_time_get();
 	player_input_enable(!presentation->input_disabled);
+	if (!presentation->scripted_shake && player_effect_port_scripted_active())
+		player_effect_port_scripted_end();
 
 	/* a machine that joined mid-cutscene may already have started it */
 	if (cinematic && !coop_presentation.cinematic_started)

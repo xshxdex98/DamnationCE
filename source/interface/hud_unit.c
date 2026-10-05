@@ -413,7 +413,7 @@ void hud_play_unit_sounds(
 
 		{
 			struct unit_definition const *unit_definition =
-				unit_definition_get(unit->definition_index);
+				unit_definition_get(unit_hud_definition_index(unit_index));
 			long active_hud_index = unit_definition_get_active_hud_index(
 				unit_definition,
 				local_player_count() > 1);
@@ -779,7 +779,7 @@ void hud_render_unit_interface(
 	{
 		struct unit_datum *unit = unit_get(player->unit_index);
 		struct unit_definition const *unit_definition =
-			unit_definition_get(unit->definition_index);
+			unit_definition_get(unit_hud_definition_index(player->unit_index));
 		short local_player_index = player->local_player_index;
 		long player_index = local_player_get_player_index(local_player_index);
 		struct unit_hud_state *hud_state = get_hud_state(local_player_index);
