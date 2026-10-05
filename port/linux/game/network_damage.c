@@ -1940,9 +1940,9 @@ static boolean distributed_event_goes_to(
 	return FALSE;
 }
 
-/* How often the host logs the clients' hits it dealt and refused, when it
-refused any: a client whose shots don't register is told apart from one
-that misses. */
+/* How often the host logs how many client hits it accepted and refused
+(only when it refused some). Tells "my shots don't register" apart from
+"I missed". */
 #define REPORT_LOG_TICKS (30 * TICKS_PER_SECOND)
 
 static void distributed_log_reports(

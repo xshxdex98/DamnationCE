@@ -45,7 +45,7 @@ observer allows up to 90 degrees) takes in all of them from that close */
 #define SPECTATE_PASSENGER_DISTANCE 1.0f
 #define SPECTATE_PASSENGER_PITCH -0.5f
 #define SPECTATE_PASSENGER_FIELD_OF_VIEW DEGREES_TO_RADIANS(85.0f)
-/* every other view: the dead camera's own (dead_camera.c) */
+/* field of view for every other spectate view (dead_camera.c's default) */
 #define SPECTATE_FIELD_OF_VIEW DEGREES_TO_RADIANS(70.0f)
 
 /* a teammate the scripts hold (Pillar of Autumn's cryo tube) is watched from
@@ -91,9 +91,9 @@ static long next_living_player(long self, long after)
 	return first;
 }
 
-/* Whether A or the keyboard's jump was pressed since the last call: once a
-press, however many frames it is held (the buttons count ticks, and a tick
-can span several frames, which would switch twice). */
+/* Returns TRUE once per press of A (or jump on the keyboard), however long
+it is held. The buttons count ticks, and one tick can span several frames,
+so testing "held" alone would switch more than once. */
 static boolean next_pressed(short controller_index)
 {
 	static boolean held[MAXIMUM_GAMEPADS];
@@ -141,7 +141,7 @@ long coop_spectate_unit(
 	if (self == NONE)
 		return NONE;
 	player = player_get(self);
-	/* (every frame, so a press is counted once) */
+	/* checked every frame so a press is never missed or counted twice */
 	next = next_pressed(player->network_player_data.controller_index);
 	/* alive: keep `watched`, so the next death starts on the same teammate */
 	if (player->unit_index != NONE)
@@ -164,7 +164,8 @@ boolean coop_spectate_watching_rider(
 
 	if (self == NONE || player_get(self)->unit_index != NONE)
 		return FALSE;
-	/* (the scripted camera may have been on since before this player died) */
+	/* the scripted camera may have been running since before this player
+	died, so nobody has been picked to watch yet */
 	if (watched == NONE || !player_try_and_get(watched) || player_get(watched)->unit_index == NONE)
 		watched = next_living_player(self, NONE);
 	unit_index = watched != NONE ? player_get(watched)->unit_index : NONE;
@@ -248,7 +249,8 @@ void coop_spectate_draw(
 	wchar_t text[96];
 	wchar_t const *hint;
 
-	/* (none to watch yet, joining: the host's view, from behind, network_coop.c) */
+	/* nobody to watch yet (still joining): network_coop.c shows the host's
+	view from behind instead */
 	if (watched == NONE || !player_try_and_get(watched))
 	{
 		if (coop_spectate_nothing_to_watch(local_player_index))

@@ -1193,7 +1193,7 @@ static void hud_draw_player_names(
 	if (setting == _player_names_none || player_index == NONE)
 		return;
 	team_index = player_get(player_index)->team_index;
-	/* (the campaign draws its triangles over teammates always, hud_draw_players) */
+	/* the campaign always draws teammate triangles (hud_draw_players) */
 	indicators = game_engine_display_team_indicators() || !game_engine_running();
 	enemy_range = hud_player_name_enemy_range();
 	/* (the players the motion tracker would show this local player) */

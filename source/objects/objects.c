@@ -2380,9 +2380,9 @@ void object_compute_node_matrices(
 		
 		struct model *model = model_definition_get(object_definition->object.model.index);
 
-		/* port: a unit animating with another model's animations (a network
-		co-op player's elite with the Spartan's) is animated and overlaid on
-		that model's nodes, then carried over to its own (model_animations.c) */
+		/* port: a unit using another model's animations (a network co-op
+		player's elite using the Spartan's) is animated on that model's nodes,
+		then copied onto its own (model_animations.c) */
 		struct animation_retarget const *retarget = TEST_FLAG(_object_mask_unit, object->object.type) ?
 			unit_animation_retarget(object_index, model) : NULL;
 		real_orientation source_orientations[MAXIMUM_NODES_PER_MODEL];
@@ -2445,7 +2445,7 @@ void object_compute_node_matrices(
 			model_get_node_orientations(model, node_orientations);
 		}
 
-		/* port: (the unit's own overlays, on the borrowed animation's nodes) */
+		/* port: apply the unit's overlays on the source nodes, then copy over */
 		if (retargeting)
 		{
 			object_type_preprocess_node_orientations(object_index, source_orientations);

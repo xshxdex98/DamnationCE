@@ -2000,9 +2000,9 @@ static boolean pause_game_quit_to_main_menu(
 	struct event_record *event,
 	boolean *widget_deleted)
 {
-	/* port: co-op leaves the network game with every player on this machine
-	(one press, not one per split screen player), and keeps the solo saved
-	game */
+	/* port: in co-op, take every player on this machine out of the network
+	game with one press (not one per split screen player). The solo save is
+	left alone. */
 	if (network_coop_active())
 	{
 		short controller_index;

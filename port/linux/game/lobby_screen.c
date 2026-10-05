@@ -41,8 +41,8 @@ static short const button_lefts[NUMBER_OF_BUTTONS] = { 176, 288, 400, 512 };
 static char const *const button_names[NUMBER_OF_BUTTONS] =
 	{ "lobby_button_team", "lobby_button_start", "lobby_button_add", "lobby_button_leave" };
 static char const *const button_labels[NUMBER_OF_BUTTONS] = { "SWITCH TEAM", "START NOW", "ADD PLAYER", "LEAVE" };
-/* the co-op lobby's PLAYER: SPARTAN / ELITE, under the game's details
-(tools/port_settings.py: LOBBY_MODEL_BUTTON_*) */
+/* the co-op lobby's PLAYER: SPARTAN / ELITE button, under the game details
+(must match LOBBY_MODEL_BUTTON_* in tools/port_settings.py) */
 enum
 {
 	MODEL_BUTTON_LEFT = 420, MODEL_BUTTON_TOP = 276, MODEL_BUTTON_WIDTH = 196,
@@ -323,7 +323,7 @@ static void render_buttons(
 	}
 }
 
-/* the player model button, where its widget is (shown in co-op only) */
+/* draws the player model button over its invisible widget (co-op only) */
 static void render_model_button(
 	struct overlay_palette const *palette,
 	struct widget_instance *list)
@@ -336,7 +336,7 @@ static void render_model_button(
 
 	if (!button || !button->visible)
 		return;
-	/* (its text is ASCII) */
+	/* the label is plain ASCII */
 	for (length = 0; label[length] && length < sizeof(text) - 1; length++)
 		text[length] = (char)label[length];
 	text[length] = 0;
@@ -356,7 +356,7 @@ static void render_join_help(
 	char text[64];
 	size_t length;
 
-	/* (its text is ASCII) */
+	/* the label is plain ASCII */
 	for (length = 0; help[length] && length < sizeof(text) - 1; length++)
 		text[length] = (char)help[length];
 	text[length] = 0;

@@ -5785,9 +5785,9 @@ static short ui_mouse_presses[UI_MOUSE_MAXIMUM_PRESSES];
 static long ui_mouse_press_count = 0;
 static boolean ui_mouse_hover_pending = FALSE;
 static boolean ui_mouse_click_pending = FALSE;
-/* whether the pointer moved the focus last (the d-pad clears it): a list
-then doesn't scroll on at its end, which the pointer, moving, would make it
-do every frame (menu_functions.c) */
+/* TRUE if the mouse last moved the focus (the keys clear it). Lists then
+don't scroll at their ends, which a resting mouse would trigger every frame
+(menu_functions.c). */
 static boolean ui_mouse_focused_last = FALSE;
 static short ui_mouse_hover_x, ui_mouse_hover_y;
 static short ui_mouse_click_x, ui_mouse_click_y;
@@ -6041,8 +6041,7 @@ static void ui_mouse_give_focus(
 	return;
 }
 
-/* port: whether the pointer moved the menus' focus last, rather than the
-d-pad (menu_functions.c's lists) */
+/* port: TRUE if the mouse, not the keys, last moved the menus' focus */
 boolean ui_widget_port_pointer_focused(
 	void)
 {

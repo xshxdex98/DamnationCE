@@ -140,8 +140,8 @@ void overlay_map_picture(
 	float width,
 	float height);
 
-/* Glassed: lights the gametype lists' focused row, as the overlay's own
-lists light theirs (ui_widget.c, after the menus are drawn) */
+/* Glassed: highlights the focused row of the gametype lists, matching the
+overlay's own lists. Called by ui_widget.c after the menus are drawn. */
 void overlay_lit_row_render(
 	void);
 

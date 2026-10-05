@@ -315,7 +315,7 @@ void overlay_map_picture(
 	draw_bitmap_in_rect(bitmap, &bounds, &art, NULL, 0xFFFFFFFF, NULL, FALSE);
 }
 
-/* the stock menus' list rows (main_menu/new_select/list_item_*) */
+/* size of the stock menu list rows (main_menu/new_select/list_item_*) */
 enum
 {
 	LIT_ROW_WIDTH = 390,
@@ -331,11 +331,11 @@ void overlay_lit_row_render(
 	struct widget_instance *top = ui_widget_port_top();
 	struct widget_instance *widget;
 
-	/* (the gametype lists, Multiplayer's and the playlist editor's: their
-	rows are the stock menus') */
+	/* only the gametype lists (Multiplayer and the playlist editor), which
+	use the stock menu rows */
 	if (!palette->glassed || !top || !top->name || strcmp(top->name, "gametype_select_screen"))
 		return;
-	/* the focused row (a widget's offsets are its place on the screen) */
+	/* find the focused row; widget offsets are already screen positions */
 	for (widget = top; widget->focused_child; widget = widget->focused_child)
 		;
 	while (widget && widget->name && strncmp(widget->name, "list_item_", 10))

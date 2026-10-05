@@ -466,18 +466,16 @@ static void player_handle_powerup_equipment(
 
 /* ---------- globals */
 
-/* port: network co-op. Since when each player has been somewhere the
-level's other players can spawn beside (player_spawnable_beside: the game
-time plus one, 0 while it isn't), by absolute index: they spawn beside it a
-while after (players_coop_room_to_spawn). */
+/* port: network co-op timers, by player absolute index. Each holds the
+game time plus one at which something started, or 0 when it isn't happening.
+spawnable_since: when the player became somewhere others can spawn beside
+(player_spawnable_beside); they wait a while after (players_coop_room_to_spawn). */
 static struct
 {
 	long spawnable_since[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
-	/* since when (the game time plus one) the dead have waited for a teammate
-	safe to respawn beside, 0 while nobody waits */
+	/* when the dead started waiting for a safe teammate to respawn beside */
 	long respawn_wait_since;
-	/* since when each player's unit has been outside the structure BSP (the
-	game time plus one, 0 while inside), by absolute index */
+	/* when each player's unit left the loaded structure BSP */
 	long stranded_since[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
 } players_coop_state;
 
@@ -1308,8 +1306,8 @@ long find_best_starting_location_index(
 	return best_starting_location_index;
 }
 
-/* port: the biped a network co-op player spawns as: an elite if they chose
-one in the lobby and the level has one, else the campaign's Spartan */
+/* port: the biped a network co-op player spawns as: the elite if they
+picked it in the lobby and the level has one, otherwise the Spartan */
 static long players_coop_unit_definition(
 	struct player_datum const *player,
 	long campaign_unit_index)
@@ -1322,11 +1320,11 @@ static long players_coop_unit_definition(
 	return elite_index != NONE ? elite_index : campaign_unit_index;
 }
 
-/* port: the unit definition whose animations a unit borrows: the campaign
-Spartan's, for a network co-op player's biped of another kind (an elite,
-players_coop_unit_definition), which has no animations for the Spartan's
-weapons; NONE for any other unit. By its owner, which the unit keeps
-after death, and which a client has too. */
+/* port: for a network co-op player's non-Spartan biped (the elite from
+players_coop_unit_definition), returns the Spartan's unit definition, whose
+animations it uses so it can hold every weapon. Returns NONE for any other
+unit. Decided by the unit's owner, which survives death and is known on
+clients too. */
 long players_coop_animation_source(
 	long unit_index)
 {
@@ -1350,9 +1348,9 @@ long players_coop_animation_source(
 	return spartan_index;
 }
 
-/* port: a network co-op player's profile colour on their unit, in place of
-each colour its tag fixes (the campaign Spartan's armour is always green: its
-tag's one colour for it overrides the colour the unit is made with) */
+/* port: paints a network co-op player's unit in their profile colour. The
+campaign Spartan is always green because its tag fixes that colour, which
+overrides the colour the unit is created with; this replaces fixed colours. */
 static void players_coop_color_unit(
 	long unit_index,
 	real_rgb_color const *color)
@@ -1366,7 +1364,7 @@ static void players_coop_color_unit(
 		struct object_change_color_definition *change_color = TAG_BLOCK_GET_ELEMENT(
 			&definition->object.change_colors, index, struct object_change_color_definition);
 
-		/* (one a function scales, as the Spartan's shield glow, is left be) */
+		/* skip colours driven by a function, like the shield glow */
 		if (change_color->permutations.count > 0 && !change_color->scaled_by && !change_color->darken_by)
 		{
 			object->object.base_change_colors[index] = *color;
@@ -2585,18 +2583,17 @@ boolean players_coop_waiting_to_start(
 		players_coop_extras_held();
 }
 
-/* how close an enemy's projectile makes a teammate unsafe to respawn
-beside (world units) */
+/* an enemy projectile this close (world units) makes a teammate unsafe
+to respawn beside */
 #define COOP_RESPAWN_DANGER_RADIUS 15.0f
 /* how often the respawn's safety test runs while someone is dead */
 #define COOP_RESPAWN_CHECK_TICKS (TICKS_PER_SECOND / 2)
-/* how long the dead wait for a safe teammate before they come back beside
-one that is at least on the ground */
+/* after waiting this long for a safe teammate, the dead respawn beside any
+teammate standing on the ground */
 #define COOP_RESPAWN_FALLBACK_TICKS (10 * TICKS_PER_SECOND)
 
-/* whether a projectile no player fired (a grenade, a plasma bolt) is loose
-near the unit; the players' own fire, and needles stuck in a body, are not
-danger */
+/* TRUE if an enemy projectile (a grenade, a plasma bolt) is flying near the
+unit. Players' own shots and needles stuck in a body don't count. */
 static boolean players_coop_danger_near(
 	long unit_index)
 {
@@ -2618,17 +2615,16 @@ static boolean players_coop_danger_near(
 	return FALSE;
 }
 
-/* whether the unit (or what it rides) is inside the structure BSP loaded:
-the campaign's scripts move only the second player along when they switch
-BSP, so in network co-op the others can be left outside it */
+/* TRUE if the unit (or the vehicle it rides) is inside the loaded structure
+BSP. In network co-op players can be left outside it after a BSP switch. */
 static boolean players_coop_unit_in_structure(
 	long unit_index)
 {
 	return object_get(object_get_ultimate_parent(unit_index))->object.location.cluster_index != NONE;
 }
 
-/* whether a living player's unit has ground to respawn beside: inside the
-structure BSP, not in the air, nor in a moving vehicle */
+/* TRUE if a living player's unit is on solid ground: inside the structure
+BSP, not airborne and not in a moving vehicle */
 static boolean players_coop_unit_grounded(
 	long unit_index)
 {
@@ -2651,8 +2647,8 @@ static boolean players_coop_unit_grounded(
 	}
 }
 
-/* whether a living player's unit is safe to respawn beside: grounded, no
-enemy attacking it, no enemy projectile near it */
+/* TRUE if it is safe to respawn beside a living player's unit: grounded,
+not under attack, and no enemy projectile nearby */
 static boolean players_coop_unit_safe(
 	long unit_index)
 {
@@ -2660,7 +2656,7 @@ static boolean players_coop_unit_safe(
 		!players_coop_danger_near(unit_index);
 }
 
-/* the unit of the first living player that `test` passes, or NONE */
+/* the unit of the first living player that passes `test`, or NONE */
 static long players_coop_unit_where(
 	boolean (*test)(long unit_index))
 {
@@ -2728,11 +2724,10 @@ static boolean players_respawn_network_coop(
 	return result;
 }
 
-/* Where a new player can spawn beside the player: the unit on foot, or the
-vehicle it rides when a player drives it (a Warthog, round which the new
-player is put); NONE while the scripts hold the controls (Pillar of
-Autumn's cryo tube) or it rides a vehicle nobody plays (Silent
-Cartographer's Pelican), which would put the new player inside. */
+/* What a new player can spawn beside: the player's unit on foot, or the
+vehicle it rides if a player drives it (a Warthog). NONE while scripts hold
+the controls (Pillar of Autumn's cryo tube) or while it rides an AI vehicle
+(Silent Cartographer's Pelican), which would put the new player inside. */
 static long player_spawnable_beside(
 	struct player_datum const *player)
 {
@@ -2749,13 +2744,13 @@ static long player_spawnable_beside(
 	return driver_index != NONE && unit_get(driver_index)->unit.player_index != NONE ? vehicle_index : NONE;
 }
 
-/* How long a teammate has been somewhere to spawn beside before the others
-do, so that they aren't put inside a vehicle it has only just left. */
+/* How long a teammate must have been somewhere spawnable before others
+spawn beside them, so nobody lands inside a vehicle they just left. */
 #define COOP_DISEMBARK_TICKS (4 * TICKS_PER_SECOND)
 
-/* Where the player was at the last checkpoint, or where anyone was for a
-player who joined since; NULL when that checkpoint was on another structure
-BSP or there is none. */
+/* The player's position at the last checkpoint, or any player's position
+for someone who joined after it. NULL if there is no checkpoint or it was on
+another structure BSP. */
 static real_point3d const *players_checkpoint_position(
 	long player_index)
 {
@@ -2774,10 +2769,9 @@ static real_point3d const *players_checkpoint_position(
 	return NULL;
 }
 
-/* Whether the unit is stranded outside the structure BSP loaded, where it
-falls forever: on foot, or riding a vehicle nobody drives or a player
-drives. A vehicle the AI drives is left alone: the intro Pelicans fly
-outside the BSP on purpose. */
+/* TRUE if the unit is outside the loaded structure BSP, where it would fall
+forever: on foot, or in a vehicle that is empty or player-driven. AI-driven
+vehicles are ignored because the intro Pelicans fly outside the BSP. */
 static boolean players_coop_unit_stranded(
 	long unit_index)
 {
@@ -2793,17 +2787,16 @@ static boolean players_coop_unit_stranded(
 	return driver_index == NONE || unit_get(driver_index)->unit.player_index != NONE;
 }
 
-/* How long a player can be stranded before it is brought back (a BSP
-switch settles in a tick or two; a moment longer tells a player left behind
-from one passing a seam). */
+/* How long a player can be outside the BSP before being brought back. A
+BSP switch settles in a tick or two; waiting a bit longer avoids moving
+someone who is just crossing a seam. */
 #define COOP_STRANDED_TICKS TICKS_PER_SECOND
 
-/* Co-op host, each tick: a player stranded for COOP_STRANDED_TICKS is
-brought beside a teammate with ground inside the BSP, else any teammate
-inside it, else to the last checkpoint. Not while the scripts hold the
-controls, as they place the players in cutscenes. A BSP switch moves
-everyone already (players_reconnect_to_structure_bsp); this catches
-whoever it couldn't place. */
+/* Co-op host, each tick: a player stranded for COOP_STRANDED_TICKS is moved
+beside a grounded teammate inside the BSP, else any teammate inside it, else
+to the last checkpoint. Skipped while scripts hold the controls, since
+cutscenes place the players themselves. A BSP switch already moves everyone
+(players_reconnect_to_structure_bsp); this catches anyone it missed. */
 static void players_coop_rescue_stranded(
 	void)
 {
@@ -2847,7 +2840,7 @@ static void players_coop_rescue_stranded(
 	}
 }
 
-/* co-op, each tick: notes when each player became somewhere to spawn beside */
+/* co-op, each tick: records when each player became somewhere spawnable */
 static void players_coop_note_on_foot(
 	void)
 {
@@ -2891,11 +2884,10 @@ static boolean players_coop_room_to_spawn(
 	return FALSE;
 }
 
-/* Co-op host: puts a newly spawned player beside a teammate on foot or in
-a vehicle a player drives (player_spawnable_beside; player_teleport tries a
-few spots round each, round the vehicle for one riding it). Every teammate
-is tried in turn, so a big lobby spreads round the whole group; if none has
-room the player stays where it spawned. */
+/* Co-op host: moves a newly spawned player beside a teammate who is on foot
+or in a player-driven vehicle (player_spawnable_beside). player_teleport tries
+a few spots around each. Teammates are tried in turn so a big lobby spreads
+out; if nobody has room the player stays where they spawned. */
 static void player_place_beside_teammate(
 	long player_index)
 {
@@ -2982,9 +2974,9 @@ static void player_teleport_on_bsp_switch(
 		position);
 	if (biped)
 	{
-		/* port: network co-op moves only the players the switch left outside
-		the BSP. Pulling everyone else to whoever crossed it, as split screen
-		does, bounced players far apart back and forth. */
+		/* port: network co-op only moves players the switch left outside the
+		BSP. Pulling everyone to whoever crossed, as split screen does, bounced
+		players who were far apart back and forth. */
 		if (players_globals->pending_teleport_starting_location_index != NONE && !network_coop_active() &&
 			!scenario_trigger_volume_test_object(
 				TAG_BLOCK_GET_ELEMENT(
@@ -3047,7 +3039,7 @@ void players_reconnect_to_structure_bsp(
 	short cutscene_flag_index;
 	long player_unit_index;
 
-	/* port: and on a network co-op host, whose other players are remote */
+	/* port: also on a network co-op host, whose other players are remote */
 	if (players_globals->pending_teleport_starting_location_index != NONE &&
 		(players_globals->local_player_count > 1 ||
 			(network_coop_active() && game_connection() == _game_connection_network_server)))
@@ -3135,8 +3127,7 @@ void players_reconnect_to_structure_bsp(
 			0x63E,
 			found_player,
 			"no players in the bsp");
-		/* port: every player, not only the local ones (in split screen
-		they are the same) */
+		/* port: all players, not just local ones (the same set in split screen) */
 		if (found_player)
 		{
 			data_iterator_new(&iterator, player_data);
