@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.12
+
+### Co-op
+
+- Everyone stays on the same part of the level. A loading zone reaches
+  every player at once, a player still loading it can't trigger another
+  or be pulled around by their own lag, and no loading zone switches again
+  until everyone has loaded the last one.
+- In a big team, players who don't fit beside whoever crossed a loading
+  zone are placed beside another teammate instead of being left behind.
+
+Network version 16: everyone needs 0.3.12 to play together.
+
 ## 0.3.11
 
 ### From OpenCE
