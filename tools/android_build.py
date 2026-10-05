@@ -411,9 +411,9 @@ def generate_android_build(n: Writer, sln: Any) -> None:
         guest_abi, guest_code, " ".join(game_flags), profile_flags,
         f"-include {prefix_header}", f"-include {semantics_header}",
         f"-I{LINUX_DIR}/include",
-        # the headers of the port's own game units, for the game sources
-        # that call them
-        f"-iquote {config['game_sources']}",
+        # the headers of the port's own game units (port/linux/game), for the
+        # game sources that call them
+        f"-iquote {Path(config['game_sources'])}",
         game_defines_and_includes(config), *libc_includes, f"-idirafter {XDK_INCLUDE}",
     ])
     for source in game_sources(config):
