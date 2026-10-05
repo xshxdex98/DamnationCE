@@ -1375,6 +1375,7 @@ static void client_apply_hud(
 	switch (event->type)
 	{
 	case _coop_hud_help_text:
+		hud_scripted_globals->show_hud_help_text = event->frame != 0;
 		if (event->value >= 0 && event->value < hud_messaging_port_message_count())
 			scripted_hud_set_state_message(event->value);
 		break;
@@ -1973,6 +1974,9 @@ void network_coop_note_hud(
 		return;
 	event->type = (byte)kind;
 	event->value = value;
+	/* (help text shows only while the scripts show it; the presentation
+	saying so comes a little after the event, so the event carries it) */
+	event->frame = (short)hud_scripted_globals->show_hud_help_text;
 	if (kind == _coop_hud_objective)
 		host_hud_state.objective = value;
 }
