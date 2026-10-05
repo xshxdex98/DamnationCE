@@ -637,9 +637,9 @@ boolean cache_file_header_verify(
 		return FALSE;
 	}
 
-	/* port: its tag data within the file, and no larger than the tag cache
-	it is read into (cache_files.c's scenario_tags_load; a Custom Edition
-	map's, larger, is checked against its own: ce_map_checks.c) */
+	/* port: the tag data must lie within the file and fit the tag cache it
+	is read into (scenario_tags_load). Custom Edition maps are checked by
+	their own loader (port/linux/game/cache_file_formats.c). */
 	if (header->tag_data_offset < 0 ||
 		header->tag_data_size < 0 ||
 		header->tag_data_offset > header->file_length ||
