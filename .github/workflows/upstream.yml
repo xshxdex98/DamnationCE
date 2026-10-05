@@ -1,6 +1,6 @@
 name: Upstream builds
 
-# OpenCE's builds (cybersecurity/halo-ce-universal, tagged build-<n>) offered
+# OpenCE's builds (OpenCommunityEdition/OpenCE, tagged build-<n>) offered
 # for merging, a day after they're out at most. For the newest build main
 # doesn't have yet:
 #
@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ github.token }}
-      UPSTREAM: https://github.com/cybersecurity/halo-ce-universal.git
+      UPSTREAM: https://github.com/OpenCommunityEdition/OpenCE.git
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,13 +63,13 @@ jobs:
           if git merge --no-ff --no-edit "$build" -m "$title"; then
             git push --quiet origin "$branch"
             gh pr create --head "$branch" --base main --title "$title" --body \
-              "OpenCE's [$build](https://github.com/cybersecurity/halo-ce-universal/releases/tag/$build) merged into main without conflicts. Its build is running; check both themes' menus for anything it adds before merging."
+              "OpenCE's [$build](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/$build) merged into main without conflicts. Its build is running; check both themes' menus for anything it adds before merging."
             gh workflow run build.yml --ref "$branch"
           else
             conflicts="$(git diff --name-only --diff-filter=U | sed 's/^/- /')"
             git merge --abort
             gh issue create --title "$title" --body \
-              "OpenCE's [$build](https://github.com/cybersecurity/halo-ce-universal/releases/tag/$build) conflicts with main, so it needs a merge by hand. The conflicting files:
+              "OpenCE's [$build](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/$build) conflicts with main, so it needs a merge by hand. The conflicting files:
 
           $conflicts"
           fi
