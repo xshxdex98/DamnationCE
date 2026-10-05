@@ -2000,10 +2000,17 @@ static boolean pause_game_quit_to_main_menu(
 	struct event_record *event,
 	boolean *widget_deleted)
 {
-	/* port: co-op leaves the network game, as the multiplayer pause menu's
-	quit does, and keeps the solo saved game */
+	/* port: co-op leaves the network game with every player on this machine
+	(one press, not one per split screen player), and keeps the solo saved
+	game */
 	if (network_coop_active())
-		return network_game_remove_local_player(widget, event, widget_deleted);
+	{
+		short controller_index;
+
+		for (controller_index = 0; controller_index < MAXIMUM_NUMBER_OF_LOCAL_PLAYERS; controller_index++)
+			network_game_client_local_player_quit(controller_index);
+		return TRUE;
+	}
 	game_state_save_to_persistent_storage();
 	main_goto_main_menu();
 	return TRUE;

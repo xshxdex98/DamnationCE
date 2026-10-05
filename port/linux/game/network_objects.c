@@ -2905,6 +2905,51 @@ static void distributed_client_remove_own_objects(
 	objects_client_new_object_count = 0;
 }
 
+/* A client: each vehicle the AI drives (a Pelican on its flight path)
+carried on at the speeds the host last sent it. It is at rest here, and the
+host sends a far one only every few ticks, so it would stand still between
+its states and jump on each. */
+static void distributed_client_carry_unsteered_vehicles(
+	void)
+{
+	struct object_iterator iterator;
+	struct object_datum *object;
+
+	object_iterator_new(&iterator, _object_mask_vehicle, 0);
+	while ((object = object_iterator_next(&iterator)) != NULL)
+	{
+		real_vector3d const *velocity = &object->object.translational_velocity;
+		real_vector3d axis = object->object.angular_velocity;
+		real_vector3d forward = object->object.forward;
+		real_vector3d up = object->object.up;
+		real_point3d position;
+		real angle;
+
+		if (object->object.parent_object_index != NONE || unit_get(iterator.index)->unit.driver_object_index == NONE ||
+			!distributed_vehicle_unsteered(iterator.index))
+		{
+			continue;
+		}
+		angle = normalize3d(&axis);
+		if (velocity->i == 0.0f && velocity->j == 0.0f && velocity->k == 0.0f && angle == 0.0f)
+			continue;
+		position.x = object->object.position.x + velocity->i;
+		position.y = object->object.position.y + velocity->j;
+		position.z = object->object.position.z + velocity->k;
+		/* (turned as physics.c turns a vehicle by its angular velocity) */
+		if (angle != 0.0f)
+		{
+			real_matrix4x3 rotation;
+
+			matrix4x3_rotation_from_axis_and_angle(&rotation, &axis, (real)sin(angle), (real)cos(angle));
+			matrix4x3_transform_vector(&rotation, &object->object.forward, &forward);
+			matrix4x3_transform_vector(&rotation, &object->object.up, &up);
+		}
+		if (distributed_transform_valid(&position, &forward, &up, NULL, NULL, &forward, &up))
+			object_set_position(iterator.index, &position, &forward, &up);
+	}
+}
+
 void network_objects_client_tick(
 	void)
 {
@@ -2932,6 +2977,7 @@ void network_objects_client_tick(
 	distributed_client_ready_picked_up_weapons();
 	distributed_client_note_own_inventories();
 	distributed_client_send_vehicles();
+	distributed_client_carry_unsteered_vehicles();
 	/* (who it is, as its Discord told it: once its ready went, which makes
 	it a machine the host takes messages of) */
 	if (objects_client_ready_time != NONE)

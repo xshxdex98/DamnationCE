@@ -996,7 +996,7 @@ static void hud_draw_players(
 	return;
 }
 
-/* port: in multiplayer, players' names above their heads
+/* port: in multiplayer and network co-op, players' names above their heads
 (display.player_names: "all", "allies", "enemies" or "none"). An ally's goes
 above the triangle the game draws over teammates; an enemy's only within the
 motion sensor's reach, while the view sees them and they are not
@@ -1193,7 +1193,8 @@ static void hud_draw_player_names(
 	if (setting == _player_names_none || player_index == NONE)
 		return;
 	team_index = player_get(player_index)->team_index;
-	indicators = game_engine_display_team_indicators();
+	/* (the campaign draws its triangles over teammates always, hud_draw_players) */
+	indicators = game_engine_display_team_indicators() || !game_engine_running();
 	enemy_range = hud_player_name_enemy_range();
 	/* (the players the motion tracker would show this local player) */
 	game_engine_motion_sensor_viewer(render.local_player_index);
@@ -1363,8 +1364,8 @@ void hud_draw_screen(
 			hud_draw_players();
 		}
 
-		/* port: players' names above their heads, in multiplayer */
-		if (game_engine_running() && !cinematic_in_progress())
+		/* port: players' names above their heads, in multiplayer and network co-op */
+		if ((game_engine_running() || network_coop_active()) && !cinematic_in_progress())
 			hud_draw_player_names();
 		/* port: who a dead network co-op player is watching */
 		if (player->unit_index == NONE && coop_spectating() && !cinematic_in_progress())

@@ -2638,8 +2638,11 @@ static boolean players_respawn_network_coop(
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
 		/* (those still waiting for the level's first checkpoint spawn then) */
-		if (player->unit_index != NONE || players_coop_waiting_to_start(iterator.datum_index))
+		if (player->unit_index != NONE || player->quit_out_of_game ||
+			players_coop_waiting_to_start(iterator.datum_index))
+		{
 			continue;
+		}
 		player_spawn(iterator.datum_index);
 		if (player->unit_index == NONE ||
 			!player_teleport(iterator.datum_index, safe_unit_index,
@@ -2876,7 +2879,7 @@ void players_respawn_at_checkpoint(
 	{
 		real_point3d const *position;
 
-		if (player->unit_index != NONE)
+		if (player->unit_index != NONE || player->quit_out_of_game)
 			continue;
 		player_spawn(iterator.datum_index);
 		position = players_checkpoint_position(iterator.datum_index);
@@ -2908,7 +2911,10 @@ static void player_teleport_on_bsp_switch(
 		position);
 	if (biped)
 	{
-		if (players_globals->pending_teleport_starting_location_index != NONE &&
+		/* port: network co-op moves only the players the switch left outside
+		the BSP. Pulling everyone else to whoever crossed it, as split screen
+		does, bounced players far apart back and forth. */
+		if (players_globals->pending_teleport_starting_location_index != NONE && !network_coop_active() &&
 			!scenario_trigger_volume_test_object(
 				TAG_BLOCK_GET_ELEMENT(
 					&global_scenario_get()->bsp_switch_trigger_volumes,
@@ -4211,8 +4217,8 @@ void players_update_before_game(
 						game_engine_client_respawn_countdown(iterator.datum_index);
 				}
 				/* port: in co-op only the host spawns players; clients get their units
-				from the network */
-				else if (!main_menu_is_active() && !network_game_distributed_client())
+				from the network. One who quit doesn't come back. */
+				else if (!main_menu_is_active() && !network_game_distributed_client() && !player->quit_out_of_game)
 				{
 					if (player->statistics.deaths == 0)
 					{

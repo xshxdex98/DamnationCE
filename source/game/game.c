@@ -937,7 +937,9 @@ void remove_quitting_players_from_game(
 	struct player_datum *player;
 	long current_time;
 
-	if (!game_engine_running())
+	/* port: and in network co-op, which has no game engine (its quitters'
+	units stayed, and respawned) */
+	if (!game_engine_running() && !network_coop_active())
 		return;
 
 	current_time = game_time_get();
