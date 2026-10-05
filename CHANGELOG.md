@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.8
+
+### Co-op
+
+- Marines are friends for clients too: no more red reticles on allies or
+  marines showing on the wrong team.
+- Going back into a part of the level the team has already left waits
+  until everyone is at the loading zone, so one player can't drag the
+  whole team back.
+- Covenant vehicles the host destroys explode for clients too, instead of
+  staying intact.
+
+### From OpenCE
+
+- Network version 14. Everyone needs 0.3.8 to
+  play together.
+
 ## 0.3.7
 
 ### Co-op
