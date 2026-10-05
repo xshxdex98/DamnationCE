@@ -28,6 +28,7 @@ own folder.
 #include "tag_files/tag_files.h"
 #include "cache/cache_files.h"
 #include "main/main.h"
+#include "networking/network_client_manager.h"
 #include "networking/network_game_globals.h"
 #include "networking/network_game_manager.h"
 #include "networking/network_server_manager_internal.h"
@@ -80,8 +81,12 @@ end (cache_files.c's CACHE_FILE_HEADER_SIGNATURE, little-endian) */
 #define CACHE_HEADER_BYTES 0x800
 #define CACHE_FOOTER_OFFSET 0x7FC
 
-/* how long the client waits for the host to answer before giving up */
+/* how long the client waits for the host to answer before giving up (and
+the host, before taking a client asking nothing for idle) */
 #define SILENCE_MILLISECONDS 15000
+/* while the player decides, how often the client asks the host again, so the
+host doesn't take it for idle */
+#define KEEP_ALIVE_MILLISECONDS 5000
 
 /* maps everyone has, which are never sent: the Xbox's campaign and
 multiplayer levels, Halo PC's own multiplayer maps, and the resource maps */
@@ -171,6 +176,9 @@ static long maximum_file_bytes(
 
 /* ---------- the host */
 
+/* when each client machine last asked for some of the map */
+static unsigned long host_request_times[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
+
 /* the file a request names: the game's own map, or the picture beside it */
 static boolean host_file_path(
 	char const *map_name,
@@ -216,6 +224,8 @@ static void host_handle_request(
 	FILE *stream = NULL;
 	long size = NONE;
 
+	if (machine_index >= 0 && machine_index < HALO_PORT_MAXIMUM_NETWORK_MACHINES)
+		host_request_times[machine_index] = system_milliseconds();
 	csmemset(&answer, 0, ANSWER_HEAD_BYTES);
 	csmemcpy(answer.map_name, request->map_name, MAP_NAME_SIZE);
 	answer.map_name[MAP_NAME_SIZE - 1] = 0;
@@ -260,6 +270,8 @@ static void host_handle_request(
 enum
 {
 	_client_idle,
+	/* asking the player, before joining, whether to download the game's map */
+	_client_asking_join,
 	/* asked the host for the files' sizes */
 	_client_sizing,
 	/* asking the player */
@@ -285,6 +297,16 @@ static struct
 	FILE *stream;
 	unsigned long heard_time;
 	char failure[128];
+	/* the host began the game in progress before the map was here
+(map_download_hold_begin) */
+	boolean begin_held;
+	/* the map the player said to download on JOIN (map_download_ask), and
+whether this download is it, so isn't asked about again */
+	char approved_name[MAP_NAME_SIZE];
+	boolean approved;
+	void (*join)(void);
+	/* when the client last asked the host anything */
+	unsigned long asked_time;
 	/* the screen's button with the focus, and the held direction */
 	short selected;
 	struct overlay_repeat repeat;
@@ -313,6 +335,7 @@ static void client_send_request(
 	request.length = length;
 	distributed_fill_header(&request, _distributed_message_map_request, 1, sizeof(request));
 	network_distributed_client_send_reliably(&request, sizeof(request));
+	client.asked_time = system_milliseconds();
 }
 
 /* closes and deletes a file half downloaded */
@@ -412,13 +435,27 @@ static boolean client_picture_valid(
 	return valid;
 }
 
-/* the map is here: loaded, and with it the game joined */
+static void client_start_download(
+	void)
+{
+	client.state = _client_downloading;
+	if (!client_start_file(_map_download_map))
+		client_fail("The map couldn't be saved. Is the disk full?");
+}
+
+/* the map is here: loaded, and with it the game joined (the game the host
+began meanwhile, now) */
 static void client_done(
 	void)
 {
+	struct network_game_client *network_client = global_network_game_client_get();
+
 	error(_error_silent, "map download: %s: done", client.name);
 	client.state = _client_idle;
 	main_set_multiplayer_map_name(client.map_name);
+	if (client.begin_held && network_client && !network_game_client_game_has_started(network_client))
+		error(_error_silent, "map download: %s: the game the host began couldn't be joined", client.name);
+	client.begin_held = FALSE;
 }
 
 /* the file being downloaded can't be had: the map is the point, and the
@@ -512,7 +549,12 @@ static void client_handle_size(
 	else if (map_size < CACHE_HEADER_BYTES)
 		client_fail("The host's map isn't a Halo map.");
 	else if (TEST_FLAG(client.sizes_known, _map_download_picture))
-		client.state = _client_asking;
+	{
+		if (client.approved)
+			client_start_download();
+		else
+			client.state = _client_asking;
+	}
 }
 
 /* a piece of the file being downloaded, the next one expected */
@@ -572,11 +614,11 @@ static void client_handle_answer(
 }
 
 /* (the client's machine gone from the game: whatever it was downloading
-dropped) */
+dropped; the question before joining needs no game) */
 static void client_forget_if_disconnected(
 	void)
 {
-	if (client.state != _client_idle && !global_network_game_client_get())
+	if (client.state != _client_idle && client.state != _client_asking_join && !global_network_game_client_get())
 		client_forget();
 }
 
@@ -608,6 +650,14 @@ void map_download_handle_message(
 #endif
 }
 
+boolean map_download_machine_busy(
+	long machine_index)
+{
+	return machine_index >= 0 && machine_index < HALO_PORT_MAXIMUM_NETWORK_MACHINES &&
+		host_request_times[machine_index] &&
+		system_milliseconds() - host_request_times[machine_index] < SILENCE_MILLISECONDS;
+}
+
 boolean map_download_needed(
 	char const *map_name)
 {
@@ -630,6 +680,7 @@ enum
 	MAXIMUM_BUTTONS = 2,
 };
 
+static char const *const asking_join_buttons[] = { "DOWNLOAD AND JOIN", "CANCEL" };
 static char const *const asking_buttons[] = { "DOWNLOAD", "LEAVE" };
 static char const *const sizing_buttons[] = { "LEAVE" };
 static char const *const downloading_buttons[] = { "CANCEL" };
@@ -639,6 +690,7 @@ static short screen_buttons(
 {
 	switch (client.state)
 	{
+	case _client_asking_join: *labels = asking_join_buttons; return NUMBEROF(asking_join_buttons);
 	case _client_asking: *labels = asking_buttons; return NUMBEROF(asking_buttons);
 	case _client_downloading: *labels = downloading_buttons; return NUMBEROF(downloading_buttons);
 	default: *labels = sizing_buttons; return NUMBEROF(sizing_buttons);
@@ -648,11 +700,21 @@ static short screen_buttons(
 static void screen_press(
 	short button)
 {
+	if (client.state == _client_asking_join)
+	{
+		/* (yes: joined, and the map fetched once the host is reached;
+		no: nothing joined, nothing left) */
+		client.state = _client_idle;
+		if (button == 0)
+		{
+			snprintf(client.approved_name, sizeof(client.approved_name), "%s", client.name);
+			client.join();
+		}
+		return;
+	}
 	if (client.state == _client_asking && button == 0)
 	{
-		client.state = _client_downloading;
-		if (!client_start_file(_map_download_map))
-			client_fail("The map couldn't be saved. Is the disk full?");
+		client_start_download();
 		return;
 	}
 	client_leave();
@@ -669,18 +731,54 @@ static void megabytes(
 boolean map_download_begin(
 	char const *map_name)
 {
+	char approved_name[MAP_NAME_SIZE];
+
 	if (!ui_overlay_available() || !global_network_game_client_get())
 		return FALSE;
 	client_forget();
+	csmemcpy(approved_name, client.approved_name, sizeof(approved_name));
 	csmemset(&client, 0, sizeof(client));
 	snprintf(client.map_name, sizeof(client.map_name), "%s", map_name);
 	snprintf(client.name, sizeof(client.name), "%s", tag_name_strip_path(map_name));
+	client.approved = !csstrcasecmp(approved_name, client.name);
 	client.sizes[_map_download_map] = NONE;
 	client.sizes[_map_download_picture] = NONE;
 	client.state = _client_sizing;
 	client.heard_time = system_milliseconds();
 	client_send_request(_map_download_map, NONE, 0);
 	client_send_request(_map_download_picture, NONE, 0);
+
+	return TRUE;
+}
+
+boolean map_download_ask(
+	char const *map_name,
+	void (*join)(void))
+{
+	if (!ui_overlay_available() || !map_name_allowed(tag_name_strip_path(map_name)))
+		return FALSE;
+	client_forget();
+	csmemset(&client, 0, sizeof(client));
+	snprintf(client.map_name, sizeof(client.map_name), "%s", map_name);
+	snprintf(client.name, sizeof(client.name), "%s", tag_name_strip_path(map_name));
+	client.join = join;
+	client.state = _client_asking_join;
+
+	return TRUE;
+}
+
+boolean map_download_holds_players(
+	void)
+{
+	return client.state != _client_idle && client.state != _client_asking_join;
+}
+
+boolean map_download_hold_begin(
+	void)
+{
+	if (client.state == _client_idle)
+		return FALSE;
+	client.begin_held = TRUE;
 
 	return TRUE;
 }
@@ -706,6 +804,8 @@ void map_download_screen_process(
 	{
 		client_fail("The host stopped answering. It may be on a version that can't send maps.");
 	}
+	if (client.state == _client_asking && system_milliseconds() - client.asked_time > KEEP_ALIVE_MILLISECONDS)
+		client_send_request(_map_download_map, NONE, 0);
 	while (client.state != _client_idle && get_next_event(&event, NONE))
 	{
 		if (event.type == OVERLAY_EVENT_LEFT_STICK)
@@ -785,6 +885,14 @@ void map_download_screen_render(
 	megabytes(client.sizes[_map_download_picture], sizes[1], sizeof(sizes[1]));
 	switch (client.state)
 	{
+	case _client_asking_join:
+		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, UI_ALIGN_LEFT, palette->text,
+			"This game is on a map you don't have. The host can send it to you before you join.");
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, BODY_X, BODY_Y + 56, UI_ALIGN_LEFT, palette->dim,
+			"Only a Halo map and its picture are taken, each checked to really be one before it's kept.");
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, BODY_X, BODY_Y + 70, UI_ALIGN_LEFT, palette->dim,
+			"They're saved in your downloaded_maps folder.");
+		break;
 	case _client_sizing:
 		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, UI_ALIGN_LEFT, palette->dim,
 			"This game's map isn't installed. Asking the host for it\xE2\x80\xA6");
@@ -837,6 +945,25 @@ void map_download_screen_render(
 
 boolean map_download_begin(
 	char const *map_name)
+{
+	return FALSE;
+}
+
+boolean map_download_ask(
+	char const *map_name,
+	void (*join)(void))
+{
+	return FALSE;
+}
+
+boolean map_download_holds_players(
+	void)
+{
+	return FALSE;
+}
+
+boolean map_download_hold_begin(
+	void)
 {
 	return FALSE;
 }

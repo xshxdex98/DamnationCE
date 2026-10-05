@@ -54,6 +54,7 @@ can't be joined, since the map would fail to load.
 #include "halo_ui_pointer.h"
 #include "custom_edition_maps.h"
 #include "overlay_screens.h"
+#include "map_download.h"
 
 /* ---------- constants */
 
@@ -271,30 +272,13 @@ static void close_screen(
 	p2p_lobby_browse(FALSE);
 }
 
-/* Starts joining the selected game: opens the tunnel through its invite.
+/* Joins the selected game: opens the tunnel through its invite.
 wait_for_host finishes the join. */
-static void join_selected(
+static void join_selected_game(
 	void)
 {
-	struct browser_game const *game;
+	struct browser_game const *game = &browser_screen.games[browser_screen.selected];
 
-	if (browser_screen.selected < 0 || browser_screen.selected >= browser_screen.count)
-		return;
-	game = &browser_screen.games[browser_screen.selected];
-	if (!game->open)
-	{
-		set_status("That game is not accepting players.");
-		return;
-	}
-	if (!known_map(game->map)->installed)
-	{
-		char text[sizeof(browser_screen.status)];
-
-		snprintf(text, sizeof(text), "You don't have %s: put %s.map in your maps folder.",
-			known_map(game->map)->name, map_file_name(game->map));
-		set_status(text);
-		return;
-	}
 	/* a network client listening for the host's advertisement, as System Link has */
 	if (!global_network_game_client_get())
 	{
@@ -316,6 +300,35 @@ static void join_selected(
 	browser_screen.connecting_invite[sizeof(browser_screen.connecting_invite) - 1] = 0;
 	overlay_utf8(game->name, NUMBEROF(game->name), browser_screen.connecting_name, sizeof(browser_screen.connecting_name));
 	browser_screen.connecting_time = system_milliseconds();
+}
+
+/* The player picked a game to join. On a custom map this machine doesn't
+have, the player is asked first, and the map comes from the host before the
+lobby is joined (map_download.c). */
+static void join_selected(
+	void)
+{
+	struct browser_game const *game;
+
+	if (browser_screen.selected < 0 || browser_screen.selected >= browser_screen.count)
+		return;
+	game = &browser_screen.games[browser_screen.selected];
+	if (!game->open)
+	{
+		set_status("That game is not accepting players.");
+		return;
+	}
+	if (!known_map(game->map)->installed && !map_download_ask(game->map, join_selected_game))
+	{
+		char text[sizeof(browser_screen.status)];
+
+		snprintf(text, sizeof(text), "You don't have %s: put %s.map in your maps folder.",
+			known_map(game->map)->name, map_file_name(game->map));
+		set_status(text);
+		return;
+	}
+	if (known_map(game->map)->installed)
+		join_selected_game();
 }
 
 /* joins the picked game once its host advertises it, and opens its lobby */

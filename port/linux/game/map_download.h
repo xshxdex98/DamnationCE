@@ -16,13 +16,31 @@ map loaders look in after the game's (custom_edition_cache.c, cache_files.c) */
 
 /* ---------- prototypes */
 
-/* network_client_manager.c: whether this machine lacks the host's map
-(levels\...\<name>) and should be offered it, and the offer. While it is
-offered or downloading, the map isn't loaded; once it is here, it is. */
+/* whether this machine lacks a map (levels\...\<name>) a host can send */
 boolean map_download_needed(
 	char const *map_name);
+
+/* browser_screen.c: the player picked a game on such a map. Asks whether to
+download it and join; on yes, join is called, and the map is fetched before
+the lobby is joined. FALSE if it can't be asked. */
+boolean map_download_ask(
+	char const *map_name,
+	void (*join)(void));
+
+/* network_client_manager.c: the host's game is on such a map: fetched (the
+player asked first unless map_download_ask did). While it is offered or
+downloading, the map isn't loaded and this machine's players aren't added
+to the game (map_download_holds_players); once it is here, they are. */
 boolean map_download_begin(
 	char const *map_name);
+boolean map_download_holds_players(
+	void);
+/* network_client_message_handler.c: the host began the game (one in
+progress, which doesn't wait for this machine's map as a lobby's start
+does). TRUE if the map is still being offered or downloaded: the game is
+then begun once the map is here. */
+boolean map_download_hold_begin(
+	void);
 
 /* network_distributed.c: the download's messages, which pass before the game
 runs (a client in the lobby, or joining one in progress, has no game yet).
@@ -34,6 +52,11 @@ void map_download_handle_message(
 	byte type,
 	void const *data,
 	word size);
+
+/* network_server_manager.c: whether a client machine is downloading the
+map (it asked for some of it lately), so isn't idle for having no players */
+boolean map_download_machine_busy(
+	long machine_index);
 
 /* the screen that asks the player and shows the download, over the menus
 (ui_widget.c) */

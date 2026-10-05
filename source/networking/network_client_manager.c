@@ -1483,6 +1483,11 @@ boolean network_game_client_add_player(
 		return TRUE; }
 #endif
 
+	/* port: no player is added while the game's map is still coming from
+	the host (map_download.c): the pregame screen asks again each frame */
+	if (map_download_holds_players())
+		return TRUE;
+
 	/* port: the pregame screen asks each frame until the host's settings
 	have the player: once every half second, not each frame (the host
 	refused and logged each repeat) */

@@ -201,6 +201,7 @@ symbols in this file:
 #include "networking/network_client_message_handler.h"
 #include "networking/network_game_manager.h"
 #include "networking/network_messages.h"
+#include "map_download.h" /* port: port/linux/game/map_download.c */
 
 /* port/linux/game/network_distributed.c's */
 void network_distributed_handle_message(long machine_index, word const *message, word size);
@@ -1181,10 +1182,20 @@ static boolean network_game_client_handle_message_server_begin_game(
 				the message carries 16 bits of it: the rest from the first
 				game update, network_game_client_handle_game_update) */
 				network_game_client_late_join_time = (long)((unsigned long)begin_game.unused & 0xFFFF);
-				result = network_game_client_game_has_started(client);
-				if (!result)
+				/* port: a game in progress whose map is still coming from the
+				host is begun once it is here (map_download.c) */
+				if (map_download_hold_begin())
 				{
-					network_event("network_game_client_game_has_started() failed");
+					network_event("holding the game's start until its map is downloaded");
+					result = TRUE;
+				}
+				else
+				{
+					result = network_game_client_game_has_started(client);
+					if (!result)
+					{
+						network_event("network_game_client_game_has_started() failed");
+					}
 				}
 			}
 			else

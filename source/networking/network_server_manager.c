@@ -468,6 +468,7 @@ symbols in this file:
 #include "networking/network_messages.h"
 #include "networking/network_server_manager.h"
 #include "networking/network_server_manager_internal.h"
+#include "map_download.h" /* port: port/linux/game/map_download.c */
 #include "networking/network_server_message_handler.h"
 #include "saved games/player_profile.h"
 #include "text/unicode.h"
@@ -4595,6 +4596,7 @@ static boolean network_game_server_idle_pregame_tasks(
 			else if (network_game_server_client_machine_is_joined_to_game(server, client_machine) &&
 				!network_game_server_client_machine_is_local(server, client_machine) &&
 				!network_game_server_machine_has_players(server, client_machine->machine_index) &&
+				!map_download_machine_busy(client_machine->machine_index) &&
 				(!network_game_has_free_player_slot(&server->game) ||
 					system_milliseconds() - network_game_server_client_machine_join_times[client_machine->machine_index] >
 						NETWORK_GAME_SERVER_PLAYERLESS_MACHINE_TIMEOUT))
