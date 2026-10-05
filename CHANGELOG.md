@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.11
+
+### From OpenCE
+
+- Network version 15, now that OpenCE has taken the allegiance, loading
+  zone and vehicle explosion fixes from 0.3.8 and 0.3.9. Everyone needs
+  0.3.11 to play together.
+
 ## 0.3.10
 
 ### Co-op
