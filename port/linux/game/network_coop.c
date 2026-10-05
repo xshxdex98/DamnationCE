@@ -1063,6 +1063,28 @@ static struct
 } host_attachments[MAXIMUM_ATTACHMENTS];
 static short host_attachment_count;
 
+/* host: the HUD state the scripts set that a late joiner would lack: the
+objective, and the nav points active (their kind, nav index, target, marker
+and offset as the note was given), resent by host_send_hud_state */
+enum
+{
+	MAXIMUM_NAV_POINTS = 16,
+};
+
+static struct
+{
+	short objective;
+	short nav_point_count;
+	struct
+	{
+		short kind;
+		short nav_index;
+		long target;
+		long marker;
+		real vertical_offset;
+	} nav_points[MAXIMUM_NAV_POINTS];
+} host_hud_state;
+
 /* host: the looping sounds the scripts have started (music, ambience).
 They are resent every OBJECT_REFRESH_TICKS so a late joiner hears them. */
 enum
@@ -1681,6 +1703,8 @@ void network_coop_new_game(
 	csmemset(&players_vitality, 0, sizeof(players_vitality));
 	host_attachment_count = 0;
 	host_looping_sound_count = 0;
+	host_hud_state.objective = NONE;
+	host_hud_state.nav_point_count = 0;
 	skip_vote_clear();
 	skip_vote.offered = FALSE;
 	skip_vote.voters = 0;
@@ -1895,6 +1919,8 @@ void network_coop_note_hud(
 		return;
 	event->type = (byte)kind;
 	event->value = value;
+	if (kind == _coop_hud_objective)
+		host_hud_state.objective = value;
 }
 
 void network_coop_note_player_effect(
@@ -1913,7 +1939,7 @@ void network_coop_note_player_effect(
 	event->reals[2] = c;
 }
 
-void network_coop_note_nav_point(
+static void send_nav_point(
 	short kind,
 	short nav_index,
 	long target,
@@ -1929,6 +1955,72 @@ void network_coop_note_nav_point(
 	event->target = target;
 	event->object_index = marker;
 	event->reals[0] = vertical_offset;
+}
+
+void network_coop_note_nav_point(
+	short kind,
+	short nav_index,
+	long target,
+	long marker,
+	real vertical_offset)
+{
+	short index;
+
+	if (!coop_host())
+		return;
+	send_nav_point(kind, nav_index, target, marker, vertical_offset);
+	for (index = 0; index < host_hud_state.nav_point_count; index++)
+	{
+		if (host_hud_state.nav_points[index].kind == kind && host_hud_state.nav_points[index].target == target &&
+			host_hud_state.nav_points[index].marker == marker)
+		{
+			break;
+		}
+	}
+	if (nav_index == NONE)
+	{
+		if (index < host_hud_state.nav_point_count)
+			host_hud_state.nav_points[index] = host_hud_state.nav_points[--host_hud_state.nav_point_count];
+		return;
+	}
+	if (index == host_hud_state.nav_point_count)
+	{
+		if (index == MAXIMUM_NAV_POINTS)
+			return;
+		host_hud_state.nav_point_count++;
+	}
+	host_hud_state.nav_points[index].kind = kind;
+	host_hud_state.nav_points[index].nav_index = nav_index;
+	host_hud_state.nav_points[index].target = target;
+	host_hud_state.nav_points[index].marker = marker;
+	host_hud_state.nav_points[index].vertical_offset = vertical_offset;
+}
+
+/* host: the active nav points again (host_resend), and the objective to a
+machine that joined (it shows on screen when it comes, so not more often) */
+static void host_send_hud_state(
+	void)
+{
+	short index;
+
+	if (!host_resend.refresh)
+		return;
+	if (host_resend.joined && host_hud_state.objective != NONE)
+	{
+		struct distributed_coop_event *event = event_new(_coop_event_hud);
+
+		if (event)
+		{
+			event->type = _coop_hud_objective;
+			event->value = host_hud_state.objective;
+		}
+	}
+	for (index = 0; index < host_hud_state.nav_point_count; index++)
+	{
+		send_nav_point(host_hud_state.nav_points[index].kind, host_hud_state.nav_points[index].nav_index,
+			host_hud_state.nav_points[index].target, host_hud_state.nav_points[index].marker,
+			host_hud_state.nav_points[index].vertical_offset);
+	}
 }
 
 void network_coop_note_unit_animation(
@@ -2208,6 +2300,7 @@ void network_coop_host_tick(
 	host_send_screen_effect();
 	host_send_attachments();
 	host_send_looping_sounds();
+	host_send_hud_state();
 	host_send_events();
 }
 
