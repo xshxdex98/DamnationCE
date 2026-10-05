@@ -68,11 +68,20 @@ typedef char player_action_desired_facing_yaw_offset_assert[
 typedef char player_action_desired_facing_pitch_offset_assert[
 	offsetof(struct player_action, desired_facing.pitch) == 0x8 ? 1 : -1];
 
+/* port: network_player.player_model, what a network co-op player plays as.
+The field was the Xbox's icon_index, which nothing used (always NONE, as an
+older build still sends it: a Spartan). */
+enum
+{
+	_player_model_spartan = 0,
+	_player_model_elite,
+};
+
 struct network_player
 {
 	wchar_t name[12];
 	short primary_color_index;
-	short icon_index;
+	short player_model;
 	char machine_index;
 	char controller_index;
 	char team_index;

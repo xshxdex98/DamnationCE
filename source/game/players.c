@@ -272,6 +272,7 @@ symbols in this file:
 #include "tag_files/tag_groups.h"
 #include "text/text_group.h"
 #include "text/unicode.h"
+#include "objects/object_definitions.h"
 #include "units/biped_definitions.h"
 #include "units/bipeds.h"
 #include "units/units.h"
@@ -1307,6 +1308,45 @@ long find_best_starting_location_index(
 	return best_starting_location_index;
 }
 
+/* port: the biped a network co-op player spawns as: an elite if they chose
+one in the lobby and the level has one, else the campaign's Spartan */
+static long players_coop_unit_definition(
+	struct player_datum const *player,
+	long campaign_unit_index)
+{
+	long elite_index;
+
+	if (!network_coop_active() || player->network_player_data.player_model != _player_model_elite)
+		return campaign_unit_index;
+	elite_index = tag_loaded(BIPED_DEFINITION_TAG, "characters\\elite\\elite");
+	return elite_index != NONE ? elite_index : campaign_unit_index;
+}
+
+/* port: a network co-op player's profile colour on their unit, in place of
+each colour its tag fixes (the campaign Spartan's armour is always green: its
+tag's one colour for it overrides the colour the unit is made with) */
+static void players_coop_color_unit(
+	long unit_index,
+	real_rgb_color const *color)
+{
+	struct object_datum *object = object_get(unit_index);
+	struct object_definition *definition = object_definition_get(object->definition_index);
+	short index;
+
+	for (index = 0; index < definition->object.change_colors.count && index < NUMBER_OF_OBJECT_CHANGE_COLORS; index++)
+	{
+		struct object_change_color_definition *change_color = TAG_BLOCK_GET_ELEMENT(
+			&definition->object.change_colors, index, struct object_change_color_definition);
+
+		/* (one a function scales, as the Spartan's shield glow, is left be) */
+		if (change_color->permutations.count > 0 && !change_color->scaled_by && !change_color->darken_by)
+		{
+			object->object.base_change_colors[index] = *color;
+			object->object.outgoing_change_colors[index] = *color;
+		}
+	}
+}
+
 static void player_spawn(
 	long player_index)
 {
@@ -1398,7 +1438,8 @@ static void player_spawn(
 				}
 				else
 				{
-					unit_definition_index = player_information->player_unit.index;
+					unit_definition_index = players_coop_unit_definition(player,
+						player_information->player_unit.index);
 				}
 
 				object_placement_data_new(
@@ -1417,6 +1458,8 @@ static void player_spawn(
 					&placement_data,
 					&change_color);
 				unit_index = object_new(&placement_data);
+				if (unit_index != NONE && network_coop_active())
+					players_coop_color_unit(unit_index, &change_color);
 				if (unit_index != NONE)
 				{
 					unit = unit_try_and_get(unit_index);
