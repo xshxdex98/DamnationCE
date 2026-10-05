@@ -699,6 +699,7 @@ void map_screen_pointer(struct halo_ui_pointer const *pointer);
 drawn over Online Games and the map picker while it's up */
 void map_download_menus_update(void);
 boolean map_download_dialog_up(void);
+void map_download_overlay_render(void);
 /* port/linux/game/lobby_screen.c: drawn over the lobby's widgets */
 boolean lobby_screen_active(void);
 void lobby_screen_render(void);
@@ -3284,6 +3285,57 @@ boolean ui_widget_port_open_from_top(
 
 	return ui_widget_load_by_name_or_tag(name, NONE, NULL, 0,
 		top ? widget_instance_get_topmost_parent(top)->definition_tag_index : NONE, NONE, NONE) != NULL;
+}
+
+/* port: a screen of the menus' laid over player 1's, which stays as it is
+(port/linux/game/map_download.c's dialog): its last child, drawn on top and
+given the focus, with no history kept. Opening a screen in place of
+player 1's (ui_widget_port_open_from_top) would delete that one, and going
+back would make it again, which a network lobby doesn't survive. */
+static struct
+{
+	struct widget_instance *screen;
+	struct widget_instance *focus;
+} ui_widget_port_layer;
+
+struct widget_instance *ui_widget_port_open_layer(
+	char const *name)
+{
+	struct widget_instance *top = widget_globals.active_widgets[0];
+	struct widget_instance *layer;
+
+	if (!top)
+		return NULL;
+	layer = ui_widget_load_by_name_or_tag(name, NONE, top, top->local_player_index, NONE, NONE, NONE);
+	if (!layer)
+		return NULL;
+	ui_widget_port_layer.screen = top;
+	ui_widget_port_layer.focus = top->focused_child;
+	ui_widget_add_child(top, layer);
+	widget_instance_give_focus_directly(top, layer);
+
+	return layer;
+}
+
+/* ... taken off again, the focus back where it was */
+void ui_widget_port_close_layer(
+	struct widget_instance *layer)
+{
+	struct widget_instance *screen = layer->parent;
+	struct widget_instance *child;
+
+	if (screen && screen->focused_child == layer)
+	{
+		screen->focused_child = NULL;
+		for (child = screen->child; child; child = child->next)
+		{
+			if (screen == ui_widget_port_layer.screen && child == ui_widget_port_layer.focus)
+				widget_instance_give_focus_directly(screen, child);
+		}
+	}
+	ui_widget_port_layer.screen = NULL;
+	ui_widget_port_layer.focus = NULL;
+	ui_widget_delete(layer);
 }
 
 /* port: player 1's screen left for the one before it, as its B leaves it */
@@ -6698,6 +6750,8 @@ void render_ui_widgets(
 		if (lobby_screen_active())
 			lobby_screen_render();
 		overlay_lit_row_render();
+		/* port: a map download's dialog, over the screen it was laid on */
+		map_download_overlay_render();
 #endif
 		if (widget_globals.fade_to_black >= 0.0f &&
 			widget_globals.fade_to_black <= 1.0f)

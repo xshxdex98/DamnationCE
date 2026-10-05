@@ -46,6 +46,7 @@ MENUS = Path(__file__).resolve().parent.parent / "port" / "assets" / "menus"
 GLASSED = MENUS / "skin" / "glassed"
 VANILLA = MENUS / "skin" / "vanilla"
 LOBBY_FILE = "main_menu.multiplayer_type_select.lobby.xml"
+MAP_DOWNLOAD_FILE = "map_download.xml"
 
 # ---------- the Glassed look
 
@@ -366,12 +367,15 @@ def glassed_layer():
                 pictures += 1
     screens = 0
     for file in sorted((MENUS / "ce").glob("*.xml")):
+        # Glassed's lobby and map download dialog are the overlay's forms
+        # (port_settings.py), not the stock ones restyled
         if file.name == LOBBY_FILE:
-            # Glassed's lobby is the overlay's form (port_settings.py), not the stock one restyled
             tree = ET.ElementTree(ET.fromstring("\n".join(port_settings.glassed_lobby_file()).encode("utf-8")))
+        elif file.name == MAP_DOWNLOAD_FILE:
+            tree = ET.ElementTree(ET.fromstring("\n".join(port_settings.glassed_map_download_file()).encode("utf-8")))
         else:
             tree = ET.parse(file)
-        if restyle(tree.getroot()) or file.name == LOBBY_FILE:
+        if restyle(tree.getroot()) or file.name in (LOBBY_FILE, MAP_DOWNLOAD_FILE):
             write_xml(tree, GLASSED / "ce" / file.name)
             screens += 1
     print(f"Glassed: {pictures} pictures, {screens} screens")

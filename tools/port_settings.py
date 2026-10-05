@@ -1138,37 +1138,62 @@ def _map_kind() -> list:
     return lines
 
 
-def _map_download() -> list:
-    """The map download's dialog (port/linux/game/map_download.c): a stock
-    confirmation, as Delete Profile's (ce/error.xml), whose text and buttons
-    "port map download update" fills in from the download: the question, the
-    progress, or why it stopped."""
+# Glassed's map download dialog: map_download.c draws it (its PANEL_*,
+# ACCEPT_X, CANCEL_X) over these places
+MAP_DOWNLOAD_BUTTONS_X, MAP_DOWNLOAD_BUTTONS_Y = 190, 304
+MAP_DOWNLOAD_BUTTON_WIDTH, MAP_DOWNLOAD_BUTTON_GAP = 120, 20
+
+
+def _map_download(overlay: bool = False) -> list:
+    """The map download's dialog (port/linux/game/map_download.c), laid over
+    whatever screen is up: a stock confirmation, as Delete Profile's
+    (ce/error.xml), whose text and buttons "port map download update" fills
+    in from the download (the question, the progress, or why it stopped);
+    or Glassed's clear widgets, which map_download.c draws over"""
     base = "map_download"
-    button = [("type", "text"), ("width", 128), ("height", 24), ("bitmap", "bitmaps/text_button_background"),
-              ("font", "ui\\small_ui"), ("color", "#FFFFFFFF"), ("align", "center"), ("text_y", 2)]
+    if overlay:
+        button = [("type", "text"), ("width", MAP_DOWNLOAD_BUTTON_WIDTH), ("height", 24), ("font", SMALL_FONT),
+                  ("color", CLEAR)]
+        bar_place, cancel_x = (MAP_DOWNLOAD_BUTTONS_X, MAP_DOWNLOAD_BUTTONS_Y), MAP_DOWNLOAD_BUTTON_WIDTH + MAP_DOWNLOAD_BUTTON_GAP
+        dialog = [("width", 640), ("height", 480)]
+        header = [("type", "text"), ("width", 150), ("height", 20), ("font", SMALL_FONT), ("color", CLEAR)]
+        text_box = [("type", "text"), ("width", 340), ("height", 100), ("font", SMALL_FONT), ("color", CLEAR)]
+    else:
+        button = [("type", "text"), ("width", 128), ("height", 24), ("bitmap", "bitmaps/text_button_background"),
+                  ("font", "ui\\small_ui"), ("color", "#FFFFFFFF"), ("align", "center"), ("text_y", 2)]
+        bar_place, cancel_x = (194, 309), 128
+        dialog = [("width", 640), ("height", 480), ("bitmap", "bitmaps/semi_transparent_grey")]
+        header = [("type", "text"), ("width", 150), ("height", 20), ("text", "MAP DOWNLOAD"),
+                  ("font", "ui\\large_ui"), ("color", "#FF2896FF")]
+        text_box = [("type", "text"), ("width", 280), ("height", 159), ("bitmap", "bitmaps/alert_bkd"),
+                    ("font", "ui\\large_ui"), ("color", "#FF2896FF"), ("text_x", 9), ("text_y", 36)]
     lines = _widget(f"{base}/map_download_screen", [("width", 640), ("height", 480),
                                                     ("flags", "pass_unhandled_to_focused_child")],
                     ['<on event="b back" run="port map download cancel" sound="sound\\sfx\\ui\\back"/>',
                      f'<child widget="{base}/dialog"/>',
-                     f'<child widget="{base}/button_bar" x="194" y="309"/>'])
-    lines += _widget(f"{base}/dialog", [("width", 640), ("height", 480), ("bitmap", "bitmaps/semi_transparent_grey")],
+                     f'<child widget="{base}/button_bar" x="{bar_place[0]}" y="{bar_place[1]}"/>'])
+    lines += _widget(f"{base}/dialog", dialog,
                      [f'<child widget="{base}/text_box" x="192" y="176"/>',
                       f'<child widget="{base}/header" x="201" y="180"/>'])
-    lines += _widget(f"{base}/header", [("type", "text"), ("width", 150), ("height", 20), ("text", "MAP DOWNLOAD"),
-                                        ("font", "ui\\large_ui"), ("color", "#FF2896FF")], [])
-    lines += _widget(f"{base}/text_box", [("type", "text"), ("width", 280), ("height", 159), ("bitmap", "bitmaps/alert_bkd"),
-                                          ("font", "ui\\large_ui"), ("color", "#FF2896FF"), ("text_x", 9), ("text_y", 36)],
-                     ['<data input="port map download update"/>'])
-    lines += _widget(f"{base}/button_bar", [("type", "column_list"), ("width", 256), ("height", 20),
+    lines += _widget(f"{base}/header", header, [])
+    lines += _widget(f"{base}/text_box", text_box, ['<data input="port map download update"/>'])
+    lines += _widget(f"{base}/button_bar", [("type", "column_list"), ("width", 2 * cancel_x), ("height", 24),
                                             ("flags", "pass_unhandled_to_focused_child up_down_tabs_items left_right_tabs_items")],
-                     [f'<child widget="{base}/button_cancel" x="128"/>', f'<child widget="{base}/button_accept"/>'])
-    lines += _widget(f"{base}/button_accept", button + [("text", "DOWNLOAD")],
+                     [f'<child widget="{base}/button_cancel" x="{cancel_x}"/>', f'<child widget="{base}/button_accept"/>'])
+    lines += _widget(f"{base}/button_accept", button + ([] if overlay else [("text", "DOWNLOAD")]),
                      ['<on event="a start" run="port map download accept" sound="sound\\sfx\\ui\\forward"/>',
                       '<on event="left_mouse" run="mouse emit accept event"/>'])
-    lines += _widget(f"{base}/button_cancel", button + [("text", "CANCEL")],
+    lines += _widget(f"{base}/button_cancel", button + ([] if overlay else [("text", "CANCEL")]),
                      ['<on event="a start" run="port map download cancel" sound="sound\\sfx\\ui\\back"/>',
                       '<on event="left_mouse" run="mouse emit accept event"/>'])
     return lines
+
+
+def glassed_map_download_file() -> list:
+    """Glassed's map download dialog: the clear widgets map_download.c draws over"""
+    return ['<?xml version="1.0" encoding="UTF-8"?>',
+            "<!-- Glassed's map download dialog, drawn by port/linux/game/map_download.c (tools/port_settings.py) -->",
+            "<menus>", *_map_download(overlay=True), "</menus>", ""]
 
 
 def multiplayer_files() -> dict:

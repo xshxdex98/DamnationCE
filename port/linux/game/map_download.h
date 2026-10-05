@@ -65,6 +65,10 @@ void map_download_menus_update(
 	void);
 boolean map_download_dialog_up(
 	void);
+/* ui_widget.c, after the menus are drawn: Glassed's drawing of the dialog,
+over its clear widgets (Vanilla shows the stock widgets themselves) */
+void map_download_overlay_render(
+	void);
 /* menu_functions.c: its text (the stock dialogs' short lines) and its
 buttons' labels (accept NULL: that button hidden), each frame it's up; its
 buttons pressed */

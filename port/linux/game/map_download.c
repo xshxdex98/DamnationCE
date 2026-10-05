@@ -43,6 +43,11 @@ own folder.
 
 #include "interface/ui_widget_instance.h"
 
+#ifdef HALO_GAME_BROWSER
+#include "overlay_screens.h"
+#include "../src/ui_overlay.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -672,17 +677,58 @@ by the name the menus load it by, and the last part they know it by */
 /* the most of a map's name one of its lines shows */
 #define DIALOG_NAME_CHARACTERS 22
 
+/* Glassed draws the dialog itself, over its widgets (clear, but still taking
+the focus and the mouse: tools/port_settings.py's _map_download(overlay)):
+a panel, its text line by line, the download's bar, and the buttons */
+enum
+{
+	PANEL_X = 130, PANEL_Y = 150, PANEL_WIDTH = 380, PANEL_HEIGHT = 190,
+	TEXT_Y = PANEL_Y + 52, LINE_HEIGHT = 17,
+	BAR_Y = PANEL_Y + 124, BAR_HEIGHT = 8,
+	BUTTONS_Y = PANEL_Y + PANEL_HEIGHT - 36, BUTTON_WIDTH = 120, BUTTON_HEIGHT = 24,
+	ACCEPT_X = 190, CANCEL_X = 330,
+};
+
 /* source/interface/ui_widget.c's */
-boolean ui_widget_port_open_from_top(char const *name);
-void ui_widget_port_go_back_from_top(void);
+struct widget_instance *ui_widget_port_open_layer(char const *name);
+void ui_widget_port_close_layer(struct widget_instance *layer);
 struct widget_instance *ui_widget_port_top(void);
 
-static boolean dialog_up(
+/* the dialog, laid over player 1's screen, or NULL */
+static struct widget_instance *dialog_find(
 	void)
 {
 	struct widget_instance *top = ui_widget_port_top();
+	struct widget_instance *child;
 
-	return top && top->name && !strcmp(top->name, DIALOG_WIDGET_NAME);
+	for (child = top ? top->child : NULL; child; child = child->next)
+	{
+		if (child->name && !strcmp(child->name, DIALOG_WIDGET_NAME))
+			return child;
+	}
+
+	return NULL;
+}
+
+/* one of the dialog's widgets, by the last part of its name, or NULL */
+static struct widget_instance *dialog_widget(
+	struct widget_instance *widget,
+	char const *name)
+{
+	struct widget_instance *child;
+	struct widget_instance *found;
+
+	if (!widget)
+		return NULL;
+	if (widget->name && !strcmp(widget->name, name))
+		return widget;
+	for (child = widget->child; child; child = child->next)
+	{
+		if ((found = dialog_widget(child, name)) != NULL)
+			return found;
+	}
+
+	return NULL;
 }
 
 static void megabytes(
@@ -844,17 +890,77 @@ void map_download_dialog_press(
 void map_download_menus_update(
 	void)
 {
+	struct widget_instance *dialog = dialog_find();
+
 	client_forget_if_disconnected();
-	if (client.state != _client_idle && !dialog_up())
-		ui_widget_port_open_from_top(DIALOG_WIDGET);
-	else if (client.state == _client_idle && dialog_up())
-		ui_widget_port_go_back_from_top();
+	if (client.state != _client_idle && !dialog)
+		ui_widget_port_open_layer(DIALOG_WIDGET);
+	else if (client.state == _client_idle && dialog)
+		ui_widget_port_close_layer(dialog);
 }
 
 boolean map_download_dialog_up(
 	void)
 {
-	return dialog_up();
+	return dialog_find() != NULL;
+}
+
+/* a button of Glassed's drawing, lit with the focus */
+static void overlay_button(
+	struct overlay_palette const *palette,
+	struct widget_instance *bar,
+	struct widget_instance *button,
+	float x,
+	char const *label)
+{
+	boolean lit = button && bar && bar->focused_child == button;
+
+	if (!button || !button->visible || !label)
+		return;
+	ui_overlay_rect(x, BUTTONS_Y, BUTTON_WIDTH, BUTTON_HEIGHT, palette->radius / 2,
+		lit ? palette->row_selected : palette->panel);
+	ui_overlay_outline(x, BUTTONS_Y, BUTTON_WIDTH, BUTTON_HEIGHT, palette->radius / 2, 0.75f, palette->panel_edge);
+	ui_overlay_text(UI_FONT_BOLD, 10.0f, x + BUTTON_WIDTH / 2, BUTTONS_Y + 6, UI_ALIGN_CENTER,
+		lit ? palette->title : palette->prompt, label);
+}
+
+void map_download_overlay_render(
+	void)
+{
+	struct overlay_palette const *palette = overlay_palette_current();
+	struct widget_instance *dialog = dialog_find();
+	struct widget_instance *bar = dialog_widget(dialog, "button_bar");
+	float margin = (float)((halo_screen_width() - 640) / 2 + 2);
+	char const *accept, *cancel;
+	char text[160];
+	char *line;
+	float y = TEXT_Y;
+
+	if (!dialog || !palette->glassed || !ui_overlay_available())
+		return;
+	map_download_dialog(text, sizeof(text), &accept, &cancel);
+	ui_overlay_rect(-margin, 0, 640 + 2 * margin, 480, 0, 0x00000099);
+	ui_overlay_rect(PANEL_X, PANEL_Y, PANEL_WIDTH, PANEL_HEIGHT, palette->radius, palette->backdrop);
+	ui_overlay_outline(PANEL_X, PANEL_Y, PANEL_WIDTH, PANEL_HEIGHT, palette->radius, 0.75f, palette->panel_edge);
+	ui_overlay_text(UI_FONT_BOLD, 18.0f, PANEL_X + 20, PANEL_Y + 16, UI_ALIGN_LEFT, palette->title, "MAP DOWNLOAD");
+	ui_overlay_rect(PANEL_X + 20, PANEL_Y + 42, PANEL_WIDTH - 40, 0.75f, 0, palette->rule);
+	/* (the dialog's short lines, one under the other) */
+	for (line = strtok(text, "\n"); line; line = strtok(NULL, "\n"))
+	{
+		overlay_text_fitted(UI_FONT_REGULAR, 12.0f, PANEL_X + 20, y, PANEL_WIDTH - 40,
+			client.state == _client_failed ? OVERLAY_COLOR_POOR : palette->text, line);
+		y += LINE_HEIGHT;
+	}
+	if (client.state == _client_downloading && client.sizes[client.file] > 0)
+	{
+		float done = (float)client.received / (float)client.sizes[client.file];
+
+		ui_overlay_rect(PANEL_X + 20, BAR_Y, PANEL_WIDTH - 40, BAR_HEIGHT, BAR_HEIGHT / 2, palette->panel);
+		ui_overlay_rect(PANEL_X + 20, BAR_Y, (PANEL_WIDTH - 40) * done, BAR_HEIGHT, BAR_HEIGHT / 2,
+			OVERLAY_COLOR_NOTICE);
+	}
+	overlay_button(palette, bar, dialog_widget(dialog, "button_accept"), ACCEPT_X, accept);
+	overlay_button(palette, bar, dialog_widget(dialog, "button_cancel"), CANCEL_X, cancel);
 }
 
 #else
@@ -909,6 +1015,11 @@ boolean map_download_dialog_up(
 	void)
 {
 	return FALSE;
+}
+
+void map_download_overlay_render(
+	void)
+{
 }
 
 #endif
