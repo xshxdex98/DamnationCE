@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.3.19
+
+### Co-op
+
+- Triggers and cutscenes work for every player, not only the first two.
+  Levels whose scripts wait for every player (the Maw's bridge, a30's
+  Pelican pickups) now go ahead for any player, and players past the
+  second are taken along by Pelicans, exits and cutscene moves.
+- Enemies placed in cutscenes appear for everyone, like the Elite with the
+  sword at the Silent Cartographer's shaft door.
+- A scripted mission failure (the Maw's timer, Keyes on Truth and
+  Reconciliation) goes back to the last checkpoint for everyone instead of
+  locking the game.
+- A cutscene waiting until it's safe to play needs only one player safe.
+- Extra enemies spread onto free ground on their own floor, clear of
+  crates and with room to stand, instead of stacking on one spot.
+- Breaking glass and destructible scenery or machines happens the same for
+  everyone.
+- A client never goes back to a checkpoint on its own.
+
+### From OpenCE
+
+- Much faster with many enemies: The Silent Cartographer at 32x extra
+  enemies went from 53 to about 97 fps (by MrBruh).
+- Extra enemies that find no free ground are still placed, not left out.
+
+Network version 17: everyone needs 0.3.19 to play together.
+
 ## 0.3.18
 
 ### Custom Edition maps
