@@ -2380,6 +2380,14 @@ void object_compute_node_matrices(
 		
 		struct model *model = model_definition_get(object_definition->object.model.index);
 
+		/* port: a unit animating with another model's animations (a network
+		co-op player's elite with the Spartan's) is animated and overlaid on
+		that model's nodes, then carried over to its own (model_animations.c) */
+		struct animation_retarget const *retarget = TEST_FLAG(_object_mask_unit, object->object.type) ?
+			unit_animation_retarget(object_index, model) : NULL;
+		real_orientation source_orientations[MAXIMUM_NODES_PER_MODEL];
+		boolean retargeting = FALSE;
+
 		if (object->object.parent_object_index==NONE)
 		{
 			object_node_matrix = NULL;
@@ -2416,7 +2424,15 @@ void object_compute_node_matrices(
 					frame_index = object->object.animation.state.frame_index;
 				}
 
-				animation_get_node_orientations(model, animation, frame_index, node_orientations);
+				if (retarget && animation->node_list_checksum != model->node_list_checksum)
+				{
+					animation_get_node_orientations(NULL, animation, frame_index, source_orientations);
+					retargeting = TRUE;
+				}
+				else
+				{
+					animation_get_node_orientations(model, animation, frame_index, node_orientations);
+				}
 				world_relative = TEST_FLAG(animation->flags, _animation_world_relative_bit);
 			}
 			else
@@ -2427,6 +2443,13 @@ void object_compute_node_matrices(
 		else
 		{
 			model_get_node_orientations(model, node_orientations);
+		}
+
+		/* port: (the unit's own overlays, on the borrowed animation's nodes) */
+		if (retargeting)
+		{
+			object_type_preprocess_node_orientations(object_index, source_orientations);
+			animation_retarget_apply(retarget, source_orientations, node_orientations);
 		}
 
 		if (object_definition->object.animation_graph.index!=NONE)
@@ -2493,7 +2516,7 @@ void object_compute_node_matrices(
 		}
 
 
-		if (object_definition->object.animation_graph.index!=NONE)
+		if (object_definition->object.animation_graph.index!=NONE && !retargeting)
 		{
 			object_type_preprocess_node_orientations(object_index, node_orientations);
 		}

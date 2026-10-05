@@ -398,6 +398,10 @@ boolean players_coop_waiting_to_start(
 	long player_index);
 void players_note_checkpoint(
 	void);
+/* port: the unit definition whose animations a network co-op player's
+elite borrows (the Spartan's), or NONE (units.c) */
+long players_coop_animation_source(
+	long unit_index);
 void players_respawn_at_checkpoint(
 	void);
 void players_reconnect_to_structure_bsp(

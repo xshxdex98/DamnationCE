@@ -743,6 +743,107 @@ void animation_get_root_velocity(
 	return;
 }
 
+/* ---------- port: borrowed animations
+
+A model can animate with another model's animations (a network co-op
+player's elite with the Spartan's: units.c's unit_animation_graph_index).
+They are played and overlaid on the other model's nodes, then each of this
+model's nodes takes the rotation of the node of the same name, keeping its
+own default where there is none (the elite's extra leg joints, second neck
+and mandibles). The root's translation is scaled by the two roots' heights
+above the origin, so the taller model stands its own height; the other
+nodes keep their own translations, the lengths of their bones. */
+
+#define MAXIMUM_ANIMATION_RETARGETS 4
+
+struct animation_retarget
+{
+	struct model *source;
+	struct model *target;
+	unsigned long source_checksum;
+	unsigned long target_checksum;
+	real root_scale;
+	/* for each of the target's nodes, the source's node it follows, or NONE */
+	short source_nodes[MAXIMUM_NODES_PER_MODEL];
+};
+
+static struct animation_retarget animation_retargets[MAXIMUM_ANIMATION_RETARGETS];
+static short animation_retarget_next;
+
+struct animation_retarget const *animation_retarget_get(
+	struct model *source,
+	struct model *target)
+{
+	struct animation_retarget *retarget;
+	struct model_node *source_root, *target_root;
+	real source_height;
+	short index, source_index;
+
+	for (index = 0; index < MAXIMUM_ANIMATION_RETARGETS; index++)
+	{
+		retarget = &animation_retargets[index];
+		if (retarget->source == source && retarget->target == target &&
+			retarget->source_checksum == source->node_list_checksum &&
+			retarget->target_checksum == target->node_list_checksum)
+		{
+			return retarget;
+		}
+	}
+	if (source->nodes.count <= 0 || target->nodes.count <= 0)
+		return NULL;
+	retarget = &animation_retargets[animation_retarget_next];
+	animation_retarget_next = (short)((animation_retarget_next + 1) % MAXIMUM_ANIMATION_RETARGETS);
+	retarget->source = source;
+	retarget->target = target;
+	retarget->source_checksum = source->node_list_checksum;
+	retarget->target_checksum = target->node_list_checksum;
+	for (index = 0; index < target->nodes.count && index < MAXIMUM_NODES_PER_MODEL; index++)
+	{
+		struct model_node *node = TAG_BLOCK_GET_ELEMENT(&target->nodes, index, struct model_node);
+
+		retarget->source_nodes[index] = NONE;
+		for (source_index = 0; source_index < source->nodes.count; source_index++)
+		{
+			if (!csstrcmp(node->name, TAG_BLOCK_GET_ELEMENT(&source->nodes, source_index, struct model_node)->name))
+			{
+				retarget->source_nodes[index] = source_index;
+				break;
+			}
+		}
+	}
+	source_root = TAG_BLOCK_GET_ELEMENT(&source->nodes, 0, struct model_node);
+	target_root = TAG_BLOCK_GET_ELEMENT(&target->nodes, 0, struct model_node);
+	source_height = source_root->default_translation.z;
+	retarget->root_scale = source_height > _real_epsilon ? target_root->default_translation.z / source_height : 1.0f;
+
+	return retarget;
+}
+
+void animation_retarget_apply(
+	struct animation_retarget const *retarget,
+	struct real_orientation const *source_orientations,
+	struct real_orientation *target_orientations)
+{
+	short index;
+
+	model_get_node_orientations(retarget->target, target_orientations);
+	for (index = 0; index < retarget->target->nodes.count && index < MAXIMUM_NODES_PER_MODEL; index++)
+	{
+		short source_index = retarget->source_nodes[index];
+
+		if (source_index == NONE)
+			continue;
+		target_orientations[index].rotation = source_orientations[source_index].rotation;
+		if (index == 0)
+		{
+			target_orientations[0].translation.x = source_orientations[source_index].translation.x * retarget->root_scale;
+			target_orientations[0].translation.y = source_orientations[source_index].translation.y * retarget->root_scale;
+			target_orientations[0].translation.z = source_orientations[source_index].translation.z * retarget->root_scale;
+			target_orientations[0].scale = source_orientations[source_index].scale;
+		}
+	}
+}
+
 void animation_get_node_orientations(
 	struct model const *model,
 	struct animation const *animation,

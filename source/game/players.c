@@ -1322,6 +1322,34 @@ static long players_coop_unit_definition(
 	return elite_index != NONE ? elite_index : campaign_unit_index;
 }
 
+/* port: the unit definition whose animations a unit borrows: the campaign
+Spartan's, for a network co-op player's biped of another kind (an elite,
+players_coop_unit_definition), which has no animations for the Spartan's
+weapons; NONE for any other unit. By its owner, which the unit keeps
+after death, and which a client has too. */
+long players_coop_animation_source(
+	long unit_index)
+{
+	struct unit_datum *unit = unit_get(unit_index);
+	struct game_globals *globals = scenario_get_game_globals();
+	long spartan_index;
+
+	if (!network_coop_active() || unit->object.type != _object_type_biped ||
+		unit->object.owner_player_index == NONE || !globals || globals->player_information.count <= 0)
+	{
+		return NONE;
+	}
+	spartan_index = TAG_BLOCK_GET_ELEMENT(&globals->player_information, 0,
+		struct game_globals_player_information)->player_unit.index;
+	if (spartan_index == NONE || spartan_index == unit->definition_index ||
+		unit_definition_get(spartan_index)->object.animation_graph.index == NONE ||
+		unit_definition_get(spartan_index)->object.model.index == NONE)
+	{
+		return NONE;
+	}
+	return spartan_index;
+}
+
 /* port: a network co-op player's profile colour on their unit, in place of
 each colour its tag fixes (the campaign Spartan's armour is always green: its
 tag's one colour for it overrides the colour the unit is made with) */
