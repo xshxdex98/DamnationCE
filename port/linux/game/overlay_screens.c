@@ -15,6 +15,8 @@ Helpers shared by the screens drawn over the menus with the overlay
 #include "tag_files/tag_groups.h"
 #include "tag_files/tag_files.h"
 
+#include "interface/ui_widget_instance.h"
+
 #include "custom_edition_maps.h"
 #include "overlay_screens.h"
 #include "../src/ui_overlay.h"
@@ -311,6 +313,38 @@ void overlay_map_picture(
 	art.x1 = (short)MIN(LEVEL_PICTURE_WIDTH, bitmap->width);
 	art.y1 = (short)MIN(LEVEL_PICTURE_HEIGHT, bitmap->height);
 	draw_bitmap_in_rect(bitmap, &bounds, &art, NULL, 0xFFFFFFFF, NULL, FALSE);
+}
+
+/* the stock menus' list rows (main_menu/new_select/list_item_*) */
+enum
+{
+	LIT_ROW_WIDTH = 390,
+	LIT_ROW_HEIGHT = 28,
+};
+
+struct widget_instance *ui_widget_port_top(void);
+
+void overlay_lit_row_render(
+	void)
+{
+	struct overlay_palette const *palette = overlay_palette_current();
+	struct widget_instance *top = ui_widget_port_top();
+	struct widget_instance *widget;
+
+	/* (the gametype lists, Multiplayer's and the playlist editor's: their
+	rows are the stock menus') */
+	if (!palette->glassed || !top || !top->name || strcmp(top->name, "gametype_select_screen"))
+		return;
+	/* the focused row (a widget's offsets are its place on the screen) */
+	for (widget = top; widget->focused_child; widget = widget->focused_child)
+		;
+	while (widget && widget->name && strncmp(widget->name, "list_item_", 10))
+		widget = widget->parent;
+	if (!widget || !widget->visible)
+		return;
+	ui_overlay_rect(widget->horizontal_offset, widget->vertical_offset, LIT_ROW_WIDTH, LIT_ROW_HEIGHT,
+		palette->radius / 2, palette->row_selected);
+	ui_overlay_rect(widget->horizontal_offset, widget->vertical_offset, 1.5f, LIT_ROW_HEIGHT, 0, 0xFFFFFFFF);
 }
 
 #endif
