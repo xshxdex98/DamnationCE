@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.7
+
+### Co-op
+
+- Clients see the black bars of cutscenes that leave the players their
+  controls.
+- From OpenCE: no more crash when extra enemies take a level past 256 AI.
+
 ## 0.3.6
 
 ### Co-op
