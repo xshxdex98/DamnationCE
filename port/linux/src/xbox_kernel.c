@@ -25,24 +25,13 @@ threads, asynchronous procedure calls, time, memory and debug output.
 void platform_log(const char *format, ...)
 {
 	va_list arguments;
-#ifdef HALO_64BIT
 	char buffer[2048];
 	FILE *handle;
-#endif
 
-	fputs("halo-linux: ", stderr);
 	va_start(arguments, format);
-#ifdef HALO_64BIT
 	vsnprintf(buffer, sizeof(buffer), format, arguments);
-#else
-	vfprintf(stderr, format, arguments);
-#endif
 	va_end(arguments);
-#ifdef HALO_64BIT
-	fputs(buffer, stderr);
-#endif
-	fputc('\n', stderr);
-#ifdef HALO_64BIT
+	fprintf(stderr, "halo-linux: %s\n", buffer);
 
 	{
 		/* the game's log, in the data folder once it is known (xbox_files.c):
@@ -60,7 +49,6 @@ void platform_log(const char *format, ...)
 		fprintf(handle, "halo-linux: %s\n", buffer);
 		fclose(handle);
 	}
-#endif
 }
 
 void platform_unimplemented(const char *name)
