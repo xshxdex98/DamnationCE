@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.13
+
+### Co-op
+
+- When a loading zone switches the level, your player waits where they
+  stand until your game has loaded the new part, instead of dropping
+  through the floor for a moment first.
+
+Still network version 16: plays with 0.3.12.
+
 ## 0.3.12
 
 ### Co-op
