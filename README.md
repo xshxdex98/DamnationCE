@@ -9,10 +9,10 @@
 <a href="https://discord.gg/5vSnrK35fz">Project Discord</a> ·
 </p>
 
-> **Plays with [OpenCE](https://github.com/cybersecurity/halo-ce-universal) build-76 through build-82 (network version 11)** and with ChupathingyCE, both ways.
+> **Plays with [OpenCE](https://github.com/OpenCommunityEdition/OpenCE) build-76 through build-102 (network version 11)** and with ChupathingyCE, both ways.
 
 DamnationCE is a fork of **OpenCE**
-([cybersecurity/halo-ce-universal](https://github.com/cybersecurity/halo-ce-universal)),
+([OpenCommunityEdition/OpenCE](https://github.com/OpenCommunityEdition/OpenCE)),
 the port of the Halo: Combat Evolved decompilation to modern computers. It
 follows OpenCE's builds closely and adds its own menus, Custom Edition map
 support and synced AI on top.
@@ -99,7 +99,7 @@ that draw them).
 
 - The decompilation: [punpckhdq/halo](https://github.com/punpckhdq/halo) and
   [bnunu/halo-1](https://github.com/bnunu/halo-1), of the Xbox build 2342.
-- The port: [OpenCE](https://github.com/cybersecurity/halo-ce-universal) and its
+- The port: [OpenCE](https://github.com/OpenCommunityEdition/OpenCE) and its
   contributors, which this is a fork of.
 - Stats:
   [ChupathingyCE](https://github.com/ChupathingyCE/chupathingyce), by
