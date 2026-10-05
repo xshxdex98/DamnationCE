@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.3
+
+### Co-op
+
+- Finishing a level takes everyone back to the lobby with the next level
+  ready to start (or another to pick), instead of freezing every game on
+  the level's last white screen. It works whoever reaches the end first.
+- Marines and other friendlies no longer show as enemies on clients'
+  reticles.
+- Skipping a cutscene stops its music and dialogue for everyone.
+- The Pillar of Autumn's tutorial prompts show for clients every time.
+
 ## 0.3.2
 
 ### Co-op
