@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.5
+
+### From OpenCE (build-121)
+
+- Co-op's Server Setup has FRIENDLY FIRE between players, on by default.
+- EXTRA ENEMIES: enemy squads grow with the players (a percentage of
+  themselves per player past the first) or by a fixed multiplier.
+- Co-op games start with room for 16 players, and private.
+- A kick command for hosts.
+- New Game can also play multiplayer maps alone; they don't replace the
+  campaign's saved game.
+- Leaving the lobby after a game goes to the main menu.
+- The host only takes grenade damage from grenades actually thrown.
+- Their review fixes to co-op: device messages split to fit, screen
+  effects and cameras from the host checked before use.
+
+Players need 0.3.5 (or OpenCE build-121) to play together: the network
+version changed.
+
 ## 0.3.4
 
 ### From OpenCE
