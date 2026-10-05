@@ -1876,6 +1876,27 @@ short object_get_marker_by_name(
 		markers,
 		maximum_marker_count);
 
+	/* port: a unit using another model's animations is asked for that model's
+	marker names; try its own name for the marker (units.c) */
+	if (marker==0 && TEST_FLAG(_object_mask_unit, object->object.type))
+	{
+		char const *own_name = unit_borrowed_marker_name(object_index, name);
+
+		if (own_name)
+		{
+			marker = model_get_marker_by_name(
+				object_definition->object.model.index,
+				own_name,
+				object->object.region_permutations,
+				FALSE,
+				NONE,
+				matrices,
+				TEST_FLAG(object->object.flags, _object_mirrored_bit),
+				markers,
+				maximum_marker_count);
+		}
+	}
+
 	if (marker==0)
 	{
 		match_assert("c:\\halo\\SOURCE\\objects\\objects.c", 1113, maximum_marker_count>0);
