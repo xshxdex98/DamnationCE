@@ -1,22 +1,23 @@
 /*
 MAP_DOWNLOAD.C
 
-A client joining a game on a custom map it doesn't have gets the map from
-the host, once the player says so.
+Downloads a custom map from the host when a player joins a game on a map
+they don't have, after asking them.
 
-The client asks the host how big the map and its picture (<name>.bmp, its
-thumbnail in the menus) are, shows the player, and on DOWNLOAD asks for
-them a piece at a time over the connection's reliable stream, at most
-WINDOW_BYTES ahead of what has arrived. Each file is written as a .part file
-in DOWNLOADED_MAPS_DIRECTORY and kept only if its contents check out: a map
-must be a Halo cache (a Custom Edition one, or an Xbox one of a build this
-game plays), and a picture a bitmap the menus can read. The map is then
-loaded, and the game joined, as if it had been there.
+The client asks the host for the sizes of the map and its picture
+(<name>.bmp, the thumbnail the menus show), then asks the player. If they
+accept, it requests the files in pieces over the connection's reliable
+stream, keeping at most WINDOW_BYTES requested beyond what has arrived.
+Each file is written to a .part file in DOWNLOADED_MAPS_DIRECTORY and only
+kept if its contents check out: the map has to be a Halo cache file this
+game can play (Custom Edition or Xbox), and the picture a bitmap the menus
+can read. After that the map loads and the game is joined as if the map
+had been installed all along.
 
-Nothing else can be sent. The host sends only the map its game is on and
-the picture beside it, never a stock map, and only by a plain file name; the
-client keeps only those two files, under its own names for them, in its
-own folder.
+Nothing else can be sent. The host only sends the map its game is running
+and the picture next to it, never a stock map, and only by a plain file
+name. The client only writes those two files, named by itself, in its own
+folder.
 */
 
 /* ---------- headers */
@@ -61,37 +62,35 @@ enum
 	NUMBER_OF_MAP_DOWNLOAD_FILES
 };
 
-/* a file name, without its extension (custom_edition_maps.c takes names of
+/* a map's file name without the extension (custom_edition_maps.c allows
 up to 56 characters) */
 #define MAP_NAME_SIZE 64
 #define PATH_SIZE 256
 
-/* the most of a file one answer carries, one request asks for, and the
-client has asked for beyond what has arrived (well inside the reliable
-stream's 256 KB queue) */
+/* bytes per answer, per request, and the most the client keeps requested
+beyond what has arrived (well inside the reliable stream's 256 KB queue) */
 #define CHUNK_BYTES 0xE00
 #define REQUEST_BYTES 0x8000
 #define WINDOW_BYTES 0x10000
 
-/* the largest map (a Custom Edition one may be over the Xbox's 0x11600000)
-and picture taken */
+/* size limits; Custom Edition maps can be bigger than the Xbox's 0x11600000 */
 #define MAXIMUM_MAP_BYTES 0x18000000L
 #define MAXIMUM_PICTURE_BYTES 0x400000L
 
-/* a cache file's header, both formats: 'head' at its start, 'foot' at its
-end (cache_files.c's CACHE_FILE_HEADER_SIGNATURE, little-endian) */
+/* both cache formats start with 'head' and end the header with 'foot'
+(cache_files.c's CACHE_FILE_HEADER_SIGNATURE, read little-endian) */
 #define CACHE_HEADER_BYTES 0x800
 #define CACHE_FOOTER_OFFSET 0x7FC
 
-/* how long the client waits for the host to answer before giving up (and
-the host, before taking a client asking nothing for idle) */
+/* how long the client waits for an answer before giving up, and how long the
+host counts a downloading client as busy after its last request */
 #define SILENCE_MILLISECONDS 15000
-/* while the player decides, how often the client asks the host again, so the
-host doesn't take it for idle */
+/* while the player is deciding, the client pings the host this often so it
+isn't dropped as idle */
 #define KEEP_ALIVE_MILLISECONDS 5000
 
-/* maps everyone has, which are never sent: the Xbox's campaign and
-multiplayer levels, Halo PC's own multiplayer maps, and the resource maps */
+/* maps everyone has, which are never sent: the Xbox campaign and
+multiplayer levels, Halo PC's multiplayer maps, and the resource maps */
 static char const *const stock_map_names[] =
 {
 	"a10", "a30", "a50", "b30", "b40", "c10", "c20", "c40", "d20", "d40",
@@ -103,7 +102,7 @@ static char const *const stock_map_names[] =
 
 /* ---------- structures */
 
-/* client to host: a file's size (offset NONE), or a piece of it */
+/* client to host: asks for a file's size (offset NONE) or a piece of it */
 struct map_download_request
 {
 	struct distributed_message_header header;
@@ -114,8 +113,8 @@ struct map_download_request
 	long length;
 };
 
-/* host to client: a file's size (NONE: the host won't send it), and with an
-offset, a piece of it */
+/* host to client: a file's size (NONE if the host won't send it), plus a
+piece of the file when offset isn't NONE */
 struct map_download_answer
 {
 	struct distributed_message_header header;
@@ -130,7 +129,7 @@ struct map_download_answer
 
 #define ANSWER_HEAD_BYTES (sizeof(struct map_download_answer) - CHUNK_BYTES)
 
-/* (both fit one network message) */
+/* an answer has to fit in one network message */
 typedef char map_download_answer_size_assert[sizeof(struct map_download_answer) <= 0xFFF ? 1 : -1];
 
 /* ---------- prototypes */
@@ -141,8 +140,8 @@ boolean network_distributed_server_send_to_machine_reliably(long machine_index, 
 
 /* ---------- private code */
 
-/* a plain file name: letters, digits and _ - . and spaces, not starting with
-a dot, no ".." and no path, and none of the stock maps */
+/* only plain file names: letters, digits, spaces and _ - . with no leading
+dot, no "..", no path, and not a stock map */
 static boolean map_name_allowed(
 	char const *name)
 {
@@ -178,10 +177,11 @@ static long maximum_file_bytes(
 
 /* ---------- the host */
 
-/* when each client machine last asked for some of the map */
+/* when each client machine last sent a request */
 static unsigned long host_request_times[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
 
-/* the file a request names: the game's own map, or the picture beside it */
+/* finds the file a request is for; only the map the game is running, or the
+picture next to it, is ever allowed */
 static boolean host_file_path(
 	char const *map_name,
 	byte file,
@@ -216,7 +216,7 @@ static void host_send_answer(
 	network_distributed_server_send_to_machine_reliably(machine_index, answer, size);
 }
 
-/* answers a client's request: the file's size, or the piece it asked for */
+/* answers with the file's size, or with the piece that was asked for */
 static void host_handle_request(
 	long machine_index,
 	struct map_download_request const *request)
@@ -245,8 +245,8 @@ static void host_handle_request(
 	{
 		host_send_answer(machine_index, &answer);
 	}
-	/* (a piece within the file and the most asked for at once: else the
-	request is a bad client's, and goes unanswered) */
+	/* a request outside the file or bigger than REQUEST_BYTES didn't come
+	from this game's client, so it gets no answer */
 	else if (request->offset >= 0 && request->length > 0 && request->length <= REQUEST_BYTES &&
 		request->offset <= size - request->length && fseek(stream, request->offset, SEEK_SET) == 0)
 	{
@@ -272,43 +272,45 @@ static void host_handle_request(
 enum
 {
 	_client_idle,
-	/* asking the player, before joining, whether to download the game's map */
+	/* the server browser's JOIN: asking whether to download before joining */
 	_client_asking_join,
-	/* asked the host for the files' sizes */
+	/* joined, waiting for the host to send the file sizes */
 	_client_sizing,
-	/* asking the player */
+	/* joined, asking the player (when they weren't asked on JOIN) */
 	_client_asking,
 	_client_downloading,
-	/* stopped, telling the player why */
+	/* stopped, showing the player why */
 	_client_failed,
 };
 
 static struct
 {
 	short state;
-	/* the host's map, as its game names it (levels\...\<name>), and its file name */
+	/* the map's tag path from the host's game (levels\...\<name>), and the
+	file name at the end of it */
 	char map_name[0x80];
 	char name[MAP_NAME_SIZE];
-	/* each file's size from the host (NONE: none to send), and which are known */
+	/* each file's size from the host (NONE if it won't send it), and a flag
+	per file for the sizes that have arrived */
 	long sizes[NUMBER_OF_MAP_DOWNLOAD_FILES];
 	short sizes_known;
-	/* the file being downloaded, how much of it has arrived and been asked for */
+	/* the file being downloaded, and how much of it has arrived and has been
+	requested */
 	byte file;
 	long received;
 	long requested;
 	FILE *stream;
 	unsigned long heard_time;
+	unsigned long asked_time;
 	char failure[128];
-	/* the host began the game in progress before the map was here
-(map_download_hold_begin) */
+	/* the host started the game before the map finished downloading */
 	boolean begin_held;
-	/* the map the player said to download on JOIN (map_download_ask), and
-whether this download is it, so isn't asked about again */
+	/* the map the player accepted on JOIN, so the lobby doesn't ask again,
+	and whether the current download is that map */
 	char approved_name[MAP_NAME_SIZE];
 	boolean approved;
+	/* the browser's join, run once the player accepts on JOIN */
 	void (*join)(void);
-	/* when the client last asked the host anything */
-	unsigned long asked_time;
 } client;
 
 static void client_path(
@@ -337,7 +339,7 @@ static void client_send_request(
 	client.asked_time = system_milliseconds();
 }
 
-/* closes and deletes a file half downloaded */
+/* closes and deletes a partly downloaded file */
 static void client_discard_part(
 	void)
 {
@@ -367,7 +369,25 @@ static void client_fail(
 	error(_error_silent, "map download: %s: %s", client.name, reason);
 }
 
-/* the player chose to go: the download dropped, and the game left */
+/* starts over for a new map, keeping only the map accepted on JOIN */
+static void client_reset(
+	char const *map_name,
+	short state)
+{
+	char approved_name[MAP_NAME_SIZE];
+
+	client_forget();
+	csmemcpy(approved_name, client.approved_name, sizeof(approved_name));
+	csmemset(&client, 0, sizeof(client));
+	csmemcpy(client.approved_name, approved_name, sizeof(approved_name));
+	snprintf(client.map_name, sizeof(client.map_name), "%s", map_name);
+	snprintf(client.name, sizeof(client.name), "%s", tag_name_strip_path(map_name));
+	client.sizes[_map_download_map] = NONE;
+	client.sizes[_map_download_picture] = NONE;
+	client.state = state;
+}
+
+/* the player cancelled: drop the download and leave the game */
 static void client_leave(
 	void)
 {
@@ -375,7 +395,7 @@ static void client_leave(
 	network_game_abort();
 }
 
-/* asks for more of the file, up to WINDOW_BYTES beyond what has arrived */
+/* keeps up to WINDOW_BYTES requested beyond what has arrived */
 static void client_request_more(
 	void)
 {
@@ -441,24 +461,32 @@ static void client_start_download(
 		client_fail("The map couldn't be\nsaved. Is the disk\nfull?");
 }
 
-/* the map is here: loaded, and with it the game joined (the game the host
-began meanwhile, now) */
+/* the map is installed: load it, and if the host already started the game,
+start it here too */
 static void client_done(
 	void)
 {
 	struct network_game_client *network_client = global_network_game_client_get();
+	boolean begin_held = client.begin_held;
 
 	error(_error_silent, "map download: %s: done", client.name);
 	client.state = _client_idle;
+	client.begin_held = FALSE;
 	custom_edition_maps_look_again();
 	main_set_multiplayer_map_name(client.map_name);
-	if (client.begin_held && network_client && !network_game_client_game_has_started(network_client))
-		error(_error_silent, "map download: %s: the game the host began couldn't be joined", client.name);
-	client.begin_held = FALSE;
+	if (begin_held && network_client)
+	{
+		/* (despite the name, this starts the game; the begin-game message
+		handler uses it the same way) */
+		boolean started = network_game_client_game_has_started(network_client);
+
+		if (!started)
+			error(_error_silent, "map download: %s: couldn't start the game the host began", client.name);
+	}
 }
 
-/* the file being downloaded can't be had: the map is the point, and the
-download stops; without the picture, the menus show the unknown level's */
+/* a file couldn't be downloaded. Without the map the download stops; without
+the picture the menus just show the unknown-level picture */
 static void client_file_failed(
 	char const *reason)
 {
@@ -472,8 +500,8 @@ static void client_file_failed(
 	client_done();
 }
 
-/* whether a file's first piece starts as its kind does: a cache header, or
-a bitmap's "BM" (nothing more of a file is taken that doesn't) */
+/* whether the first piece starts like the right kind of file: a cache header
+for the map, "BM" for the picture. Anything else is dropped right away */
 static boolean client_first_piece_valid(
 	byte file,
 	byte const *data,
@@ -488,7 +516,8 @@ static boolean client_first_piece_valid(
 	return size >= 2 && !memcmp(data, "BM", 2);
 }
 
-/* whether a whole file is what it should be, by its contents */
+/* whether the whole file really is what it should be, judged by its contents
+rather than its name */
 static boolean client_file_valid(
 	byte file,
 	char const *path)
@@ -499,8 +528,8 @@ static boolean client_file_valid(
 	return client_picture_valid(path);
 }
 
-/* a file has all arrived: kept under its own name if it checks out, else
-deleted; then the picture, if the host has one */
+/* the whole file has arrived: keep it if it checks out, otherwise delete it.
+After the map comes the picture, if the host has one */
 static void client_finish_file(
 	void)
 {
@@ -530,8 +559,8 @@ static void client_finish_file(
 	client_done();
 }
 
-/* the host's answer to the size requests: once both are in, the player is
-asked */
+/* a size from the host. Once both are in, ask the player, or start right
+away if they accepted on JOIN */
 static void client_handle_size(
 	struct map_download_answer const *answer)
 {
@@ -556,7 +585,8 @@ static void client_handle_size(
 	}
 }
 
-/* a piece of the file being downloaded, the next one expected */
+/* a piece of the current file; anything but the next expected piece is
+ignored */
 static void client_handle_piece(
 	struct map_download_answer const *answer)
 {
@@ -594,7 +624,7 @@ static void client_handle_answer(
 
 	csmemcpy(name, answer->map_name, MAP_NAME_SIZE);
 	name[MAP_NAME_SIZE - 1] = 0;
-	/* (only answers about the map being downloaded, whole) */
+	/* only complete answers about the map being downloaded */
 	if (csstrcmp(name, client.name) || answer->file >= NUMBER_OF_MAP_DOWNLOAD_FILES ||
 		answer->data_size > CHUNK_BYTES || size != ANSWER_HEAD_BYTES + answer->data_size)
 	{
@@ -612,13 +642,28 @@ static void client_handle_answer(
 	}
 }
 
-/* (the client's machine gone from the game: whatever it was downloading
-dropped; the question before joining needs no game) */
-static void client_forget_if_disconnected(
+/* runs every frame the menus do: drops the download if the connection is
+gone, gives up on a host that stopped answering, and pings the host while
+the player decides */
+static void client_update(
 	void)
 {
+	unsigned long now = system_milliseconds();
+
+	/* (asking on JOIN happens before there is a connection) */
 	if (client.state != _client_idle && client.state != _client_asking_join && !global_network_game_client_get())
+	{
 		client_forget();
+	}
+	else if ((client.state == _client_sizing || client.state == _client_downloading) &&
+		now - client.heard_time > SILENCE_MILLISECONDS)
+	{
+		client_fail("The host stopped\nanswering. It may be\non a version that\ncan't send maps.");
+	}
+	else if (client.state == _client_asking && now - client.asked_time > KEEP_ALIVE_MILLISECONDS)
+	{
+		client_send_request(_map_download_map, NONE, 0);
+	}
 }
 
 #endif
@@ -670,16 +715,16 @@ boolean map_download_needed(
 
 /* ---------- the dialog */
 
-/* the dialog (tools/port_settings.py's _map_download: ce/map_download.xml),
-by the name the menus load it by, and the last part they know it by */
+/* the dialog's widget (ce/map_download.xml, from tools/port_settings.py's
+_map_download): the tag it's loaded by, and the name of its instance */
 #define DIALOG_WIDGET "pc\\map_download\\map_download_screen"
 #define DIALOG_WIDGET_NAME "map_download_screen"
-/* the most of a map's name one of its lines shows */
+/* map names longer than this are cut short to fit a line */
 #define DIALOG_NAME_CHARACTERS 22
 
-/* Glassed draws the dialog itself, over its widgets (clear, but still taking
-the focus and the mouse: tools/port_settings.py's _map_download(overlay)):
-a panel, its text line by line, the download's bar, and the buttons */
+/* Glassed draws the dialog itself. Its widgets are still there underneath,
+invisible, so focus and the mouse work as in Vanilla
+(tools/port_settings.py's _map_download(overlay)) */
 enum
 {
 	PANEL_X = 130, PANEL_Y = 150, PANEL_WIDTH = 380, PANEL_HEIGHT = 190,
@@ -694,7 +739,7 @@ struct widget_instance *ui_widget_port_open_layer(char const *name);
 void ui_widget_port_close_layer(struct widget_instance *layer);
 struct widget_instance *ui_widget_port_top(void);
 
-/* the dialog, laid over player 1's screen, or NULL */
+/* the dialog, if it's open on player 1's screen */
 static struct widget_instance *dialog_find(
 	void)
 {
@@ -710,7 +755,7 @@ static struct widget_instance *dialog_find(
 	return NULL;
 }
 
-/* one of the dialog's widgets, by the last part of its name, or NULL */
+/* finds a widget by name anywhere under `widget` */
 static struct widget_instance *dialog_widget(
 	struct widget_instance *widget,
 	char const *name)
@@ -731,7 +776,7 @@ static struct widget_instance *dialog_widget(
 	return NULL;
 }
 
-static void megabytes(
+static void format_megabytes(
 	long bytes,
 	char *text,
 	size_t size)
@@ -753,19 +798,12 @@ static void dialog_map_name(
 boolean map_download_begin(
 	char const *map_name)
 {
-	char approved_name[MAP_NAME_SIZE];
-
 	if (!global_network_game_client_get())
 		return FALSE;
-	client_forget();
-	csmemcpy(approved_name, client.approved_name, sizeof(approved_name));
-	csmemset(&client, 0, sizeof(client));
-	snprintf(client.map_name, sizeof(client.map_name), "%s", map_name);
-	snprintf(client.name, sizeof(client.name), "%s", tag_name_strip_path(map_name));
-	client.approved = !csstrcasecmp(approved_name, client.name);
-	client.sizes[_map_download_map] = NONE;
-	client.sizes[_map_download_picture] = NONE;
-	client.state = _client_sizing;
+	client_reset(map_name, _client_sizing);
+	/* (accepting on JOIN covers this one download only) */
+	client.approved = !csstrcasecmp(client.approved_name, client.name);
+	client.approved_name[0] = 0;
 	client.heard_time = system_milliseconds();
 	client_send_request(_map_download_map, NONE, 0);
 	client_send_request(_map_download_picture, NONE, 0);
@@ -779,12 +817,9 @@ boolean map_download_ask(
 {
 	if (!map_name_allowed(tag_name_strip_path(map_name)))
 		return FALSE;
-	client_forget();
-	csmemset(&client, 0, sizeof(client));
-	snprintf(client.map_name, sizeof(client.map_name), "%s", map_name);
-	snprintf(client.name, sizeof(client.name), "%s", tag_name_strip_path(map_name));
+	client_reset(map_name, _client_asking_join);
+	client.approved_name[0] = 0;
 	client.join = join;
-	client.state = _client_asking_join;
 
 	return TRUE;
 }
@@ -811,25 +846,14 @@ void map_download_dialog(
 	char const **accept,
 	char const **cancel)
 {
-	unsigned long now = system_milliseconds();
 	char name[DIALOG_NAME_CHARACTERS + 4];
 	char sizes[NUMBER_OF_MAP_DOWNLOAD_FILES][24];
 	char received[24];
 
-	/* (the download's clock: a host gone quiet ends it, and while the player
-	decides, the host hears this machine isn't idle) */
-	if ((client.state == _client_sizing || client.state == _client_downloading) &&
-		now - client.heard_time > SILENCE_MILLISECONDS)
-	{
-		client_fail("The host stopped\nanswering. It may be\non a version that\ncan't send maps.");
-	}
-	if (client.state == _client_asking && now - client.asked_time > KEEP_ALIVE_MILLISECONDS)
-		client_send_request(_map_download_map, NONE, 0);
-
 	dialog_map_name(name, sizeof(name));
-	megabytes(client.sizes[_map_download_map], sizes[_map_download_map], sizeof(sizes[0]));
-	megabytes(client.sizes[_map_download_picture], sizes[_map_download_picture], sizeof(sizes[0]));
-	megabytes(client.received, received, sizeof(received));
+	format_megabytes(client.sizes[_map_download_map], sizes[_map_download_map], sizeof(sizes[0]));
+	format_megabytes(client.sizes[_map_download_picture], sizes[_map_download_picture], sizeof(sizes[0]));
+	format_megabytes(client.received, received, sizeof(received));
 	*accept = NULL;
 	*cancel = "CANCEL";
 	switch (client.state)
@@ -868,8 +892,8 @@ void map_download_dialog_press(
 {
 	if (client.state == _client_asking_join)
 	{
-		/* (yes: the game joined, and the map fetched once the host is
-		reached; no: nothing joined) */
+		/* accepting joins the game, and the download starts once the host
+		answers; cancelling joins nothing */
 		client.state = _client_idle;
 		if (accept)
 		{
@@ -890,9 +914,10 @@ void map_download_dialog_press(
 void map_download_menus_update(
 	void)
 {
-	struct widget_instance *dialog = dialog_find();
+	struct widget_instance *dialog;
 
-	client_forget_if_disconnected();
+	client_update();
+	dialog = dialog_find();
 	if (client.state != _client_idle && !dialog)
 		ui_widget_port_open_layer(DIALOG_WIDGET);
 	else if (client.state == _client_idle && dialog)
@@ -905,7 +930,7 @@ boolean map_download_dialog_up(
 	return dialog_find() != NULL;
 }
 
-/* a button of Glassed's drawing, lit with the focus */
+/* draws one of Glassed's buttons, highlighted when it has the focus */
 static void overlay_button(
 	struct overlay_palette const *palette,
 	struct widget_instance *bar,
@@ -944,7 +969,6 @@ void map_download_overlay_render(
 	ui_overlay_outline(PANEL_X, PANEL_Y, PANEL_WIDTH, PANEL_HEIGHT, palette->radius, 0.75f, palette->panel_edge);
 	ui_overlay_text(UI_FONT_BOLD, 18.0f, PANEL_X + 20, PANEL_Y + 16, UI_ALIGN_LEFT, palette->title, "MAP DOWNLOAD");
 	ui_overlay_rect(PANEL_X + 20, PANEL_Y + 42, PANEL_WIDTH - 40, 0.75f, 0, palette->rule);
-	/* (the dialog's short lines, one under the other) */
 	for (line = strtok(text, "\n"); line; line = strtok(NULL, "\n"))
 	{
 		overlay_text_fitted(UI_FONT_REGULAR, 12.0f, PANEL_X + 20, y, PANEL_WIDTH - 40,

@@ -106,8 +106,7 @@ enum
 	/* co-op: where the host's devices are (doors, elevators), when they move
 	(network_coop.c) */
 	_distributed_message_coop_device_states = 77,
-	/* a joining client asks for the host's custom map, and the host answers
-	(map_download.c) */
+	/* a joining client downloading the host's custom map (map_download.c) */
 	_distributed_message_map_request = 78,
 	_distributed_message_map_answer = 79,
 
@@ -186,10 +185,10 @@ a longer message is split where a batch is full */
 
 /* ---------- prototypes/NETWORK_DISTRIBUTED.C */
 
-/* fills in a message's header, for one sent other than by distributed_send */
+/* fills in a message's header, for messages not sent with distributed_send */
 void distributed_fill_header(void *message, byte type, short count, word size);
-/* whether a message from this client the host takes before the client has
-loaded its game (a map download's) */
+/* whether the host accepts this client message before the client has
+loaded the game (a map download's) */
 boolean network_distributed_message_before_game(word const *message, word size);
 
 /* sends a message (its header filled in here) where destination says: the

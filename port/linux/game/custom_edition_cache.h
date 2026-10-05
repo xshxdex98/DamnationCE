@@ -52,14 +52,15 @@ void opensauce_cache_path_find(
 	char *path,
 	long path_size);
 
-/* The path of the ".map" file `map_name` names in the maps folders (an
-OpenSauce ".yelo" is never it), in `path` (256 characters); FALSE if none. */
+/* Finds `map_name`'s .map file in the maps folders and writes its path to
+`path` (256 characters). OpenSauce .yelo files don't count. FALSE if there
+is none. */
 boolean custom_edition_cache_map_file(
 	char const *map_name,
 	char *path);
 
-/* Whether the file at `path` is a Custom Edition cache by its contents,
-whatever it is called (map_download.c). */
+/* Whether the file at `path` is a Custom Edition cache file, judged by its
+contents rather than its name (map_download.c). */
 boolean custom_edition_cache_file_is_map(
 	char const *path);
 

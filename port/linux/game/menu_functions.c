@@ -4072,7 +4072,7 @@ static void lobby_update(struct widget_instance *list)
 	rows_update(list, (short)MIN(lobby_player_count, rows), lobby_row_text);
 	lobby_join_help(list);
 	visible_set(named(list, "lobby_button_team", 0), game && game->variant.universal_variant.teams);
-	/* (DELAY: while the countdown runs) */
+	/* (DELAY only while the countdown is running) */
 	visible_set(named(list, "lobby_button_delay", 0),
 		game && state >= _client_state_pregame && network_game_client_get_seconds_to_game_start(client) > 0);
 	/* (the buttons' focus, off Switch Team when it is hidden) */
@@ -5299,21 +5299,19 @@ boolean pc_menu_event_function_invoke(
 	}
 }
 
-/* "port map download update": the map download's dialog (map_download.c,
-ce/map_download.xml): its text, and its buttons' labels, the accept button
-hidden when there is nothing to accept */
+/* "port map download update": fills in the map download dialog
+(map_download.c, ce/map_download.xml) with its text and button labels, and
+hides the accept button when there's nothing to accept */
 #define MAP_DOWNLOAD_TEXT_LENGTH 160
 
-/* a button's label, from plain ASCII text */
+/* (the dialog's text is all ASCII, since map names are checked to be, and
+it always fits: MAP_DOWNLOAD_TEXT_LENGTH is map_download.c's limit too) */
 static void button_text_set(struct widget_instance *button, char const *label)
 {
 	wchar_t text[ROW_TEXT_LENGTH];
-	long index;
 
-	for (index = 0; label[index] && index < ROW_TEXT_LENGTH - 1; index++)
-		text[index] = (wchar_t)(unsigned char)label[index];
-	text[index] = 0;
-	text_set(button, text);
+	if (ascii_to_wide(label, text, sizeof(text)))
+		text_set(button, text);
 }
 
 static void map_download_dialog_update(struct widget_instance *text_box)
@@ -5323,17 +5321,14 @@ static void map_download_dialog_update(struct widget_instance *text_box)
 	char const *accept, *cancel;
 	char text[MAP_DOWNLOAD_TEXT_LENGTH];
 	wchar_t wide[MAP_DOWNLOAD_TEXT_LENGTH];
-	long index;
 
 	while (screen->parent)
 		screen = screen->parent;
 	accept_button = named(screen, "button_accept", 0);
 	cancel_button = named(screen, "button_cancel", 0);
 	map_download_dialog(text, sizeof(text), &accept, &cancel);
-	/* (the text is plain ASCII: map names are, map_download.c) */
-	for (index = 0; text[index] && index < MAP_DOWNLOAD_TEXT_LENGTH - 1; index++)
-		wide[index] = (wchar_t)(unsigned char)text[index];
-	wide[index] = 0;
+	if (!ascii_to_wide(text, wide, sizeof(wide)))
+		wide[0] = 0;
 	text_set_length(text_box, wide, MAP_DOWNLOAD_TEXT_LENGTH);
 	if (accept_button)
 	{

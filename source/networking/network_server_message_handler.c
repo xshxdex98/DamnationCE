@@ -1344,9 +1344,9 @@ boolean network_game_server_handle_client_message(
 					network_game_server_get_client_machine(server, machine, &machine_index);
 					network_distributed_handle_message(machine_index, message, message_buffer_size);
 				}
-				/* (port: a joining client asking for the game's map, before it
-				can load it, map_download.c; heard, so a download doesn't time
-				out a machine joining a game in progress) */
+				/* port: a joining client downloading the game's map
+				(map_download.c). Counted as heard, so a long download doesn't
+				time out a machine joining a game in progress */
 				else if (network_game_server_client_machine_is_joined_to_game(server, machine) &&
 					network_distributed_message_before_game(message, message_buffer_size))
 				{

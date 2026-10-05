@@ -25,8 +25,8 @@ struct bitmap_data;
 
 /* ---------- prototypes/CUSTOM_EDITION_MAPS.C */
 
-/* The maps folders changed (a map downloaded, map_download.c): the next
-lookup scans them again, so the menus name and picture the new map. */
+/* A map was added to the maps folders (map_download.c). The next lookup
+scans them again, so the menus show the new map's name and picture. */
 void custom_edition_maps_look_again(
 	void);
 

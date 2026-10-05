@@ -140,8 +140,8 @@ static boolean file_path_exists(
 
 /* the file that holds the map `map_name` names: <maps>\<name>.map, or the
 OpenSauce <maps>\<name>.yelo when there is no .map */
-/* the maps folders looked in, in order: the game's, the Custom Edition
-install's, then the maps downloaded from hosts (map_download.c) */
+/* the maps folders, in the order they're searched: the game's, the Custom
+Edition install's, then maps downloaded from hosts (map_download.c) */
 static char const *maps_folder(
 	short index)
 {

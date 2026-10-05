@@ -57,13 +57,14 @@ char const *cache_files_build_region(
 	char const *build);
 char const *cache_files_multiplayer_region(
 	char build[0x20]);
-/* port: the path of an Xbox-format map, in `path`: the maps folder's, else
-among the maps downloaded from hosts (map_download.c); whether it exists */
+/* port: finds an Xbox-format map in the game's maps folder, then among the
+maps downloaded from hosts (map_download.c), and writes its path to `path`.
+FALSE if it's in neither. */
 boolean cache_files_map_path(
 	char const *map_name,
 	char path[256]);
-/* port: whether the file at `path` is an Xbox cache of a build this one
-plays, by its header, whatever it is called (map_download.c) */
+/* port: whether the file at `path` is an Xbox cache file of a build this
+game can play, judged by its header rather than its name (map_download.c) */
 boolean cache_files_xbox_map_playable(
 	char const *path);
 boolean cache_files_map_plays_multiplayer(

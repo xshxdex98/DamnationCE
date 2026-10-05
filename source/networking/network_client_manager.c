@@ -1274,8 +1274,8 @@ boolean network_game_client_game_settings_updated(
 		{
 			char build[0x20];
 
-			/* port: a custom map this machine doesn't have is offered from
-			the host, and loaded once it is here (map_download.c) */
+			/* port: a missing custom map is downloaded from the host and
+			loaded once it's installed (map_download.c) */
 			if (!network_game_is_splitscreen_local() && map_download_needed(message_packet->map.name) &&
 				map_download_begin(message_packet->map.name))
 			{
@@ -1283,14 +1283,14 @@ boolean network_game_client_game_settings_updated(
 			}
 			else
 			{
-				/* port: a map of a build this version does not play with others
-				(its objects would not be the host's): said, and the game left */
+				/* port: a map from a build this version can't play online with
+				(its objects wouldn't match the host's): say so and leave */
 				if (!network_game_is_splitscreen_local() &&
 					!cache_files_map_plays_multiplayer(message_packet->map.name, build))
 				{
 					cache_files_show_multiplayer_unavailable(message_packet->map.name, build);
-					/* (the menu's error the join's, not the connection lost that
-					the failure would otherwise give) */
+					/* (show a failed join, not the lost connection that
+					returning FALSE would otherwise report) */
 					display_error_when_main_menu_loaded(_error_network_failed_to_join_game);
 					return FALSE;
 				}
@@ -1483,8 +1483,8 @@ boolean network_game_client_add_player(
 		return TRUE; }
 #endif
 
-	/* port: no player is added while the game's map is still coming from
-	the host (map_download.c): the pregame screen asks again each frame */
+	/* port: players are only added once the map has downloaded
+	(map_download.c); the pregame screen tries again every frame */
 	if (map_download_holds_players())
 		return TRUE;
 

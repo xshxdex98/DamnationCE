@@ -3720,9 +3720,9 @@ void network_game_server_update_countdown(
 				{
 					switch (countdown_event)
 					{
-						/* port: the lobby's DELAY puts the countdown back to its
-						start, where the Xbox's added NETWORK_GAME_COUNTDOWN_ADJUSTMENT
-						(a client's once a countdown, not in its last ten seconds:
+						/* port: the lobby's DELAY resets the countdown to the start.
+						The Xbox added NETWORK_GAME_COUNTDOWN_ADJUSTMENT instead (each
+						client once per countdown, not in the last ten seconds:
 						network_game_server_client_machine_may_slow_countdown) */
 						case _network_game_server_countdown_event_player_left:
 							server->countdown_state.adjusted_time_this_tick = TRUE;

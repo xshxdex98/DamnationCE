@@ -302,9 +302,8 @@ static void join_selected_game(
 	browser_screen.connecting_time = system_milliseconds();
 }
 
-/* The player picked a game to join. On a custom map this machine doesn't
-have, the player is asked first, and the map comes from the host before the
-lobby is joined (map_download.c). */
+/* The player pressed JOIN. If the game's map is missing, they're asked
+whether to download it from the host first (map_download.c). */
 static void join_selected(
 	void)
 {
@@ -318,17 +317,18 @@ static void join_selected(
 		set_status("That game is not accepting players.");
 		return;
 	}
-	if (!known_map(game->map)->installed && !map_download_ask(game->map, join_selected_game))
+	if (known_map(game->map)->installed)
+	{
+		join_selected_game();
+	}
+	else if (!map_download_ask(game->map, join_selected_game))
 	{
 		char text[sizeof(browser_screen.status)];
 
 		snprintf(text, sizeof(text), "You don't have %s: put %s.map in your maps folder.",
 			known_map(game->map)->name, map_file_name(game->map));
 		set_status(text);
-		return;
 	}
-	if (known_map(game->map)->installed)
-		join_selected_game();
 }
 
 /* joins the picked game once its host advertises it, and opens its lobby */

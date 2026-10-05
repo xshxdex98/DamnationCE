@@ -695,8 +695,8 @@ boolean map_screen_active(void);
 void map_screen_process(void);
 void map_screen_render(void);
 void map_screen_pointer(struct halo_ui_pointer const *pointer);
-/* port/linux/game/map_download.c's: its dialog, a screen of the menus, is
-drawn over Online Games and the map picker while it's up */
+/* port/linux/game/map_download.c: its dialog sits on top of Online Games and
+the map picker, which take no input while it's up */
 void map_download_menus_update(void);
 boolean map_download_dialog_up(void);
 void map_download_overlay_render(void);
@@ -3287,11 +3287,11 @@ boolean ui_widget_port_open_from_top(
 		top ? widget_instance_get_topmost_parent(top)->definition_tag_index : NONE, NONE, NONE) != NULL;
 }
 
-/* port: a screen of the menus' laid over player 1's, which stays as it is
-(port/linux/game/map_download.c's dialog): its last child, drawn on top and
-given the focus, with no history kept. Opening a screen in place of
-player 1's (ui_widget_port_open_from_top) would delete that one, and going
-back would make it again, which a network lobby doesn't survive. */
+/* port: opens a screen on top of player 1's current screen, as its last
+child with the focus, leaving the screen underneath alone (used by
+port/linux/game/map_download.c's dialog). Opening it as a screen of its own
+would delete the current one and going back would recreate it, which a
+network lobby doesn't survive. */
 static struct
 {
 	struct widget_instance *screen;
@@ -3317,7 +3317,8 @@ struct widget_instance *ui_widget_port_open_layer(
 	return layer;
 }
 
-/* ... taken off again, the focus back where it was */
+/* port: closes a screen opened with ui_widget_port_open_layer and gives the
+focus back to whatever had it before */
 void ui_widget_port_close_layer(
 	struct widget_instance *layer)
 {
@@ -3327,10 +3328,15 @@ void ui_widget_port_close_layer(
 	if (screen && screen->focused_child == layer)
 	{
 		screen->focused_child = NULL;
+		/* (only if the saved widget is still on this screen; it may have
+		been deleted while the layer was open) */
 		for (child = screen->child; child; child = child->next)
 		{
 			if (screen == ui_widget_port_layer.screen && child == ui_widget_port_layer.focus)
+			{
 				widget_instance_give_focus_directly(screen, child);
+				break;
+			}
 		}
 	}
 	ui_widget_port_layer.screen = NULL;

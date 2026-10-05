@@ -705,7 +705,7 @@ char const *cache_files_multiplayer_region(
 	return cache_files_build_region(cache_file_globals.header.build);
 }
 
-/* port: whether a file of that path can be opened */
+/* port: whether the file at `path` exists and can be opened */
 static boolean cache_files_path_exists(
 	char const *path)
 {
@@ -718,7 +718,7 @@ static boolean cache_files_path_exists(
 	return TRUE;
 }
 
-/* port: a cache file's header, read from the file at that path and checked */
+/* port: reads and checks the header of the cache file at `path` */
 static boolean cache_files_read_header(
 	char const *path,
 	struct cache_file_header *header)
@@ -749,7 +749,7 @@ boolean cache_files_map_path(
 	snprintf(path, 256, "%s%s.map", DOWNLOADED_MAPS_DIRECTORY, name);
 	if (cache_files_path_exists(path))
 		return TRUE;
-	/* (neither: the maps folder's, as missing maps are told of) */
+	/* (not found: report it under the game's maps folder) */
 	snprintf(path, 256, "%s%s.map", cache_files_map_directory(), name);
 
 	return FALSE;
