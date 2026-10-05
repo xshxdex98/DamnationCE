@@ -1007,7 +1007,7 @@ static void distributed_change_from_object(
 	change->owner_player_index = distributed_player_to_byte(object->object.owner_player_index);
 	change->owner_team_index = object->object.owner_team_index;
 	change->variant_number = object->object.variant_number;
-	change->forced_shader_permutation_index = (byte)PIN(object->object.forced_shader_permutation_index, 0, UCHAR_MAX);
+	change->forced_shader_permutation_index = (byte)PIN(object->object.forced_shader_permutation_index, 0, 0xFF);
 	change->position = object->object.position;
 	change->forward = object->object.forward;
 	change->up = object->object.up;
