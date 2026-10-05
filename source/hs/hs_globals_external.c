@@ -920,7 +920,8 @@ typedef char verify_hs_external_global_definition_size[
 
 /* ---------- globals */
 
-short const hs_external_global_count = 443;
+/* port: the Xbox's 443, then two of Halo PC's (below) */
+short const hs_external_global_count = 443 + 2;
 
 extern boolean allow_out_of_sync;
 extern boolean breakable_surface_effect_enabled;
@@ -1945,7 +1946,19 @@ static struct hs_external_global_definition global_connection_dont_timeout_defin
 
 static struct hs_external_global_definition run_game_scripts_definition = { "run_game_scripts", _hs_type_boolean, 0, NULL };
 
-struct hs_external_global_definition *hs_external_globals[443] =
+/* port: two of Halo PC's globals, which some Custom Edition maps' scripts
+use (coldsnap's). They change nothing: which players' names show is the
+display.player_names setting, and there is no developer mode (0, as on
+Halo PC). They come after the Xbox's: Xbox maps refer to globals by their
+place in the table, Custom Edition maps by name (custom_edition_scripts.c). */
+static boolean multiplayer_draw_teammates_names;
+static struct hs_external_global_definition multiplayer_draw_teammates_names_definition =
+	{ "multiplayer_draw_teammates_names", _hs_type_boolean, 0, &multiplayer_draw_teammates_names };
+static short developer_mode;
+static struct hs_external_global_definition developer_mode_definition =
+	{ "developer_mode", _hs_type_short_integer, 0, &developer_mode };
+
+struct hs_external_global_definition *hs_external_globals[443 + 2] =
 {
 	&rasterizer_near_clip_distance_definition,
 	&rasterizer_far_clip_distance_definition,
@@ -2390,6 +2403,8 @@ struct hs_external_global_definition *hs_external_globals[443] =
 	&global_connection_dont_timeout_definition,
 	&find_all_fucked_up_shit_definition,
 	&run_game_scripts_definition,
+	&multiplayer_draw_teammates_names_definition,
+	&developer_mode_definition,
 };
 
 /* ---------- public code */
