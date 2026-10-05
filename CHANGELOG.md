@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.10
+
+### Co-op
+
+- Elite majors and commanders wear their own armor for clients, instead
+  of the minor's.
+
+Everyone needs 0.3.10 to play together.
+
 ## 0.3.9
 
 ### Co-op
