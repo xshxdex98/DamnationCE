@@ -1227,6 +1227,36 @@ long unit_animation_graph_index(
 		object.animation_graph.index;
 }
 
+/* port: The marker on the unit's own model matching a name from a borrowed
+animation graph. The Spartan's graph asks for "right hand" and "left hand";
+the elite's model names them "right hand elite" and "left hand elite". Returns
+NULL if the unit uses its own graph or has no such marker. */
+char const *unit_borrowed_marker_name(
+	long unit_index,
+	char const *name)
+{
+	long model_index;
+	struct model *model;
+	size_t length;
+	short index;
+
+	if (!name || !name[0] || players_coop_animation_source(unit_index) == NONE)
+		return NULL;
+	model_index = unit_definition_get(unit_get(unit_index)->definition_index)->object.model.index;
+	if (model_index == NONE)
+		return NULL;
+	model = model_definition_get(model_index);
+	length = strlen(name);
+	for (index = 0; index < model->markers.count; index++)
+	{
+		struct model_marker *marker = TAG_BLOCK_GET_ELEMENT(&model->markers, index, struct model_marker);
+
+		if (!strncmp(marker->name, name, length) && marker->name[length] == ' ')
+			return marker->name;
+	}
+	return NULL;
+}
+
 struct animation_retarget const *unit_animation_retarget(
 	long unit_index,
 	struct model *model)
