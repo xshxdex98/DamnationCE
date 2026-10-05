@@ -1477,6 +1477,16 @@ static void particle_system_render(
 					{
 						sequence_index = state_definition->sequence_index;
 					}
+					/* port: a particle whose bitmap lacks that sequence, or whose
+					sequence has no sprites, isn't drawn (a Custom Edition map's can,
+					Hornets Nest's); it read past the bitmap's sequences */
+					if (sequence_index < 0 || sequence_index >= bitmap->sequences.count ||
+						TAG_BLOCK_GET_ELEMENT(&bitmap->sequences, sequence_index,
+							struct bitmap_group_sequence)->sprites.count <= 0)
+					{
+						particle_index = (short)particle->next_particle_index;
+						continue;
+					}
 					sequence = TAG_BLOCK_GET_ELEMENT(
 						&bitmap->sequences,
 						sequence_index,
