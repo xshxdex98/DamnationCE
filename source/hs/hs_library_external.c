@@ -1002,6 +1002,9 @@ void hs_teleport_players_not_in_trigger_volume(
 	short cutscene_flag_index)
 {
 	long player_index;
+	/* port: in network co-op the first player moved goes to the flag and
+	the rest around them, instead of all into the same spot */
+	long first_unit_index = NONE;
 
 	for (player_index = data_next_index(player_data, NONE);
 		player_index != NONE;
@@ -1015,11 +1018,17 @@ void hs_teleport_players_not_in_trigger_volume(
 				trigger_volume_index,
 				player->unit_index))
 		{
+			if (first_unit_index != NONE && network_coop_active())
+			{
+				player_teleport(player_index, first_unit_index, &object_get(first_unit_index)->object.position);
+				continue;
+			}
 			hs_object_orient(
 				player->unit_index,
 				cutscene_flag_index,
 				TRUE,
 				TRUE);
+			first_unit_index = player->unit_index;
 		}
 	}
 

@@ -3164,6 +3164,26 @@ void players_reconnect_to_structure_bsp(
 			}
 		}
 
+		/* port: in network co-op, if whoever crossed isn't in the new BSP yet,
+		the others gather to a player who is and stands on no switch trigger,
+		so nobody is left to switch it straight back */
+		if (!found_player && network_coop_active())
+		{
+			data_iterator_new(&iterator, player_data);
+			while ((player = data_iterator_next(&iterator)) != NULL && !found_player)
+			{
+				struct object_datum *unit = object_try_and_get(player->unit_index);
+
+				if (unit && scenario_leaf_index_from_point(&unit->object.bounding_sphere_center) != NONE &&
+					!players_coop_in_bsp_switch_trigger(player->unit_index))
+				{
+					source_unit_index = player->unit_index;
+					teleport_position = unit->object.position;
+					found_player = TRUE;
+				}
+			}
+		}
+
 		match_vassert(
 			"c:\\halo\\SOURCE\\game\\players.c",
 			0x63E,
