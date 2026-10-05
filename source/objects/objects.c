@@ -1877,27 +1877,6 @@ short object_get_marker_by_name(
 		markers,
 		maximum_marker_count);
 
-	/* port: a unit using another model's animations is asked for that model's
-	marker names; try its own name for the marker (units.c) */
-	if (marker==0 && TEST_FLAG(_object_mask_unit, object->object.type))
-	{
-		char const *own_name = unit_borrowed_marker_name(object_index, name);
-
-		if (own_name)
-		{
-			marker = model_get_marker_by_name(
-				object_definition->object.model.index,
-				own_name,
-				object->object.region_permutations,
-				FALSE,
-				NONE,
-				matrices,
-				TEST_FLAG(object->object.flags, _object_mirrored_bit),
-				markers,
-				maximum_marker_count);
-		}
-	}
-
 	if (marker==0)
 	{
 		match_assert("c:\\halo\\SOURCE\\objects\\objects.c", 1113, maximum_marker_count>0);
@@ -2407,14 +2386,6 @@ void object_compute_node_matrices(
 		
 		struct model *model = model_definition_get(object_definition->object.model.index);
 
-		/* port: a unit using another model's animations (a network co-op
-		player's elite using the Spartan's) is animated on that model's nodes,
-		then copied onto its own (model_animations.c) */
-		struct animation_retarget const *retarget = TEST_FLAG(_object_mask_unit, object->object.type) ?
-			unit_animation_retarget(object_index, model) : NULL;
-		real_orientation source_orientations[MAXIMUM_NODES_PER_MODEL];
-		boolean retargeting = FALSE;
-
 		if (object->object.parent_object_index==NONE)
 		{
 			object_node_matrix = NULL;
@@ -2451,15 +2422,7 @@ void object_compute_node_matrices(
 					frame_index = object->object.animation.state.frame_index;
 				}
 
-				if (retarget && animation->node_list_checksum != model->node_list_checksum)
-				{
-					animation_get_node_orientations(NULL, animation, frame_index, source_orientations);
-					retargeting = TRUE;
-				}
-				else
-				{
-					animation_get_node_orientations(model, animation, frame_index, node_orientations);
-				}
+				animation_get_node_orientations(model, animation, frame_index, node_orientations);
 				world_relative = TEST_FLAG(animation->flags, _animation_world_relative_bit);
 			}
 			else
@@ -2470,13 +2433,6 @@ void object_compute_node_matrices(
 		else
 		{
 			model_get_node_orientations(model, node_orientations);
-		}
-
-		/* port: apply the unit's overlays on the source nodes, then copy over */
-		if (retargeting)
-		{
-			object_type_preprocess_node_orientations(object_index, source_orientations);
-			animation_retarget_apply(retarget, source_orientations, node_orientations);
 		}
 
 		if (object_definition->object.animation_graph.index!=NONE)
@@ -2543,7 +2499,7 @@ void object_compute_node_matrices(
 		}
 
 
-		if (object_definition->object.animation_graph.index!=NONE && !retargeting)
+		if (object_definition->object.animation_graph.index!=NONE)
 		{
 			object_type_preprocess_node_orientations(object_index, node_orientations);
 		}

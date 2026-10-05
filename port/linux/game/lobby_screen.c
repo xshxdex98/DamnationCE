@@ -41,12 +41,6 @@ static short const button_lefts[NUMBER_OF_BUTTONS] = { 176, 288, 400, 512 };
 static char const *const button_names[NUMBER_OF_BUTTONS] =
 	{ "lobby_button_team", "lobby_button_start", "lobby_button_add", "lobby_button_leave" };
 static char const *const button_labels[NUMBER_OF_BUTTONS] = { "SWITCH TEAM", "START NOW", "ADD PLAYER", "LEAVE" };
-/* the co-op lobby's PLAYER: SPARTAN / ELITE button, under the game details
-(must match LOBBY_MODEL_BUTTON_* in tools/port_settings.py) */
-enum
-{
-	MODEL_BUTTON_LEFT = 420, MODEL_BUTTON_TOP = 276, MODEL_BUTTON_WIDTH = 196,
-};
 
 /* the rest of the layout, in the menus' 640x480 */
 enum
@@ -71,7 +65,6 @@ struct widget_instance *ui_widget_port_top(void);
 /* menu_functions.c */
 short pc_menu_lobby_players(struct network_player *const **players, short *first);
 wchar_t const *pc_menu_lobby_join_help(void);
-wchar_t const *pc_menu_lobby_player_model_label(void);
 
 /* ---------- private code */
 
@@ -323,31 +316,6 @@ static void render_buttons(
 	}
 }
 
-/* draws the player model button over its invisible widget (co-op only) */
-static void render_model_button(
-	struct overlay_palette const *palette,
-	struct widget_instance *list)
-{
-	struct widget_instance *button = child_named(list, "lobby_button_model");
-	wchar_t const *label = pc_menu_lobby_player_model_label();
-	boolean lit = button && list->focused_child == button;
-	char text[32];
-	size_t length;
-
-	if (!button || !button->visible)
-		return;
-	/* the label is plain ASCII */
-	for (length = 0; label[length] && length < sizeof(text) - 1; length++)
-		text[length] = (char)label[length];
-	text[length] = 0;
-	ui_overlay_rect(MODEL_BUTTON_LEFT, MODEL_BUTTON_TOP, MODEL_BUTTON_WIDTH, BUTTON_HEIGHT, palette->radius / 2,
-		lit ? palette->row_selected : palette->panel);
-	ui_overlay_outline(MODEL_BUTTON_LEFT, MODEL_BUTTON_TOP, MODEL_BUTTON_WIDTH, BUTTON_HEIGHT, palette->radius / 2,
-		0.75f, palette->panel_edge);
-	ui_overlay_text(UI_FONT_BOLD, 10.0f, MODEL_BUTTON_LEFT + MODEL_BUTTON_WIDTH / 2, MODEL_BUTTON_TOP + 5,
-		UI_ALIGN_CENTER, lit ? palette->title : palette->prompt, text);
-}
-
 /* how another player joins (split screen), left of the buttons */
 static void render_join_help(
 	struct overlay_palette const *palette)
@@ -403,7 +371,6 @@ void lobby_screen_render(
 	render_header(palette, game, client, player_count);
 	render_players(palette, list, game);
 	render_panel(palette, game, player_count);
-	render_model_button(palette, list);
 }
 
 #endif

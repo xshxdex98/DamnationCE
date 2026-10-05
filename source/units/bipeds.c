@@ -866,40 +866,12 @@ boolean biped_flying_through_air(
 		TEST_FLAG(biped->object.damage_flags, _object_dead_bit));
 }
 
-/* port: The biped definition a biped moves and lands by. A network co-op
-player's elite (see players.c, players_coop_animation_source) uses the
-Spartan's, whose animations it plays. The elite's own tag is the AI's: it
-moves by its animations' root motion, which the Spartan's animations don't
-have (the Spartan uses player physics), and its landings stop it for long.
-Without this the elite stood still with some weapons, stopped while
-throwing grenades, couldn't strafe diagonally and froze after landing. */
-static struct biped_definition *biped_movement_definition(
-	long biped_index)
-{
-	long source_index = players_coop_animation_source(biped_index);
-
-	return biped_definition_get(source_index != NONE ? source_index : biped_get(biped_index)->definition_index);
-}
-
-/* the biped's own flags, with how it moves taken from
-biped_movement_definition */
-#define BIPED_MOVEMENT_FLAGS (FLAG(_biped_turns_without_animating_bit) | \
-	FLAG(_biped_uses_player_physics_bit) | FLAG(_biped_uses_old_player_physics_bit))
-
-static unsigned long biped_movement_flags(
-	long biped_index,
-	struct biped_definition const *definition)
-{
-	return (definition->biped.flags & ~BIPED_MOVEMENT_FLAGS) |
-		(biped_movement_definition(biped_index)->biped.flags & BIPED_MOVEMENT_FLAGS);
-}
-
 static void biped_start_landing(
 	long biped_index,
 	real landing_velocity)
 {
 	struct biped_datum *biped = biped_get(biped_index);
-	struct biped_definition *definition = biped_movement_definition(biped_index);
+	struct biped_definition *definition = biped_definition_get(biped->definition_index);
 	real minimum_soft_landing_velocity =
 		definition->biped.minimum_soft_landing_velocity * (1.f / TICKS_PER_SECOND);
 	real minimum_hard_landing_velocity =
@@ -3210,7 +3182,7 @@ static void biped_update_turning(
 {
 	struct biped_datum *biped = biped_get(biped_index);
 	struct biped_definition *definition = biped_definition_get(biped->definition_index);
-	unsigned long flags = biped_movement_flags(biped_index, definition);
+	unsigned long flags = definition->biped.flags;
 
 	if (TEST_FLAG(flags, _biped_flying_bit) &&
 		!TEST_FLAG(biped->object.damage_flags, _object_dead_bit))
@@ -3718,7 +3690,7 @@ static void biped_update_moving(
 		if (!TEST_FLAG(definition->biped.flags, _biped_flying_bit) ||
 			TEST_FLAG(biped->object.damage_flags, _object_dead_bit))
 		{
-			if (!TEST_FLAG(biped_movement_flags(biped_index, definition), _biped_uses_player_physics_bit) ||
+			if (!TEST_FLAG(definition->biped.flags, _biped_uses_player_physics_bit) ||
 				biped->unit.animation.state == _unit_state_user_animation)
 			{
 				if (!TEST_FLAG(biped->biped.flags, _biped_slipping_bit) &&
@@ -3749,7 +3721,7 @@ static void biped_update_moving(
 
 				if (cinematic_in_progress() ||
 					TEST_FLAG(
-						biped_movement_flags(biped_index, definition),
+						definition->biped.flags,
 						_biped_uses_old_player_physics_bit))
 				{
 					player_information_block = *player_information;

@@ -1314,48 +1314,6 @@ long find_best_starting_location_index(
 	return best_starting_location_index;
 }
 
-/* port: the biped a network co-op player spawns as: the elite if they
-picked it in the lobby and the level has one, otherwise the Spartan */
-static long players_coop_unit_definition(
-	struct player_datum const *player,
-	long campaign_unit_index)
-{
-	long elite_index;
-
-	if (!network_coop_active() || player->network_player_data.player_model != _player_model_elite)
-		return campaign_unit_index;
-	elite_index = tag_loaded(BIPED_DEFINITION_TAG, "characters\\elite\\elite");
-	return elite_index != NONE ? elite_index : campaign_unit_index;
-}
-
-/* port: for a network co-op player's non-Spartan biped (the elite from
-players_coop_unit_definition), returns the Spartan's unit definition, whose
-animations it uses so it can hold every weapon. Returns NONE for any other
-unit. Decided by the unit's owner, which survives death and is known on
-clients too. */
-long players_coop_animation_source(
-	long unit_index)
-{
-	struct unit_datum *unit = unit_get(unit_index);
-	struct game_globals *globals = scenario_get_game_globals();
-	long spartan_index;
-
-	if (!network_coop_active() || unit->object.type != _object_type_biped ||
-		unit->object.owner_player_index == NONE || !globals || globals->player_information.count <= 0)
-	{
-		return NONE;
-	}
-	spartan_index = TAG_BLOCK_GET_ELEMENT(&globals->player_information, 0,
-		struct game_globals_player_information)->player_unit.index;
-	if (spartan_index == NONE || spartan_index == unit->definition_index ||
-		unit_definition_get(spartan_index)->object.animation_graph.index == NONE ||
-		unit_definition_get(spartan_index)->object.model.index == NONE)
-	{
-		return NONE;
-	}
-	return spartan_index;
-}
-
 /* port: paints a network co-op player's unit in their profile colour. The
 campaign Spartan is always green because its tag fixes that colour, which
 overrides the colour the unit is created with; this replaces fixed colours. */
@@ -1472,20 +1430,13 @@ static void player_spawn(
 				}
 				else
 				{
-					unit_definition_index = players_coop_unit_definition(player,
-						player_information->player_unit.index);
+					unit_definition_index = player_information->player_unit.index;
 				}
 
 				object_placement_data_new(
 					&placement_data,
 					unit_definition_index,
 					NONE);
-				/* port: owned from its creation, so a co-op player's Elite picks
-				its first animations from the Spartan's graph it uses
-				(units.c, unit_animation_graph_index). Owned only after, it
-				kept seat and weapon slots of the Elite's own graph, which
-				index past the Spartan's. */
-				placement_data.owner_player_index = player_index;
 				placement_data.position = starting_location->position;
 				vector3d_from_angle(
 					&placement_data.forward,

@@ -3451,58 +3451,6 @@ static struct widget_instance *focused_leaf(struct widget_instance *widget)
 	return widget;
 }
 
-boolean network_game_client_update_local_player_data(struct network_game_client *client,
-	struct network_player *player);
-
-/* The player model (players.h) each controller picked in the co-op lobby.
-Kept until the game closes. The button shows the last controller's choice. */
-static short lobby_player_models[MAXIMUM_LOCAL_PLAYERS];
-static short lobby_player_model_controller;
-
-/* The choice is offered for co-op on the stock campaign levels. A level
-without an elite biped still spawns that player as a Spartan (players.c). */
-static boolean lobby_player_model_offered(struct network_game const *game)
-{
-	return game_cooperative(game) &&
-		custom_edition_maps_campaign_level(custom_edition_maps_display_index(game->map.name)) != NONE;
-}
-
-/* the model a controller's player joins with (network_client_manager.c) */
-short pc_menu_lobby_player_model(short controller)
-{
-	return controller >= 0 && controller < MAXIMUM_LOCAL_PLAYERS ? lobby_player_models[controller] :
-		_player_model_spartan;
-}
-
-/* the button's label (also drawn by lobby_screen.c in Glassed) */
-wchar_t const *pc_menu_lobby_player_model_label(void)
-{
-	return lobby_player_models[lobby_player_model_controller] == _player_model_elite ?
-		L"PLAYER: ELITE" : L"PLAYER: SPARTAN";
-}
-
-/* "port lobby player model": toggles the controller's player between
-Spartan and Elite and sends the change to the host */
-static boolean lobby_player_model_toggle(short controller)
-{
-	void *client = global_network_game_client_get();
-	struct network_player *player;
-	struct network_player changed;
-
-	/* a mouse click has no controller; treat it as the first player's */
-	if (controller < 0 || controller >= MAXIMUM_LOCAL_PLAYERS)
-		controller = 0;
-	lobby_player_models[controller] = lobby_player_models[controller] == _player_model_elite ?
-		_player_model_spartan : _player_model_elite;
-	lobby_player_model_controller = controller;
-	player = lobby_local_player(controller);
-	if (!client || !player)
-		return TRUE;
-	changed = *player;
-	changed.player_model = lobby_player_models[controller];
-	return network_game_client_update_local_player_data((struct network_game_client *)client, &changed);
-}
-
 /* "port lobby open" (the lobby made, or come back to): no player being added */
 static boolean lobby_join_reset(void)
 {
@@ -3765,9 +3713,6 @@ static void lobby_update(struct widget_instance *list)
 	visible_set(named(list, "lobby_button_team", 0), game && game->variant.universal_variant.teams);
 	/* (the buttons' focus, off Switch Team when it is hidden) */
 	focus_off_hidden(named(list, "lobby_button_bar", 0));
-	visible_set(named(list, "lobby_button_model", 0), game && lobby_player_model_offered(game));
-	text_set_length(named(list, "lobby_button_model", 0), pc_menu_lobby_player_model_label(), ROW_TEXT_LENGTH);
-	focus_off_hidden(list);
 	if (description && named(description, "lobby_game_data", 0))
 		lobby_panel_show(description, client, game, state);
 }
@@ -4878,10 +4823,6 @@ boolean pc_menu_event_function_invoke(
 		else if (!strcmp(name, "port lobby add player"))
 		{
 			return lobby_add_player();
-		}
-		else if (!strcmp(name, "port lobby player model"))
-		{
-			return lobby_player_model_toggle(controller);
 		}
 		else if (!strcmp(name, "port lobby join"))
 		{
