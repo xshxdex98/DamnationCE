@@ -153,6 +153,20 @@ def test_link_check_rejects_undefined_weak_references(tmp_path):
     assert check(caller, local, provider) == 0
 
 
+# ---------- network version
+
+
+def test_network_version_is_one_this_client_joins():
+    """the client joins hosts of HALO_PORT_NETWORK_VERSION_MINIMUM to _MAXIMUM
+    only (network_client_manager.c): its own version outside them, it would
+    join no one, even itself (as a merge of OpenCE's version bump alone
+    would leave it)"""
+    text = (Path(__file__).resolve().parent.parent / "port/linux/include/halo_port_limits.h").read_text()
+    version, minimum, maximum = (int(re.search(rf"#define HALO_PORT_NETWORK_VERSION{suffix} (\d+)", text).group(1))
+                                 for suffix in ("", "_MINIMUM", "_MAXIMUM"))
+    assert minimum <= version <= maximum
+
+
 # ---------- game sources
 
 

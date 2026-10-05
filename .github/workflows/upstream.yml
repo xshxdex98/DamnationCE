@@ -1,22 +1,27 @@
 name: Upstream builds
 
 # OpenCE's builds (OpenCommunityEdition/OpenCE, tagged build-<n>) merged
-# into main without anyone at the keyboard, every six hours. For the newest
-# build main doesn't have yet:
+# into main with no one at the keyboard, every six hours, and told of in
+# Discord's upstream channel. For the newest build main doesn't have yet:
 #
-# - if it merges without conflicts, the merge goes on the branch
-#   upstream/build-<n> with a pull request "Merge upstream build-<n>", and
-#   is built on every platform (build.yml, its tests with it). Built, the
-#   pull request is merged into main; not, it stays open with the run
-#   named, for a look by hand.
-# - if it conflicts, an issue naming the files, for a merge by hand (the
-#   network version, both themes' menus and the co-op code are this
-#   client's own, and a conflict there needs a person).
+# - if it merges without conflicts: the merge goes on the branch
+#   upstream/build-<n> with a pull request, and is built on every platform
+#   with the tests (build.yml). Built, and main where it was when the merge
+#   was made (else what was built isn't what would be merged; the next run
+#   tries again), the pull request is merged into main and main's build
+#   offers it to players (build.yml's publish). Not built, the pull request
+#   stays open with the run named, and main is left as it was.
+# - if it conflicts, but every commit it brings is DamnationCE's own coming
+#   back (the same title is on main) or a network version main is at or
+#   past: main's side is kept, so the merge changes nothing and only
+#   records the build as merged.
+# - if it conflicts otherwise: an issue naming the files, for a merge by
+#   hand. Nothing reaches main.
 #
-# Either is done once a build. A merge this workflow makes reaches main but
-# not players: its push starts no build (a workflow's own token starts
-# none), so the update channel (build.yml's publish-latest) offers it with
-# the next push to main by hand, or the next release.
+# An OpenCE network version bump merged cleanly would leave this client's
+# own range of versions it joins (HALO_PORT_NETWORK_VERSION_MINIMUM and
+# _MAXIMUM, which OpenCE hasn't) behind it, so the range is moved to the
+# new version in the merge, as by hand (test_linux_port.py checks it).
 on:
   schedule:
     - cron: "17 */6 * * *"
@@ -35,14 +40,16 @@ concurrency:
 jobs:
   merge:
     runs-on: ubuntu-24.04
-    # (the four platforms' build, waited for)
-    timeout-minutes: 120
+    # (the four platforms' build, waited for, twice)
+    timeout-minutes: 180
     env:
       GH_TOKEN: ${{ github.token }}
       UPSTREAM: https://github.com/OpenCommunityEdition/OpenCE.git
+      LIMITS: port/linux/include/halo_port_limits.h
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Merge the newest build
@@ -59,50 +66,123 @@ jobs:
             exit 0
           fi
           title="Merge upstream $build"
-          if [ -n "$(gh pr list --state all --search "\"$title\" in:title" --json number --jq '.[].number')" ] ||
-             [ -n "$(gh issue list --state all --search "\"$title\" in:title" --json number --jq '.[].number')" ]; then
-            echo "$build has been taken already"
+          if [ -n "$(gh pr list --state open --search "\"$title\" in:title" --json number --jq '.[].number')" ] ||
+             [ -n "$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[].number')" ]; then
+            echo "$build is waiting already"
             exit 0
           fi
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          git log --no-merges --format=%s HEAD.."$build" > commits.txt
+          base="$(git rev-parse HEAD)"
+          version() { sed -n "s/^#define HALO_PORT_NETWORK_VERSION$1 \([0-9]*\)$/\1/p" "$LIMITS"; }
+          our_version="$(version '')"
 
           branch="upstream/$build"
           git switch --quiet -c "$branch"
           if git merge --no-ff --no-edit "$build" -m "$title"; then
+            # (OpenCE's version bump: this client's range moved to it)
+            new_version="$(version '')"
+            if [ "$new_version" != "$our_version" ]; then
+              sed -i "s/^#define HALO_PORT_NETWORK_VERSION_MINIMUM [0-9]*$/#define HALO_PORT_NETWORK_VERSION_MINIMUM $new_version/;
+                      s/^#define HALO_PORT_NETWORK_VERSION_MAXIMUM [0-9]*$/#define HALO_PORT_NETWORK_VERSION_MAXIMUM $new_version/" "$LIMITS"
+              git commit --quiet --amend --no-edit "$LIMITS"
+            fi
             git push --quiet origin "$branch"
             gh pr create --head "$branch" --base main --title "$title" --body \
-              "OpenCE's [$build](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/$build) merged into main without conflicts. It's merged into main by itself once it builds on every platform."
+              "OpenCE's [$build](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/$build) merged into main without conflicts. It's merged into main by itself once it builds on every platform with the tests."
             echo "branch=$branch" >> "$GITHUB_OUTPUT"
-          else
-            conflicts="$(git diff --name-only --diff-filter=U | sed 's/^/- /')"
-            git merge --abort
-            gh issue create --title "$title" --body \
-              "OpenCE's [$build](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/$build) conflicts with main, so it needs a merge by hand. The conflicting files:
+            echo "base=$base" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-          $conflicts"
+          conflicts="$(git diff --name-only --diff-filter=U | tr '\n' ' ')"
+          git merge --abort
+          git switch --quiet main
+          # (every commit DamnationCE's own coming back, or a network version
+          # main has: main kept)
+          ours=true
+          for commit in $(git log --no-merges --format=%H HEAD.."$build"); do
+            subject="$(git log -1 --format=%s "$commit")"
+            # (one of DamnationCE's: its author and title both on main)
+            if git log --format='%ae %s' HEAD | grep -Fxq -- "$(git log -1 --format='%ae %s' "$commit")"; then
+              continue
+            fi
+            if [[ "$subject" =~ ^Network\ version\ ([0-9]+)$ ]] && [ "${BASH_REMATCH[1]}" -le "$our_version" ]; then
+              continue
+            fi
+            ours=false
+            break
+          done
+          if $ours; then
+            git merge --quiet -s ours --no-edit "$build" -m "$title" \
+              -m "Every commit it brings is DamnationCE's own (on main already) or a network version main has, so main's side is kept and the merge changes nothing."
+            git push --quiet origin HEAD:main
+            echo "status=ours" >> "$GITHUB_OUTPUT"
+          else
+            gh issue create --title "$title" --body \
+              "OpenCE's [$build](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/$build) conflicts with main, so it needs a merge by hand. The conflicting files: $conflicts"
+            echo "status=conflict" >> "$GITHUB_OUTPUT"
+            echo "details=$conflicts" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build it, and merge it if it builds
+        id: built
         if: steps.merge.outputs.branch != ''
         env:
           BRANCH: ${{ steps.merge.outputs.branch }}
+          BASE: ${{ steps.merge.outputs.base }}
         run: |
-          # (a pull request this workflow opens starts no build by itself)
-          gh workflow run build.yml --ref "$BRANCH"
-          run=""
-          for attempt in $(seq 30); do
-            sleep 10
-            run="$(gh run list --workflow build.yml --branch "$BRANCH" --event workflow_dispatch --limit 1 \
-              --json databaseId --jq '.[0].databaseId')"
-            [ -n "$run" ] && break
-          done
-          if [ -z "$run" ]; then
-            gh pr comment "$BRANCH" --body "Its build didn't start, so it wasn't merged."
-            exit 1
+          # waits for the newest run of build.yml on a ref started by hand
+          # (a pull request or merge this workflow makes starts none itself)
+          build_and_wait() {
+            gh workflow run build.yml --ref "$1" "${@:2}"
+            run=""
+            for attempt in $(seq 30); do
+              sleep 10
+              run="$(gh run list --workflow build.yml --branch "$1" --event workflow_dispatch --limit 1 \
+                --json databaseId,createdAt --jq ".[] | select(.createdAt > \"$started\") | .databaseId")"
+              [ -n "$run" ] && break
+            done
+            [ -n "$run" ] && gh run watch "$run" --interval 30 --exit-status > /dev/null
+          }
+          started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if ! build_and_wait "$BRANCH"; then
+            details="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run"
+            gh pr comment "$BRANCH" --body "Its build failed ($details), so it wasn't merged."
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+            echo "details=$details" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
-          if gh run watch "$run" --interval 30 --exit-status > /dev/null; then
-            gh pr merge "$BRANCH" --merge --delete-branch
+          # (what was built is the merge onto main as it was: main moved
+          # since, the pull request waits for the next run)
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq .commit.sha)" != "$BASE" ]; then
+            gh pr close "$BRANCH" --delete-branch --comment "Main changed while it was built, so it wasn't merged; the next run tries again."
+            exit 0
+          fi
+          gh pr merge "$BRANCH" --merge --delete-branch
+          started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if build_and_wait main -f publish=true; then
+            echo "status=merged" >> "$GITHUB_OUTPUT"
           else
-            gh pr comment "$BRANCH" --body \
-              "Its build failed ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run), so it wasn't merged."
-            exit 1
+            echo "status=unpublished" >> "$GITHUB_OUTPUT"
+            echo "details=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.merge.outputs.status != '' || steps.built.outputs.status != ''
+        with:
+          python-version: "3.12"
+
+      # (the upstream channel's post; none without its webhook, as in a fork)
+      - name: Post to Discord
+        if: steps.merge.outputs.status != '' || steps.built.outputs.status != ''
+        env:
+          DISCORD_UPSTREAM_WEBHOOK: ${{ secrets.DISCORD_UPSTREAM_WEBHOOK }}
+          BUILD: ${{ steps.merge.outputs.build }}
+          STATUS: ${{ steps.built.outputs.status || steps.merge.outputs.status }}
+          DETAILS: ${{ steps.built.outputs.details || steps.merge.outputs.details }}
+        run: |
+          if [ -n "$DISCORD_UPSTREAM_WEBHOOK" ]; then
+            pip install --quiet pillow
+            python3 tools/discord_feeds.py upstream "$BUILD" "$STATUS" commits.txt "$DETAILS"
           fi
