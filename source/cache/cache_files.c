@@ -351,13 +351,6 @@ void scenario_tags_unload(
 
 		menu_tags_unloaded();
 	}
-	/* port: then the co-op Elite's animation graph, added before them
-	(port/linux/game/player_animations.c) */
-	{
-		extern void player_animations_unloaded(void);
-
-		player_animations_unloaded();
-	}
 	cache_file_close();
 	/* a Halo Custom Edition map has no Xbox vertex or index buffers
 	(port/linux/game/custom_edition_cache.c) */
@@ -841,13 +834,6 @@ long scenario_tags_load(
 			global_tag_count = cache_file_globals.tag_header->tag_count;
 			cache_file_globals.tags_loaded = TRUE;
 			result = cache_file_globals.tag_header->scenario_tag_index;
-			/* port: the co-op Elite's animation graph (port/linux/game/
-			player_animations.c), before the menus add their tags */
-			{
-				extern void player_animations_loaded(void);
-
-				player_animations_loaded();
-			}
 			/* port: the menus' tags, as for the Xbox's maps below: the pause
 			menu's SETTINGS and the menus' theme */
 			{
@@ -902,13 +888,6 @@ long scenario_tags_load(
 				extern void pal_tags_loaded(char const *build);
 
 				pal_tags_loaded(cache_file_globals.header.build);
-			}
-			/* port: the co-op Elite's animation graph (port/linux/game/
-			player_animations.c), before the menus add their tags */
-			{
-				extern void player_animations_loaded(void);
-
-				player_animations_loaded();
 			}
 			/* port: the menus' tags, added to the map's (port/linux/game/menu_tags.c) */
 			{
