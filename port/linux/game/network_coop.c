@@ -24,8 +24,8 @@ that clients need to see is sent from this file:
   but this file: doors a player walks up to and switches a player uses are
   decided by the host (the player's action is relayed to it). The host
   sends a group's value for three ticks when it changes, plus a few groups
-  every tick in rotation, so a client that lost a message or joined late
-  catches up. A scenario group is identified by its index, which is the
+  every tick in rotation (those that have moved since the map loaded more
+  often), so a client that lost a message or joined late catches up. A scenario group is identified by its index, which is the
   same on every machine. A device's own group is identified by the device.
 - Named objects (scenery and devices) the scripts create or destroy.
   network_objects.c already handles units, vehicles, weapons and equipment.
@@ -83,6 +83,7 @@ index and tag, since the map placed them at the same index everywhere.
 #include "objects/objects.h"
 #include "objects/object_types.h"
 #include "objects/scenery.h"
+#include "physics/collisions.h"
 #include "rasterizer/rasterizer_cinematics.h"
 #include "saved games/game_state.h"
 #include "scenario/scenario.h"
@@ -110,10 +111,20 @@ enum
 	CAMERA_OBJECT_DISTANCE = 8,
 	/* a client ends the cinematic after this long without hearing from the host */
 	PRESENTATION_SILENCE_TICKS = 2 * TICKS_PER_SECOND,
+	/* A client plays the host's presentations (its cutscene camera, fades,
+	letterbox) one a tick, about this many ticks behind the newest it has,
+	so they keep an even pace however unevenly the network delivers them. */
+	PRESENTATION_DELAY_TICKS = 2,
+	PRESENTATION_BUFFER_COUNT = 8,
 	/* the field of view (radians) is sent as a word, scaled by this */
 	FIELD_OF_VIEW_SCALE = 10000,
 
 	MAXIMUM_QUEUED_EVENTS = 128,
+
+	/* a Pelican's Warthog drop: one Warthog for every this many players,
+	at most this many in all */
+	PLAYERS_PER_DROPPED_VEHICLE = 4,
+	MAXIMUM_DROPPED_VEHICLES = 5,
 	/* each event is sent in this many ticks' messages */
 	EVENT_SENDS = 3,
 
@@ -383,6 +394,15 @@ static struct
 	real_vector3d watching_host_forward;
 	long heard_time;
 	long fade_start_time;
+	/* the host's presentations as they arrived, by the host's tick; the
+	newest tick heard and the tick last played (nothing is played until
+	one has been heard) */
+	struct distributed_coop_presentation buffered[PRESENTATION_BUFFER_COUNT];
+	long buffered_times[PRESENTATION_BUFFER_COUNT];
+	boolean heard_any;
+	boolean playing;
+	long newest_time;
+	long played_time;
 } coop_presentation;
 
 /* host: events still to be sent; client: the last one applied */
@@ -408,7 +428,9 @@ static struct
 	byte sends[MAXIMUM_DEVICE_GROUPS];
 	/* immediate sets so far (devices.c calls network_coop_note_device_snap) */
 	byte snap_counts[MAXIMUM_DEVICE_GROUPS];
-	short refresh_next;
+	/* whether this group has changed since the map loaded */
+	boolean moved[MAXIMUM_DEVICE_GROUPS];
+	short refresh_next, moved_refresh_next;
 	struct distributed_coop_device_groups_message message;
 } host_devices;
 
@@ -441,6 +463,10 @@ static struct
 	written (a skip reverts to it) */
 	boolean skip_save_written;
 } skip_vote;
+
+/* ---------- prototypes */
+
+static void client_play_presentation(void);
 
 /* ---------- private code */
 
@@ -695,22 +721,24 @@ static short device_group_find(
 		device_group_network_get(group_index, &value, &flags, &runtime) && runtime ? group_index : NONE;
 }
 
-/* host: sends the groups that changed, plus the next few in the rotation */
+/* host: sends the groups that changed, plus the next few in each rotation:
+one through every group, and a quicker one through the groups that have
+moved since the map loaded. A late joiner loaded the same map, so those are
+the ones it lacks, and a level's few moved devices (a light bridge) reach it
+within a tick or two instead of after a pass through hundreds. */
 static void host_send_device_groups(
 	void)
 {
 	static short group_indices[MAXIMUM_DEVICE_GROUPS];
 	struct distributed_coop_device_group *entries = host_devices.message.groups;
 	short count = device_group_entries(entries, group_indices);
+	short moved_count = 0, moved_index = 0;
 	short index, sent = 0;
 
-	if (host_devices.refresh_next >= count)
-		host_devices.refresh_next = 0;
 	for (index = 0; index < count; index++)
 	{
-		struct distributed_coop_device_group *entry = &entries[index];
+		struct distributed_coop_device_group const *entry = &entries[index];
 		short group_index = group_indices[index];
-		short rotation = (short)((index - host_devices.refresh_next + count) % count);
 
 		if (!host_devices.started ||
 			entry->value != host_devices.values[group_index] ||
@@ -721,17 +749,42 @@ static void host_send_device_groups(
 			host_devices.flags[group_index] = entry->flags;
 			host_devices.snaps[group_index] = entry->snaps;
 			/* clients loaded the same map, so the starting state isn't sent */
-			host_devices.sends[group_index] = host_devices.started ? DEVICE_GROUP_SENDS : 0;
+			if (host_devices.started)
+			{
+				host_devices.sends[group_index] = DEVICE_GROUP_SENDS;
+				host_devices.moved[group_index] = TRUE;
+			}
+		}
+		if (host_devices.moved[group_index])
+			moved_count++;
+	}
+	if (host_devices.refresh_next >= count)
+		host_devices.refresh_next = 0;
+	if (host_devices.moved_refresh_next >= moved_count)
+		host_devices.moved_refresh_next = 0;
+	for (index = 0; index < count; index++)
+	{
+		struct distributed_coop_device_group *entry = &entries[index];
+		short group_index = group_indices[index];
+		boolean refresh = (index - host_devices.refresh_next + count) % count < DEVICE_GROUP_REFRESHES_PER_TICK;
+
+		if (host_devices.moved[group_index])
+		{
+			refresh = refresh ||
+				(moved_index - host_devices.moved_refresh_next + moved_count) % moved_count < DEVICE_GROUP_REFRESHES_PER_TICK;
+			moved_index++;
 		}
 		entry->changed = host_devices.sends[group_index] != 0;
 		if (entry->changed)
 			host_devices.sends[group_index]--;
-		else if (rotation >= DEVICE_GROUP_REFRESHES_PER_TICK)
+		else if (!refresh)
 			continue;
 		entries[sent++] = *entry;
 	}
 	host_devices.started = TRUE;
 	host_devices.refresh_next = count ? (short)((host_devices.refresh_next + DEVICE_GROUP_REFRESHES_PER_TICK) % count) : 0;
+	host_devices.moved_refresh_next = moved_count ?
+		(short)((host_devices.moved_refresh_next + DEVICE_GROUP_REFRESHES_PER_TICK) % moved_count) : 0;
 	if (sent)
 	{
 		distributed_send(&host_devices.message, _distributed_message_coop_device_groups, sent,
@@ -1551,6 +1604,73 @@ boolean network_coop_devices_remote(
 	return coop_client();
 }
 
+/* the players in the game */
+static short coop_player_count(
+	void)
+{
+	struct data_iterator iterator;
+	short count = 0;
+
+	data_iterator_new(&iterator, player_data);
+	while (data_iterator_next(&iterator))
+		count++;
+
+	return count;
+}
+
+static boolean tag_name_has(
+	long definition_index,
+	char const *text)
+{
+	return definition_index != NONE && strstr(tag_get_name(definition_index), text) != NULL;
+}
+
+/* units.c: a vehicle left the vehicle carrying it. When a Pelican drops a
+Warthog in a larger game, the host drops more beside it, so every player has
+a ride: one Warthog for every four players, at most five. They go side by
+side, alternately left and right, each only where no wall stands between it
+and the first, and reach the clients as any vehicle does. */
+void network_coop_vehicle_dropped(
+	long vehicle_index,
+	long carrier_index)
+{
+	struct object_datum const *vehicle = object_get(vehicle_index);
+	short wanted = (short)MIN((coop_player_count() + PLAYERS_PER_DROPPED_VEHICLE - 1) / PLAYERS_PER_DROPPED_VEHICLE,
+		MAXIMUM_DROPPED_VEHICLES) - 1;
+	real_vector3d left;
+	short spot, placed = 0;
+
+	if (!coop_host() || wanted <= 0 || !tag_name_has(vehicle->definition_index, "warthog") ||
+		!tag_name_has(object_get(carrier_index)->definition_index, "pelican"))
+	{
+		return;
+	}
+	cross_product3d(&vehicle->object.up, &vehicle->object.forward, &left);
+	for (spot = 1; spot <= 2 * MAXIMUM_DROPPED_VEHICLES && placed < wanted; spot++)
+	{
+		/* (1.5 world units apart: a Warthog's width and a gap) */
+		real distance = 1.5f * ((spot + 1) / 2) * (spot % 2 ? 1.0f : -1.0f);
+		struct object_placement_data data;
+		struct collision_result collision;
+		real_vector3d offset;
+
+		scale_vector3d(&left, distance, &offset);
+		if (collision_test_vector(FLAG(_collision_test_structure_bit), &vehicle->object.position, &offset, NONE,
+			&collision))
+		{
+			continue;
+		}
+		object_placement_data_new(&data, vehicle->definition_index, NONE);
+		point_from_line3d(&vehicle->object.position, &offset, 1.0f, &data.position);
+		data.forward = vehicle->object.forward;
+		data.up = vehicle->object.up;
+		data.translational_velocity = vehicle->object.translational_velocity;
+		if (object_new(&data) != NONE)
+			placed++;
+	}
+	error(_error_silent, "co-op: a Pelican dropped %d more Warthogs for %d players", placed, coop_player_count());
+}
+
 void network_coop_note_device_snap(
 	short group_index)
 {
@@ -1975,6 +2095,7 @@ void network_coop_host_tick(
 void network_coop_client_tick(
 	void)
 {
+	client_play_presentation();
 	if (game_time_get() - coop_presentation.heard_time > PRESENTATION_SILENCE_TICKS)
 	{
 		client_cinematic_end();
@@ -2212,15 +2333,32 @@ void network_coop_handle_events(
 	}
 }
 
+/* client: keeps the host's presentation of tick host_time, to be played
+in its turn (client_play_presentation) */
 void network_coop_handle_presentation(
-	void const *entries)
+	void const *entries,
+	long host_time)
 {
-	struct distributed_coop_presentation const *presentation = entries;
-	boolean cinematic = TEST_FLAG(presentation->flags, _presentation_cinematic_bit);
+	short slot;
 
-	if (!coop_game())
+	if (!coop_game() || host_time < 0)
 		return;
 	coop_presentation.heard_time = game_time_get();
+	if (coop_presentation.playing && host_time <= coop_presentation.played_time)
+		return;
+	slot = (short)(host_time % PRESENTATION_BUFFER_COUNT);
+	coop_presentation.buffered[slot] = *(struct distributed_coop_presentation const *)entries;
+	coop_presentation.buffered_times[slot] = host_time;
+	if (!coop_presentation.heard_any || host_time > coop_presentation.newest_time)
+		coop_presentation.newest_time = host_time;
+	coop_presentation.heard_any = TRUE;
+}
+
+static void client_presentation_apply(
+	struct distributed_coop_presentation const *presentation)
+{
+	boolean cinematic = TEST_FLAG(presentation->flags, _presentation_cinematic_bit);
+
 	player_input_enable(!presentation->input_disabled);
 	if (!presentation->scripted_shake && player_effect_port_scripted_active())
 		player_effect_port_scripted_end();
@@ -2297,4 +2435,41 @@ void network_coop_handle_presentation(
 	skip_vote.votes = presentation->skip_votes;
 	skip_vote.voters = presentation->skip_voters;
 	client_apply_hud_state(presentation);
+}
+
+/* client, each tick: plays the next of the host's presentations. It moves
+one host tick a tick, two when it has fallen behind, and waits when it has
+caught up with the newest; a lost tick's place is taken by the one before. */
+static void client_play_presentation(
+	void)
+{
+	struct distributed_coop_presentation const *presentation = NULL;
+	long lag, best_time = NONE;
+	short index;
+
+	if (!coop_presentation.heard_any)
+		return;
+	lag = coop_presentation.newest_time - coop_presentation.played_time;
+	if (!coop_presentation.playing || lag > PRESENTATION_BUFFER_COUNT || lag < -PRESENTATION_BUFFER_COUNT)
+		coop_presentation.played_time = coop_presentation.newest_time - PRESENTATION_DELAY_TICKS;
+	else if (lag > PRESENTATION_DELAY_TICKS + 1)
+		coop_presentation.played_time += 2;
+	else if (lag > 0)
+		coop_presentation.played_time++;
+	else
+		return;
+	coop_presentation.playing = TRUE;
+	for (index = 0; index < PRESENTATION_BUFFER_COUNT; index++)
+	{
+		long time = coop_presentation.buffered_times[index];
+
+		if (time <= coop_presentation.played_time && time > coop_presentation.played_time - PRESENTATION_BUFFER_COUNT &&
+			time > best_time)
+		{
+			best_time = time;
+			presentation = &coop_presentation.buffered[index];
+		}
+	}
+	if (presentation)
+		client_presentation_apply(presentation);
 }
