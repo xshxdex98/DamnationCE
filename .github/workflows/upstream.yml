@@ -1,20 +1,25 @@
 name: Upstream builds
 
-# OpenCE's builds (OpenCommunityEdition/OpenCE, tagged build-<n>) offered
-# for merging, a day after they're out at most. For the newest build main
-# doesn't have yet:
+# OpenCE's builds (OpenCommunityEdition/OpenCE, tagged build-<n>) merged
+# into main without anyone at the keyboard, every six hours. For the newest
+# build main doesn't have yet:
 #
-# - if it merges without conflicts, a pull request "Merge upstream
-#   build-<n>" from the branch upstream/build-<n>, with its build started
-#   (a pull request this workflow opens starts no workflow by itself);
-# - if it conflicts, an issue naming the files, for a merge by hand.
+# - if it merges without conflicts, the merge goes on the branch
+#   upstream/build-<n> with a pull request "Merge upstream build-<n>", and
+#   is built on every platform (build.yml, its tests with it). Built, the
+#   pull request is merged into main; not, it stays open with the run
+#   named, for a look by hand.
+# - if it conflicts, an issue naming the files, for a merge by hand (the
+#   network version, both themes' menus and the co-op code are this
+#   client's own, and a conflict there needs a person).
 #
-# Either is opened once. Nothing reaches main without a person merging it:
-# a merge can need this client's own wiring (both themes' menus), and every
-# push to main is offered to players as an update.
+# Either is done once a build. A merge this workflow makes reaches main but
+# not players: its push starts no build (a workflow's own token starts
+# none), so the update channel (build.yml's publish-latest) offers it with
+# the next push to main by hand, or the next release.
 on:
   schedule:
-    - cron: "17 6 * * *"
+    - cron: "17 */6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -28,9 +33,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  offer:
+  merge:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    # (the four platforms' build, waited for)
+    timeout-minutes: 120
     env:
       GH_TOKEN: ${{ github.token }}
       UPSTREAM: https://github.com/OpenCommunityEdition/OpenCE.git
@@ -39,7 +45,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Offer the newest build
+      - name: Merge the newest build
+        id: merge
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -54,7 +61,7 @@ jobs:
           title="Merge upstream $build"
           if [ -n "$(gh pr list --state all --search "\"$title\" in:title" --json number --jq '.[].number')" ] ||
              [ -n "$(gh issue list --state all --search "\"$title\" in:title" --json number --jq '.[].number')" ]; then
-            echo "$build has been offered already"
+            echo "$build has been taken already"
             exit 0
           fi
 
@@ -63,8 +70,8 @@ jobs:
           if git merge --no-ff --no-edit "$build" -m "$title"; then
             git push --quiet origin "$branch"
             gh pr create --head "$branch" --base main --title "$title" --body \
-              "OpenCE's [$build](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/$build) merged into main without conflicts. Its build is running; check both themes' menus for anything it adds before merging."
-            gh workflow run build.yml --ref "$branch"
+              "OpenCE's [$build](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/$build) merged into main without conflicts. It's merged into main by itself once it builds on every platform."
+            echo "branch=$branch" >> "$GITHUB_OUTPUT"
           else
             conflicts="$(git diff --name-only --diff-filter=U | sed 's/^/- /')"
             git merge --abort
@@ -72,4 +79,30 @@ jobs:
               "OpenCE's [$build](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/$build) conflicts with main, so it needs a merge by hand. The conflicting files:
 
           $conflicts"
+          fi
+
+      - name: Build it, and merge it if it builds
+        if: steps.merge.outputs.branch != ''
+        env:
+          BRANCH: ${{ steps.merge.outputs.branch }}
+        run: |
+          # (a pull request this workflow opens starts no build by itself)
+          gh workflow run build.yml --ref "$BRANCH"
+          run=""
+          for attempt in $(seq 30); do
+            sleep 10
+            run="$(gh run list --workflow build.yml --branch "$BRANCH" --event workflow_dispatch --limit 1 \
+              --json databaseId --jq '.[0].databaseId')"
+            [ -n "$run" ] && break
+          done
+          if [ -z "$run" ]; then
+            gh pr comment "$BRANCH" --body "Its build didn't start, so it wasn't merged."
+            exit 1
+          fi
+          if gh run watch "$run" --interval 30 --exit-status > /dev/null; then
+            gh pr merge "$BRANCH" --merge --delete-branch
+          else
+            gh pr comment "$BRANCH" --body \
+              "Its build failed ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run), so it wasn't merged."
+            exit 1
           fi
