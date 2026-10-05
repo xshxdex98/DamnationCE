@@ -25,6 +25,11 @@ struct bitmap_data;
 
 /* ---------- prototypes/CUSTOM_EDITION_MAPS.C */
 
+/* The maps folders changed (a map downloaded, map_download.c): the next
+lookup scans them again, so the menus name and picture the new map. */
+void custom_edition_maps_look_again(
+	void);
+
 /* Rescans for CE maps and returns the level list: the Xbox levels, then the
 CE multiplayer maps sorted by name. *level_count gets the total. */
 char **custom_edition_maps_level_list(

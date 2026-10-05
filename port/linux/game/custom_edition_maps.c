@@ -557,6 +557,12 @@ static short campaign_level_from_name(
 
 /* ---------- public code */
 
+void custom_edition_maps_look_again(
+	void)
+{
+	custom_edition_maps_globals.looked_for = FALSE;
+}
+
 char **custom_edition_maps_level_list(
 	char **xbox_levels,
 	short xbox_level_count,

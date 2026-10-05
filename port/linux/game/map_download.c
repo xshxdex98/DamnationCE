@@ -37,6 +37,7 @@ own folder.
 
 #include "bmp_files.h"
 #include "custom_edition_cache.h"
+#include "custom_edition_maps.h"
 #include "map_download.h"
 #include "network_distributed.h"
 
@@ -444,6 +445,7 @@ static void client_done(
 
 	error(_error_silent, "map download: %s: done", client.name);
 	client.state = _client_idle;
+	custom_edition_maps_look_again();
 	main_set_multiplayer_map_name(client.map_name);
 	if (client.begin_held && network_client && !network_game_client_game_has_started(network_client))
 		error(_error_silent, "map download: %s: the game the host began couldn't be joined", client.name);
