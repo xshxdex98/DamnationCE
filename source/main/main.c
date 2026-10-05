@@ -2189,7 +2189,7 @@ static void main_won_map_private(
 	in multiplayer, back to the lobby, and the next round is the campaign's
 	next level, The Maw's The Pillar of Autumn. A Custom Edition campaign map
 	has no next level: it repeats. */
-	if (game_connection() == _game_connection_network_server)
+	if (game_connection() == _game_connection_network_server && network_coop_active())
 	{
 		struct network_game *game = network_game_get_game();
 

@@ -43,7 +43,8 @@ the one last used, else the first) and the game's saved game in it:
   list update", "solo level set map") has those the profile has reached, and
   marks those it has finished on Normal, Heroic and Legendary, as the
   Xbox's list does; a level with the saved game in it goes on with it, at
-  its difficulty;
+  its difficulty. Its first row's chooser shows MULTIPLAYER's maps
+  instead, one chosen played alone at once;
 - the difficulty menu: "difficulty item select" (a difficulty chosen) and
   "set difficulty" (its OK button: the difficulty shown) start the game;
 - Load Game's list ("load game menu init", "load game list update", "load
@@ -98,6 +99,7 @@ char const *pc_menu_game_data_input_name(long function_index);
 void event_manager_post_button(short controller_index, short button_index);
 int config_text(char const *name, char *text, unsigned int size);
 int config_write(char const *name, char const *value);
+int config_boolean(char const *name);
 int config_default(char const *name, char *text, unsigned int size);
 char const *config_string(char const *name);
 void platform_display_apply(void);
@@ -888,12 +890,147 @@ static boolean campaign_continue(short controller)
 	return TRUE;
 }
 
-/* New Game's list: "initialize sp level list solo" starts on the level last
-played */
+/* ---- the map lists (New Game's and the Map screen's): their first row's
+chooser of SINGLEPLAYER (the campaign's levels) or MULTIPLAYER maps
+(port_settings.MAP_KIND_CHOOSER), then the kind's rows, scrolling as
+list_scroll scrolls */
+
+enum
+{
+	MAP_KIND_SINGLEPLAYER,
+	MAP_KIND_MULTIPLAYER,
+	NUMBER_OF_MAP_KINDS
+};
+
+/* the rows after the chooser */
+#define MAP_KIND_ROWS 10
+
+static void visible_set(struct widget_instance *widget, boolean visible);
+short ui_widget_port_multiplayer_maps(char const *const **names, short *last_used);
+
+/* the kind the chooser shows (kept at `only`, unless NONE) */
+static short map_kind_shown(struct widget_instance *list, short only)
+{
+	struct widget_instance *spinner = named(list, "list_item_0_map_kind_spinner", 0);
+
+	if (!spinner)
+		return only != NONE ? only : MAP_KIND_SINGLEPLAYER;
+	if (only != NONE)
+		spinner->parameters.list.selected_index = only;
+	return (short)PIN(spinner->parameters.list.selected_index, 0, NUMBER_OF_MAP_KINDS - 1);
+}
+
+static void map_kind_set(struct widget_instance *list, short kind)
+{
+	struct widget_instance *spinner = named(list, "list_item_0_map_kind_spinner", 0);
+
+	if (spinner)
+		spinner->parameters.list.selected_index = kind;
+}
+
+/* the first of count entries shown, for the entry chosen to be in the middle */
+static short map_kind_first(short chosen, short count)
+{
+	return (short)PIN(chosen - MAP_KIND_ROWS / 2, 0, MAX(count - MAP_KIND_ROWS, 0));
+}
+
+static void map_kind_focus(struct widget_instance *list, short first, short chosen)
+{
+	focus_row(list, (short)(1 + chosen - first));
+}
+
+/* the rows after the chooser: count entries from *first's, scrolled on at
+their ends; the entry focused, NONE when the chooser or the buttons have the
+focus */
+static short map_kind_rows_update(struct widget_instance *list, short *first, short count,
+	void (*entry_text)(short entry, wchar_t *text))
+{
+	short shown = (short)MIN(count, MAP_KIND_ROWS);
+	short row = focused_row(list), index = 0;
+	struct widget_instance *child;
+
+	if (row != NONE && row >= 1 && row == shown && *first + shown < count)
+	{
+		(*first)++;
+		focus_row(list, --row);
+	}
+	else if (row == 1 && *first > 0)
+	{
+		(*first)--;
+		focus_row(list, ++row);
+	}
+	for (child = list->child; child; child = child->next, index++)
+	{
+		wchar_t text[ROW_TEXT_LENGTH];
+
+		if (index < 1)
+			continue;
+		if (strncmp(child->name, "list_item_", 10))
+			break;
+		child->visible = index - 1 < shown;
+		if (index - 1 < shown)
+		{
+			entry_text((short)(*first + index - 1), text);
+			text_set(named(child, "list_item_text", 0), text);
+		}
+		visible_set(named(child, "list_item_arrows", 0), child == list->focused_child);
+		visible_set(named(child, "scroll_up_button", 0), FALSE);
+		visible_set(named(child, "scroll_down_button", 0), FALSE);
+	}
+	return row == NONE || row < 1 || row > shown ? NONE : (short)(*first + row - 1);
+}
+
+static void multiplayer_map_text(short map, wchar_t *text)
+{
+	string_get("pc\\main_menu\\mp_map_list", map, text);
+}
+
+/* the description's map (each list's has both kinds' widgets): a campaign
+level's picture, name and words (level_description sets them), or a
+multiplayer map's, or (both NONE) neither */
+static void map_description_show(struct widget_instance *description, short level, short map)
+{
+	struct widget_instance *widget;
+	short marker;
+
+	visible_set(named(description, "replay_level_right_name", 0), level != NONE);
+	visible_set(named(description, "replay_level_right_pic", 0), level != NONE);
+	visible_set(named(description, "replay_level_right_data", 0), level != NONE);
+	visible_set(named(description, "mp_map_right_name", 0), map != NONE);
+	visible_set(named(description, "mp_map_right_pic", 0), map != NONE);
+	visible_set(named(description, "mp_map_right_data", 0), map != NONE);
+	if (level == NONE)
+	{
+		for (marker = 0; marker < 3; marker++)
+			visible_set(named(description, "difficulty_indicator", marker), FALSE);
+	}
+	if (map == NONE)
+		return;
+	if ((widget = named(description, "mp_map_right_name", 0)) != NULL)
+		widget->parameters.text_box.string_list_index = map;
+	if ((widget = named(description, "mp_map_right_pic", 0)) != NULL)
+		widget->animation.current_frame_index = map;
+	if ((widget = named(description, "mp_map_right_data", 0)) != NULL)
+		widget->parameters.text_box.string_list_index = map;
+}
+
+/* New Game's list: SINGLEPLAYER's levels, the profile's reached, or
+MULTIPLAYER's maps, played alone to walk around (no game engine: a campaign
+game on the map) */
+static struct
+{
+	short kind;
+	short first, chosen;
+	/* the multiplayer maps (ui_widget_port_multiplayer_maps) */
+	char const *const *map_names;
+	short map_count;
+} level_list;
+
+/* "initialize sp level list solo" starts on the level last played */
 static boolean level_list_initialize(struct widget_instance *list, short controller)
 {
 	struct player_profile profile;
-	short level;
+	short level, last_used;
 
 	if (!campaign_profile(controller, &profile))
 		return FALSE;
@@ -904,37 +1041,70 @@ static boolean level_list_initialize(struct widget_instance *list, short control
 	if (!campaign.levels[level].available)
 		level = 0;
 	campaign.shown_level = level;
-	focus_row(list, level);
+	level_list.map_count = ui_widget_port_multiplayer_maps(&level_list.map_names, &last_used);
+	level_list.kind = MAP_KIND_SINGLEPLAYER;
+	level_list.chosen = level;
+	level_list.first = map_kind_first(level, NUMBER_OF_SINGLE_PLAYER_LEVELS);
+	map_kind_set(list, level_list.kind);
+	map_kind_focus(list, level_list.first, level_list.chosen);
 	return TRUE;
 }
 
-static void level_row_text(short row, wchar_t *text)
+static void level_row_text(short level, wchar_t *text)
 {
-	string_get("pc\\main_menu\\map_list", campaign.levels[row].available ? row : LEVEL_UNAVAILABLE, text);
+	string_get("pc\\main_menu\\map_list", campaign.levels[level].available ? level : LEVEL_UNAVAILABLE, text);
 }
 
 /* "solo map list update" */
 static void level_list_update(struct widget_instance *list)
 {
-	short row = focused_row(list), level;
+	struct widget_instance *description = list->parameters.list.extended_description;
+	short kind = map_kind_shown(list, NONE), count, entry, level;
 
-	rows_update(list, NUMBER_OF_SINGLE_PLAYER_LEVELS, level_row_text);
-	if (row != NONE && row < NUMBER_OF_SINGLE_PLAYER_LEVELS)
-		campaign.shown_level = row;
+	if (kind != level_list.kind)
+	{
+		level_list.kind = kind;
+		level_list.first = level_list.chosen = 0;
+	}
+	count = kind == MAP_KIND_SINGLEPLAYER ? NUMBER_OF_SINGLE_PLAYER_LEVELS : level_list.map_count;
+	entry = map_kind_rows_update(list, &level_list.first, count,
+		kind == MAP_KIND_SINGLEPLAYER ? level_row_text : multiplayer_map_text);
+	if (entry != NONE)
+		level_list.chosen = entry;
+	if (kind == MAP_KIND_MULTIPLAYER)
+	{
+		map_description_show(description, NONE, level_list.chosen < count ? level_list.chosen : NONE);
+		profile_name_show(description);
+		return;
+	}
+	map_description_show(description, 0, NONE);
+	campaign.shown_level = level_list.chosen;
 	level = campaign.shown_level;
 	if (!campaign.levels[level].available)
 		level = LEVEL_UNAVAILABLE;
-	level_description(list->parameters.list.extended_description, "replay_level", level,
-		level == campaign.saved_level, level == LEVEL_UNAVAILABLE ? NULL : campaign.levels[level].finished, NONE);
-	profile_name_show(list->parameters.list.extended_description);
+	level_description(description, "replay_level", level, level == campaign.saved_level,
+		level == LEVEL_UNAVAILABLE ? NULL : campaign.levels[level].finished, NONE);
+	profile_name_show(description);
 }
 
 /* "solo level set map": the level shown, if reached, for the difficulty
-menu */
-static boolean level_choose(void)
+menu; or the multiplayer map, played at once (FALSE: no difficulty menu) */
+static boolean level_choose(short controller)
 {
 	short level = campaign.shown_level;
 
+	if (level_list.kind == MAP_KIND_MULTIPLAYER)
+	{
+		struct player_profile profile;
+
+		if (level_list.chosen < 0 || level_list.chosen >= level_list.map_count ||
+			!campaign_profile(controller, &profile))
+		{
+			return campaign_fail();
+		}
+		campaign_start(level_list.map_names[level_list.chosen], main_get_difficulty(), controller);
+		return FALSE;
+	}
 	if (level < 0 || level >= NUMBER_OF_SINGLE_PLAYER_LEVELS || !campaign.levels[level].available)
 		return campaign_fail();
 	/* (not yet: setting it at the main menu changes map, as the Xbox's has it
@@ -1898,6 +2068,7 @@ boolean ui_widget_port_cooperative_level_choose(char const *map_name, short diff
 boolean ui_widget_port_open_from_top(char const *name);
 void ui_widget_port_go_back_from_top(void);
 boolean network_game_is_splitscreen_local(void);
+boolean ui_widget_port_multiplayer_map_choose(short level_index);
 short ui_widget_port_gametypes(long *indices, short maximum, short *last_used);
 boolean ui_widget_port_gametype_choose(long profile_index);
 boolean ui_widget_port_host(struct widget_instance *widget, struct event_record *event, boolean *widget_deleted);
@@ -1910,13 +2081,16 @@ boolean ui_widget_port_multiplayer_player(short controller_index, long profile_i
 boolean ui_widget_port_unjoin_player(struct widget_instance *widget, struct event_record *event,
 	boolean *widget_deleted);
 void network_game_server_port_set_settings(wchar_t const *name, long maximum_players);
+void network_game_server_port_set_cooperative_friendly_fire(short friendly_fire);
 void *global_network_game_client_get(void);
 void *global_network_game_server_get(void);
 struct network_game *network_game_server_get_game(void *server);
+boolean network_game_is_splitscreen_local(void);
 struct advertised_game *network_game_client_get_available_games(void *client);
 boolean network_game_client_advertised_game_is_valid(struct advertised_game *game);
 short network_game_client_get_state(void *client, short *state_data);
 struct network_game *network_game_client_get_game(void *client);
+struct network_game *network_game_server_get_game(void *server);
 short network_game_client_get_local_machine_index(void);
 short network_game_client_get_seconds_to_game_start(void *client);
 boolean network_player_is_valid(struct network_player *player);
@@ -1951,6 +2125,12 @@ static struct
 	/* the server settings */
 	wchar_t game_name[16];
 	short maximum_players_index;
+	/* (co-op's own, so it leaves multiplayer's as it was: each game hosted
+	starts with COOPERATIVE_DEFAULT_PLAYERS players at most) */
+	short cooperative_maximum_players_index;
+	boolean cooperative_maximum_players_set;
+	/* co-op's FRIENDLY FIRE shown (network.coop_friendly_fire's) */
+	short cooperative_friendly_fire;
 	/* the browser's games */
 	struct advertised_game *games[MAXIMUM_ADVERTISED_GAMES];
 	short game_count, game_chosen;
@@ -2558,6 +2738,73 @@ static char const *const server_settings_gametype_rows[] =
 	"op_team_options",
 };
 
+/* the most players a co-op game hosted starts with (maximum_players') */
+#define COOPERATIVE_DEFAULT_PLAYERS 16
+/* Server Setup's help for co-op's FRIENDLY FIRE and EXTRA ENEMIES, by
+their choices, and EXTRA ENEMIES' PER PLAYER and MULTIPLIER (its
+help_strings, tools/port_settings.py) */
+#define COOPERATIVE_FRIENDLY_FIRE_HELP 12
+#define COOPERATIVE_EXTRA_ENEMIES_HELP 16
+#define COOPERATIVE_ENEMIES_PER_PLAYER_HELP 19
+#define COOPERATIVE_ENEMIES_MULTIPLIER_HELP 20
+
+/* co-op's EXTRA ENEMIES' choices (port_settings.COOP_ENEMIES_MODES, in this
+order): its amount's row is the choice's */
+enum
+{
+	_cooperative_enemies_none,
+	_cooperative_enemies_per_player,
+	_cooperative_enemies_multiplier,
+	NUMBER_OF_COOPERATIVE_ENEMIES_MODES
+};
+
+/* co-op's FRIENDLY FIRE's choices (network.coop_friendly_fire's values,
+port_settings.COOP_FRIENDLY_FIRE_VALUES, in this order) */
+static short const cooperative_friendly_fire_modes[] =
+{
+	_friendly_fire_off, _friendly_fire_on, _friendly_fire_shields_only, _friendly_fire_explosives_only
+};
+
+/* the most players Server Setup shows and sets: the multiplayer game's, or
+the co-op game's (COOPERATIVE_DEFAULT_PLAYERS the first time in each game
+hosted: multiplayer_host) */
+static short *server_settings_maximum_players_index(void)
+{
+	short index;
+
+	if (!hosting_cooperative())
+		return &multiplayer.maximum_players_index;
+	if (!multiplayer.cooperative_maximum_players_set)
+	{
+		multiplayer.cooperative_maximum_players_index = NUMBEROF(maximum_players) - 1;
+		for (index = 0; index < NUMBEROF(maximum_players); index++)
+		{
+			if (maximum_players[index] == COOPERATIVE_DEFAULT_PLAYERS)
+				multiplayer.cooperative_maximum_players_index = index;
+		}
+		multiplayer.cooperative_maximum_players_set = TRUE;
+	}
+	return &multiplayer.cooperative_maximum_players_index;
+}
+
+/* Server Setup's LISTING, PRIVATE: the multiplayer game's (as
+network.host_public started it), or co-op's, saved in network.coop_public */
+static boolean server_settings_private(void)
+{
+	return hosting_cooperative() ? !config_boolean("network.coop_public") : multiplayer.game_private;
+}
+
+static void server_settings_private_set(boolean private_game)
+{
+	if (!hosting_cooperative())
+		multiplayer.game_private = private_game;
+	else if (private_game != server_settings_private() &&
+		!config_write("network.coop_public", private_game ? "false" : "true"))
+	{
+		platform_log("menus: could not write network.coop_public to config.toml");
+	}
+}
+
 /* "server settings init": the game's name (player 1's, else the one given
 last), the most players, the gametype's copy (once: the screen is made
 again on coming back from an option's screen) */
@@ -2565,11 +2812,8 @@ static boolean server_settings_initialize(struct widget_instance *list)
 {
 	struct widget_instance *spinner = named(list, "max_players_spinner", 0);
 
-	/* co-op has no gametype to edit, and allows the build's maximum players
-	unless set lower */
-	if (hosting_cooperative())
-		multiplayer.maximum_players_index = NUMBEROF(maximum_players) - 1;
-	else
+	/* (co-op has no gametype to edit) */
+	if (!hosting_cooperative())
 		gametype_setup_begin();
 	if (!multiplayer.game_name[0] && player_ui_get_active_player_profile_index(0) != NONE)
 	{
@@ -2579,11 +2823,12 @@ static boolean server_settings_initialize(struct widget_instance *list)
 		ustrncpy(multiplayer.game_name, profile.player_name, NUMBEROF(multiplayer.game_name) - 1);
 	}
 	if (spinner)
-		spinner->parameters.list.selected_index = multiplayer.maximum_players_index;
+		spinner->parameters.list.selected_index = *server_settings_maximum_players_index();
 	/* (PUBLIC or PRIVATE: this game's; the screen is made again on coming
 	back from an option's screen) */
 	if ((spinner = named(list, "listing_spinner", 0)) != NULL)
-		spinner->parameters.list.selected_index = multiplayer.game_private ? 1 : 0;
+		spinner->parameters.list.selected_index = server_settings_private() ? 1 : 0;
+	p2p_set_hosting_public(multiplayer.mode == _multiplayer_mode_host_internet && !server_settings_private());
 	return TRUE;
 }
 
@@ -2604,7 +2849,7 @@ static void server_settings_update(struct widget_instance *list)
 	char text[TEXT_FIELD_LENGTH];
 
 	if (spinner)
-		multiplayer.maximum_players_index = (short)PIN(spinner->parameters.list.selected_index, 0,
+		*server_settings_maximum_players_index() = (short)PIN(spinner->parameters.list.selected_index, 0,
 			NUMBEROF(maximum_players) - 1);
 	wide_to_text(multiplayer.game_name, text, sizeof(text));
 	text_field_show(named(list, "server_name_value", 0), text, text_field_editing(row));
@@ -2628,6 +2873,43 @@ static void server_settings_update(struct widget_instance *list)
 
 		for (row = 0; row < NUMBEROF(server_settings_gametype_rows); row++)
 			visible_set(named(list, server_settings_gametype_rows[row], 0), !cooperative);
+		/* co-op's FRIENDLY FIRE, in their place: its help is its choice's */
+		visible_set(named(list, "op_friendly_fire", 0), cooperative);
+		if (cooperative && (spinner = named(list, "friendly_fire_spinner", 0)) != NULL)
+		{
+			short choice = (short)PIN(spinner->parameters.list.selected_index, 0,
+				NUMBEROF(cooperative_friendly_fire_modes) - 1);
+			struct widget_instance *help = list->parameters.list.extended_description;
+
+			multiplayer.cooperative_friendly_fire = cooperative_friendly_fire_modes[choice];
+			if (help && list->focused_child == named(list, "op_friendly_fire", 0))
+				help->parameters.text_box.string_list_index = (short)(COOPERATIVE_FRIENDLY_FIRE_HELP + choice);
+		}
+		/* ... and its EXTRA ENEMIES, with the row of the amount of the one
+		chosen below it (network.coop_enemies_mode and its amounts, which the
+		host reads as the game begins: coop_enemies.c) */
+		{
+			struct widget_instance *help = list->parameters.list.extended_description;
+			short mode = _cooperative_enemies_none;
+
+			if ((spinner = named(list, "extra_enemies_spinner", 0)) != NULL)
+			{
+				mode = (short)PIN(spinner->parameters.list.selected_index, 0,
+					NUMBER_OF_COOPERATIVE_ENEMIES_MODES - 1);
+			}
+			visible_set(named(list, "op_extra_enemies", 0), cooperative);
+			visible_set(named(list, "op_enemies_per_player", 0), cooperative && mode == _cooperative_enemies_per_player);
+			visible_set(named(list, "op_enemies_multiplier", 0), cooperative && mode == _cooperative_enemies_multiplier);
+			if (cooperative && help)
+			{
+				if (list->focused_child == named(list, "op_extra_enemies", 0))
+					help->parameters.text_box.string_list_index = (short)(COOPERATIVE_EXTRA_ENEMIES_HELP + mode);
+				else if (list->focused_child == named(list, "op_enemies_per_player", 0))
+					help->parameters.text_box.string_list_index = COOPERATIVE_ENEMIES_PER_PLAYER_HELP;
+				else if (list->focused_child == named(list, "op_enemies_multiplier", 0))
+					help->parameters.text_box.string_list_index = COOPERATIVE_ENEMIES_MULTIPLIER_HELP;
+			}
+		}
 	}
 	/* LISTING (an internet game's): PUBLIC, listed in everyone's server
 	browser, or PRIVATE, for this game. Its help is its choice's */
@@ -2638,7 +2920,7 @@ static void server_settings_update(struct widget_instance *list)
 		boolean public = spinner->parameters.list.selected_index == 0;
 		struct widget_instance *help = list->parameters.list.extended_description;
 
-		multiplayer.game_private = !public;
+		server_settings_private_set(!public);
 		p2p_set_hosting_public(public);
 		if (help && list->focused_child == named(list, "op_listing", 0))
 			help->parameters.text_box.string_list_index = (short)(10 + spinner->parameters.list.selected_index);
@@ -2678,10 +2960,14 @@ static boolean server_start(void)
 	if (text_field_editing(NULL))
 		text_field_end(TRUE);
 	network_game_server_port_set_settings(multiplayer.game_name,
-		maximum_players[PIN(multiplayer.maximum_players_index, 0, NUMBEROF(maximum_players) - 1)]);
-	/* apply Server Setup's gametype options (co-op keeps its own) */
+		maximum_players[PIN(*server_settings_maximum_players_index(), 0, NUMBEROF(maximum_players) - 1)]);
+	/* the gametype as Server Setup's options left it (co-op keeps its own,
+	and its FRIENDLY FIRE) */
 	if (hosting_cooperative())
+	{
 		gametype_setup_end();
+		network_game_server_port_set_cooperative_friendly_fire(multiplayer.cooperative_friendly_fire);
+	}
 	else if (!gametype_setup_apply())
 		return campaign_fail();
 	return global_network_game_server_get() != NULL;
@@ -2854,8 +3140,30 @@ static char const *scenario_name(char const *path)
 	return name ? name + 1 : path;
 }
 
-/* a map's name as the menus show it (its scenario's name, if not one of
-theirs), from its scenario's path or name */
+/* the campaign level whose scenario a path or name is (a network co-op
+game's map), else NONE */
+static short campaign_level_of(char const *map_name)
+{
+	short level;
+
+	for (level = 0; level < NUMBER_OF_SINGLE_PLAYER_LEVELS; level++)
+	{
+		if (!_stricmp(scenario_name(main_get_solo_level_name(level)), scenario_name(map_name)))
+			return level;
+	}
+	return NONE;
+}
+
+/* a game's type as the browsers and lobby show it: its engine's name, or
+CO-OP for one with none (network co-op: ui_widget_port_cooperative_level_choose) */
+static wchar_t const *game_type_name(long engine_type)
+{
+	return engine_type == 0 ? L"CO-OP" : engine_names[PIN(engine_type, 0, 5)];
+}
+
+/* a map's name as the menus show it (a campaign level's too, hosted as
+network co-op; its scenario's name, if not one of theirs), from its
+scenario's path or name */
 static void map_display_name(char const *map_name, wchar_t *text)
 {
 	char const *const *names;
@@ -2869,6 +3177,11 @@ static void map_display_name(char const *map_name, wchar_t *text)
 			string_get("pc\\main_menu\\mp_map_list", index, text);
 			return;
 		}
+	}
+	if ((index = campaign_level_of(map_name)) != NONE)
+	{
+		string_get("pc\\main_menu\\map_list", index, text);
+		return;
 	}
 	for (index = 0; map_name[index] && index < ROW_TEXT_LENGTH - 1; index++)
 		text[index] = (wchar_t)(unsigned char)map_name[index];
@@ -3066,7 +3379,7 @@ static void lobby_browser_update(struct widget_instance *list)
 		text_set(named(row, "server_item_server_name", 0), text);
 		map_display_name(game->map, text);
 		text_set(named(row, "server_item_map", 0), text);
-		text_set(named(row, "server_item_type", 0), engine_names[PIN(game->engine_type, 0, 5)]);
+		text_set(named(row, "server_item_type", 0), game_type_name(game->engine_type));
 		usnprintf(text, ROW_TEXT_LENGTH - 1, L"%d/%d", game->player_count, game->maximum_player_count);
 		text_set(named(row, "server_item_players", 0), text);
 		/* (no ping yet: its host is reached only on joining) */
@@ -3271,7 +3584,7 @@ static void browser_update(struct widget_instance *list)
 		text_set(named(row, "server_item_server_name", 0), text);
 		game_map_name(game, text);
 		text_set(named(row, "server_item_map", 0), text);
-		text_set(named(row, "server_item_type", 0), engine_names[PIN(game->engine_type, 0, 5)]);
+		text_set(named(row, "server_item_type", 0), game_type_name(game->engine_type));
 		usnprintf(text, ROW_TEXT_LENGTH - 1, L"%d/%d", game->player_count, game->maximum_player_count);
 		text_set(named(row, "server_item_players", 0), text);
 		text_set(named(row, "server_item_ping", 0), advertised_in_progress(game) ? L"LIVE" : L"");
@@ -3665,7 +3978,6 @@ static void lobby_info_show(struct widget_instance *description, wchar_t const *
 	text_set_length(named(description, "lobby_info_values", 0), value_text, LOBBY_TEXT_LENGTH);
 }
 
-/* the lobby's panel's map: its picture and name */
 /* the game's map in the lobby's picture and name: an Xbox level's from the
 menus' lists, a Custom Edition map's its own (custom_edition_maps.c, by its
 display index, as the map picker shows it), else the unknown level's */
@@ -4942,7 +5254,7 @@ boolean pc_menu_event_function_invoke(
 		}
 		else if (!strcmp(name, "solo level set map"))
 		{
-			return level_choose();
+			return level_choose(controller);
 		}
 		else if (!strcmp(name, "difficulty item select"))
 		{
