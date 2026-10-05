@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.4
+
+### From OpenCE
+
+- Resolution, scaling and window size settings.
+- Textures bind correctly after their first upload.
+- No more vertices shooting to the middle of the screen near the camera.
+- The death and respawn delays are the same at every frame rate.
+- Friendly fire setting stops teammates' instant kills.
+- Windows release builds open without a console window.
+
+### Co-op
+
+- AI on any team keeps its team on clients, for multiplayer maps with AI.
+
 ## 0.3.3
 
 ### Co-op
