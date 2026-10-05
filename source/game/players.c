@@ -477,6 +477,9 @@ static struct
 	long respawn_wait_since;
 	/* when each player's unit left the loaded structure BSP */
 	long stranded_since[NETWORK_GAME_MAXIMUM_PLAYER_COUNT];
+	/* no BSP switch trigger counts before this game time (one has just
+	switched, and the players are being brought into the new BSP) */
+	long bsp_switch_allowed_time;
 } players_coop_state;
 
 /* port: where each player was at the last checkpoint, in network co-op
@@ -2800,6 +2803,10 @@ BSP switch settles in a tick or two; waiting a bit longer avoids moving
 someone who is just crossing a seam. */
 #define COOP_STRANDED_TICKS TICKS_PER_SECOND
 
+/* After a BSP switch, how long the co-op host lets no other trigger switch
+it while the players are brought into the new one */
+#define COOP_BSP_SWITCH_SETTLE_TICKS (2 * TICKS_PER_SECOND)
+
 /* Co-op host, each tick: a player stranded for COOP_STRANDED_TICKS is moved
 beside a grounded teammate inside the BSP, else any teammate inside it, else
 to the last checkpoint. Skipped while scripts hold the controls, since
@@ -2960,6 +2967,29 @@ void players_respawn_at_checkpoint(
 	return;
 }
 
+/* port: whether the unit stands in a trigger that switches away from the
+loaded structure BSP */
+static boolean players_coop_in_bsp_switch_trigger(
+	long unit_index)
+{
+	struct scenario *scenario = global_scenario_get();
+	short index;
+
+	for (index = 0; index < scenario->bsp_switch_trigger_volumes.count; index++)
+	{
+		struct scenario_bsp_switch_trigger_volume *volume = TAG_BLOCK_GET_ELEMENT(
+			&scenario->bsp_switch_trigger_volumes, index, struct scenario_bsp_switch_trigger_volume);
+
+		if (volume->source_structure_bsp_index == global_structure_bsp_index &&
+			scenario_trigger_volume_test_object(volume->trigger_volume_index, unit_index))
+		{
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
 static void player_teleport_on_bsp_switch(
 	long player_index,
 	long source_unit_index,
@@ -2981,10 +3011,15 @@ static void player_teleport_on_bsp_switch(
 		position);
 	if (biped)
 	{
-		/* port: network co-op only moves players the switch left outside the
-		BSP. Pulling everyone to whoever crossed, as split screen does, bounced
-		players who were far apart back and forth. */
-		if (players_globals->pending_teleport_starting_location_index != NONE && !network_coop_active() &&
+		/* port: network co-op moves the players the switch left outside the
+		BSP, and those standing where they would switch it straight back,
+		which switched the BSP back and forth every tick. Pulling everyone to
+		whoever crossed, as split screen does, bounced players far apart. */
+		if (network_coop_active())
+		{
+			outside_switch_trigger = players_coop_in_bsp_switch_trigger(unit_index);
+		}
+		else if (players_globals->pending_teleport_starting_location_index != NONE &&
 			!scenario_trigger_volume_test_object(
 				TAG_BLOCK_GET_ELEMENT(
 					&global_scenario_get()->bsp_switch_trigger_volumes,
@@ -4522,9 +4557,11 @@ void players_update_after_game(
 			root_object_index = object_get_ultimate_parent(player->unit_index);
 			root_object = object_get(root_object_index);
 			/* port: a co-op client only switches BSP when the host does
-			(network_distributed.c) */
+			(network_distributed.c), and the host not again until the players
+			are in the new one */
 			if (!TEST_FLAG(root_object->object.flags, _object_outside_of_map_bit) &&
-				!(network_game_distributed_client() && network_coop_active()))
+				!(network_coop_active() &&
+					(network_game_distributed_client() || game_time_get() < players_coop_state.bsp_switch_allowed_time)))
 			{
 				scenario = global_scenario_get();
 				for (bsp_switch_trigger_volume_index = 0;
@@ -4558,6 +4595,7 @@ void players_update_after_game(
 							bsp_switch_trigger_volume_index;
 						main_switch_structure_bsp(
 							bsp_switch_trigger_volume->destination_structure_bsp_index);
+						players_coop_state.bsp_switch_allowed_time = game_time_get() + COOP_BSP_SWITCH_SETTLE_TICKS;
 					}
 				}
 			}
