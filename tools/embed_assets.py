@@ -46,6 +46,9 @@ SKIN_FOLDER = MENU_ASSETS / "skin"
 SKIN_ASSETS = SKIN_FOLDER / "glassed" / "xbox"
 SKIN_LIST = SKIN_ASSETS / "textures.json"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+# the animation graphs a co-op player's Elite uses (made by
+# tools/player_animations.py; port/linux/game/player_animations.c loads them)
+ANIMATION_ASSETS = Path("port/assets/animations")
 # the overlay's fonts (the game browser's; posix_ui_font.c), in its order
 UI_FONTS = Path("port/linux/ui/fonts")
 UI_FONT_FILES = ["NotoSans-Regular.ttf", "NotoSans-Bold.ttf", "input_xbox.ttf", "input_playstation.ttf",
@@ -87,6 +90,12 @@ def menu_files() -> List[str]:
     return files + layers
 
 
+def animation_files() -> List[str]:
+    """The animation graphs, by file name."""
+    folder = ROOT / ANIMATION_ASSETS
+    return sorted(path.name for path in folder.glob("*.antr")) if folder.is_dir() else []
+
+
 def hud_asset_inputs() -> List[Path]:
     """The files the generated source is made from."""
     inputs = [listing for listing in (LAYOUT, CUSTOM_EDITION_HUD, TITLE_LIST, SKIN_LIST, FONT_LIST, MENU_LIST)
@@ -94,7 +103,8 @@ def hud_asset_inputs() -> List[Path]:
     if not inputs:
         return []
     return [*inputs, *(folder / f"{asset['name']}.png" for folder, asset, _, _ in textures()),
-            *(FONT_ASSETS / name for name in font_files()), *(MENU_ASSETS / name for name in menu_files())]
+            *(FONT_ASSETS / name for name in font_files()), *(MENU_ASSETS / name for name in menu_files()),
+            *(ANIMATION_ASSETS / name for name in animation_files())]
 
 
 def hud_configure_inputs() -> List[Path]:
@@ -106,6 +116,8 @@ def hud_configure_inputs() -> List[Path]:
                             (FONT_ASSETS, FONT_LIST), (MENU_ASSETS, MENU_LIST)):
         if (ROOT / listing).is_file():
             inputs += [folder, listing]
+    if (ROOT / ANIMATION_ASSETS).is_dir():
+        inputs.append(ANIMATION_ASSETS)
     return inputs
 
 
@@ -266,6 +278,25 @@ def main() -> None:
         lines.append("\t{ 0 },")
     lines.append("};")
     lines.append(f"const unsigned int menu_files_embedded_count = {len(menus)};")
+    lines.append("")
+    # the animation graphs (animation_files.h)
+    lines.append('#include "animation_files.h"')
+    lines.append("")
+    animations = animation_files()
+    for index, name in enumerate(animations):
+        lines.append(f"static const unsigned int animation{index}[] = {{")
+        lines.extend(words((ROOT / ANIMATION_ASSETS / name).read_bytes()))
+        lines.append("};")
+        lines.append("")
+    lines.append("const struct animation_file_embedded animation_files_embedded[] =")
+    lines.append("{")
+    for index, name in enumerate(animations):
+        size = (ROOT / ANIMATION_ASSETS / name).stat().st_size
+        lines.append(f'\t{{ "{name}", animation{index}, {size} }},')
+    if not animations:
+        lines.append("\t{ 0 },")
+    lines.append("};")
+    lines.append(f"const unsigned int animation_files_embedded_count = {len(animations)};")
     write(Path(sys.argv[1]), lines)
 
 

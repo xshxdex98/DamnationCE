@@ -1218,13 +1218,24 @@ void unit_persistent_control(
 	return;
 }
 
+/* port: player_animations.c's */
+long player_animations_graph_for(long definition_index);
+
 long unit_animation_graph_index(
 	long unit_index)
 {
 	long source_index = players_coop_animation_source(unit_index);
+	long elite_graph_index;
 
-	return unit_definition_get(source_index != NONE ? source_index : unit_get(unit_index)->definition_index)->
-		object.animation_graph.index;
+	if (source_index == NONE)
+		return unit_definition_get(unit_get(unit_index)->definition_index)->object.animation_graph.index;
+	/* a co-op player's Elite: the Elite player graph the game carries, made
+	for its skeleton, or the Spartan's where the map's Elite isn't the stock
+	one */
+	elite_graph_index = player_animations_graph_for(unit_get(unit_index)->definition_index);
+	if (elite_graph_index != NONE)
+		return elite_graph_index;
+	return unit_definition_get(source_index)->object.animation_graph.index;
 }
 
 /* port: The marker on the unit's own model matching a name from a borrowed
@@ -1273,7 +1284,8 @@ struct animation_retarget const *unit_animation_retarget(
 {
 	long source_index = players_coop_animation_source(unit_index);
 
-	if (source_index == NONE)
+	/* (none for the Elite player graph, made for the Elite's own skeleton) */
+	if (source_index == NONE || player_animations_graph_for(unit_get(unit_index)->definition_index) != NONE)
 		return NULL;
 	return animation_retarget_get(model_definition_get(unit_definition_get(source_index)->object.model.index), model);
 }

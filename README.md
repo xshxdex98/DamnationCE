@@ -106,6 +106,9 @@ that draw them).
   [Milenko](https://github.com/MrMilenko) and contributors (CC0), used with
   their permission, and its service halo.milenko.org.
 - Custom Edition map loading: [bnunu](https://github.com/bnunu/halo-ce-universal).
+- The co-op Elite's animations: a multiplayer Elite animation graph from the
+  Halo PC modding community (2005-2010), whose author we couldn't reach;
+  thank you, whoever you are.
 - Fonts: [Noto Sans](https://fonts.google.com/noto) (SIL OFL) and
   [Kenney's Input Prompts](https://kenney.nl/assets/input-prompts) (CC0).
 - Libraries: SDL3, stb (and stb_vorbis), Mbed TLS, miniupnpc, KCP, tomlc17,
