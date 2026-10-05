@@ -132,10 +132,11 @@ Xbox address. */
 the window (port/android/include/halo_android_abi.h) */
 #define PLATFORM_CONTIGUOUS_SIZE 0x08000000U
 #else
-/* 256 MB on the desktop builds: Custom Edition maps need more texture,
-model and sound memory than the Xbox's (coldsnap ran out of 128 MB).
-port/windows/src/win32_memory_watch.c uses the same size. */
-#define PLATFORM_CONTIGUOUS_SIZE 0x10000000U
+/* 512 MB on the desktop builds: Custom Edition maps need more texture,
+model and sound memory than the Xbox's (coldsnap ran out of 128 MB). Only
+pages in use are committed. port/windows/src/win32_memory_watch.c must use
+the same size. */
+#define PLATFORM_CONTIGUOUS_SIZE 0x20000000U
 #endif
 #define PLATFORM_ANY_PHYSICAL_ADDRESS 0xffffffffU
 
