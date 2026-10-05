@@ -1202,12 +1202,12 @@ static boolean color_list_initialize(struct widget_instance *list)
 	return TRUE;
 }
 
-/* (ui_widget.c) whether the pointer moved the menus' focus last */
+/* ui_widget.c: TRUE if the mouse, not the keys, last moved the focus */
 boolean ui_widget_port_pointer_focused(void);
 
-/* Whether a list whose focus is on its first or last row moves on: when the
-d-pad put it there. The pointer resting there would make it move every
-frame; the wheel scrolls it instead. */
+/* Whether a list should scroll when its focus sits on the first or last row.
+Only when the keys put it there: a mouse resting on that row would scroll the
+list every frame. The mouse wheel scrolls it instead. */
 static boolean list_scrolls_at_end(void)
 {
 	return !ui_widget_port_pointer_focused();
@@ -3446,42 +3446,42 @@ static struct widget_instance *focused_leaf(struct widget_instance *widget)
 boolean network_game_client_update_local_player_data(struct network_game_client *client,
 	struct network_player *player);
 
-/* the player model each controller's player chose in the co-op lobby
-(players.h), for this run of the game; and whose the button shows */
+/* The player model (players.h) each controller picked in the co-op lobby.
+Kept until the game closes. The button shows the last controller's choice. */
 static short lobby_player_models[MAXIMUM_LOCAL_PLAYERS];
 static short lobby_player_model_controller;
 
-/* Whether the lobby offers the choice: co-op on a stock campaign level. The
-host spawns a Spartan on a level with no elite (players.c). */
+/* The choice is offered for co-op on the stock campaign levels. A level
+without an elite biped still spawns that player as a Spartan (players.c). */
 static boolean lobby_player_model_offered(struct network_game const *game)
 {
 	return game_cooperative(game) &&
 		custom_edition_maps_campaign_level(custom_edition_maps_display_index(game->map.name)) != NONE;
 }
 
-/* network_client_manager.c: the model a controller's player joins as */
+/* the model a controller's player joins with (network_client_manager.c) */
 short pc_menu_lobby_player_model(short controller)
 {
 	return controller >= 0 && controller < MAXIMUM_LOCAL_PLAYERS ? lobby_player_models[controller] :
 		_player_model_spartan;
 }
 
-/* the button's caption (lobby_screen.c draws it on Glassed) */
+/* the button's label (also drawn by lobby_screen.c in Glassed) */
 wchar_t const *pc_menu_lobby_player_model_label(void)
 {
 	return lobby_player_models[lobby_player_model_controller] == _player_model_elite ?
 		L"PLAYER: ELITE" : L"PLAYER: SPARTAN";
 }
 
-/* "port lobby player model" (PLAYER: SPARTAN / ELITE): the controller's
-player swaps model, and the host is told */
+/* "port lobby player model": toggles the controller's player between
+Spartan and Elite and sends the change to the host */
 static boolean lobby_player_model_toggle(short controller)
 {
 	void *client = global_network_game_client_get();
 	struct network_player *player;
 	struct network_player changed;
 
-	/* (the mouse's press has no controller: the first player's) */
+	/* a mouse click has no controller; treat it as the first player's */
 	if (controller < 0 || controller >= MAXIMUM_LOCAL_PLAYERS)
 		controller = 0;
 	lobby_player_models[controller] = lobby_player_models[controller] == _player_model_elite ?

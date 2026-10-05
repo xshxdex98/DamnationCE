@@ -90,9 +90,9 @@ index and tag, since the map placed them at the same index everywhere.
 
 /* ---------- constants */
 
-/* A player with nothing to watch yet (joining, before its teammates'
-units have reached it) sees the host's view from this far behind and above
-the host's eyes, turning a share of the way to it each tick. */
+/* A joining player with nobody to spectate yet watches the host's view
+from this far behind and above the host's eyes, easing a fraction of the way
+toward it each tick. */
 #define WATCH_HOST_DISTANCE 3.0f
 #define WATCH_HOST_HEIGHT 1.0f
 #define WATCH_HOST_FOLLOW 0.2f
@@ -365,8 +365,8 @@ static struct
 	/* looking through the host's camera: its scripted cutscene camera, or
 	its view for a player with nothing else to look at */
 	boolean host_camera;
-	/* the view from behind the host, while there is nothing else to
-	watch (watching_host_valid FALSE until the first) */
+	/* the eased view behind the host, used while there is nothing else to
+	watch (watching_host_valid is FALSE until it is first set) */
 	boolean watching_host_valid;
 	real_point3d watching_host_position;
 	real_vector3d watching_host_forward;
@@ -411,9 +411,9 @@ static struct
 /* client: the object names that differed from the host's last time */
 static byte client_names_differing[OBJECT_NAME_BYTES];
 
-/* The cutscene skip vote. The host keeps when it last heard from each client
-showing the cutscene, and when it last heard each one vote; a client keeps
-the host's last tally. */
+/* The cutscene skip vote. The host records when it last heard from each
+client that is showing the cutscene, and when that client last voted. A
+client keeps the host's latest tally for display. */
 static struct
 {
 	boolean voted;
@@ -953,8 +953,8 @@ static struct
 } host_attachments[MAXIMUM_ATTACHMENTS];
 static short host_attachment_count;
 
-/* host: the looping sounds its scripts play (music, ambience), sent again
-every OBJECT_REFRESH_TICKS for a client that joined since they started */
+/* host: the looping sounds the scripts have started (music, ambience).
+They are resent every OBJECT_REFRESH_TICKS so a late joiner hears them. */
 enum
 {
 	MAXIMUM_LOOPING_SOUNDS = 32,
@@ -1161,10 +1161,9 @@ static void client_cinematic_end(
 	cinematic_stop();
 }
 
-/* client, with nothing else to watch: the host's view (position, forward
-and up, which this changes) seen from behind and above the host's eyes, as
-a spectator sees a teammate, eased toward it so the host's looking around
-doesn't throw it about */
+/* client with nothing else to watch: moves the camera (position, forward,
+up) behind and above the host's eyes, like spectating a teammate. It eases
+toward the target so the host looking around doesn't jerk it. */
 static void client_watch_host_from_behind(
 	real_point3d *position,
 	real_vector3d *forward,
@@ -1193,7 +1192,7 @@ static void client_watch_host_from_behind(
 	}
 	*position = coop_presentation.watching_host_position;
 	*forward = coop_presentation.watching_host_forward;
-	/* (up from the forward, upright) */
+	/* keep the camera upright */
 	up->i = 0.0f;
 	up->j = 0.0f;
 	up->k = 1.0f;
@@ -1349,7 +1348,7 @@ static void client_apply_sound(
 			scripted_sound_new(event->tag_index, object_index, scale);
 		break;
 	case _coop_sound_looping_start:
-		/* (one sent again for a late joiner, which plays here already, plays on) */
+		/* a resent sound that is already playing here is left alone */
 		if (distributed_tag_of_group(event->tag_index, LOOPING_SOUND_DEFINITION_TAG) &&
 			looping_sound_definition_get(event->tag_index)->runtime_scripting_sound_index == NONE)
 		{
@@ -1546,7 +1545,7 @@ void network_coop_note_device_snap(
 		host_devices.snap_counts[group_index]++;
 }
 
-/* the looping sound's place in host_looping_sounds, or NONE */
+/* index of the looping sound in host_looping_sounds, or NONE */
 static short host_looping_sound_find(
 	long definition_index)
 {
@@ -1572,7 +1571,7 @@ static void host_send_looping_sounds(
 		long definition_index = host_looping_sounds[index].definition_index;
 		struct distributed_coop_event *event;
 
-		/* (one that has stopped by itself: forgotten) */
+		/* it stopped on its own: drop it */
 		if (looping_sound_definition_get(definition_index)->runtime_scripting_sound_index == NONE)
 		{
 			host_looping_sounds[index] = host_looping_sounds[--host_looping_sound_count];
@@ -1969,8 +1968,8 @@ void network_coop_client_tick(
 		client_host_camera_set(FALSE);
 		player_input_enable(TRUE);
 	}
-	/* (sent every tick the skip is offered, voted or not: the host counts
-	only the machines it hears from) */
+	/* sent every tick while a skip is offered, voted or not, because the
+	host only counts machines it hears from */
 	if (!network_coop_skip_offered())
 		skip_vote.voted = FALSE;
 	else
@@ -2211,7 +2210,7 @@ void network_coop_handle_presentation(
 	coop_presentation.heard_time = game_time_get();
 	player_input_enable(!presentation->input_disabled);
 
-	/* (a machine that joined during the cutscene may have started it itself) */
+	/* a machine that joined mid-cutscene may already have started it */
 	if (cinematic && !coop_presentation.cinematic_started)
 	{
 		if (!cinematic_in_progress())

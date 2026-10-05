@@ -702,9 +702,10 @@ boolean unit_start_animation_impulse(
 	short animation_impulse,
 	real_vector2d *alignment_vector);
 long unit_get_aiming_unit_index(long unit_index);
-/* port: the animation graph the unit animates with (its own, or the one it
-borrows: players.c's players_coop_animation_source), and how its model
-takes that graph's animations (NULL: they are its own) */
+/* port: the animation graph the unit uses: its own, or another unit's (see
+players.c, players_coop_animation_source). unit_animation_retarget returns
+how to copy that graph's animations onto the unit's model, or NULL if the
+graph is the unit's own. */
 long unit_animation_graph_index(long unit_index);
 struct animation_retarget const *unit_animation_retarget(long unit_index, struct model *model);
 void unit_get_aiming_vector(

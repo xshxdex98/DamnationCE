@@ -1495,7 +1495,7 @@ boolean network_game_client_add_player(
 	ustrncpy(player.name, profile.player_name, NETWORK_PLAYER_NAME_LENGTH - 1);
 	player.name[NETWORK_PLAYER_NAME_LENGTH - 1] = 0;
 	player.primary_color_index = profile.primary_color_index;
-	/* port: the model chosen in the co-op lobby (menu_functions.c) */
+	/* port: the model picked in the co-op lobby (menu_functions.c) */
 	{ short pc_menu_lobby_player_model(short controller);
 	  player.player_model = pc_menu_lobby_player_model(local_player_index); }
 	player.team_index = NONE;

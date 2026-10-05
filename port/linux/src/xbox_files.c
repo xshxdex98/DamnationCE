@@ -49,7 +49,8 @@ static BOOL has_maps(const char *directory)
 		posix_find_entry_case_insensitive(directory, "maps", on_disk, sizeof(on_disk));
 }
 
-/* where platform_log writes (xbox_kernel.c), once the data folder is known */
+/* the log file platform_log writes to (xbox_kernel.c), set once the data
+folder is known */
 char platform_log_path[MAX_PATH];
 
 static void trim_separators(char *path)

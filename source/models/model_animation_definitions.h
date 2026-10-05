@@ -271,7 +271,7 @@ void animation_get_node_orientations(
 	struct animation const *animation,
 	short frame_index, 
 	struct real_orientation *node_orientations);
-/* port: one model animated with another's animations (model_animations.c) */
+/* port: playing one model's animations on another (model_animations.c) */
 struct animation_retarget;
 struct animation_retarget const *animation_retarget_get(
 	struct model *source,

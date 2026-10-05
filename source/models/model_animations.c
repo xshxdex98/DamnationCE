@@ -745,14 +745,14 @@ void animation_get_root_velocity(
 
 /* ---------- port: borrowed animations
 
-A model can animate with another model's animations (a network co-op
-player's elite with the Spartan's: units.c's unit_animation_graph_index).
-They are played and overlaid on the other model's nodes, then each of this
-model's nodes takes the rotation of the node of the same name, keeping its
-own default where there is none (the elite's extra leg joints, second neck
-and mandibles). The root's translation is scaled by the two roots' heights
-above the origin, so the taller model stands its own height; the other
-nodes keep their own translations, the lengths of their bones. */
+Plays one model's animations on another, such as a network co-op player's
+elite using the Spartan's animations (units.c, unit_animation_graph_index).
+The animations and overlays are computed on the source model's nodes. Each
+target node then copies the rotation of the source node with the same name;
+nodes with no match (the elite's extra leg joints, second neck bone and
+mandibles) keep their default pose. The root translation is scaled by the
+ratio of the two models' root heights so the taller model stands at its own
+height. Other nodes keep their own translations, i.e. their bone lengths. */
 
 #define MAXIMUM_ANIMATION_RETARGETS 4
 
@@ -763,7 +763,7 @@ struct animation_retarget
 	unsigned long source_checksum;
 	unsigned long target_checksum;
 	real root_scale;
-	/* for each of the target's nodes, the source's node it follows, or NONE */
+	/* for each target node, the source node it copies, or NONE */
 	short source_nodes[MAXIMUM_NODES_PER_MODEL];
 };
 

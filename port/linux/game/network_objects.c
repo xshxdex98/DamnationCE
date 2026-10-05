@@ -736,9 +736,9 @@ boolean network_objects_reconcile(
 		distributed_object_move(object_index, position, &valid_forward, &valid_up, velocity, angular_velocity);
 		return TRUE;
 	}
-	/* Half of the way, drawn gliding there over the next few frames as a
-	larger correction is: moved in one step, a unit corrected every tick or
-	two (an enemy far off) visibly hitched each time. */
+	/* Move halfway, and draw the move as a glide over the next few frames,
+	as larger corrections are. Drawn as one step, a unit corrected every tick
+	or two (a distant enemy) visibly hitched each time. */
 	if (distributed_object_follows_host(object_index))
 		blended = *position;
 	else
@@ -1097,10 +1097,9 @@ static void distributed_host_update_objects(
 	}
 }
 
-/* The order a client that has just loaded is told of the host's objects
-in, so it has first what it needs first: the players' units (whom it may
-spectate), the vehicles they and the AI ride, the other units, then
-everything else. */
+/* The order a newly loaded client receives the host's objects in, most
+needed first: players' units (it may spectate them), the vehicles players
+and AI ride, other units, then everything else. */
 enum
 {
 	_send_rank_player_unit,
@@ -1271,11 +1270,12 @@ static void distributed_host_find_viewers(
 	}
 }
 
-/* How often (ticks) the host sends that client machine an object where it
-is, moving: by its nearest player. A machine with none in the world (dead
-or joining) watches one of the others, so by the nearest of every player:
-sending it every moving object every tick, as before, flooded it on a
-campaign level and threw everything it saw out of step. */
+/* How often, in ticks, the host sends a moving object's position to a
+client machine, based on its distance from that machine's nearest player.
+A machine with no player in the world (dead or joining) spectates someone,
+so the distance is measured from every player instead. Sending such a
+machine every moving object every tick flooded it on campaign levels and
+threw everything it saw out of sync. */
 static short distributed_host_object_period(
 	short machine_number,
 	real_point3d const *position)
@@ -1290,7 +1290,7 @@ static short distributed_host_object_period(
 		count = objects_host_viewers.player_unit_count;
 		origins = objects_host_viewers.player_unit_origins;
 	}
-	/* (nobody in the world at all: what is left moving matters little) */
+	/* nobody is alive anywhere, so nothing needs to be sent often */
 	if (!count)
 		return MAXIMUM_OBJECT_PERIOD_TICKS;
 	for (index = 0; index < count; index++)
@@ -2916,10 +2916,10 @@ static void distributed_client_remove_own_objects(
 	objects_client_new_object_count = 0;
 }
 
-/* A client: each vehicle the AI drives (a Pelican on its flight path)
-carried on at the speeds the host last sent it. It is at rest here, and the
-host sends a far one only every few ticks, so it would stand still between
-its states and jump on each. */
+/* Client: keeps each AI-driven vehicle (such as a Pelican on its flight
+path) moving at the velocity the host last sent. These vehicles are held at
+rest here, and a distant one is only updated every few ticks, so otherwise
+it would stop between updates and jump on each one. */
 static void distributed_client_carry_unsteered_vehicles(
 	void)
 {
@@ -2947,7 +2947,7 @@ static void distributed_client_carry_unsteered_vehicles(
 		position.x = object->object.position.x + velocity->i;
 		position.y = object->object.position.y + velocity->j;
 		position.z = object->object.position.z + velocity->k;
-		/* (turned as physics.c turns a vehicle by its angular velocity) */
+		/* rotate the same way physics.c applies angular velocity */
 		if (angle != 0.0f)
 		{
 			real_matrix4x3 rotation;
