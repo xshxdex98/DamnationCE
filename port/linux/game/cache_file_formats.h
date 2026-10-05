@@ -140,8 +140,9 @@ enum cache_file_status
 	_cache_file_status_bad_structure_bsp_header,
 	_cache_file_status_bad_structure_bsp_geometry,
 
-	/* model geometry */
+	/* model geometry and animation */
 	_cache_file_status_bad_model_part,
+	_cache_file_status_bad_animation_nodes,
 
 	/* conversion */
 	_cache_file_status_bad_shader_type,

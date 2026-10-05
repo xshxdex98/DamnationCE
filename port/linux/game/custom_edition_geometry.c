@@ -435,6 +435,20 @@ static boolean custom_edition_model_verify(
 	return TRUE;
 }
 
+/* The model's node for a node the part `part` names by its index among its
+local nodes; an index past them is left as it is. */
+static short part_model_node(
+	struct custom_edition_model_part const *part,
+	short node_index)
+{
+	if (node_index >= 0 && node_index < part->local_node_count)
+	{
+		return part->local_node_indices[node_index];
+	}
+
+	return node_index;
+}
+
 /* Makes `part` this build's part for the Custom Edition part `source`,
 compressing its vertices (by way of `scratch`, room for all of them) to
 `vertices` and copying its strip to `strip`, and gives it buffers. Its
@@ -544,6 +558,13 @@ static boolean custom_edition_model_convert(
 				struct model_geometry_part);
 
 			globals->model_parts[globals->model_part_count++] = part;
+			/* a part with local nodes names its centroid's nodes among them
+			too, and the renderer places a transparent part by them */
+			if (local_nodes)
+			{
+				source.centroid_primary_node_index = part_model_node(&source, source.centroid_primary_node_index);
+				source.centroid_secondary_node_index = part_model_node(&source, source.centroid_secondary_node_index);
+			}
 			if (!custom_edition_model_part_convert(
 				part,
 				&source,

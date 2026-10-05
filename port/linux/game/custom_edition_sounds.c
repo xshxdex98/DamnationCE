@@ -50,6 +50,12 @@ the channels (port/linux/src/dsound_sdl.c decodes it).
 /* the decoded buffer grows by this much at a time */
 #define DECODED_GROWTH 0x100000
 
+/* an Ogg Vorbis stream is decoded into a buffer that grows by this many
+frames, and refused past the most (over six minutes at 44 kHz); no
+packet decodes to more than 4096 frames */
+#define VORBIS_GROWTH_FRAMES 4096
+#define VORBIS_MAXIMUM_FRAMES 0x1000000
+
 /* ---------- globals */
 
 static int const adpcm_step_table[ADPCM_STEP_INDEX_MAXIMUM + 1] =
@@ -199,35 +205,70 @@ static void frames_free(
 }
 
 /* the Ogg Vorbis stream `data`, at its own channel count and rate; FALSE
-when it cannot be decoded */
+when it cannot be decoded. It is decoded a packet at a time, so a stream
+of more channels than a sound has, or one longer than any sound, is
+refused as soon as that shows, before it has used the memory. */
 static boolean vorbis_decode(
 	byte const *data,
 	long data_bytes,
 	struct frames *frames)
 {
-	int channels;
-	int rate;
-	short *samples;
-	int count = stb_vorbis_decode_memory(data, data_bytes, &channels, &rate, &samples);
+	int error = 0;
+	stb_vorbis *vorbis = stb_vorbis_open_memory(data, (int)data_bytes, &error, NULL);
+	stb_vorbis_info info;
+	long capacity;
+	boolean decoded = FALSE;
 
-	if (count <= 0 || channels <= 0 || rate <= 0)
+	if (!vorbis)
 	{
 		return FALSE;
 	}
-	frames->count = count;
-	frames->channels = channels;
-	frames->rate = rate;
-	frames->samples = malloc((size_t)count * channels * sizeof(short));
-	if (frames->samples)
+	info = stb_vorbis_get_info(vorbis);
+	frames->count = 0;
+	frames->channels = info.channels;
+	frames->rate = (long)info.sample_rate;
+	capacity = VORBIS_GROWTH_FRAMES;
+	frames->samples = NULL;
+	if (info.channels >= 1 && info.channels <= 2 && info.sample_rate > 0)
 	{
-		memcpy(frames->samples, samples, (size_t)count * channels * sizeof(short));
+		frames->samples = malloc((size_t)capacity * info.channels * sizeof(short));
 	}
-	/* (stb_vorbis.c is an object of its own, which allocates with the C
-	library's malloc, not cseries.h's debug_malloc: the parentheses keep
-	cseries.h's free macro, debug_free, from taking it) */
-	(free)(samples);
+	while (frames->samples)
+	{
+		int count;
 
-	return frames->samples != NULL;
+		if (frames->count + VORBIS_GROWTH_FRAMES > capacity)
+		{
+			short *larger = realloc(frames->samples, (size_t)capacity * 2 * info.channels * sizeof(short));
+
+			if (!larger)
+			{
+				break;
+			}
+			frames->samples = larger;
+			capacity *= 2;
+		}
+		count = stb_vorbis_get_frame_short_interleaved(vorbis, info.channels,
+			frames->samples + frames->count * info.channels,
+			(int)((capacity - frames->count) * info.channels));
+		if (count == 0)
+		{
+			decoded = frames->count > 0;
+			break;
+		}
+		frames->count += count;
+		if (frames->count > VORBIS_MAXIMUM_FRAMES)
+		{
+			break;
+		}
+	}
+	stb_vorbis_close(vorbis);
+	if (!decoded)
+	{
+		frames_free(frames);
+	}
+
+	return decoded;
 }
 
 /* uncompressed samples, 16-bit little-endian as Halo PC keeps them */
