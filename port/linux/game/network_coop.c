@@ -4,8 +4,8 @@ NETWORK_COOP.C
 Campaign co-op over the network (port/linux/NETCODE.md).
 
 A network game on a campaign map, with no game engine running, is co-op.
-Only the host runs the map's scripts (game.c), so anything the scripts do
-that the clients need to see is sent from here:
+Only the host runs the map's scripts (game.c), so everything the scripts do
+that clients need to see is sent from this file:
 
 - Presentation, every tick: whether a cinematic is playing, the letterbox,
   the camera, the screen fade, the HUD settings the scripts control (what
@@ -32,6 +32,12 @@ that the clients need to see is sent from here:
   Twice a second the host sends which object names currently exist. A
   client that sees the same difference twice in a row, on the same BSP,
   creates or deletes its copy.
+- State a late joiner would otherwise miss, resent every two seconds: where
+  scripted scenery and machines have moved, how objects look (permutations,
+  scale), what the scripts have attached, the looping sounds playing, and
+  the full-screen cinematic effect.
+- The view of a client with nobody to spectate yet: the host's view from
+  behind, eased so it doesn't jerk.
 
 Skipping a cutscene is a vote. Pressing the skip key during a skippable
 cutscene votes (a client sends its vote to the host every tick), and the
@@ -765,7 +771,8 @@ static void host_send_object_transforms(
 			continue;
 		if (host_sent_transforms[absolute_index].object_index != iterator.index)
 		{
-			/* (an object first seen is where the map placed it, as on every machine) */
+			/* an object seen for the first time is where the map placed it, on
+			every machine, so there is nothing to send yet */
 			host_sent_transforms[absolute_index].object_index = iterator.index;
 			host_sent_transforms[absolute_index].moved = FALSE;
 			host_sent_transforms[absolute_index].position = object->object.position;
@@ -833,7 +840,7 @@ static void host_send_object_looks(
 			continue;
 		if (host_sent_looks[absolute_index].object_index != iterator.index)
 		{
-			/* (an object first seen looks as the map, or its creation, made it on every machine) */
+			/* an object seen for the first time looks the same on every machine */
 			host_sent_looks[absolute_index].object_index = iterator.index;
 			host_sent_looks[absolute_index].changed = FALSE;
 			host_sent_looks[absolute_index].scale = object->object.scale;
@@ -914,7 +921,7 @@ void network_coop_handle_screen_effect(
 	short count)
 {
 	struct rasterizer_screen_effect_port_state state;
-	/* (every field from the tint on is a real: rasterizer_cinematics.h) */
+	/* every field from the tint onward is a real (rasterizer_cinematics.h) */
 	real const *reals = &state.filter_desaturation_tint.red;
 	short real_count = (short)((sizeof(state) -
 		offsetof(struct rasterizer_screen_effect_port_state, filter_desaturation_tint)) / sizeof(real));
@@ -928,7 +935,7 @@ void network_coop_handle_screen_effect(
 		if (!distributed_real_valid(reals[index]))
 			return;
 	}
-	/* (the game stops rather than blur more than one window: split screen goes without) */
+	/* the game can only blur one window, so split screen goes without */
 	if (main_get_window_count() > 1)
 	{
 		state.convolution_type = 0;
@@ -1013,10 +1020,10 @@ static void host_count_skip_votes(
 	boolean was_offered = skip_vote.offered;
 	short index;
 
-	/* Not until the save the script makes as the cutscene becomes skippable
-	is written: reverting before then would go back to the save before it.
-	A save asked for later in the cutscene doesn't hold the vote up (the
-	skip cancels it, as in a solo game). */
+	/* Wait until the save the script makes when the cutscene becomes
+	skippable has been written; reverting earlier would go back to the save
+	before it. A save requested later in the cutscene doesn't hold up the
+	vote, since the skip cancels it, as in a solo game. */
 	if (!skippable)
 		skip_vote.skip_save_written = FALSE;
 	else if (!main_saving_map())
@@ -1031,7 +1038,7 @@ static void host_count_skip_votes(
 		skip_vote.requested = FALSE;
 		return;
 	}
-	/* asked for already: main.c skips at the end of this frame */
+	/* already requested: main.c skips at the end of this frame */
 	if (skip_vote.requested)
 		return;
 	/* the host votes too, unless it is a dedicated server with no player */
@@ -1427,7 +1434,7 @@ static void client_apply_attach(
 
 	if (parent_index == NONE || child_index == NONE || parent_index == child_index)
 		return;
-	/* (an attach sent again for a late joiner, which this machine has) */
+	/* a resent attach this machine already has */
 	if (event->type == _coop_attach && object_get(child_index)->object.parent_object_index == parent_index)
 		return;
 	if (event->type == _coop_detach)
@@ -1789,7 +1796,7 @@ static void host_send_attachments(
 	{
 		struct object_datum *child = object_try_and_get(host_attachments[index].child_index);
 
-		/* (gone, or moved on to another parent: forgotten) */
+		/* the child is gone or has a new parent: forget it */
 		if (!child || child->object.parent_object_index != host_attachments[index].parent_index)
 		{
 			host_attachments[index] = host_attachments[--host_attachment_count];
@@ -2057,7 +2064,7 @@ void network_coop_handle_object_looks(
 
 		if (!object)
 			continue;
-		/* (a permutation its model has, or none) */
+		/* only a permutation its model has, or none */
 		for (region_index = 0; model && region_index < model->regions.count &&
 			region_index < MAXIMUM_REGIONS_PER_OBJECT; region_index++)
 		{
@@ -2221,12 +2228,12 @@ void network_coop_handle_presentation(
 	{
 		client_cinematic_end();
 	}
-	/* The host's camera when its scripts film the cutscene. A cutscene that
-	leaves the camera with the player, or films a teammate riding in a
-	Pelican the AI flies (a level's insertion), is spectated: shots taken
+	/* Use the host's camera while its scripts control it. Spectate instead
+	when the cutscene leaves the camera with the player, or when the watched
+	teammate rides an AI-flown Pelican (a level's insertion): shots filmed
 	beside a moving Pelican shake against this machine's copy of it. A player
-	with no unit and no living teammate to watch would look out of the world
-	from a dead camera at the origin, so it sees the host's view too. */
+	with no unit and nobody to watch also gets the host's view, rather than
+	a dead camera at the world origin. */
 	client_host_camera_set((coop_presentation.cinematic_started && presentation->camera_scripted &&
 		!coop_spectate_watching_rider(0)) || coop_spectate_nothing_to_watch(0));
 	if (coop_presentation.cinematic_started)
@@ -2242,7 +2249,8 @@ void network_coop_handle_presentation(
 			distributed_object_index_valid(presentation->camera_object_index) ?
 			object_try_and_get(presentation->camera_object_index) : NULL;
 
-		/* (by this machine's copy of what it films, which may be a tick off the host's) */
+		/* place the camera relative to this machine's copy of the filmed
+		object, which may be a tick behind the host's */
 		if (filmed && distributed_real_valid(presentation->camera_object_offset.i) &&
 			distributed_real_valid(presentation->camera_object_offset.j) &&
 			distributed_real_valid(presentation->camera_object_offset.k) &&

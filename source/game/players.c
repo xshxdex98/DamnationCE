@@ -960,8 +960,8 @@ boolean any_player_is_dead(
 		player_data);
 	while ((player = (struct player_datum *)data_iterator_next(&iterator)) != NULL)
 	{
-		/* port: not a co-op player waiting for the first checkpoint, or the
-		checkpoint that lets them in could never be saved */
+		/* port: ignore co-op players still waiting for the first checkpoint,
+		or the checkpoint that lets them in could never be saved */
 		if (player->unit_index == NONE && !players_coop_waiting_to_start(iterator.datum_index))
 			return TRUE;
 	}
@@ -1178,10 +1178,10 @@ static void machine_add_player(
 	return;
 }
 
-/* port: a player who left the game in progress is no longer its machine's
-(its datum stays until the game ends): a machine that joins at the same index
-fills the list from its first free entry, and the old players' entries left
-it full, or its players taken for the old ones */
+/* port: removes a player who left mid-game from their machine's list (the
+player datum stays until the game ends). Otherwise a machine joining at the
+same index would find the list full, or have its players mistaken for the
+old ones. */
 void machine_remove_player(
 	long player_index)
 {
@@ -1544,10 +1544,10 @@ static void player_spawn(
 	return;
 }
 
-/* the distributed netcode (port/linux/game/network_distributed.c): a
-client's player takes the unit the host spawned it with (the host's object,
-at the host's index, with the host's weapons), as player_spawn gives a
-player the unit it makes */
+/* port: on a client of the distributed netcode
+(port/linux/game/network_distributed.c), gives a player the unit the host
+spawned for it (the host's object, at the host's index, with its weapons),
+the way player_spawn gives a player the unit it creates */
 void network_player_attach_unit(
 	long player_index,
 	long unit_index)
@@ -1555,8 +1555,8 @@ void network_player_attach_unit(
 	struct player_datum *player = player_get(player_index);
 	struct unit_datum *unit = unit_get(unit_index);
 
-	/* port: the host's team for the player (auto team balance moves a
-	player to the other team at his death: game_engine_player_killed) */
+	/* port: take the host's team for the player (auto team balance can move
+	a player to the other team when they die: game_engine_player_killed) */
 	if (game_engine_has_teams() && unit->object.owner_team_index >= 0 && unit->object.owner_team_index < 2)
 		player->team_index = unit->object.owner_team_index;
 	unit->object.owner_player_index = player_index;
@@ -1914,17 +1914,17 @@ static boolean player_handle_action(
 	switch (player->action_result)
 	{
 	case _player_action_result_touch_device:
-		/* port: on a co-op client the host decides device use; the action
-		is relayed to it (network_coop.c) */
+		/* port: on a co-op client the host decides device use; the action is
+		relayed to it (network_coop.c) */
 		if (!network_coop_devices_remote())
 			device_touched(player->action_object_index, player->unit_index);
 		result = TRUE;
 		break;
 
 	case _player_action_result_swap_for_powerup:
-		/* port: a distributed client's inventories are the host's (the
-		powerup is swapped where the host decides pickups, and the relayed
-		action of a remote player reaches here too): it swaps nothing */
+		/* port: a distributed client swaps nothing: the host owns inventories
+		and decides pickups, and a remote player's relayed action also reaches
+		here */
 		if (!players_decide_pickups())
 		{
 			result = TRUE;
@@ -2222,9 +2222,10 @@ static boolean player_teleport_internal(
 	else
 	{
 		error(2, "couldn't teleport player into a valid location");
-		/* port: only split screen pseudo-kills (its respawn gives the unit back
-		as the local player's, which a network game can't). In a network game
-		the player stays where it is; the Xbox halted for another machine's. */
+		/* port: only split screen pseudo-kills, because its respawn hands the
+		unit back to the local player, which a network game can't do. In a
+		network game the player stays put; the Xbox halted for another
+		machine's player. */
 		if (player->local_player_index != NONE && game_connection() == _game_connection_local)
 			player_pseudo_kill(player_index, source_unit_index);
 	}
@@ -2425,7 +2426,8 @@ boolean players_respawn_coop(
 	boolean result;
 	boolean dangerous;
 
-	/* port: network co-op judges safety around each teammate (players_respawn_network_coop) */
+	/* port: network co-op checks safety around each teammate instead
+	(players_respawn_network_coop) */
 	if (game_connection() == _game_connection_network_server && network_coop_active())
 		return players_respawn_network_coop();
 
@@ -2537,25 +2539,25 @@ that was on another BSP. */
 static boolean players_coop_room_to_spawn(
 	void);
 
-/* The level's first seconds, when the extra players don't spawn yet: its
-opening cutscene starts a tick or so in, and the first player may still be
-somewhere with no room beside it (Halo's drop pod). */
+/* How long into a level the extra players wait before spawning. The opening
+cutscene starts a tick or so in, and the first player may still be somewhere
+with no room beside them (the drop pod on Halo). */
 #define COOP_LEVEL_START_TICKS (2 * TICKS_PER_SECOND)
 
-/* Co-op: whether the players after the first are held back from spawning:
-in the level's first seconds, while a cutscene plays, or until a teammate
-has been free on foot a while (players_coop_room_to_spawn). */
+/* Co-op: TRUE while players after the first are held back from spawning:
+during the level's first seconds, during a cutscene, or until a teammate has
+been free on foot for a while (players_coop_room_to_spawn). */
 static boolean players_coop_extras_held(
 	void)
 {
 	return game_time_get() < COOP_LEVEL_START_TICKS || cinematic_in_progress() || !players_coop_room_to_spawn();
 }
 
-/* Co-op host: whether a player who hasn't spawned on this level yet may
-spawn now. The first player spawns at once (the level's script places it).
-The others spawn when nothing holds them back (players_coop_extras_held),
-beside a teammate on foot (player_place_beside_teammate): as the opening
-cutscene ends or is skipped, or at once if they join later. */
+/* Co-op host: TRUE if a player who hasn't spawned on this level yet may
+spawn now. The first player spawns at once (the level's script places them).
+The others spawn beside a teammate (player_place_beside_teammate) once nothing
+holds them back (players_coop_extras_held): when the opening cutscene ends or
+is skipped, or straight away if they join later. */
 static boolean players_coop_may_spawn(
 	void)
 {
@@ -2572,8 +2574,8 @@ static boolean players_coop_may_spawn(
 	return TRUE;
 }
 
-/* whether this player hasn't spawned on the level yet and is held back
-(players_coop_extras_held); it watches a teammate meanwhile */
+/* TRUE if this player hasn't spawned on the level yet and is being held
+back (players_coop_extras_held); they spectate a teammate meanwhile */
 boolean players_coop_waiting_to_start(
 	long player_index)
 {
@@ -2689,8 +2691,8 @@ static boolean players_respawn_network_coop(
 
 	if (!players_coop_state.respawn_wait_since)
 		players_coop_state.respawn_wait_since = game_time_get() + 1;
-	/* (main.c asks every tick while someone is dead; the test walks the
-	map's projectiles, so twice a second is enough) */
+	/* main.c calls this every tick while someone is dead; the safety test
+	walks all the map's projectiles, so twice a second is enough */
 	if (game_time_get() % COOP_RESPAWN_CHECK_TICKS != 0)
 		return FALSE;
 	safe_unit_index = players_coop_unit_where(players_coop_unit_safe);
@@ -2704,7 +2706,7 @@ static boolean players_respawn_network_coop(
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
-		/* (those still waiting for the level's first checkpoint spawn then) */
+		/* players still waiting for the level's first checkpoint spawn then */
 		if (player->unit_index != NONE || player->quit_out_of_game ||
 			players_coop_waiting_to_start(iterator.datum_index))
 		{
@@ -2861,11 +2863,10 @@ static void players_coop_note_on_foot(
 	}
 }
 
-/* Co-op host: whether a new player has somewhere to go: beside a teammate
-that has been somewhere to spawn beside for COOP_DISEMBARK_TICKS. While
-every teammate rides a vehicle nobody plays (Silent Cartographer's Pelican)
-or is held by the scripts (Pillar of Autumn's cryo tube) the others
-spectate. */
+/* Co-op host: TRUE if a new player has somewhere to spawn, i.e. a teammate
+who has been spawnable for COOP_DISEMBARK_TICKS. While every teammate rides
+an AI vehicle (Silent Cartographer's Pelican) or is held by the scripts
+(Pillar of Autumn's cryo tube), the others spectate. */
 static boolean players_coop_room_to_spawn(
 	void)
 {
@@ -4285,9 +4286,9 @@ void players_update_before_game(
 					if (player->statistics.deaths == 0)
 					{
 						/* port: in network co-op the first player spawns at the map's
-						start; the rest spawn beside a player already in the game once
-						nothing holds them back (players_coop_may_spawn), as do late
-						joiners */
+						start; everyone else, late joiners included, spawns beside a
+						player already in the game once nothing holds them back
+						(players_coop_may_spawn) */
 						if (game_connection() != _game_connection_network_server)
 							player_spawn(iterator.datum_index);
 						else if (players_coop_may_spawn())
@@ -4514,7 +4515,7 @@ void players_update_after_game(
 		{
 			root_object_index = object_get_ultimate_parent(player->unit_index);
 			root_object = object_get(root_object_index);
-			/* port: a co-op client switches BSP when the host does
+			/* port: a co-op client only switches BSP when the host does
 			(network_distributed.c) */
 			if (!TEST_FLAG(root_object->object.flags, _object_outside_of_map_bit) &&
 				!(network_game_distributed_client() && network_coop_active()))

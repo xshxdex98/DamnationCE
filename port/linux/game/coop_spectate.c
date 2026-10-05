@@ -237,7 +237,7 @@ static void draw_bottom_text(
 	bounds = render.camera.window_bounds;
 	bounds.y0 = (short)(bounds.y1 - 3 * height - 24);
 	bounds.y1 = (short)(bounds.y1 - 24);
-	/* 2: centred */
+	/* draw mode 2: centered */
 	draw_string_set_draw_mode(font_index, NONE, 2, 0, &color);
 	rasterizer_draw_unicode_string(&bounds, NULL, NULL, 0, text);
 }

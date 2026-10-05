@@ -342,8 +342,8 @@ static void actor_state_from_unit(
 	state->aiming_speed = (byte)actor->control.aiming_speed;
 	state->primary_trigger = (byte)(long)floor(PIN(actor->control.primary_trigger, 0.0f, 1.0f) * 255.0f + 0.5f);
 	state->control_flags = actor->control.control_flags;
-	/* (a burst the AI holds the trigger for, unit_persistent_control: the
-	flags and trigger the unit's update made of it this tick) */
+	/* for a burst the AI holds the trigger for (unit_persistent_control),
+	send the flags and trigger the unit's update produced this tick */
 	if (unit->unit.persistent_control_timer > 0)
 	{
 		state->control_flags = (word)(unit->unit.control_flags & (FLAG(NUMBER_OF_UNIT_CONTROL_FLAGS) - 1));
@@ -508,7 +508,7 @@ static boolean actor_state_apply(
 		TEST_FLAG(state->flags, _distributed_actor_running_blindly_bit));
 	if (TEST_FLAG(state->flags, _distributed_actor_running_blindly_bit))
 		unit->unit.run_blindly_angle = distributed_angle_unpack(state->run_blindly_angle, FALSE);
-	/* (a vehicle is placed by the host's object states alone: network_objects.c) */
+	/* vehicles are placed only by the host's object states (network_objects.c) */
 	if (unit->object.parent_object_index == NONE && unit->object.type != _object_type_vehicle)
 	{
 		real dx = state->position.x - unit->object.position.x;
@@ -839,7 +839,7 @@ void network_actors_drive(
 			client_actors[index--] = client_actors[--client_actor_count];
 			continue;
 		}
-		/* (a vehicle follows the host's transform instead: network_objects.c) */
+		/* vehicles follow the host's transform instead (network_objects.c) */
 		if (object_get(actor->unit_index)->object.type == _object_type_vehicle)
 			continue;
 		if (!actor->driven)
