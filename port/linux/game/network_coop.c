@@ -411,14 +411,16 @@ static struct
 /* client: the object names that differed from the host's last time */
 static byte client_names_differing[OBJECT_NAME_BYTES];
 
-/* The cutscene skip vote. The host keeps when it last heard each client's
-vote; a client keeps the host's last tally. */
+/* The cutscene skip vote. The host keeps when it last heard from each client
+showing the cutscene, and when it last heard each one vote; a client keeps
+the host's last tally. */
 static struct
 {
 	boolean voted;
 	boolean offered;
 	short votes;
 	short voters;
+	long client_heard_times[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
 	long client_vote_times[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
 	/* host: no voting before this game time (set after a skip) */
 	long cooldown_until;
@@ -992,11 +994,15 @@ static void skip_vote_clear(
 	skip_vote.voted = FALSE;
 	skip_vote.votes = 0;
 	for (index = 0; index < NUMBEROF(skip_vote.client_vote_times); index++)
+	{
+		skip_vote.client_heard_times[index] = NONE;
 		skip_vote.client_vote_times[index] = NONE;
+	}
 }
 
 /* host: counts the votes to skip the cinematic, and skips when more than
-half the machines have voted */
+half the machines showing it have voted (one still loading, or joined since
+it began, has no say until it shows it) */
 static void host_count_skip_votes(
 	void)
 {
@@ -1029,12 +1035,16 @@ static void host_count_skip_votes(
 	if (skip_vote.requested)
 		return;
 	/* the host votes too, unless it is a dedicated server with no player */
-	skip_vote.voters = (short)(machine_count + (local_player_get_next(NONE) != NONE ? 1 : 0));
+	skip_vote.voters = local_player_get_next(NONE) != NONE ? 1 : 0;
 	skip_vote.votes = skip_vote.voted ? 1 : 0;
 	for (index = 0; index < machine_count; index++)
 	{
+		long heard_time = skip_vote.client_heard_times[machine_indices[index]];
 		long vote_time = skip_vote.client_vote_times[machine_indices[index]];
 
+		if (heard_time == NONE || now - heard_time > SKIP_VOTE_HELD_TICKS)
+			continue;
+		skip_vote.voters++;
 		if (vote_time != NONE && now - vote_time <= SKIP_VOTE_HELD_TICKS)
 			skip_vote.votes++;
 	}
@@ -1959,14 +1969,16 @@ void network_coop_client_tick(
 		client_host_camera_set(FALSE);
 		player_input_enable(TRUE);
 	}
+	/* (sent every tick the skip is offered, voted or not: the host counts
+	only the machines it hears from) */
 	if (!network_coop_skip_offered())
 		skip_vote.voted = FALSE;
-	else if (skip_vote.voted)
+	else
 	{
 		struct distributed_coop_skip_vote_message message;
 
 		csmemset(&message.vote, 0, sizeof(message.vote));
-		message.vote.voted = TRUE;
+		message.vote.voted = skip_vote.voted;
 		distributed_send(&message, _distributed_message_coop_skip_vote, 1, (word)sizeof(message), _distributed_to_host);
 	}
 }
@@ -2087,6 +2099,7 @@ void network_coop_handle_skip_vote(
 
 	if (!coop_host() || machine_index < 0 || machine_index >= HALO_PORT_MAXIMUM_NETWORK_MACHINES)
 		return;
+	skip_vote.client_heard_times[machine_index] = game_time_get();
 	skip_vote.client_vote_times[machine_index] = vote->voted ? game_time_get() : NONE;
 }
 
@@ -2198,9 +2211,11 @@ void network_coop_handle_presentation(
 	coop_presentation.heard_time = game_time_get();
 	player_input_enable(!presentation->input_disabled);
 
-	if (cinematic && !coop_presentation.cinematic_started && !cinematic_in_progress())
+	/* (a machine that joined during the cutscene may have started it itself) */
+	if (cinematic && !coop_presentation.cinematic_started)
 	{
-		cinematic_start();
+		if (!cinematic_in_progress())
+			cinematic_start();
 		coop_presentation.cinematic_started = TRUE;
 	}
 	else if (!cinematic)
@@ -2208,11 +2223,13 @@ void network_coop_handle_presentation(
 		client_cinematic_end();
 	}
 	/* The host's camera when its scripts film the cutscene. A cutscene that
-	leaves the camera with the player (riding a Pelican) is spectated. A
-	player with no unit and no living teammate to watch would look out of the
-	world from a dead camera at the origin, so it sees the host's view too. */
-	client_host_camera_set((coop_presentation.cinematic_started && presentation->camera_scripted) ||
-		coop_spectate_nothing_to_watch(0));
+	leaves the camera with the player, or films a teammate riding in a
+	Pelican the AI flies (a level's insertion), is spectated: shots taken
+	beside a moving Pelican shake against this machine's copy of it. A player
+	with no unit and no living teammate to watch would look out of the world
+	from a dead camera at the origin, so it sees the host's view too. */
+	client_host_camera_set((coop_presentation.cinematic_started && presentation->camera_scripted &&
+		!coop_spectate_watching_rider(0)) || coop_spectate_nothing_to_watch(0));
 	if (coop_presentation.cinematic_started)
 		cinematic_show_letterbox(TEST_FLAG(presentation->flags, _presentation_letterbox_bit));
 	if (coop_presentation.host_camera)

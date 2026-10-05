@@ -49,9 +49,8 @@ static BOOL has_maps(const char *directory)
 		posix_find_entry_case_insensitive(directory, "maps", on_disk, sizeof(on_disk));
 }
 
-#ifdef HALO_64BIT
+/* where platform_log writes (xbox_kernel.c), once the data folder is known */
 char platform_log_path[MAX_PATH];
-#endif
 
 static void trim_separators(char *path)
 {
@@ -162,10 +161,8 @@ const char *platform_data_root(void)
 		}
 		trim_separators(root);
 		platform_log("data root: %s (the game's log: debug.txt there)", root);
-#ifdef HALO_64BIT
 		/* the platform layer's log goes to the game's (xbox_kernel.c) */
 		snprintf(platform_log_path, sizeof(platform_log_path), "%s/debug.txt", root);
-#endif
 	}
 	return root;
 }

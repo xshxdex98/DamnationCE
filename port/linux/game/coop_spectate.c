@@ -40,9 +40,13 @@ turn toward the unit's facing it makes each frame */
 #define SPECTATE_TURN 0.15f
 
 /* a passenger (riding a Pelican) is watched from in front of them, above
-and looking down, so the camera stays inside the vehicle and sees all of them */
+and looking down, so the camera stays inside the vehicle; a wide view (the
+observer allows up to 90 degrees) takes in all of them from that close */
 #define SPECTATE_PASSENGER_DISTANCE 1.0f
 #define SPECTATE_PASSENGER_PITCH -0.5f
+#define SPECTATE_PASSENGER_FIELD_OF_VIEW DEGREES_TO_RADIANS(85.0f)
+/* every other view: the dead camera's own (dead_camera.c) */
+#define SPECTATE_FIELD_OF_VIEW DEGREES_TO_RADIANS(70.0f)
 
 /* a teammate the scripts hold (Pillar of Autumn's cryo tube) is watched from
 in front, far enough back to see all of what holds them */
@@ -150,6 +154,26 @@ long coop_spectate_unit(
 	return *watched != NONE ? player_get(*watched)->unit_index : NONE;
 }
 
+boolean coop_spectate_watching_rider(
+	short local_player_index)
+{
+	long self = local_player_get_player_index(local_player_index);
+	long watched = coop_spectate_watched[local_player_index];
+	long unit_index;
+	long driver_index;
+
+	if (self == NONE || player_get(self)->unit_index != NONE)
+		return FALSE;
+	/* (the scripted camera may have been on since before this player died) */
+	if (watched == NONE || !player_try_and_get(watched) || player_get(watched)->unit_index == NONE)
+		watched = next_living_player(self, NONE);
+	unit_index = watched != NONE ? player_get(watched)->unit_index : NONE;
+	if (unit_index == NONE || !unit_is_passenger(unit_index))
+		return FALSE;
+	driver_index = unit_get(object_get(unit_index)->object.parent_object_index)->unit.driver_object_index;
+	return driver_index == NONE || unit_get(driver_index)->unit.player_index == NONE;
+}
+
 boolean coop_spectate_nothing_to_watch(
 	short local_player_index)
 {
@@ -173,8 +197,10 @@ void coop_spectate_camera(
 		camera->facing.yaw = yaw + _pi;
 		camera->facing.pitch = SPECTATE_PASSENGER_PITCH;
 		camera->distance = SPECTATE_PASSENGER_DISTANCE;
+		camera->field_of_view = SPECTATE_PASSENGER_FIELD_OF_VIEW;
 		return;
 	}
+	camera->field_of_view = SPECTATE_FIELD_OF_VIEW;
 	if (!player_input_enabled())
 	{
 		camera->facing.yaw = yaw + _pi;

@@ -736,7 +736,9 @@ boolean network_objects_reconcile(
 		distributed_object_move(object_index, position, &valid_forward, &valid_up, velocity, angular_velocity);
 		return TRUE;
 	}
-	/* (half of the way: the tick's snapshots draw it moving, no jump) */
+	/* Half of the way, drawn gliding there over the next few frames as a
+	larger correction is: moved in one step, a unit corrected every tick or
+	two (an enemy far off) visibly hitched each time. */
 	if (distributed_object_follows_host(object_index))
 		blended = *position;
 	else
@@ -745,7 +747,16 @@ boolean network_objects_reconcile(
 		blended.y = object->object.position.y + dy * 0.5f;
 		blended.z = object->object.position.z + dz * 0.5f;
 	}
-	object_set_position(object_index, &blended, &valid_forward, &valid_up);
+	{
+		real_vector3d offset;
+
+		offset.i = object->object.position.x - blended.x;
+		offset.j = object->object.position.y - blended.y;
+		offset.k = object->object.position.z - blended.z;
+		object_set_position(object_index, &blended, &valid_forward, &valid_up);
+		if (!distributed_object_follows_host(object_index))
+			render_interpolation_correct_object(object_index, &offset);
+	}
 	if (velocity)
 		object->object.translational_velocity = *velocity;
 	if (angular_velocity)
