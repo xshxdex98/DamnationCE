@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.2.9
+
+### Co-op
+
+- Play as an Elite: the lobby has a PLAYER: SPARTAN / ELITE button on the
+  campaign levels that have Elites. An Elite player uses the Spartan's
+  animations and movement, so it holds every weapon, drives every vehicle
+  and strafes like the Spartan.
+- Everyone wears their profile colour, instead of the Spartan's fixed green.
+- Players' names show over their heads.
+- A player who leaves is removed from the game; their model no longer stays
+  behind or respawns.
+- When the level moves to its next part, only players left outside the map
+  are moved. Players far apart were being pulled back and forth, snapping
+  back as they walked.
+- Dropships and Pelicans flown by the AI move smoothly, and enemies no
+  longer hitch on small corrections.
+- The Pelican rides at the start of a level (The Truth and Reconciliation,
+  The Silent Cartographer) are watched from your teammate's seat, wide
+  enough to see them whole.
+- Someone joining during a cutscene gets the vote to skip it, and machines
+  still loading no longer hold the vote up.
+- Save and Quit takes every split screen player on that machine out at once.
+
+### Custom Edition maps
+
+- Protected maps load.
+- Maps whose models or animations have broken bone lists are repaired as
+  they load, instead of hanging.
+- A map whose scripts can't be loaded plays without them instead of halting,
+  and maps with deeply nested scripts run on 64-bit builds.
+- Several kinds of unusual map data no longer stop the game: HUD meters,
+  counters and sounds, collision edges, unit dialogue, short weapon lists,
+  and odd shaders under camouflage.
+- Messages a map's scripts send to the players (sv_say) show on screen.
+
+### Menus
+
+- In Glassed, the gametype lists light the row under the mouse.
+
+### Other
+
+- On Windows, the updater's and platform's messages are written to
+  debug.txt, so a failed update shows why.
+- The host logs how many of its clients' hits it accepted and refused.
+
 ## 0.2.8
 
 ### Co-op
