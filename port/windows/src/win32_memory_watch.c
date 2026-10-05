@@ -23,7 +23,7 @@ addresses into functions).
 
 /* the Xbox memory window (port/linux/src/platform.h) */
 #define PLATFORM_CONTIGUOUS_BASE 0x80000000UL
-#define PLATFORM_CONTIGUOUS_SIZE 0x08000000UL
+#define PLATFORM_CONTIGUOUS_SIZE 0x10000000UL
 
 #define WATCH_PAGE_SIZE 0x1000UL
 #define WATCH_PAGE_COUNT (PLATFORM_CONTIGUOUS_SIZE / WATCH_PAGE_SIZE)
