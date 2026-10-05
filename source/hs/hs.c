@@ -3380,7 +3380,8 @@ typedef void (*hs_token_enumerator)(
 
 struct hs_function_table_storage
 {
-	struct hs_function_definition const *functions[418];
+	/* port: the Xbox's 418, then sv_say for Custom Edition maps */
+	struct hs_function_definition const *functions[418 + 1];
 	struct profile_section profile;
 	hs_token_enumerator token_enumerators[18];
 };
@@ -11578,7 +11579,46 @@ static struct hs_function_definition_with_1_parameter const xbox_set_machine_nam
 	},
 };
 
-long const hs_function_table_count= 418;
+/* port: Halo PC's sv_say, which some Custom Edition maps' scripts call to
+show a message. It goes at the end of the table: the Xbox's maps call
+functions by their place in it, and Custom Edition maps by name
+(custom_edition_scripts.c). Every machine runs the scripts, so each shows
+the message to its own players. */
+static void hs_sv_say(
+	char const *message)
+{
+	wchar_t text[128];
+	short local_player_index;
+	long index;
+
+	for (index = 0; message && message[index] && index < NUMBEROF(text) - 1; index++)
+		text[index] = (wchar_t)(unsigned char)message[index];
+	text[index] = 0;
+	for (local_player_index = 0; local_player_index < MAXIMUM_LOCAL_PLAYERS; local_player_index++)
+	{
+		if (local_player_get_player_index(local_player_index) != NONE)
+			hud_print_message(local_player_index, text);
+	}
+}
+
+HS_EVALUATE_VOID_STRING(hs_sv_say_evaluate, hs_sv_say)
+
+static struct hs_function_definition_with_1_parameter const sv_say_definition=
+{
+	{
+		_hs_type_void,
+		0,
+		"sv_say",
+		hs_macro_function_parse,
+		hs_sv_say_evaluate,
+		"Halo PC's: shows every player a message.",
+		NULL,
+		1,
+		{ _hs_type_string },
+	},
+};
+
+long const hs_function_table_count= 418 + 1;
 
 struct hs_enum_definition const hs_enum_table[]=
 {
@@ -12010,6 +12050,7 @@ struct hs_function_table_storage hs_function_table=
 		&display_scenario_help_definition.definition,
 		&hs_network_game_start_now_definition,
 		&xbox_set_machine_name_definition.definition,
+		&sv_say_definition.definition,
 	},
 	{
 		"hs_update",
