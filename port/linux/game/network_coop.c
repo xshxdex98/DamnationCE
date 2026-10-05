@@ -9,10 +9,12 @@ that clients need to see is sent from this file:
 
 - Presentation, every tick: whether a cinematic is playing, the letterbox,
   the camera, the screen fade, the HUD settings the scripts control (what
-  is shown, the mission timer), and the cutscene skip vote. A client starts
-  and stops its own cinematic to match, and looks through the host's camera
-  meanwhile. If the host goes quiet for two seconds, the client ends the
-  cinematic so its players aren't stuck.
+  is shown, the mission timer), the players' maximum vitality, and the
+  cutscene skip vote. A client plays them one a tick by the host's clock, a
+  couple of ticks behind the newest, so the camera keeps an even pace. It
+  starts and stops its own cinematic to match, and looks through the host's
+  camera meanwhile. If the host goes quiet for two seconds, the client ends
+  the cinematic so its players aren't stuck.
 - Events, which happen once: script sounds (dialogue, music, ambience),
   chapter titles, help and objective text, "Checkpoint" messages, screen
   shake, nav points, and custom animations on units and scenery. Each is
@@ -24,20 +26,26 @@ that clients need to see is sent from this file:
   but this file: doors a player walks up to and switches a player uses are
   decided by the host (the player's action is relayed to it). The host
   sends a group's value for three ticks when it changes, plus a few groups
-  every tick in rotation (those that have moved since the map loaded more
-  often), so a client that lost a message or joined late catches up. A scenario group is identified by its index, which is the
-  same on every machine. A device's own group is identified by the device.
+  every tick in rotation, those that have moved since the map loaded more
+  often. A scenario group is identified by its index, which is the same on
+  every machine; a device's own group by the device.
 - Named objects (scenery and devices) the scripts create or destroy.
   network_objects.c already handles units, vehicles, weapons and equipment.
   Twice a second the host sends which object names currently exist. A
   client that sees the same difference twice in a row, on the same BSP,
   creates or deletes its copy.
-- State a late joiner would otherwise miss, resent every two seconds: where
-  scripted scenery and machines have moved, how objects look (permutations,
-  scale), what the scripts have attached, the looping sounds playing, and
-  the full-screen cinematic effect.
+- State a late joiner would otherwise lack, resent every two seconds and on
+  the tick a machine joins (host_resend): where scripted scenery and
+  machines have moved, how objects look (permutations, scale), what the
+  scripts have attached, the looping sounds playing, the full-screen
+  cinematic effect and the nav points; on a join also the objective, the
+  object names and every device that has moved.
 - The view of a client with nobody to spectate yet: the host's view from
   behind, eased so it doesn't jerk.
+
+The host also makes up for scripts written for one player: vitality they
+set on player0 is set on every player (a10's shields), and a Pelican's
+Warthog drop brings more Warthogs in a larger game.
 
 Skipping a cutscene is a vote. Pressing the skip key during a skippable
 cutscene votes (a client sends its vote to the host every tick), and the
