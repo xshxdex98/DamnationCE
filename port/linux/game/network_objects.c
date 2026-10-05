@@ -244,16 +244,15 @@ struct distributed_object_change
 	byte change;
 	byte flags;
 	byte owner_player_index;
-	byte pad;
+	/* which bitmap of its shaders it draws with, when not its tag's (0). An
+	AI unit's actor variant sets it after the unit is made
+	(actor_customize_unit): the Elite major's and commander's armor are 1
+	and 2. Builds before it sent 0 here. */
+	byte forced_shader_permutation_index;
 	long object_index;
 	long definition_index;
 	short owner_team_index;
 	short variant_number;
-	/* which bitmap of its shaders it draws with. An AI unit's actor variant
-	sets it after the unit is made (actor_customize_unit): the Elite major's
-	and commander's armor are 1 and 2. */
-	short forced_shader_permutation_index;
-	short pad2;
 	real_point3d position;
 	real_vector3d forward;
 	real_vector3d up;
@@ -1008,7 +1007,7 @@ static void distributed_change_from_object(
 	change->owner_player_index = distributed_player_to_byte(object->object.owner_player_index);
 	change->owner_team_index = object->object.owner_team_index;
 	change->variant_number = object->object.variant_number;
-	change->forced_shader_permutation_index = object->object.forced_shader_permutation_index;
+	change->forced_shader_permutation_index = (byte)PIN(object->object.forced_shader_permutation_index, 0, UCHAR_MAX);
 	change->position = object->object.position;
 	change->forward = object->object.forward;
 	change->up = object->object.up;
@@ -2121,9 +2120,6 @@ static boolean distributed_client_change_valid(
 		team_count = game_engine_get_variant()->game_engine_index == game_engine_ctf ? CTF_FLAG_TEAMS : ODDBALL_TEAMS;
 	if (change->owner_team_index != NONE && (change->owner_team_index < 0 || change->owner_team_index >= team_count))
 		return FALSE;
-	/* (the renderer wraps it to the shader's bitmap count, but not a negative one) */
-	if (change->forced_shader_permutation_index < 0)
-		return FALSE;
 	/* (its colors numbers) */
 	{
 		short color_index;
@@ -2151,7 +2147,8 @@ static void distributed_client_apply_change(
 	struct object_datum *object = object_get(object_index);
 
 	csmemcpy(object->object.base_change_colors, change->change_colors, sizeof(object->object.base_change_colors));
-	object->object.forced_shader_permutation_index = change->forced_shader_permutation_index;
+	if (change->forced_shader_permutation_index)
+		object->object.forced_shader_permutation_index = change->forced_shader_permutation_index;
 	/* (and the colors drawn, which object_new chose from the tag: an AI unit's
 	are its variant's, set after it was made, actors.c) */
 	{
