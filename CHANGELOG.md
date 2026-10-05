@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.6
+
+### Co-op
+
+- Crossing a loading zone brings the whole team to whoever crossed it, so
+  nobody is thrown back to a hallway, under a floor or behind a locked door
+  when the level loads its next part.
+- The rescue for a player outside the level only takes someone actually
+  falling, after two seconds, so riding an elevator no longer teleports you.
+- Doors and elevators match the host's for everyone: no more doors stuck
+  half open (Captain Keyes' door, Assault on the Control Room's bridge) or
+  elevators that leave clients behind and drop them.
+- Flood combat forms that get back up do so on every machine, instead of
+  their bodies sliding around on clients.
+- Dropship doors open and close for clients as they do for the host.
+
 ## 0.3.5
 
 ### From OpenCE (build-121)
