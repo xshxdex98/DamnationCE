@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.15
+
+### Co-op
+
+- Joining a game in progress works again between DamnationCE and OpenCE:
+  since 0.3.10, players on one joining a game hosted on the other never
+  spawned and couldn't spectate. Elite majors and commanders keep their
+  own armor.
+
+Still network version 16.
+
 ## 0.3.14
 
 ### Co-op
