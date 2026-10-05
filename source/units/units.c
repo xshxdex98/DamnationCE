@@ -1218,66 +1218,6 @@ void unit_persistent_control(
 	return;
 }
 
-long unit_animation_graph_index(
-	long unit_index)
-{
-	long source_index = players_coop_animation_source(unit_index);
-
-	return unit_definition_get(source_index != NONE ? source_index : unit_get(unit_index)->definition_index)->
-		object.animation_graph.index;
-}
-
-/* port: The marker on the unit's own model matching a name from a borrowed
-animation graph. The Spartan's graph asks for "right hand" and "left hand";
-the elite's model names them "right hand elite" and "left hand elite". Returns
-NULL if the unit uses its own graph or has no such marker. */
-char const *unit_borrowed_marker_name(
-	long unit_index,
-	char const *name)
-{
-	long model_index;
-	struct model *model;
-	size_t length;
-	short index;
-
-	if (!name || !name[0] || players_coop_animation_source(unit_index) == NONE)
-		return NULL;
-	model_index = unit_definition_get(unit_get(unit_index)->definition_index)->object.model.index;
-	if (model_index == NONE)
-		return NULL;
-	model = model_definition_get(model_index);
-	length = strlen(name);
-	for (index = 0; index < model->markers.count; index++)
-	{
-		struct model_marker *marker = TAG_BLOCK_GET_ELEMENT(&model->markers, index, struct model_marker);
-
-		if (!strncmp(marker->name, name, length) && marker->name[length] == ' ')
-			return marker->name;
-	}
-	return NULL;
-}
-
-/* port: the unit definition whose HUD a unit shows: the Spartan's for a
-network co-op player's elite (players.c), whose own tag (the AI's) has none */
-long unit_hud_definition_index(
-	long unit_index)
-{
-	long source_index = players_coop_animation_source(unit_index);
-
-	return source_index != NONE ? source_index : unit_get(unit_index)->definition_index;
-}
-
-struct animation_retarget const *unit_animation_retarget(
-	long unit_index,
-	struct model *model)
-{
-	long source_index = players_coop_animation_source(unit_index);
-
-	if (source_index == NONE)
-		return NULL;
-	return animation_retarget_get(model_definition_get(unit_definition_get(source_index)->object.model.index), model);
-}
-
 boolean unit_get_seat_entrance_point(
 	long unit_index,
 	long target_unit_index,
@@ -1297,7 +1237,7 @@ boolean unit_get_seat_entrance_point(
 	struct object_marker enter_hint_marker;
 	char enter_hint_marker_name[256];
 	struct animation_graph *animation_graph = animation_graph_definition_get(
-		unit_animation_graph_index(unit_index));
+		unit_definition->object.animation_graph.index);
 	struct unit_datum *target_unit = unit_get(target_unit_index);
 	struct unit_definition *target_unit_definition =
 		unit_definition_get(target_unit->definition_index);
@@ -1410,7 +1350,7 @@ boolean unit_get_melee_range_and_ticks(
 
 	model_definition_get(unit_definition->object.model.index);
 	animation_graph = animation_graph_definition_get(
-		unit_animation_graph_index(unit_index));
+		unit_definition->object.animation_graph.index);
 	animation_seat = TAG_BLOCK_GET_ELEMENT(
 		&animation_graph->unit_seats,
 		unit->unit.animation.seat_index,
@@ -1468,7 +1408,7 @@ boolean unit_set_user_animation(
 	struct unit_datum *unit = unit_get(unit_index);
 	struct unit_definition *unit_definition = unit_definition_get(unit->definition_index);
 
-	animation_graph_definition_get(unit_animation_graph_index(unit_index));
+	animation_graph_definition_get(unit_definition->object.animation_graph.index);
 
 	match_assert("c:\\halo\\SOURCE\\units\\units.c", 6689, index>=0 && index<NUMBER_OF_UNIT_USER_ANIMATIONS);
 
@@ -2541,7 +2481,7 @@ boolean unit_new(
 		unit_definition_get(unit->definition_index);
 	result = FALSE;
 
-	if (unit_animation_graph_index(unit_index)!=NONE)
+	if (unit_definition->object.animation_graph.index!=NONE)
 	{
 		unit->unit.equipment_object_index = NONE;
 		csmemset(
@@ -3159,7 +3099,7 @@ boolean unit_enter_seat(
 		}
 
 		unit_definition = unit_definition_get(unit->definition_index);
-		animation_graph_index = unit_animation_graph_index(unit_index);
+		animation_graph_index = unit_definition->object.animation_graph.index;
 		animation_graph = animation_graph_definition_get(
 			animation_graph_index);
 		animation_seat = TAG_BLOCK_GET_ELEMENT(
@@ -3176,13 +3116,13 @@ boolean unit_enter_seat(
 			{
 				object_start_interpolation(unit_index, 6);
 				animation_graph_index =
-					unit_animation_graph_index(unit_index);
+					unit_definition->object.animation_graph.index;
 				animation_index = animation_choose_random_permutation_internal(
 					TRUE,
 					animation_graph_index,
 					animation_index);
 				animation_graph_index =
-					unit_animation_graph_index(unit_index);
+					unit_definition->object.animation_graph.index;
 				unit_set_animation(
 					unit_index,
 					animation_graph_index,
@@ -3358,7 +3298,7 @@ void unit_animation_start_action(
 	else
 	{
 		struct unit_definition *unit_definition = unit_definition_get(unit->definition_index);
-		struct animation_graph *animation_graph = animation_graph_definition_get(unit_animation_graph_index(unit_index));
+		struct animation_graph *animation_graph = animation_graph_definition_get(unit_definition->object.animation_graph.index);
 		struct animation_graph_unit_seat *unit_seat = TAG_BLOCK_GET_ELEMENT(&animation_graph->unit_seats, unit->unit.animation.seat_index, struct animation_graph_unit_seat);
 		struct animation_graph_weapon_class *weapon_class = TAG_BLOCK_GET_ELEMENT(&unit_seat->weapon_classes, unit->unit.animation.weapon_index, struct animation_graph_weapon_class);
 		struct animation_graph_weapon_type *weapon_type = TAG_BLOCK_GET_ELEMENT(&weapon_class->weapon_types, unit->unit.animation.weapon_type_index, struct animation_graph_weapon_type);
@@ -3432,7 +3372,7 @@ void unit_animation_start_action(
 				object_start_interpolation(unit_index, interpolation_frame_count);
 			}
 
-			animation_graph_index = unit_animation_graph_index(unit_index);
+			animation_graph_index = unit_definition->object.animation_graph.index;
 			unit->unit.animation.action_animation.index = animation_choose_random_permutation_internal(TRUE, animation_graph_index, animation_index);
 			unit->unit.animation.action_animation.frame_index = 0;
 			unit->unit.animation.action = (char)action;
@@ -3471,7 +3411,7 @@ static void unit_animation_start_overlay_action(
 			default:
 			{
 				struct unit_definition *unit_definition = unit_definition_get(unit->definition_index);
-				struct animation_graph *animation_graph = animation_graph_definition_get(unit_animation_graph_index(unit_index));
+				struct animation_graph *animation_graph = animation_graph_definition_get(unit_definition->object.animation_graph.index);
 				struct animation_graph_unit_seat *unit_seat = TAG_BLOCK_GET_ELEMENT(&animation_graph->unit_seats, unit->unit.animation.seat_index, struct animation_graph_unit_seat);
 				struct animation_graph_weapon_class *weapon_class = TAG_BLOCK_GET_ELEMENT(&unit_seat->weapon_classes, unit->unit.animation.weapon_index, struct animation_graph_weapon_class);
 				struct animation_graph_weapon_type *weapon_type = TAG_BLOCK_GET_ELEMENT(&weapon_class->weapon_types, unit->unit.animation.weapon_type_index, struct animation_graph_weapon_type);
@@ -3492,7 +3432,7 @@ static void unit_animation_start_overlay_action(
 
 				if (animation_index != NONE)
 				{
-					long graph_index = unit_animation_graph_index(unit_index);
+					long graph_index = unit_definition->object.animation_graph.index;
 
 					unit->unit.animation.overlay_action_animation.index = animation_choose_random_permutation_internal(TRUE, graph_index, animation_index);
 					unit->unit.animation.overlay_action_animation.frame_index = 0;
@@ -4184,7 +4124,7 @@ boolean unit_port_correct_damage_animation(
 	short animation_index)
 {
 	struct unit_datum *unit = unit_get(unit_index);
-	long animation_graph_index = unit_animation_graph_index(unit_index);
+	long animation_graph_index = unit_definition_get(unit->definition_index)->object.animation_graph.index;
 
 	if (type == _unit_damage_animation_soft_ping)
 	{
@@ -4447,7 +4387,7 @@ boolean unit_throw_grenade_begin(
 					unit->unit.grenade_throw_ticks = 0;
 
 					animation_graph = animation_graph_definition_get(
-						unit_animation_graph_index(unit_index));
+						unit_definition->object.animation_graph.index);
 					animation = TAG_BLOCK_GET_ELEMENT(
 						&animation_graph->animations,
 						unit->object.animation.state.index,
@@ -4680,7 +4620,7 @@ void unit_place(
 			}
 
 			animation_graph = animation_graph_definition_get(
-				unit_animation_graph_index(unit_index));
+				unit_definition->object.animation_graph.index);
 			animation = TAG_BLOCK_GET_ELEMENT(
 				&animation_graph->animations,
 				unit->object.animation.state.index,
@@ -4771,7 +4711,7 @@ boolean unit_try_and_exit_seat(
 		else if (!unit_animation_busy(&unit->unit.animation))
 		{
 			struct unit_definition *unit_definition = unit_definition_get(unit->definition_index);
-			struct animation_graph *animation_graph = animation_graph_definition_get(unit_animation_graph_index(unit_index));
+			struct animation_graph *animation_graph = animation_graph_definition_get(unit_definition->object.animation_graph.index);
 			struct animation_graph_unit_seat *unit_seat = TAG_BLOCK_GET_ELEMENT(
 				&animation_graph->unit_seats,
 				unit->unit.animation.seat_index,
@@ -4791,12 +4731,12 @@ boolean unit_try_and_exit_seat(
 					}
 
 					animation_index = animation_choose_random_permutation(
-						unit_animation_graph_index(unit_index),
+						unit_definition->object.animation_graph.index,
 						animation_index);
 
 					unit_set_animation(
 						unit_index,
-						unit_animation_graph_index(unit_index),
+						unit_definition->object.animation_graph.index,
 						animation_index);
 					object_set_visibility(unit_index, TRUE);
 					unit->unit.animation.state = _unit_state_exiting_seat;
@@ -6496,7 +6436,7 @@ static void unit_ping_animation(
 	{
 		unit_definition = unit_definition_get(unit->definition_index);
 		animation_graph = animation_graph_definition_get(
-			unit_animation_graph_index(unit_index));
+			unit_definition->object.animation_graph.index);
 
 		if (!hard_ping && !killed)
 		{
@@ -6530,7 +6470,7 @@ static void unit_ping_animation(
 					selected_damage_animation_index = NONE;
 				}
 				animation_graph_index =
-					unit_animation_graph_index(unit_index);
+					unit_definition->object.animation_graph.index;
 
 				animation_index = animation_choose_random_permutation_internal(
 					TRUE,
@@ -6657,7 +6597,7 @@ static void unit_ping_animation(
 					selected_damage_animation_index = NONE;
 				}
 				animation_graph_index =
-					unit_animation_graph_index(unit_index);
+					unit_definition->object.animation_graph.index;
 
 				animation_index = animation_choose_random_permutation_internal(
 					TRUE,
@@ -6678,7 +6618,7 @@ static void unit_ping_animation(
 				unit->unit.animation.state = (char)animation_state;
 				unit_set_animation(
 					unit_index,
-					unit_animation_graph_index(unit_index),
+					unit_definition->object.animation_graph.index,
 					animation_index);
 				SET_FLAG(
 					unit->unit.animation.flags,
@@ -7538,7 +7478,7 @@ static void unit_ready_desired_weapon(
 
 			unit_set_or_test_seat_and_weapon_label(unit_index, unit_get_seat_label(unit_index), weapon_get_label(desired_weapon_index), TRUE);
 
-			animation_graph = animation_graph_definition_get(unit_animation_graph_index(unit_index));
+			animation_graph = animation_graph_definition_get(unit_definition->object.animation_graph.index);
 			unit_seat = TAG_BLOCK_GET_ELEMENT(&animation_graph->unit_seats, unit->unit.animation.seat_index, struct animation_graph_unit_seat);
 			weapon_class = TAG_BLOCK_GET_ELEMENT(&unit_seat->weapon_classes, unit->unit.animation.weapon_index, struct animation_graph_weapon_class);
 
@@ -8028,7 +7968,7 @@ static boolean unit_set_or_test_seat_and_weapon_label(
 
 	struct unit_datum *unit = unit_get(object_index);
 	struct unit_definition *unit_definition = unit_definition_get(unit->definition_index);
-	struct animation_graph *animation_graph = animation_graph_definition_get(unit_animation_graph_index(object_index));
+	struct animation_graph *animation_graph = animation_graph_definition_get(unit_definition->object.animation_graph.index);
 	boolean result = FALSE;
 
 	for (seat_index = 0; seat_index<animation_graph->unit_seats.count; ++seat_index)
@@ -8525,7 +8465,7 @@ boolean unit_test_animation_impulse(
 	{
 		unit_definition = unit_definition_get(unit->definition_index);
 		animation_graph = animation_graph_definition_get(
-			unit_animation_graph_index(unit_index));
+			unit_definition->object.animation_graph.index);
 		unit_seat = TAG_BLOCK_GET_ELEMENT(
 			&animation_graph->unit_seats,
 			unit->unit.animation.seat_index,
@@ -8575,7 +8515,7 @@ boolean unit_start_animation_impulse(
 	{
 		unit_definition = unit_definition_get(unit->definition_index);
 		animation_graph = animation_graph_definition_get(
-			unit_animation_graph_index(unit_index));
+			unit_definition->object.animation_graph.index);
 		unit_seat = TAG_BLOCK_GET_ELEMENT(
 			&animation_graph->unit_seats,
 			unit->unit.animation.seat_index,
@@ -8601,7 +8541,7 @@ boolean unit_start_animation_impulse(
 					unit_index,
 					interpolation_frame_count);
 				animation_graph_index =
-					unit_animation_graph_index(unit_index);
+					unit_definition->object.animation_graph.index;
 				animation_index =
 					animation_choose_random_permutation_internal(
 						TRUE,
@@ -8609,7 +8549,7 @@ boolean unit_start_animation_impulse(
 						animation_index);
 				unit_set_animation(
 					unit_index,
-					unit_animation_graph_index(unit_index),
+					unit_definition->object.animation_graph.index,
 					animation_index);
 				SET_FLAG(
 					unit->unit.animation.flags,
@@ -10136,7 +10076,7 @@ short unit_update_animation(
 	{
 		animation_update_result = unit_animation_update(
 			unit_index,
-			unit_animation_graph_index(unit_index),
+			unit_definition->object.animation_graph.index,
 			&unit->unit.animation.soft_ping_animation);
 		if (animation_update_result==2)
 		{
@@ -10288,7 +10228,7 @@ short unit_update_animation(
 	{
 		animation_update_result = unit_animation_update(
 			unit_index,
-			unit_animation_graph_index(unit_index),
+			unit_definition->object.animation_graph.index,
 			&unit->unit.animation.action_animation);
 		if (animation_update_result==2)
 		{
@@ -10305,7 +10245,7 @@ short unit_update_animation(
 	{
 		animation_update_result = unit_animation_update(
 			unit_index,
-			unit_animation_graph_index(unit_index),
+			unit_definition->object.animation_graph.index,
 			&unit->unit.animation.overlay_action_animation);
 
 		switch (animation_update_result)
@@ -10342,7 +10282,7 @@ static boolean unit_animation_set_state(
 		unit_definition_get(unit->definition_index);
 	struct animation_graph *animation_graph =
 		animation_graph_definition_get(
-			unit_animation_graph_index(unit_index));
+			unit_definition->object.animation_graph.index);
 	struct animation_graph_unit_seat *unit_seat =
 		TAG_BLOCK_GET_ELEMENT(
 			&animation_graph->unit_seats,
@@ -10583,7 +10523,7 @@ static boolean unit_animation_set_state(
 
 		{
 			animation_graph_index =
-				unit_animation_graph_index(unit_index);
+				unit_definition->object.animation_graph.index;
 			animation_index =
 				animation_choose_random_permutation_internal(
 					TRUE,
@@ -10591,7 +10531,7 @@ static boolean unit_animation_set_state(
 					animation_index);
 			unit_set_animation(
 				unit_index,
-				unit_animation_graph_index(unit_index),
+				unit_definition->object.animation_graph.index,
 				animation_index);
 
 			interpolation_frame_count =
@@ -10629,7 +10569,7 @@ static boolean unit_animation_set_state(
 			}
 
 			animation_graph_index =
-				unit_animation_graph_index(unit_index);
+				unit_definition->object.animation_graph.index;
 			unit->unit.animation.aiming_screen_index =
 				animation_choose_random_permutation_internal(
 					TRUE,
@@ -10674,7 +10614,7 @@ static boolean unit_animation_set_state(
 			}
 
 			animation_graph_index =
-				unit_animation_graph_index(unit_index);
+				unit_definition->object.animation_graph.index;
 			unit->unit.animation.looking_screen_index =
 				animation_choose_random_permutation_internal(
 					TRUE,
@@ -10723,7 +10663,7 @@ void unit_preprocess_node_orientations(
 	unit = unit_get(unit_index);
 	unit_definition = unit_definition_get(unit->definition_index);
 	animation_graph = animation_graph_definition_get(
-		unit_animation_graph_index(unit_index));
+		unit_definition->object.animation_graph.index);
 
 	if (unit->unit.animation.action_animation.index != NONE)
 	{
@@ -11048,7 +10988,7 @@ void unit_postprocess_node_matrices(
 		unit->unit.animation.seat_index!=NONE)
 	{
 		animation_graph = animation_graph_definition_get(
-			unit_animation_graph_index(unit_index));
+			unit_definition->object.animation_graph.index);
 		unit_seat = TAG_BLOCK_GET_ELEMENT(
 				&animation_graph->unit_seats,
 				unit->unit.animation.seat_index,

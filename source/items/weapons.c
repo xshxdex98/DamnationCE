@@ -2285,10 +2285,6 @@ static void trigger_create_projectiles(
 				actor_index= gunner->unit.actor_index;
 			}
 
-			/* port: a co-op player's elite fires from the camera like the
-			Spartan whose animations it uses (players.c) */
-			if (players_coop_animation_source(owner_object_index) != NONE)
-				unit_definition= unit_definition_get(players_coop_animation_source(owner_object_index));
 			adjust_origin= TEST_FLAG(unit_definition->unit.flags, _unit_fires_from_camera_bit);
 			use_aiming_vector= TRUE;
 			if (actor_index!=NONE && actor_firing_blindly(actor_index))

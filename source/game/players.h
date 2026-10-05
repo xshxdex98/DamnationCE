@@ -68,20 +68,11 @@ typedef char player_action_desired_facing_yaw_offset_assert[
 typedef char player_action_desired_facing_pitch_offset_assert[
 	offsetof(struct player_action, desired_facing.pitch) == 0x8 ? 1 : -1];
 
-/* port: network_player.player_model, the model a network co-op player
-plays as. This was the Xbox's unused icon_index field; older builds still
-send NONE, which means Spartan. */
-enum
-{
-	_player_model_spartan = 0,
-	_player_model_elite,
-};
-
 struct network_player
 {
 	wchar_t name[12];
 	short primary_color_index;
-	short player_model;
+	short icon_index;
 	char machine_index;
 	char controller_index;
 	char team_index;
@@ -398,10 +389,6 @@ boolean players_coop_waiting_to_start(
 	long player_index);
 void players_note_checkpoint(
 	void);
-/* port: the unit definition whose animations a network co-op player's
-elite uses (the Spartan's), or NONE (see units.c) */
-long players_coop_animation_source(
-	long unit_index);
 void players_respawn_at_checkpoint(
 	void);
 void players_reconnect_to_structure_bsp(

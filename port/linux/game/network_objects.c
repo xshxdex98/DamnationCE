@@ -874,7 +874,7 @@ static boolean distributed_unit_has_animation(
 	long unit_index,
 	short animation_index)
 {
-	long graph_index = unit_animation_graph_index(unit_index);
+	long graph_index = unit_definition_get(unit_get(unit_index)->definition_index)->object.animation_graph.index;
 
 	return graph_index != NONE && animation_index >= 0 &&
 		animation_index < animation_graph_definition_get(graph_index)->animations.count;
