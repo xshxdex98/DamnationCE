@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.14
+
+### Co-op
+
+- Going back through a loading zone works again: two thirds of the team
+  within about 45 metres of it is enough, so a team walking back through a
+  doorway together switches straight away.
+- A player waiting at a loading zone for the team is told so, with how many
+  are there and how many it needs.
+
+Still network version 16: plays with 0.3.12 and 0.3.13. Going back works
+the new way in games hosted on 0.3.14.
+
 ## 0.3.13
 
 ### Co-op
