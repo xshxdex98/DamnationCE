@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.9
+
+### Co-op
+
+- Going back into a part of the level the team has already left needs two
+  thirds of the players at the loading zone instead of everyone, so one
+  player who stayed behind can't hold the team up.
+
 ## 0.3.8
 
 ### Co-op
