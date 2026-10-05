@@ -804,17 +804,22 @@ SETUP_OPTION_SCREENS = [
 # text) that still update it, take the focus and catch the mouse, in the
 # places it draws them:
 LOBBY_ROW_LEFT, LOBBY_ROW_TOP, LOBBY_ROW_HEIGHT, LOBBY_ROW_WIDTH, LOBBY_ROWS = 24, 92, 24, 380, 13
-LOBBY_BUTTONS_TOP, LOBBY_BUTTON_WIDTH, LOBBY_BUTTON_HEIGHT = 448, 104, 22
-LOBBY_BUTTON_LEFTS = (176, 288, 400, 512)
+LOBBY_BUTTONS_TOP, LOBBY_BUTTON_WIDTH, LOBBY_BUTTON_HEIGHT = 448, 80, 22
+LOBBY_BUTTON_LEFTS = (176, 266, 356, 446, 536)
+# (Vanilla's: the stock buttons' picture is 128 wide)
+LOBBY_STOCK_BUTTON_LEFTS = (0, 128, 256, 384, 512)
 CLEAR = "#00000000"
 # (the clear text still needs a font, or the game won't draw the widget and logs it every frame)
 SMALL_FONT = "ui\\small_ui"
 # (SWITCH TEAM first: hidden in a game without teams, which moves the focus
-# to the first shown, START NOW; at the end it traps none)
+# to the first shown, START NOW; at the end it traps none. DELAY is shown
+# while the countdown runs, and puts it back to 30 seconds: the Xbox's.)
 LOBBY_BUTTONS = (
     ("team", "SWITCH TEAM", ['<on event="a" run="swap player team"/>', '<on event="start" run="swap player team"/>']),
     ("start", "START NOW", ['<on event="a" run="net game speed start"/>',
                             '<on event="start" run="net game speed start"/>']),
+    ("delay", "DELAY", ['<on event="a" run="net game delay start"/>',
+                        '<on event="start" run="net game delay start"/>']),
     ("add", "ADD PLAYER", ['<on event="a" run="port lobby add player"/>',
                            '<on event="start" run="port lobby add player"/>']),
     ("leave", "LEAVE", ['<on event="a" run="mouse emit back event"/>',
@@ -897,8 +902,8 @@ def _lobby_overlay_rows(base: str) -> list:
 
 
 def _lobby_buttons(base: str, overlay: bool) -> list:
-    """SWITCH TEAM, START NOW, ADD PLAYER and LEAVE: the stock buttons, or the
-    Glassed lobby's invisible ones"""
+    """SWITCH TEAM, START NOW, DELAY, ADD PLAYER and LEAVE: the stock
+    buttons, or the Glassed lobby's invisible ones"""
     if overlay:
         lines = _widget(f"{base}/lobby_button_bar", [("type", "column_list"), ("width", 640),
                                                      ("height", LOBBY_BUTTON_HEIGHT),
@@ -914,7 +919,7 @@ def _lobby_buttons(base: str, overlay: bool) -> list:
     lines = _widget(f"{base}/lobby_button_bar", [("type", "column_list"), ("width", 640), ("height", 28),
                                                  ("flags", "pass_unhandled_to_focused_child left_right_tabs_items")],
                     [f'<child widget="{base}/lobby_button_{key}" x="{left}" y="1"/>'
-                     for (key, _, _), left in zip(LOBBY_BUTTONS, (120, 250, 380, 510))])
+                     for (key, _, _), left in zip(LOBBY_BUTTONS, LOBBY_STOCK_BUTTON_LEFTS)])
     for key, caption, handlers in LOBBY_BUTTONS:
         lines += _widget(f"{base}/lobby_button_{key}", [("type", "text"), ("width", 128), ("height", 24),
                                                        ("bitmap", "bitmaps/text_button_background"),

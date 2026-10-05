@@ -106,26 +106,32 @@
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_bar" type="column_list" width="640" height="22" flags="pass_unhandled_to_focused_child left_right_tabs_items">
 		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_team" x="176" />
-		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_start" x="288" />
-		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_add" x="400" />
-		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_leave" x="512" />
+		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_start" x="266" />
+		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_delay" x="356" />
+		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_add" x="446" />
+		<child widget="main_menu/multiplayer_type_select/lobby/lobby_button_leave" x="536" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_team" type="text" width="104" height="22" font="ui\small_ui" color="#00000000">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_team" type="text" width="80" height="22" font="ui\small_ui" color="#00000000">
 		<on event="a" run="swap player team" />
 		<on event="start" run="swap player team" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_start" type="text" width="104" height="22" font="ui\small_ui" color="#00000000">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_start" type="text" width="80" height="22" font="ui\small_ui" color="#00000000">
 		<on event="a" run="net game speed start" />
 		<on event="start" run="net game speed start" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_add" type="text" width="104" height="22" font="ui\small_ui" color="#00000000">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_delay" type="text" width="80" height="22" font="ui\small_ui" color="#00000000">
+		<on event="a" run="net game delay start" />
+		<on event="start" run="net game delay start" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_add" type="text" width="80" height="22" font="ui\small_ui" color="#00000000">
 		<on event="a" run="port lobby add player" />
 		<on event="start" run="port lobby add player" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_leave" type="text" width="104" height="22" font="ui\small_ui" color="#00000000">
+	<widget name="main_menu/multiplayer_type_select/lobby/lobby_button_leave" type="text" width="80" height="22" font="ui\small_ui" color="#00000000">
 		<on event="a" run="mouse emit back event" />
 		<on event="start" run="mouse emit back event" />
 		<on event="left_mouse" run="mouse emit accept event" />

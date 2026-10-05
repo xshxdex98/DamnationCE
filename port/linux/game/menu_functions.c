@@ -4072,6 +4072,9 @@ static void lobby_update(struct widget_instance *list)
 	rows_update(list, (short)MIN(lobby_player_count, rows), lobby_row_text);
 	lobby_join_help(list);
 	visible_set(named(list, "lobby_button_team", 0), game && game->variant.universal_variant.teams);
+	/* (DELAY: while the countdown runs) */
+	visible_set(named(list, "lobby_button_delay", 0),
+		game && state >= _client_state_pregame && network_game_client_get_seconds_to_game_start(client) > 0);
 	/* (the buttons' focus, off Switch Team when it is hidden) */
 	focus_off_hidden(named(list, "lobby_button_bar", 0));
 	if (description && named(description, "lobby_game_data", 0))

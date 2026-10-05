@@ -34,13 +34,14 @@ row or button that has the focus.
 enum
 {
 	ROW_LEFT = 24, ROW_TOP = 92, ROW_HEIGHT = 24, ROW_WIDTH = 380, ROWS = 13,
-	BUTTONS_TOP = 448, BUTTON_WIDTH = 104, BUTTON_HEIGHT = 22,
-	NUMBER_OF_BUTTONS = 4,
+	BUTTONS_TOP = 448, BUTTON_WIDTH = 80, BUTTON_HEIGHT = 22,
+	NUMBER_OF_BUTTONS = 5,
 };
-static short const button_lefts[NUMBER_OF_BUTTONS] = { 176, 288, 400, 512 };
+static short const button_lefts[NUMBER_OF_BUTTONS] = { 176, 266, 356, 446, 536 };
 static char const *const button_names[NUMBER_OF_BUTTONS] =
-	{ "lobby_button_team", "lobby_button_start", "lobby_button_add", "lobby_button_leave" };
-static char const *const button_labels[NUMBER_OF_BUTTONS] = { "SWITCH TEAM", "START NOW", "ADD PLAYER", "LEAVE" };
+	{ "lobby_button_team", "lobby_button_start", "lobby_button_delay", "lobby_button_add", "lobby_button_leave" };
+static char const *const button_labels[NUMBER_OF_BUTTONS] =
+	{ "SWITCH TEAM", "START NOW", "DELAY", "ADD PLAYER", "LEAVE" };
 
 /* the rest of the layout, in the menus' 640x480 */
 enum
