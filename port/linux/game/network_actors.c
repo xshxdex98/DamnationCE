@@ -702,7 +702,9 @@ static void host_send_damage(
 Units near the client's players go every tick, others less often. A unit
 with a fresh impulse, action, speech or animation goes to everyone in each
 of the next IMPULSE_REPEAT_TICKS ticks, and one starting a one-tick action
-goes that tick. A unit no actor drove this tick is dropped from the table. */
+goes that tick. A unit no actor drove this tick is dropped from the table,
+unless it is fleeing: a unit running blindly moves by itself, without its
+actor's control, and dropped it stood running in place on the clients. */
 void network_actors_host_tick(
 	void)
 {
@@ -721,7 +723,8 @@ void network_actors_host_tick(
 	{
 		struct host_actor *actor = &host_actors[index];
 
-		if (!actor->noted || !actor_unit_valid(actor->unit_index))
+		if (!actor_unit_valid(actor->unit_index) ||
+			(!actor->noted && !TEST_FLAG(unit_get(actor->unit_index)->unit.flags, _unit_running_blindly_bit)))
 		{
 			host_actors[index--] = host_actors[--host_actor_count];
 			continue;

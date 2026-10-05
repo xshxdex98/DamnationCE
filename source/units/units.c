@@ -1257,6 +1257,16 @@ char const *unit_borrowed_marker_name(
 	return NULL;
 }
 
+/* port: the unit definition whose HUD a unit shows: the Spartan's for a
+network co-op player's elite (players.c), whose own tag (the AI's) has none */
+long unit_hud_definition_index(
+	long unit_index)
+{
+	long source_index = players_coop_animation_source(unit_index);
+
+	return source_index != NONE ? source_index : unit_get(unit_index)->definition_index;
+}
+
 struct animation_retarget const *unit_animation_retarget(
 	long unit_index,
 	struct model *model)
