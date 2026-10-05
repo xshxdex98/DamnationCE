@@ -3758,6 +3758,7 @@ void unit_detach_from_parent(
 
 	if (unit->object.parent_object_index != NONE)
 	{
+		long parent_index = unit->object.parent_object_index;
 		real_point3d parent_origin;
 		real_point3d unit_origin;
 		real_vector3d velocity;
@@ -3787,6 +3788,10 @@ void unit_detach_from_parent(
 			&unit->object.translational_velocity);
 		object_set_visibility(unit_index, TRUE);
 		object_compute_node_matrices(unit_index);
+		/* port: a vehicle dropped by another comes with more in a large
+		co-op game (port/linux/game/network_coop.c) */
+		if (unit->object.type == _object_type_vehicle && object_get(parent_index)->object.type == _object_type_vehicle)
+			network_coop_vehicle_dropped(unit_index, parent_index);
 	}
 
 	return;

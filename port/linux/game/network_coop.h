@@ -49,6 +49,8 @@ boolean network_coop_active(void);
 boolean network_coop_devices_remote(void);
 /* devices.c: a group's devices were set straight to its value */
 void network_coop_note_device_snap(short group_index);
+/* units.c: a vehicle left the vehicle carrying it (a Pelican's Warthog drop) */
+void network_coop_vehicle_dropped(long vehicle_index, long carrier_index);
 
 /* cinematics.c: a chapter title */
 void network_coop_note_title(short title_index, real delay);

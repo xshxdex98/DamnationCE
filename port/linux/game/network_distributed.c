@@ -3864,7 +3864,7 @@ void network_distributed_handle_message(
 		distributed_handle_structure_bsp((struct distributed_structure_bsp const *)entries);
 		break;
 	case _distributed_message_coop_presentation:
-		network_coop_handle_presentation(entries);
+		network_coop_handle_presentation(entries, header.game_time);
 		break;
 	case _distributed_message_coop_events:
 		network_coop_handle_events(entries, header.count);

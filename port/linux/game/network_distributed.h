@@ -268,7 +268,7 @@ void network_coop_host_tick(void);
 void network_coop_client_tick(void);
 /* the message handlers, and their entry sizes */
 word network_coop_presentation_entry_size(void);
-void network_coop_handle_presentation(void const *entries);
+void network_coop_handle_presentation(void const *entries, long host_time);
 word network_coop_event_entry_size(void);
 void network_coop_handle_events(void const *entries, short count);
 word network_coop_device_group_entry_size(void);
