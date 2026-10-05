@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.17
+
+### Custom Edition maps (from ChupathingyCE)
+
+- Halo PC's sv_end_game works: a map's script can end the game on the host.
+- Maps whose scripts call Halo PC's server commands (sv_map_next, sv_kick,
+  rcon and the rest), change_team, set_gamma, thread_sleep or its sound
+  settings keep their scripts: those calls do nothing here.
+- Twelve of Halo PC's settings a map's script may set (hud_filter,
+  sv_public, rasterizer_fps and others) are accepted and change nothing.
+
+Still network version 16.
+
 ## 0.3.16
 
 ### Custom Edition maps (from ChupathingyCE)
