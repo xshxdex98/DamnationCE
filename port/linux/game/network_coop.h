@@ -49,6 +49,9 @@ boolean network_coop_active(void);
 boolean network_coop_devices_remote(void);
 /* devices.c: a group's devices were set straight to its value */
 void network_coop_note_device_snap(short group_index);
+/* unit_scripting_commands.c: a script set a unit's maximum or current
+vitality; TRUE if it was a co-op player's, now set on every player's */
+boolean network_coop_set_players_vitality(long unit_index, boolean maximum, real body, real shield);
 /* units.c: a vehicle left the vehicle carrying it (a Pelican's Warthog drop) */
 void network_coop_vehicle_dropped(long vehicle_index, long carrier_index);
 

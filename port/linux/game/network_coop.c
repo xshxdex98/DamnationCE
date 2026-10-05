@@ -82,6 +82,7 @@ index and tag, since the map placed them at the same index everywhere.
 #include "objects/object_definitions.h"
 #include "objects/objects.h"
 #include "objects/object_types.h"
+#include "objects/damage.h"
 #include "objects/scenery.h"
 #include "physics/collisions.h"
 #include "rasterizer/rasterizer_cinematics.h"
@@ -243,7 +244,12 @@ struct distributed_coop_presentation
 	whose shake outlives it (the stop was skipped with a cutscene, or lost)
 	ends its own. */
 	byte scripted_shake;
-	byte pad[3];
+	/* whether the scripts have set the players' maximum vitality, and to
+	what (network_coop_set_players_vitality) */
+	byte players_vitality_set;
+	byte pad[2];
+	real players_maximum_body_vitality;
+	real players_maximum_shield_vitality;
 };
 
 struct distributed_coop_presentation_message
@@ -438,6 +444,16 @@ static struct
 	struct distributed_coop_device_groups_message message;
 } host_devices;
 
+/* The players' maximum vitality, once the scripts have set a player's: on
+the host as they set it, on a client as the host's presentation has it.
+Every player's unit is kept at it, a new one included. */
+static struct
+{
+	boolean set;
+	real maximum_body;
+	real maximum_shield;
+} players_vitality;
+
 /* host: the client machines it had last tick. On the tick a new one
 appears, and every OBJECT_REFRESH_TICKS, the state a client that joined
 since would lack is sent again (refresh), and on the join every device that
@@ -483,6 +499,8 @@ static struct
 /* ---------- prototypes */
 
 static void client_play_presentation(void);
+/* unit_scripting_commands.c */
+void unit_scripting_set_current_vitality_of(long unit_index, real body_vitality, real shield_vitality);
 
 /* ---------- private code */
 
@@ -1226,6 +1244,9 @@ static void host_presentation(
 	presentation->camera_scripted = (byte)(*director_camera_scripted != FALSE);
 	presentation->input_disabled = (byte)!player_input_enabled();
 	presentation->scripted_shake = (byte)player_effect_port_scripted_active();
+	presentation->players_vitality_set = (byte)players_vitality.set;
+	presentation->players_maximum_body_vitality = players_vitality.maximum_body;
+	presentation->players_maximum_shield_vitality = players_vitality.maximum_shield;
 	SET_FLAG(presentation->flags, _presentation_skippable_bit, skip_vote.offered);
 	presentation->skip_votes = (byte)MIN(skip_vote.votes, 255);
 	presentation->skip_voters = (byte)MIN(skip_vote.voters, 255);
@@ -1612,6 +1633,37 @@ static boolean tag_name_has(
 	return definition_index != NONE && strstr(tag_get_name(definition_index), text) != NULL;
 }
 
+/* each tick: every player's unit at the players' maximum vitality. The
+host's own units get their current vitality full, as the scripts' set does;
+a client's follows the host's damage states. */
+static void players_vitality_keep(
+	void)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+
+	if (!players_vitality.set)
+		return;
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		struct object_datum *unit = object_try_and_get(player->unit_index);
+
+		if (!unit || (unit->object.maximum_body_vitality == players_vitality.maximum_body &&
+			unit->object.maximum_shield_vitality == players_vitality.maximum_shield))
+		{
+			continue;
+		}
+		if (coop_host())
+			object_initialize_vitality(player->unit_index, &players_vitality.maximum_body, &players_vitality.maximum_shield);
+		else
+		{
+			unit->object.maximum_body_vitality = players_vitality.maximum_body;
+			unit->object.maximum_shield_vitality = players_vitality.maximum_shield;
+		}
+	}
+}
+
 /* ---------- public code */
 
 void network_coop_new_game(
@@ -1626,6 +1678,7 @@ void network_coop_new_game(
 	csmemset(host_sent_looks, 0, sizeof(host_sent_looks));
 	csmemset(&host_sent_screen_effect, 0, sizeof(host_sent_screen_effect));
 	csmemset(&host_resend, 0, sizeof(host_resend));
+	csmemset(&players_vitality, 0, sizeof(players_vitality));
 	host_attachment_count = 0;
 	host_looping_sound_count = 0;
 	skip_vote_clear();
@@ -1697,6 +1750,43 @@ void network_coop_vehicle_dropped(
 			placed++;
 	}
 	error(_error_silent, "co-op: a Pelican dropped %d more Warthogs for %d players", placed, coop_player_count());
+}
+
+/* unit_scripting_commands.c: the scripts set a unit's maximum (maximum
+TRUE) or current vitality. Campaign scripts name only player0 for what
+every player should have, so in co-op a player's is set on every player's
+unit, and a maximum is kept for those spawned later and sent to the
+clients. FALSE if the unit isn't a co-op player's, for the caller to set. */
+boolean network_coop_set_players_vitality(
+	long unit_index,
+	boolean maximum,
+	real body,
+	real shield)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+
+	if (!coop_host() || player_index_from_unit_index(unit_index) == NONE)
+		return FALSE;
+	if (maximum)
+	{
+		players_vitality.set = TRUE;
+		players_vitality.maximum_body = body;
+		players_vitality.maximum_shield = shield;
+	}
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		struct object_datum *unit = object_try_and_get(player->unit_index);
+
+		if (!unit || TEST_FLAG(unit->object.damage_flags, _object_dead_bit))
+			continue;
+		if (maximum)
+			object_initialize_vitality(player->unit_index, &body, &shield);
+		else
+			unit_scripting_set_current_vitality_of(player->unit_index, body, shield);
+	}
+	return TRUE;
 }
 
 void network_coop_note_device_snap(
@@ -2106,6 +2196,7 @@ void network_coop_host_tick(
 	if (!coop_game())
 		return;
 	host_resend_update();
+	players_vitality_keep();
 	host_count_skip_votes();
 	host_presentation(&message.presentation);
 	send_to_clients(&message, _distributed_message_coop_presentation, 1, sizeof(message.presentation));
@@ -2125,6 +2216,7 @@ void network_coop_client_tick(
 	void)
 {
 	client_play_presentation();
+	players_vitality_keep();
 	if (game_time_get() - coop_presentation.heard_time > PRESENTATION_SILENCE_TICKS)
 	{
 		client_cinematic_end();
@@ -2389,6 +2481,13 @@ static void client_presentation_apply(
 	boolean cinematic = TEST_FLAG(presentation->flags, _presentation_cinematic_bit);
 
 	player_input_enable(!presentation->input_disabled);
+	if (presentation->players_vitality_set && distributed_real_valid(presentation->players_maximum_body_vitality) &&
+		distributed_real_valid(presentation->players_maximum_shield_vitality))
+	{
+		players_vitality.set = TRUE;
+		players_vitality.maximum_body = presentation->players_maximum_body_vitality;
+		players_vitality.maximum_shield = presentation->players_maximum_shield_vitality;
+	}
 	if (!presentation->scripted_shake && player_effect_port_scripted_active())
 		player_effect_port_scripted_end();
 
