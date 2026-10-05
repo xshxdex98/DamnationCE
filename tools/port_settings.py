@@ -1133,9 +1133,42 @@ def _map_kind() -> list:
     return lines
 
 
+def _map_download() -> list:
+    """The map download's dialog (port/linux/game/map_download.c): a stock
+    confirmation, as Delete Profile's (ce/error.xml), whose text and buttons
+    "port map download update" fills in from the download: the question, the
+    progress, or why it stopped."""
+    base = "map_download"
+    button = [("type", "text"), ("width", 128), ("height", 24), ("bitmap", "bitmaps/text_button_background"),
+              ("font", "ui\\small_ui"), ("color", "#FFFFFFFF"), ("align", "center"), ("text_y", 2)]
+    lines = _widget(f"{base}/map_download_screen", [("width", 640), ("height", 480),
+                                                    ("flags", "pass_unhandled_to_focused_child")],
+                    ['<on event="b back" run="port map download cancel" sound="sound\\sfx\\ui\\back"/>',
+                     f'<child widget="{base}/dialog"/>',
+                     f'<child widget="{base}/button_bar" x="194" y="309"/>'])
+    lines += _widget(f"{base}/dialog", [("width", 640), ("height", 480), ("bitmap", "bitmaps/semi_transparent_grey")],
+                     [f'<child widget="{base}/text_box" x="192" y="176"/>',
+                      f'<child widget="{base}/header" x="201" y="180"/>'])
+    lines += _widget(f"{base}/header", [("type", "text"), ("width", 150), ("height", 20), ("text", "MAP DOWNLOAD"),
+                                        ("font", "ui\\large_ui"), ("color", "#FF2896FF")], [])
+    lines += _widget(f"{base}/text_box", [("type", "text"), ("width", 280), ("height", 159), ("bitmap", "bitmaps/alert_bkd"),
+                                          ("font", "ui\\large_ui"), ("color", "#FF2896FF"), ("text_x", 9), ("text_y", 36)],
+                     ['<data input="port map download update"/>'])
+    lines += _widget(f"{base}/button_bar", [("type", "column_list"), ("width", 256), ("height", 20),
+                                            ("flags", "pass_unhandled_to_focused_child up_down_tabs_items left_right_tabs_items")],
+                     [f'<child widget="{base}/button_cancel" x="128"/>', f'<child widget="{base}/button_accept"/>'])
+    lines += _widget(f"{base}/button_accept", button + [("text", "DOWNLOAD")],
+                     ['<on event="a start" run="port map download accept" sound="sound\\sfx\\ui\\forward"/>',
+                      '<on event="left_mouse" run="mouse emit accept event"/>'])
+    lines += _widget(f"{base}/button_cancel", button + [("text", "CANCEL")],
+                     ['<on event="a start" run="port map download cancel" sound="sound\\sfx\\ui\\back"/>',
+                      '<on event="left_mouse" run="mouse emit accept event"/>'])
+    return lines
+
+
 def multiplayer_files() -> dict:
     """the port's multiplayer widgets: the browser's additions, the server
-    settings, the lobby"""
+    settings, the lobby, the map download's dialog"""
     head = ['<?xml version="1.0" encoding="UTF-8"?>',
             "<!-- The port's multiplayer screens, in the PC version's style (tools/port_settings.py) -->", "<menus>"]
     return {
@@ -1145,6 +1178,7 @@ def multiplayer_files() -> dict:
         f"{MT}/coop".replace("/", ".") + ".xml": head + _coop() + ["</menus>", ""],
         "main_menu/new_select".replace("/", ".") + ".port.xml": head + _map_kind() + ["</menus>", ""],
         "main_menu/settings_select/multiplayer_setup/item_options_edit".replace("/", ".") + ".port.xml": head + _item_options_extras() + ["</menus>", ""],
+        "map_download.xml": head + _map_download() + ["</menus>", ""],
     }
 
 

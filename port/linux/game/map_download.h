@@ -58,16 +58,22 @@ map (it asked for some of it lately), so isn't idle for having no players */
 boolean map_download_machine_busy(
 	long machine_index);
 
-/* the screen that asks the player and shows the download, over the menus
-(ui_widget.c) */
-boolean map_download_screen_active(
+/* The dialog that asks the player and shows the download, a stock one of
+the menus' (ce/map_download.xml). ui_widget.c, each frame: opens it while
+there is a download to show, and closes it after; whether it is up. */
+void map_download_menus_update(
 	void);
-void map_download_screen_process(
+boolean map_download_dialog_up(
 	void);
-void map_download_screen_render(
-	void);
-struct halo_ui_pointer;
-void map_download_screen_pointer(
-	struct halo_ui_pointer const *pointer);
+/* menu_functions.c: its text (the stock dialogs' short lines) and its
+buttons' labels (accept NULL: that button hidden), each frame it's up; its
+buttons pressed */
+void map_download_dialog(
+	char *text,
+	size_t text_size,
+	char const **accept,
+	char const **cancel);
+void map_download_dialog_press(
+	boolean accept);
 
 #endif

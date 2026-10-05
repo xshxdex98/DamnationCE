@@ -77,6 +77,7 @@ their handlers open opens.
 
 #include "halo_menus.h"
 #include "custom_edition_maps.h"
+#include "map_download.h"
 /* (internet play's server browser: the platform layer's) */
 #include "../src/p2p.h"
 
@@ -5039,6 +5040,11 @@ boolean pc_menu_event_function_invoke(
 			return FALSE;
 #endif
 		}
+		else if (!strcmp(name, "port map download accept") || !strcmp(name, "port map download cancel"))
+		{
+			map_download_dialog_press(!strcmp(name, "port map download accept"));
+			return TRUE;
+		}
 		else if (!strcmp(name, "port online games"))
 		{
 #ifdef HALO_GAME_BROWSER
@@ -5290,6 +5296,52 @@ boolean pc_menu_event_function_invoke(
 	}
 }
 
+/* "port map download update": the map download's dialog (map_download.c,
+ce/map_download.xml): its text, and its buttons' labels, the accept button
+hidden when there is nothing to accept */
+#define MAP_DOWNLOAD_TEXT_LENGTH 160
+
+/* a button's label, from plain ASCII text */
+static void button_text_set(struct widget_instance *button, char const *label)
+{
+	wchar_t text[ROW_TEXT_LENGTH];
+	long index;
+
+	for (index = 0; label[index] && index < ROW_TEXT_LENGTH - 1; index++)
+		text[index] = (wchar_t)(unsigned char)label[index];
+	text[index] = 0;
+	text_set(button, text);
+}
+
+static void map_download_dialog_update(struct widget_instance *text_box)
+{
+	struct widget_instance *screen = text_box;
+	struct widget_instance *accept_button, *cancel_button;
+	char const *accept, *cancel;
+	char text[MAP_DOWNLOAD_TEXT_LENGTH];
+	wchar_t wide[MAP_DOWNLOAD_TEXT_LENGTH];
+	long index;
+
+	while (screen->parent)
+		screen = screen->parent;
+	accept_button = named(screen, "button_accept", 0);
+	cancel_button = named(screen, "button_cancel", 0);
+	map_download_dialog(text, sizeof(text), &accept, &cancel);
+	/* (the text is plain ASCII: map names are, map_download.c) */
+	for (index = 0; text[index] && index < MAP_DOWNLOAD_TEXT_LENGTH - 1; index++)
+		wide[index] = (wchar_t)(unsigned char)text[index];
+	wide[index] = 0;
+	text_set_length(text_box, wide, MAP_DOWNLOAD_TEXT_LENGTH);
+	if (accept_button)
+	{
+		accept_button->visible = accept != NULL;
+		if (accept)
+			button_text_set(accept_button, accept);
+	}
+	if (cancel_button)
+		button_text_set(cancel_button, cancel);
+}
+
 /* "port title shine": the title's frame (shell/bitmaps.xml): at rest (0),
 and every TITLE_SHINE_PERIOD a light sliding across it (1 on) over
 TITLE_SHINE_TIME */
@@ -5342,6 +5394,8 @@ void pc_menu_game_data_function_invoke(
 		preview_update(widget);
 	else if (!strcmp(name, "port lobby update"))
 		lobby_update(widget);
+	else if (!strcmp(name, "port map download update"))
+		map_download_dialog_update(widget);
 	else if (!strcmp(name, "port settings help"))
 	{
 		video_rows_show(widget);

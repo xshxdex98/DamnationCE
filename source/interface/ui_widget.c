@@ -695,11 +695,10 @@ boolean map_screen_active(void);
 void map_screen_process(void);
 void map_screen_render(void);
 void map_screen_pointer(struct halo_ui_pointer const *pointer);
-/* port/linux/game/map_download.c's: asking to download the host's map */
-boolean map_download_screen_active(void);
-void map_download_screen_process(void);
-void map_download_screen_render(void);
-void map_download_screen_pointer(struct halo_ui_pointer const *pointer);
+/* port/linux/game/map_download.c's: its dialog, a screen of the menus, is
+drawn over Online Games and the map picker while it's up */
+void map_download_menus_update(void);
+boolean map_download_dialog_up(void);
 /* port/linux/game/lobby_screen.c: drawn over the lobby's widgets */
 boolean lobby_screen_active(void);
 void lobby_screen_render(void);
@@ -6190,9 +6189,8 @@ static void ui_widgets_process_mouse(
 #ifdef HALO_GAME_BROWSER
 		/* (nor over Online Games, which takes the pointer itself: a click
 		left in the queue would pick a game) */
-		|| (map_download_screen_active() && (map_download_screen_pointer(&pointer), TRUE))
-		|| (browser_screen_active() && (browser_screen_pointer(&pointer), TRUE))
-		|| (map_screen_active() && (map_screen_pointer(&pointer), TRUE))
+		|| (browser_screen_active() && !map_download_dialog_up() && (browser_screen_pointer(&pointer), TRUE))
+		|| (map_screen_active() && !map_download_dialog_up() && (map_screen_pointer(&pointer), TRUE))
 #endif
 		)
 	{
@@ -6601,19 +6599,13 @@ void render_ui_widgets(
 	if (bink_playback_ui_rendering_inhibited())
 		return;
 #ifdef HALO_GAME_BROWSER
-	/* port: a map download is asked about and shown over everything */
-	if (map_download_screen_active())
-	{
-		map_download_screen_render();
-		return;
-	}
 	/* port: Online Games is drawn alone, without the menu it was opened from */
-	if (browser_screen_active())
+	if (browser_screen_active() && !map_download_dialog_up())
 	{
 		browser_screen_render();
 		return;
 	}
-	if (map_screen_active())
+	if (map_screen_active() && !map_download_dialog_up())
 	{
 		map_screen_render();
 		return;
@@ -7746,19 +7738,14 @@ void process_ui_widgets(
 		return;
 	}
 #ifdef HALO_GAME_BROWSER
-	if (map_download_screen_active())
-	{
-		map_download_screen_process();
-
-		return;
-	}
-	if (browser_screen_active())
+	map_download_menus_update();
+	if (browser_screen_active() && !map_download_dialog_up())
 	{
 		browser_screen_process();
 
 		return;
 	}
-	if (map_screen_active())
+	if (map_screen_active() && !map_download_dialog_up())
 	{
 		map_screen_process();
 

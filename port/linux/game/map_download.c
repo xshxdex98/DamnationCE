@@ -40,11 +40,7 @@ own folder.
 #include "map_download.h"
 #include "network_distributed.h"
 
-#ifdef HALO_GAME_BROWSER
-#include "overlay_screens.h"
-#include "../src/ui_overlay.h"
-#include "halo_ui_pointer.h"
-#endif
+#include "interface/ui_widget_instance.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -307,9 +303,6 @@ whether this download is it, so isn't asked about again */
 	void (*join)(void);
 	/* when the client last asked the host anything */
 	unsigned long asked_time;
-	/* the screen's button with the focus, and the held direction */
-	short selected;
-	struct overlay_repeat repeat;
 } client;
 
 static void client_path(
@@ -365,7 +358,6 @@ static void client_fail(
 	client_discard_part();
 	snprintf(client.failure, sizeof(client.failure), "%s", reason);
 	client.state = _client_failed;
-	client.selected = 0;
 	error(_error_silent, "map download: %s: %s", client.name, reason);
 }
 
@@ -440,7 +432,7 @@ static void client_start_download(
 {
 	client.state = _client_downloading;
 	if (!client_start_file(_map_download_map))
-		client_fail("The map couldn't be saved. Is the disk full?");
+		client_fail("The map couldn't be\nsaved. Is the disk\nfull?");
 }
 
 /* the map is here: loaded, and with it the game joined (the game the host
@@ -516,7 +508,7 @@ static void client_finish_file(
 	{
 		DeleteFileA(part_path);
 		client_file_failed(client.file == _map_download_map ?
-			"What the host sent isn't a Halo map this game can play. It was deleted." :
+			"What the host sent\nisn't a Halo map this\ngame can play. It\nwas deleted." :
 			"it isn't a bitmap");
 		return;
 	}
@@ -545,9 +537,9 @@ static void client_handle_size(
 		return;
 	map_size = client.sizes[_map_download_map];
 	if (map_size == NONE)
-		client_fail("The host can't send this map.");
+		client_fail("The host can't send\nthis map.");
 	else if (map_size < CACHE_HEADER_BYTES)
-		client_fail("The host's map isn't a Halo map.");
+		client_fail("The host's map isn't\na Halo map.");
 	else if (TEST_FLAG(client.sizes_known, _map_download_picture))
 	{
 		if (client.approved)
@@ -569,14 +561,14 @@ static void client_handle_piece(
 	if (answer->offset == 0 && !client_first_piece_valid(client.file, answer->data, answer->data_size))
 	{
 		client_file_failed(client.file == _map_download_map ?
-			"What the host is sending isn't a Halo map. Nothing was kept." :
+			"What the host is\nsending isn't a Halo\nmap. Nothing was kept." :
 			"it isn't a bitmap");
 		return;
 	}
 	if (fwrite(answer->data, 1, answer->data_size, client.stream) != answer->data_size)
 	{
 		client_file_failed(client.file == _map_download_map ?
-			"The map couldn't be saved. Is the disk full?" :
+			"The map couldn't be\nsaved. Is the disk\nfull?" :
 			"it couldn't be saved");
 		return;
 	}
@@ -669,55 +661,26 @@ boolean map_download_needed(
 
 #ifdef HALO_GAME_BROWSER
 
-/* ---------- the screen */
+/* ---------- the dialog */
 
-enum
+/* the dialog (tools/port_settings.py's _map_download: ce/map_download.xml),
+by the name the menus load it by, and the last part they know it by */
+#define DIALOG_WIDGET "pc\\map_download\\map_download_screen"
+#define DIALOG_WIDGET_NAME "map_download_screen"
+/* the most of a map's name one of its lines shows */
+#define DIALOG_NAME_CHARACTERS 22
+
+/* source/interface/ui_widget.c's */
+boolean ui_widget_port_open_from_top(char const *name);
+void ui_widget_port_go_back_from_top(void);
+struct widget_instance *ui_widget_port_top(void);
+
+static boolean dialog_up(
+	void)
 {
-	TITLE_X = 37, TITLE_Y = 22,
-	BODY_X = 37, BODY_Y = 90, BODY_WIDTH = 566,
-	BAR_Y = 210, BAR_HEIGHT = 14,
-	GLASS_TOP = 66, GLASS_BOTTOM = 446,
-	MAXIMUM_BUTTONS = 2,
-};
+	struct widget_instance *top = ui_widget_port_top();
 
-static char const *const asking_join_buttons[] = { "DOWNLOAD AND JOIN", "CANCEL" };
-static char const *const asking_buttons[] = { "DOWNLOAD", "LEAVE" };
-static char const *const sizing_buttons[] = { "LEAVE" };
-static char const *const downloading_buttons[] = { "CANCEL" };
-
-static short screen_buttons(
-	char const *const **labels)
-{
-	switch (client.state)
-	{
-	case _client_asking_join: *labels = asking_join_buttons; return NUMBEROF(asking_join_buttons);
-	case _client_asking: *labels = asking_buttons; return NUMBEROF(asking_buttons);
-	case _client_downloading: *labels = downloading_buttons; return NUMBEROF(downloading_buttons);
-	default: *labels = sizing_buttons; return NUMBEROF(sizing_buttons);
-	}
-}
-
-static void screen_press(
-	short button)
-{
-	if (client.state == _client_asking_join)
-	{
-		/* (yes: joined, and the map fetched once the host is reached;
-		no: nothing joined, nothing left) */
-		client.state = _client_idle;
-		if (button == 0)
-		{
-			snprintf(client.approved_name, sizeof(client.approved_name), "%s", client.name);
-			client.join();
-		}
-		return;
-	}
-	if (client.state == _client_asking && button == 0)
-	{
-		client_start_download();
-		return;
-	}
-	client_leave();
+	return top && top->name && !strcmp(top->name, DIALOG_WIDGET_NAME);
 }
 
 static void megabytes(
@@ -728,12 +691,23 @@ static void megabytes(
 	snprintf(text, size, "%.1f MB", (double)bytes / (1024.0 * 1024.0));
 }
 
+/* the map's name as the dialog shows it, cut to a line */
+static void dialog_map_name(
+	char *text,
+	size_t size)
+{
+	if (strlen(client.name) <= DIALOG_NAME_CHARACTERS)
+		snprintf(text, size, "%s", client.name);
+	else
+		snprintf(text, size, "%.*s...", DIALOG_NAME_CHARACTERS - 3, client.name);
+}
+
 boolean map_download_begin(
 	char const *map_name)
 {
 	char approved_name[MAP_NAME_SIZE];
 
-	if (!ui_overlay_available() || !global_network_game_client_get())
+	if (!global_network_game_client_get())
 		return FALSE;
 	client_forget();
 	csmemcpy(approved_name, client.approved_name, sizeof(approved_name));
@@ -755,7 +729,7 @@ boolean map_download_ask(
 	char const *map_name,
 	void (*join)(void))
 {
-	if (!ui_overlay_available() || !map_name_allowed(tag_name_strip_path(map_name)))
+	if (!map_name_allowed(tag_name_strip_path(map_name)))
 		return FALSE;
 	client_forget();
 	csmemset(&client, 0, sizeof(client));
@@ -783,162 +757,102 @@ boolean map_download_hold_begin(
 	return TRUE;
 }
 
-boolean map_download_screen_active(
-	void)
+void map_download_dialog(
+	char *text,
+	size_t text_size,
+	char const **accept,
+	char const **cancel)
 {
-	client_forget_if_disconnected();
+	unsigned long now = system_milliseconds();
+	char name[DIALOG_NAME_CHARACTERS + 4];
+	char sizes[NUMBER_OF_MAP_DOWNLOAD_FILES][24];
+	char received[24];
 
-	return client.state != _client_idle && ui_overlay_available();
-}
-
-void map_download_screen_process(
-	void)
-{
-	struct event_record event;
-	char const *const *labels;
-	short count = screen_buttons(&labels);
-	short direction = 0;
-
+	/* (the download's clock: a host gone quiet ends it, and while the player
+	decides, the host hears this machine isn't idle) */
 	if ((client.state == _client_sizing || client.state == _client_downloading) &&
-		system_milliseconds() - client.heard_time > SILENCE_MILLISECONDS)
+		now - client.heard_time > SILENCE_MILLISECONDS)
 	{
-		client_fail("The host stopped answering. It may be on a version that can't send maps.");
+		client_fail("The host stopped\nanswering. It may be\non a version that\ncan't send maps.");
 	}
-	if (client.state == _client_asking && system_milliseconds() - client.asked_time > KEEP_ALIVE_MILLISECONDS)
+	if (client.state == _client_asking && now - client.asked_time > KEEP_ALIVE_MILLISECONDS)
 		client_send_request(_map_download_map, NONE, 0);
-	while (client.state != _client_idle && get_next_event(&event, NONE))
-	{
-		if (event.type == OVERLAY_EVENT_LEFT_STICK)
-			direction = event.data.stick.x == SHORT_MIN ? -1 : event.data.stick.x == SHORT_MAX ? 1 : direction;
-		else if (event.type == OVERLAY_EVENT_BUTTON)
-		{
-			switch (event.data.button.index)
-			{
-			case _gamepad_binary_button_dpad_left: direction = -1; break;
-			case _gamepad_binary_button_dpad_right: direction = 1; break;
-			case _gamepad_analog_button_a: screen_press(client.selected); break;
-			case _gamepad_analog_button_b: client_leave(); break;
-			default: break;
-			}
-		}
-		count = screen_buttons(&labels);
-	}
-	if (overlay_repeat_step(&client.repeat, direction != 0))
-		client.selected = (short)PIN(client.selected + direction, 0, count - 1);
-	client.selected = (short)PIN(client.selected, 0, count - 1);
-	/* (the menus behind get no input while this is up) */
-	event_manager_flush();
-}
 
-void map_download_screen_pointer(
-	struct halo_ui_pointer const *pointer)
-{
-	char const *const *labels;
-	short count = screen_buttons(&labels);
-	short button;
-
-	if (pointer->moved)
-	{
-		button = overlay_button_at(labels, count, BODY_X, OVERLAY_BUTTON_Y, pointer->x, pointer->y);
-		if (button != NONE)
-			client.selected = button;
-	}
-	if (pointer->left_clicks)
-	{
-		button = overlay_button_at(labels, count, BODY_X, OVERLAY_BUTTON_Y, pointer->click_x, pointer->click_y);
-		if (button != NONE)
-			screen_press(button);
-	}
-}
-
-void map_download_screen_render(
-	void)
-{
-	struct overlay_palette const *palette = overlay_palette_current();
-	float margin = (float)((halo_screen_width() - 640) / 2 + 2);
-	struct overlay_button_colors colors;
-	char const *const *labels;
-	short count = screen_buttons(&labels);
-	char display_name[96];
-	char text[160];
-	char sizes[2][24];
-
-	/* Glassed darkens a band over the scene; Vanilla covers the screen */
-	if (palette->glassed)
-	{
-		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
-		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, palette->rule);
-		ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, palette->rule);
-	}
-	else
-	{
-		ui_overlay_gradient(-margin, 0, 640 + 2 * margin, 480, 0, palette->backdrop, palette->backdrop_bottom);
-		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 1.0f, 0, palette->rule);
-		ui_overlay_rect(BODY_X - 8, BODY_Y - 10, BODY_WIDTH + 16, BAR_Y + BAR_HEIGHT + 66 - BODY_Y, palette->radius,
-			palette->panel);
-	}
-	ui_overlay_text(UI_FONT_BOLD, 24.0f, TITLE_X, TITLE_Y, UI_ALIGN_LEFT, palette->title, "MAP DOWNLOAD");
-
-	overlay_map_name(client.map_name, display_name, sizeof(display_name));
-	overlay_text_fitted(UI_FONT_BOLD, 14.0f, BODY_X, BODY_Y, BODY_WIDTH, palette->text, display_name);
-	megabytes(client.sizes[_map_download_map], sizes[0], sizeof(sizes[0]));
-	megabytes(client.sizes[_map_download_picture], sizes[1], sizeof(sizes[1]));
+	dialog_map_name(name, sizeof(name));
+	megabytes(client.sizes[_map_download_map], sizes[_map_download_map], sizeof(sizes[0]));
+	megabytes(client.sizes[_map_download_picture], sizes[_map_download_picture], sizeof(sizes[0]));
+	megabytes(client.received, received, sizeof(received));
+	*accept = NULL;
+	*cancel = "CANCEL";
 	switch (client.state)
 	{
 	case _client_asking_join:
-		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, UI_ALIGN_LEFT, palette->text,
-			"This game is on a map you don't have. The host can send it to you before you join.");
-		ui_overlay_text(UI_FONT_REGULAR, 9.0f, BODY_X, BODY_Y + 56, UI_ALIGN_LEFT, palette->dim,
-			"Only a Halo map and its picture are taken, each checked to really be one before it's kept.");
-		ui_overlay_text(UI_FONT_REGULAR, 9.0f, BODY_X, BODY_Y + 70, UI_ALIGN_LEFT, palette->dim,
-			"They're saved in your downloaded_maps folder.");
+		snprintf(text, text_size, "%s\nisn't installed.\nDownload it from the\nhost and join?", name);
+		*accept = "DOWNLOAD";
 		break;
 	case _client_sizing:
-		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, UI_ALIGN_LEFT, palette->dim,
-			"This game's map isn't installed. Asking the host for it\xE2\x80\xA6");
+		snprintf(text, text_size, "Asking the host for\n%s...", name);
 		break;
 	case _client_asking:
-		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, UI_ALIGN_LEFT, palette->text,
-			"This game's map isn't installed. The host can send it to you.");
-		if (client.sizes[_map_download_picture] != NONE)
-			snprintf(text, sizeof(text), "The map, %s, and its picture, %s.", sizes[0], sizes[1]);
-		else
-			snprintf(text, sizeof(text), "The map, %s.", sizes[0]);
-		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 44, UI_ALIGN_LEFT, palette->text, text);
-		ui_overlay_text(UI_FONT_REGULAR, 9.0f, BODY_X, BODY_Y + 74, UI_ALIGN_LEFT, palette->dim,
-			"Only a Halo map and its picture are taken, each checked to really be one before it's kept.");
-		ui_overlay_text(UI_FONT_REGULAR, 9.0f, BODY_X, BODY_Y + 88, UI_ALIGN_LEFT, palette->dim,
-			"They're saved in your downloaded_maps folder.");
+		snprintf(text, text_size, "%s\nisn't installed.\nDownload it from the\nhost? (%s)", name,
+			sizes[_map_download_map]);
+		*accept = "DOWNLOAD";
+		*cancel = "LEAVE";
 		break;
 	case _client_downloading:
-	{
-		long size = client.sizes[client.file];
-		float done = size > 0 ? (float)client.received / (float)size : 0.0f;
-		char received[24];
-
-		megabytes(client.received, received, sizeof(received));
-		snprintf(text, sizeof(text), "Downloading the %s\xE2\x80\xA6 %s of %s",
-			client.file == _map_download_map ? "map" : "picture", received, sizes[client.file]);
-		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, UI_ALIGN_LEFT, palette->text, text);
-		ui_overlay_rect(BODY_X, BAR_Y, BODY_WIDTH, BAR_HEIGHT, palette->radius / 2, palette->panel);
-		ui_overlay_rect(BODY_X, BAR_Y, BODY_WIDTH * done, BAR_HEIGHT, palette->radius / 2, palette->row_selected);
-		ui_overlay_outline(BODY_X, BAR_Y, BODY_WIDTH, BAR_HEIGHT, palette->radius / 2, 0.75f, palette->panel_edge);
+		if (client.file == _map_download_map)
+			snprintf(text, text_size, "Downloading\n%s\n%s of %s", name, received, sizes[_map_download_map]);
+		else
+			snprintf(text, text_size, "Downloading its\npicture\n%s of %s", received, sizes[_map_download_picture]);
 		break;
-	}
 	case _client_failed:
-		overlay_text_fitted(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, BODY_WIDTH, OVERLAY_COLOR_POOR,
-			client.failure);
+		snprintf(text, text_size, "%s", client.failure);
+		*cancel = "OK";
+		break;
+	default:
+		text[0] = 0;
 		break;
 	}
+}
 
-	colors.fill = palette->panel;
-	colors.fill_lit = palette->row_selected;
-	colors.edge = palette->panel_edge;
-	colors.text = palette->prompt;
-	colors.text_lit = palette->title;
-	colors.text_disabled = palette->dim;
-	colors.radius = palette->radius;
-	overlay_buttons_draw(labels, count, BODY_X, OVERLAY_BUTTON_Y, client.selected, 0, &colors);
+void map_download_dialog_press(
+	boolean accept)
+{
+	if (client.state == _client_asking_join)
+	{
+		/* (yes: the game joined, and the map fetched once the host is
+		reached; no: nothing joined) */
+		client.state = _client_idle;
+		if (accept)
+		{
+			snprintf(client.approved_name, sizeof(client.approved_name), "%s", client.name);
+			client.join();
+		}
+	}
+	else if (client.state == _client_asking && accept)
+	{
+		client_start_download();
+	}
+	else
+	{
+		client_leave();
+	}
+}
+
+void map_download_menus_update(
+	void)
+{
+	client_forget_if_disconnected();
+	if (client.state != _client_idle && !dialog_up())
+		ui_widget_port_open_from_top(DIALOG_WIDGET);
+	else if (client.state == _client_idle && dialog_up())
+		ui_widget_port_go_back_from_top();
+}
+
+boolean map_download_dialog_up(
+	void)
+{
+	return dialog_up();
 }
 
 #else
@@ -963,6 +877,33 @@ boolean map_download_holds_players(
 }
 
 boolean map_download_hold_begin(
+	void)
+{
+	return FALSE;
+}
+
+void map_download_dialog(
+	char *text,
+	size_t text_size,
+	char const **accept,
+	char const **cancel)
+{
+	text[0] = 0;
+	*accept = NULL;
+	*cancel = "OK";
+}
+
+void map_download_dialog_press(
+	boolean accept)
+{
+}
+
+void map_download_menus_update(
+	void)
+{
+}
+
+boolean map_download_dialog_up(
 	void)
 {
 	return FALSE;

@@ -359,6 +359,7 @@ static char const *const port_function_names[] =
 	"port lobby open", "port lobby add player", "port lobby join", "port lobby leave",
 	"port lobby player list initialize", "port lobby player choose",
 	"port lobby preview add", "port lobby preview leave",
+	"port map download accept", "port map download cancel",
 	/* (the gametype editor's: the Xbox's walk their rows by place, which the
 	PC version's screens changed) */
 	"mp profile begin editing", "mp profile save changes", "request del playlist profile", "final del playlist profile",
@@ -389,6 +390,7 @@ static char const *const port_game_data_input_names[] =
 	row; the Xbox's read only player_ui's gametype, not Server Setup's) */
 	"game settings lists text update", "get edit game settings name", "mp edit profile set rule text",
 	"port title shine",
+	"port map download update",
 };
 
 static struct
