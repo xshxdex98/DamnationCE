@@ -2,7 +2,7 @@
 
 ## 0.3.17
 
-### Custom Edition maps (ported from ChupathingyCE's custom map work, by MrMilenko)
+### Custom Edition maps (adapted from ChupathingyCE's custom map work, by MrMilenko)
 
 - Halo PC's sv_end_game works: a map's script can end the game on the host.
 - Maps whose scripts call Halo PC's server commands (sv_map_next, sv_kick,
@@ -15,7 +15,7 @@ Still network version 16.
 
 ## 0.3.16
 
-### Custom Edition maps (ported from ChupathingyCE's custom map work, by MrMilenko)
+### Custom Edition maps (adapted from ChupathingyCE's custom map work, by MrMilenko)
 
 - A map whose scripts use something this engine doesn't know keeps every
   script that does load. Before, one unknown line cost the map all its
