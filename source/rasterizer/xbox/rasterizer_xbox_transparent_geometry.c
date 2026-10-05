@@ -655,6 +655,43 @@ typedef char rasterizer_xbox_transparent_geometry_globals_size_assert[
 static struct rasterizer_xbox_transparent_geometry_globals
 	rasterizer_xbox_transparent_geometry_globals = { 0 };
 
+/* ---------- port: extra layers
+
+A transparent shader can list other shaders as extra layers, drawn over it.
+The Xbox's maps have none; Custom Edition maps do, and some list a layer
+that names no shader, or a layer that is (or contains) the shader itself,
+which would recurse until the stack ran out. Layers naming no shader are
+passed over, and layers within layers are drawn only so deep. */
+
+#define MAXIMUM_EXTRA_LAYER_DEPTH 4
+
+static short transparent_geometry_extra_layer_depth = 0;
+
+static void transparent_geometry_extra_layers_draw(
+	struct transparent_geometry_group const *group,
+	struct tag_block const *extra_layers,
+	boolean dirty)
+{
+	short layer_index;
+
+	if (transparent_geometry_extra_layer_depth >= MAXIMUM_EXTRA_LAYER_DEPTH)
+		return;
+	transparent_geometry_extra_layer_depth++;
+	for (layer_index = 0; layer_index < extra_layers->count; layer_index++)
+	{
+		long shader_index = TAG_BLOCK_GET_ELEMENT(extra_layers, layer_index, struct tag_reference)->index;
+		struct transparent_geometry_group layer_group;
+
+		if (shader_index == NONE)
+			continue;
+		csmemcpy(&layer_group, group, sizeof(layer_group));
+		layer_group.sorted_index = NONE;
+		layer_group.shader = shader_definition_get(shader_index);
+		rasterizer_transparent_geometry_group_draw(&layer_group, dirty);
+	}
+	transparent_geometry_extra_layer_depth--;
+}
+
 /* ---------- public code */
 
 boolean rasterizer_transparent_geometry_initialize_aux_buffer(
@@ -1823,21 +1860,9 @@ void rasterizer_transparent_geometry_group_draw(
 							short stage_index;
 							long result;
 
-							for (layer_index = 0;
-								layer_index < shader_transparent_generic->generic.extra_layers.count;
-								layer_index++)
-							{
-								struct transparent_geometry_group layer_group;
-
-								csmemcpy(&layer_group, group, sizeof(layer_group));
-								layer_group.sorted_index = NONE;
-								layer_group.shader = shader_definition_get(
-									TAG_BLOCK_GET_ELEMENT(
-										&shader_transparent_generic->generic.extra_layers,
-										layer_index,
-										struct tag_reference)->index);
-								rasterizer_transparent_geometry_group_draw(&layer_group, dirty);
-							}
+							/* port: through the helper above */
+							transparent_geometry_extra_layers_draw(group,
+								&shader_transparent_generic->generic.extra_layers, dirty);
 
 							rasterizer_set_vertex_shader_permutation(
 								TRANSPARENT_GEOMETRY_VERTEX_SHADER_GENERIC,
@@ -2310,27 +2335,10 @@ void rasterizer_transparent_geometry_group_draw(
 							short map_index;
 							long result;
 
-							/* port: January never advances layer_index (a bug), so its loop redraws extra
-							 * layer 0 for as long as the block is non-empty (the bytes push index 0 and
-							 * re-test the count). No Xbox map has such layers; Halo Custom Edition maps have
-							 * chicago shaders with them, which would hang the game
-							 * (port/linux/game/custom_edition_cache.c), so the port advances it.
-							 */
-							for (layer_index = 0;
-								layer_index < shader_transparent_chicago->chicago.extra_layers.count;
-								layer_index++)
-							{
-								struct transparent_geometry_group layer_group;
-
-								csmemcpy(&layer_group, group, sizeof(layer_group));
-								layer_group.sorted_index = NONE;
-								layer_group.shader = shader_definition_get(
-									TAG_BLOCK_GET_ELEMENT(
-										&shader_transparent_chicago->chicago.extra_layers,
-										layer_index,
-										struct tag_reference)->index);
-								rasterizer_transparent_geometry_group_draw(&layer_group, dirty);
-							}
+							/* port: January's loop here never advanced layer_index, so a shader with
+							 * extra layers redrew the first forever; the helper above draws each once */
+							transparent_geometry_extra_layers_draw(group,
+								&shader_transparent_chicago->chicago.extra_layers, dirty);
 
 							rasterizer_set_vertex_shader_permutation(
 								TRANSPARENT_GEOMETRY_VERTEX_SHADER_GENERIC,
