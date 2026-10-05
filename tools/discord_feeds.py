@@ -240,6 +240,8 @@ def post_release(tag, notes_path):
 
 def edit_release(tag, notes_path, message_id):
     webhook = os.environ["DISCORD_RELEASES_WEBHOOK"]
+    if not message_id.isdigit():
+        sys.exit(f"{message_id!r} isn't a Discord message ID.")
     with open(notes_path, encoding="utf-8") as notes:
         parts = message_parts(unwrap(notes.read()))
     if len(parts) != 1:
