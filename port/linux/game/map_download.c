@@ -412,47 +412,137 @@ static boolean client_picture_valid(
 	return valid;
 }
 
-/* a file has all arrived: checked, and kept under its own name, or deleted */
+/* the map is here: loaded, and with it the game joined */
+static void client_done(
+	void)
+{
+	error(_error_silent, "map download: %s: done", client.name);
+	client.state = _client_idle;
+	main_set_multiplayer_map_name(client.map_name);
+}
+
+/* the file being downloaded can't be had: the map is the point, and the
+download stops; without the picture, the menus show the unknown level's */
+static void client_file_failed(
+	char const *reason)
+{
+	if (client.file == _map_download_map)
+	{
+		client_fail(reason);
+		return;
+	}
+	client_discard_part();
+	error(_error_silent, "map download: %s: no picture: %s", client.name, reason);
+	client_done();
+}
+
+/* whether a file's first piece starts as its kind does: a cache header, or
+a bitmap's "BM" (nothing more of a file is taken that doesn't) */
+static boolean client_first_piece_valid(
+	byte file,
+	byte const *data,
+	word size)
+{
+	if (file == _map_download_map)
+	{
+		return size >= CACHE_HEADER_BYTES && !memcmp(data, "daeh", 4) &&
+			!memcmp(data + CACHE_FOOTER_OFFSET, "toof", 4);
+	}
+
+	return size >= 2 && !memcmp(data, "BM", 2);
+}
+
+/* whether a whole file is what it should be, by its contents */
+static boolean client_file_valid(
+	byte file,
+	char const *path)
+{
+	if (file == _map_download_map)
+		return custom_edition_cache_file_is_map(path) || cache_files_xbox_map_playable(path);
+
+	return client_picture_valid(path);
+}
+
+/* a file has all arrived: kept under its own name if it checks out, else
+deleted; then the picture, if the host has one */
 static void client_finish_file(
 	void)
 {
 	char part_path[PATH_SIZE];
 	char path[PATH_SIZE];
-	boolean valid;
 
 	fclose(client.stream);
 	client.stream = NULL;
 	client_path(client.file, TRUE, part_path);
 	client_path(client.file, FALSE, path);
-	valid = client.file == _map_download_map ?
-		custom_edition_cache_file_is_map(part_path) || cache_files_xbox_map_playable(part_path) :
-		client_picture_valid(part_path);
-	if (!valid)
+	if (!client_file_valid(client.file, part_path))
 	{
 		DeleteFileA(part_path);
-		/* (a map is the point; without its picture, the menus show the
-		unknown level's) */
-		if (client.file == _map_download_map)
-		{
-			client_fail("What the host sent isn't a Halo map this game can play. It was deleted.");
-			return;
-		}
-		error(_error_silent, "map download: %s: the picture isn't a bitmap; deleted", client.name);
+		client_file_failed(client.file == _map_download_map ?
+			"What the host sent isn't a Halo map this game can play. It was deleted." :
+			"it isn't a bitmap");
+		return;
 	}
-	else
-	{
-		DeleteFileA(path);
-		MoveFileA(part_path, path);
-	}
+	DeleteFileA(path);
+	MoveFileA(part_path, path);
 	if (client.file == _map_download_map && client.sizes[_map_download_picture] != NONE)
 	{
 		if (!client_start_file(_map_download_picture))
-			client_fail("The picture couldn't be saved.");
+			client_file_failed("it couldn't be saved");
 		return;
 	}
-	error(_error_silent, "map download: %s: done", client.name);
-	client.state = _client_idle;
-	main_set_multiplayer_map_name(client.map_name);
+	client_done();
+}
+
+/* the host's answer to the size requests: once both are in, the player is
+asked */
+static void client_handle_size(
+	struct map_download_answer const *answer)
+{
+	long map_size;
+
+	client.sizes[answer->file] = answer->size > 0 && answer->size <= maximum_file_bytes(answer->file) ?
+		answer->size : NONE;
+	SET_FLAG(client.sizes_known, answer->file, TRUE);
+	if (!TEST_FLAG(client.sizes_known, _map_download_map))
+		return;
+	map_size = client.sizes[_map_download_map];
+	if (map_size == NONE)
+		client_fail("The host can't send this map.");
+	else if (map_size < CACHE_HEADER_BYTES)
+		client_fail("The host's map isn't a Halo map.");
+	else if (TEST_FLAG(client.sizes_known, _map_download_picture))
+		client.state = _client_asking;
+}
+
+/* a piece of the file being downloaded, the next one expected */
+static void client_handle_piece(
+	struct map_download_answer const *answer)
+{
+	if (answer->file != client.file || answer->offset != client.received ||
+		answer->size != client.sizes[client.file] || client.received + answer->data_size > client.sizes[client.file])
+	{
+		return;
+	}
+	if (answer->offset == 0 && !client_first_piece_valid(client.file, answer->data, answer->data_size))
+	{
+		client_file_failed(client.file == _map_download_map ?
+			"What the host is sending isn't a Halo map. Nothing was kept." :
+			"it isn't a bitmap");
+		return;
+	}
+	if (fwrite(answer->data, 1, answer->data_size, client.stream) != answer->data_size)
+	{
+		client_file_failed(client.file == _map_download_map ?
+			"The map couldn't be saved. Is the disk full?" :
+			"it couldn't be saved");
+		return;
+	}
+	client.received += answer->data_size;
+	if (client.received == client.sizes[client.file])
+		client_finish_file();
+	else
+		client_request_more();
 }
 
 static void client_handle_answer(
@@ -463,60 +553,22 @@ static void client_handle_answer(
 
 	csmemcpy(name, answer->map_name, MAP_NAME_SIZE);
 	name[MAP_NAME_SIZE - 1] = 0;
-	if (client.state == _client_idle || client.state == _client_failed || csstrcmp(name, client.name) ||
-		answer->file >= NUMBER_OF_MAP_DOWNLOAD_FILES || answer->data_size > CHUNK_BYTES ||
-		size != ANSWER_HEAD_BYTES + answer->data_size)
+	/* (only answers about the map being downloaded, whole) */
+	if (csstrcmp(name, client.name) || answer->file >= NUMBER_OF_MAP_DOWNLOAD_FILES ||
+		answer->data_size > CHUNK_BYTES || size != ANSWER_HEAD_BYTES + answer->data_size)
 	{
 		return;
 	}
-	client.heard_time = system_milliseconds();
 	if (client.state == _client_sizing && answer->offset == NONE)
 	{
-		long most = maximum_file_bytes(answer->file);
-
-		client.sizes[answer->file] = answer->size > 0 && answer->size <= most ? answer->size : NONE;
-		SET_FLAG(client.sizes_known, answer->file, TRUE);
-		if (TEST_FLAG(client.sizes_known, _map_download_map) && client.sizes[_map_download_map] == NONE)
-			client_fail("The host can't send this map.");
-		else if (client.sizes[_map_download_map] != NONE && client.sizes[_map_download_map] < CACHE_HEADER_BYTES)
-			client_fail("The host's map isn't a Halo map.");
-		else if (client.sizes_known == FLAG(NUMBER_OF_MAP_DOWNLOAD_FILES) - 1)
-			client.state = _client_asking;
-		return;
+		client.heard_time = system_milliseconds();
+		client_handle_size(answer);
 	}
-	if (client.state != _client_downloading || answer->file != client.file || answer->offset != client.received ||
-		answer->size != client.sizes[client.file] || client.received + answer->data_size > client.sizes[client.file])
+	else if (client.state == _client_downloading && answer->offset != NONE)
 	{
-		return;
+		client.heard_time = system_milliseconds();
+		client_handle_piece(answer);
 	}
-	/* (the first piece shows what the file is: a cache header, or a bitmap's
-	"BM", before any more of it is taken) */
-	if (answer->offset == 0 &&
-		(client.file == _map_download_map ?
-			answer->data_size < CACHE_HEADER_BYTES || memcmp(answer->data, "daeh", 4) ||
-				memcmp(answer->data + CACHE_FOOTER_OFFSET, "toof", 4) :
-			answer->data_size < 2 || memcmp(answer->data, "BM", 2)))
-	{
-		if (client.file == _map_download_map)
-			client_fail("What the host is sending isn't a Halo map. Nothing was kept.");
-		else
-		{
-			client_discard_part();
-			client.state = _client_idle;
-			main_set_multiplayer_map_name(client.map_name);
-		}
-		return;
-	}
-	if (fwrite(answer->data, 1, answer->data_size, client.stream) != answer->data_size)
-	{
-		client_fail("The map couldn't be saved. Is the disk full?");
-		return;
-	}
-	client.received += answer->data_size;
-	if (client.received == client.sizes[client.file])
-		client_finish_file();
-	else
-		client_request_more();
 }
 
 /* (the client's machine gone from the game: whatever it was downloading
