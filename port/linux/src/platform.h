@@ -127,7 +127,16 @@ the game and Direct3D rely on keeps working. PLATFORM_CONTIGUOUS_BASE is an
 Xbox address. */
 
 #define PLATFORM_CONTIGUOUS_BASE 0x80000000U
-#define PLATFORM_CONTIGUOUS_SIZE 0x08000000U /* a 128 MB development kit */
+/* 256 MB, twice a development kit's: Custom Edition maps' textures, models
+and sounds need more than the Xbox's maps did, and coldsnap's ran out of
+128 MB. Android keeps 128 MB, because its guest image is linked just above
+the window (port/android/include/halo_android_abi.h). The Windows memory
+watch has the same size (port/windows/src/win32_memory_watch.c). */
+#ifdef HALO_ANDROID
+#define PLATFORM_CONTIGUOUS_SIZE 0x08000000U
+#else
+#define PLATFORM_CONTIGUOUS_SIZE 0x10000000U
+#endif
 #define PLATFORM_ANY_PHYSICAL_ADDRESS 0xffffffffU
 
 /* the host's page size, which protection works in (4 KB or more) */
