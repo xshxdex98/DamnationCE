@@ -1472,6 +1472,12 @@ static void player_spawn(
 					&placement_data,
 					unit_definition_index,
 					NONE);
+				/* port: owned from its creation, so a co-op player's Elite picks
+				its first animations from the Spartan's graph it uses
+				(units.c, unit_animation_graph_index). Owned only after, it
+				kept seat and weapon slots of the Elite's own graph, which
+				index past the Spartan's. */
+				placement_data.owner_player_index = player_index;
 				placement_data.position = starting_location->position;
 				vector3d_from_angle(
 					&placement_data.forward,
