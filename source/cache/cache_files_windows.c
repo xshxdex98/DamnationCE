@@ -1220,7 +1220,8 @@ static void cache_file_get_map_path(
 	const char *map_name,
 	char *path)
 {
-	sprintf(path, "%s%s.map", cache_files_map_directory(), map_name);
+	/* (port: or one downloaded from a host, map_download.c) */
+	cache_files_map_path(map_name, path);
 	/* or the OpenSauce .yelo cache of that name, which the header check
 	names and refuses; every caller's path holds 256 characters
 	(port/linux/game/custom_edition_cache.c) */

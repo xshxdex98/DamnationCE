@@ -267,6 +267,7 @@ symbols in this file:
 
 /* port/linux/game/network_distributed.c's */
 void network_distributed_handle_message(long machine_index, word const *message, word size);
+boolean network_distributed_message_before_game(word const *message, word size);
 
 /* ---------- constants */
 
@@ -1340,6 +1341,18 @@ boolean network_game_server_handle_client_message(
 				{
 					long machine_index;
 
+					network_game_server_get_client_machine(server, machine, &machine_index);
+					network_distributed_handle_message(machine_index, message, message_buffer_size);
+				}
+				/* (port: a joining client asking for the game's map, before it
+				can load it, map_download.c; heard, so a download doesn't time
+				out a machine joining a game in progress) */
+				else if (network_game_server_client_machine_is_joined_to_game(server, machine) &&
+					network_distributed_message_before_game(message, message_buffer_size))
+				{
+					long machine_index;
+
+					network_game_server_client_machine_heard(server, machine);
 					network_game_server_get_client_machine(server, machine, &machine_index);
 					network_distributed_handle_message(machine_index, message, message_buffer_size);
 				}

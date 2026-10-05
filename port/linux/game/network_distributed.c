@@ -71,6 +71,7 @@ machine (their datum identifiers need not be).
 #include "units/biped_definitions.h"
 #include "units/bipeds.h"
 #include "network_coop.h"
+#include "map_download.h"
 #include "network_distributed.h"
 
 #include <limits.h>
@@ -942,7 +943,7 @@ static void distributed_batches_flush(
 		distributed_batch_flush((short)((first + step) % MAXIMUM_SENDERS));
 }
 
-static void distributed_fill_header(
+void distributed_fill_header(
 	void *message,
 	byte type,
 	short count,
@@ -3783,6 +3784,19 @@ boolean distributed_machine_clock_fast(
 
 /* a message of the distributed kind; machine_index is the sender's on the
 host, NONE on a client */
+boolean network_distributed_message_before_game(
+	word const *message,
+	word size)
+{
+	struct distributed_message_header header;
+
+	if (size < sizeof(header))
+		return FALSE;
+	csmemcpy(&header, message, sizeof(header));
+
+	return header.type == _distributed_message_map_request;
+}
+
 void network_distributed_handle_message(
 	long machine_index,
 	word const *message,
@@ -3793,10 +3807,18 @@ void network_distributed_handle_message(
 	short index;
 	word entry_size;
 
-	/* (none between games: loading, or in the menus) */
-	if (size < sizeof(header) || !game_in_progress())
+	if (size < sizeof(header))
 		return;
 	csmemcpy(&header, message, sizeof(header));
+	/* (a joining client's map download runs before its game does) */
+	if (map_download_message(header.type))
+	{
+		map_download_handle_message(machine_index, header.type, message, size);
+		return;
+	}
+	/* (none between games: loading, or in the menus) */
+	if (!game_in_progress())
+		return;
 	/* a tick's messages in one: each as if it came alone */
 	if (header.type == _distributed_message_batch)
 	{

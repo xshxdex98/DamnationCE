@@ -39,6 +39,7 @@ Each map can have, beside it in its folder:
 #include "bmp_files.h"
 #include "custom_edition_cache.h"
 #include "custom_edition_maps.h"
+#include "map_download.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -414,7 +415,8 @@ static void custom_edition_maps_look_for(
 	struct file_reference file;
 	char name[MAXIMUM_FILENAME_LENGTH + 1];
 	char extension[MAXIMUM_FILENAME_LENGTH + 1];
-	char const *folders[] = { cache_files_map_directory(), CUSTOM_EDITION_INSTALL_MAP_DIRECTORY };
+	char const *folders[] = { cache_files_map_directory(), CUSTOM_EDITION_INSTALL_MAP_DIRECTORY,
+		DOWNLOADED_MAPS_DIRECTORY };
 	short folder_index;
 
 	custom_edition_maps_forget();

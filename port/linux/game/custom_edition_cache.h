@@ -52,6 +52,17 @@ void opensauce_cache_path_find(
 	char *path,
 	long path_size);
 
+/* The path of the ".map" file `map_name` names in the maps folders (an
+OpenSauce ".yelo" is never it), in `path` (256 characters); FALSE if none. */
+boolean custom_edition_cache_map_file(
+	char const *map_name,
+	char *path);
+
+/* Whether the file at `path` is a Custom Edition cache by its contents,
+whatever it is called (map_download.c). */
+boolean custom_edition_cache_file_is_map(
+	char const *path);
+
 /* TRUE when Custom Edition maps may run (game.custom_edition) and the map
 `map_name` names is a Custom Edition cache whose resource maps are present:
 it is then read in place, never copied to the cache partition. */

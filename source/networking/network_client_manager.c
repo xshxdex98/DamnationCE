@@ -383,6 +383,7 @@ symbols in this file:
 #include "main/main.h"
 #include "memory/data.h"
 #include "networking/network_client_manager.h"
+#include "map_download.h" /* port: port/linux/game/map_download.c */
 #include "networking/network_client_message_handler.h"
 #include "networking/network_connection.h"
 #include "networking/network_game_globals.h"
@@ -1273,19 +1274,29 @@ boolean network_game_client_game_settings_updated(
 		{
 			char build[0x20];
 
-			/* port: a map of a build this version does not play with others
-			(its objects would not be the host's): said, and the game left */
-			if (!network_game_is_splitscreen_local() &&
-				!cache_files_map_plays_multiplayer(message_packet->map.name, build))
+			/* port: a custom map this machine doesn't have is offered from
+			the host, and loaded once it is here (map_download.c) */
+			if (!network_game_is_splitscreen_local() && map_download_needed(message_packet->map.name) &&
+				map_download_begin(message_packet->map.name))
 			{
-				cache_files_show_multiplayer_unavailable(message_packet->map.name, build);
-				/* (the menu's error the join's, not the connection lost that
-				the failure would otherwise give) */
-				display_error_when_main_menu_loaded(_error_network_failed_to_join_game);
-				return FALSE;
+				network_event("asking the host for map '%s'...", message_packet->map.name);
 			}
-			network_event("precaching map '%s'...", message_packet->map.name);
-			main_set_multiplayer_map_name(message_packet->map.name);
+			else
+			{
+				/* port: a map of a build this version does not play with others
+				(its objects would not be the host's): said, and the game left */
+				if (!network_game_is_splitscreen_local() &&
+					!cache_files_map_plays_multiplayer(message_packet->map.name, build))
+				{
+					cache_files_show_multiplayer_unavailable(message_packet->map.name, build);
+					/* (the menu's error the join's, not the connection lost that
+					the failure would otherwise give) */
+					display_error_when_main_menu_loaded(_error_network_failed_to_join_game);
+					return FALSE;
+				}
+				network_event("precaching map '%s'...", message_packet->map.name);
+				main_set_multiplayer_map_name(message_packet->map.name);
+			}
 		}
 
 		csmemcpy(&previous_game, &client->game, sizeof(client->game));

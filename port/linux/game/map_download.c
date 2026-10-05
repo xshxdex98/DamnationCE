@@ -1,0 +1,791 @@
+/*
+MAP_DOWNLOAD.C
+
+A client joining a game on a custom map it doesn't have gets the map from
+the host, once the player says so.
+
+The client asks the host how big the map and its picture (<name>.bmp, its
+thumbnail in the menus) are, shows the player, and on DOWNLOAD asks for
+them a piece at a time over the connection's reliable stream, at most
+WINDOW_BYTES ahead of what has arrived. Each file is written as a .part file
+in DOWNLOADED_MAPS_DIRECTORY and kept only if its contents check out: a map
+must be a Halo cache (a Custom Edition one, or an Xbox one of a build this
+game plays), and a picture a bitmap the menus can read. The map is then
+loaded, and the game joined, as if it had been there.
+
+Nothing else can be sent. The host sends only the map its game is on and
+the picture beside it, never a stock map, and only by a plain file name; the
+client keeps only those two files, under its own names for them, in its
+own folder.
+*/
+
+/* ---------- headers */
+
+#include "cseries.h"
+#include "cseries/cseries_windows.h"
+#include "errors.h"
+#include "tag_files/tag_groups.h"
+#include "cache/cache_files.h"
+#include "main/main.h"
+#include "networking/network_game_globals.h"
+#include "networking/network_game_manager.h"
+#include "networking/network_server_manager_internal.h"
+#include "interface/event_manager.h"
+#include "input/input.h"
+
+#include "bmp_files.h"
+#include "custom_edition_cache.h"
+#include "map_download.h"
+#include "network_distributed.h"
+
+#ifdef HALO_GAME_BROWSER
+#include "overlay_screens.h"
+#include "../src/ui_overlay.h"
+#include "halo_ui_pointer.h"
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* ---------- constants */
+
+enum
+{
+	_map_download_map,
+	_map_download_picture,
+	NUMBER_OF_MAP_DOWNLOAD_FILES
+};
+
+/* a file name, without its extension (custom_edition_maps.c takes names of
+up to 56 characters) */
+#define MAP_NAME_SIZE 64
+#define PATH_SIZE 256
+
+/* the most of a file one answer carries, one request asks for, and the
+client has asked for beyond what has arrived (well inside the reliable
+stream's 256 KB queue) */
+#define CHUNK_BYTES 0xE00
+#define REQUEST_BYTES 0x8000
+#define WINDOW_BYTES 0x10000
+
+/* the largest map (a Custom Edition one may be over the Xbox's 0x11600000)
+and picture taken */
+#define MAXIMUM_MAP_BYTES 0x18000000L
+#define MAXIMUM_PICTURE_BYTES 0x400000L
+
+/* a cache file's header, both formats: 'head' at its start, 'foot' at its
+end (cache_files.c's CACHE_FILE_HEADER_SIGNATURE, little-endian) */
+#define CACHE_HEADER_BYTES 0x800
+#define CACHE_FOOTER_OFFSET 0x7FC
+
+/* how long the client waits for the host to answer before giving up */
+#define SILENCE_MILLISECONDS 15000
+
+/* maps everyone has, which are never sent: the Xbox's campaign and
+multiplayer levels, Halo PC's own multiplayer maps, and the resource maps */
+static char const *const stock_map_names[] =
+{
+	"a10", "a30", "a50", "b30", "b40", "c10", "c20", "c40", "d20", "d40",
+	"beavercreek", "sidewinder", "damnation", "ratrace", "prisoner", "hangemhigh", "chillout",
+	"carousel", "boardingaction", "bloodgulch", "wizard", "putput", "longest",
+	"icefields", "deathisland", "dangercanyon", "infinity", "timberland", "gephyrophobia",
+	"ui", "bitmaps", "sounds", "loc",
+};
+
+/* ---------- structures */
+
+/* client to host: a file's size (offset NONE), or a piece of it */
+struct map_download_request
+{
+	struct distributed_message_header header;
+	char map_name[MAP_NAME_SIZE];
+	byte file;
+	byte pad[3];
+	long offset;
+	long length;
+};
+
+/* host to client: a file's size (NONE: the host won't send it), and with an
+offset, a piece of it */
+struct map_download_answer
+{
+	struct distributed_message_header header;
+	char map_name[MAP_NAME_SIZE];
+	byte file;
+	byte pad;
+	word data_size;
+	long size;
+	long offset;
+	byte data[CHUNK_BYTES];
+};
+
+#define ANSWER_HEAD_BYTES (sizeof(struct map_download_answer) - CHUNK_BYTES)
+
+/* (both fit one network message) */
+typedef char map_download_answer_size_assert[sizeof(struct map_download_answer) <= 0xFFF ? 1 : -1];
+
+/* ---------- prototypes */
+
+/* network_game_globals.c's and network_server_message_handler.c's */
+boolean network_distributed_client_send_reliably(void *message, word size);
+boolean network_distributed_server_send_to_machine_reliably(long machine_index, void *message, word size);
+
+/* ---------- private code */
+
+/* a plain file name: letters, digits and _ - . and spaces, not starting with
+a dot, no ".." and no path, and none of the stock maps */
+static boolean map_name_allowed(
+	char const *name)
+{
+	size_t length = strlen(name);
+	size_t index;
+
+	if (length == 0 || length >= MAP_NAME_SIZE || name[0] == '.' || strstr(name, ".."))
+		return FALSE;
+	for (index = 0; index < length; index++)
+	{
+		char character = name[index];
+
+		if (!(character >= 'a' && character <= 'z') && !(character >= 'A' && character <= 'Z') &&
+			!(character >= '0' && character <= '9') && !strchr("_-. ", character))
+		{
+			return FALSE;
+		}
+	}
+	for (index = 0; index < NUMBEROF(stock_map_names); index++)
+	{
+		if (!csstrcasecmp(name, stock_map_names[index]))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+static long maximum_file_bytes(
+	byte file)
+{
+	return file == _map_download_map ? MAXIMUM_MAP_BYTES : MAXIMUM_PICTURE_BYTES;
+}
+
+/* ---------- the host */
+
+/* the file a request names: the game's own map, or the picture beside it */
+static boolean host_file_path(
+	char const *map_name,
+	byte file,
+	char path[PATH_SIZE])
+{
+	struct network_game_server *server = global_network_game_server_get();
+	size_t length;
+
+	if (!server || file >= NUMBER_OF_MAP_DOWNLOAD_FILES || !map_name_allowed(map_name) ||
+		csstrcasecmp(map_name, tag_name_strip_path(network_game_server_get_game(server)->map.name)))
+	{
+		return FALSE;
+	}
+	if (!custom_edition_cache_map_file(map_name, path) && !cache_files_map_path(map_name, path))
+		return FALSE;
+	length = strlen(path);
+	if (length < 4 || csstrcasecmp(path + length - 4, ".map"))
+		return FALSE;
+	if (file == _map_download_picture)
+		strcpy(path + length - 4, ".bmp");
+
+	return TRUE;
+}
+
+static void host_send_answer(
+	long machine_index,
+	struct map_download_answer *answer)
+{
+	word size = (word)(ANSWER_HEAD_BYTES + answer->data_size);
+
+	distributed_fill_header(answer, _distributed_message_map_answer, 1, size);
+	network_distributed_server_send_to_machine_reliably(machine_index, answer, size);
+}
+
+/* answers a client's request: the file's size, or the piece it asked for */
+static void host_handle_request(
+	long machine_index,
+	struct map_download_request const *request)
+{
+	struct map_download_answer answer;
+	char path[PATH_SIZE];
+	FILE *stream = NULL;
+	long size = NONE;
+
+	csmemset(&answer, 0, ANSWER_HEAD_BYTES);
+	csmemcpy(answer.map_name, request->map_name, MAP_NAME_SIZE);
+	answer.map_name[MAP_NAME_SIZE - 1] = 0;
+	answer.file = request->file;
+	answer.offset = NONE;
+	if (host_file_path(answer.map_name, answer.file, path) && (stream = fopen(path, "rb")) != NULL &&
+		fseek(stream, 0, SEEK_END) == 0)
+	{
+		size = ftell(stream);
+		if (size <= 0 || size > maximum_file_bytes(answer.file))
+			size = NONE;
+	}
+	answer.size = size;
+	if (request->offset == NONE || size == NONE)
+	{
+		host_send_answer(machine_index, &answer);
+	}
+	/* (a piece within the file and the most asked for at once: else the
+	request is a bad client's, and goes unanswered) */
+	else if (request->offset >= 0 && request->length > 0 && request->length <= REQUEST_BYTES &&
+		request->offset <= size - request->length && fseek(stream, request->offset, SEEK_SET) == 0)
+	{
+		long sent;
+
+		for (sent = 0; sent < request->length; sent += answer.data_size)
+		{
+			answer.offset = request->offset + sent;
+			answer.data_size = (word)MIN(CHUNK_BYTES, request->length - sent);
+			if (fread(answer.data, 1, answer.data_size, stream) != answer.data_size)
+				break;
+			host_send_answer(machine_index, &answer);
+		}
+	}
+	if (stream)
+		fclose(stream);
+}
+
+/* ---------- the client */
+
+#ifdef HALO_GAME_BROWSER
+
+enum
+{
+	_client_idle,
+	/* asked the host for the files' sizes */
+	_client_sizing,
+	/* asking the player */
+	_client_asking,
+	_client_downloading,
+	/* stopped, telling the player why */
+	_client_failed,
+};
+
+static struct
+{
+	short state;
+	/* the host's map, as its game names it (levels\...\<name>), and its file name */
+	char map_name[0x80];
+	char name[MAP_NAME_SIZE];
+	/* each file's size from the host (NONE: none to send), and which are known */
+	long sizes[NUMBER_OF_MAP_DOWNLOAD_FILES];
+	short sizes_known;
+	/* the file being downloaded, how much of it has arrived and been asked for */
+	byte file;
+	long received;
+	long requested;
+	FILE *stream;
+	unsigned long heard_time;
+	char failure[128];
+	/* the screen's button with the focus, and the held direction */
+	short selected;
+	struct overlay_repeat repeat;
+} client;
+
+static void client_path(
+	byte file,
+	boolean part,
+	char path[PATH_SIZE])
+{
+	snprintf(path, PATH_SIZE, "%s%s%s%s", DOWNLOADED_MAPS_DIRECTORY, client.name,
+		file == _map_download_map ? ".map" : ".bmp", part ? ".part" : "");
+}
+
+static void client_send_request(
+	byte file,
+	long offset,
+	long length)
+{
+	struct map_download_request request;
+
+	csmemset(&request, 0, sizeof(request));
+	csmemcpy(request.map_name, client.name, MAP_NAME_SIZE);
+	request.file = file;
+	request.offset = offset;
+	request.length = length;
+	distributed_fill_header(&request, _distributed_message_map_request, 1, sizeof(request));
+	network_distributed_client_send_reliably(&request, sizeof(request));
+}
+
+/* closes and deletes a file half downloaded */
+static void client_discard_part(
+	void)
+{
+	char path[PATH_SIZE];
+
+	if (!client.stream)
+		return;
+	fclose(client.stream);
+	client.stream = NULL;
+	client_path(client.file, TRUE, path);
+	DeleteFileA(path);
+}
+
+static void client_forget(
+	void)
+{
+	client_discard_part();
+	client.state = _client_idle;
+}
+
+static void client_fail(
+	char const *reason)
+{
+	client_discard_part();
+	snprintf(client.failure, sizeof(client.failure), "%s", reason);
+	client.state = _client_failed;
+	client.selected = 0;
+	error(_error_silent, "map download: %s: %s", client.name, reason);
+}
+
+/* the player chose to go: the download dropped, and the game left */
+static void client_leave(
+	void)
+{
+	client_forget();
+	network_game_abort();
+}
+
+/* asks for more of the file, up to WINDOW_BYTES beyond what has arrived */
+static void client_request_more(
+	void)
+{
+	long size = client.sizes[client.file];
+
+	while (client.requested < size && client.requested - client.received < WINDOW_BYTES)
+	{
+		long length = MIN(REQUEST_BYTES, size - client.requested);
+
+		client_send_request(client.file, client.requested, length);
+		client.requested += length;
+	}
+}
+
+static boolean client_start_file(
+	byte file)
+{
+	char path[PATH_SIZE];
+
+	CreateDirectoryA(DOWNLOADED_MAPS_DIRECTORY, NULL);
+	client.file = file;
+	client.received = 0;
+	client.requested = 0;
+	client_path(file, TRUE, path);
+	client.stream = fopen(path, "wb");
+	if (!client.stream)
+		return FALSE;
+	client.heard_time = system_milliseconds();
+	client_request_more();
+
+	return TRUE;
+}
+
+/* whether the picture downloaded is a bitmap the menus can read */
+static boolean client_picture_valid(
+	char const *path)
+{
+	FILE *stream = fopen(path, "rb");
+	struct bmp_file_picture picture;
+	uint8_t *contents = NULL;
+	long size = 0;
+	boolean valid = FALSE;
+
+	if (!stream)
+		return FALSE;
+	if (fseek(stream, 0, SEEK_END) == 0 && (size = ftell(stream)) > 0 && size <= MAXIMUM_PICTURE_BYTES &&
+		fseek(stream, 0, SEEK_SET) == 0 && (contents = malloc((size_t)size)) != NULL &&
+		fread(contents, 1, (size_t)size, stream) == (size_t)size)
+	{
+		valid = bmp_file_open(contents, (uint32_t)size, &picture) == _bmp_file_status_ok;
+	}
+	free(contents);
+	fclose(stream);
+
+	return valid;
+}
+
+/* a file has all arrived: checked, and kept under its own name, or deleted */
+static void client_finish_file(
+	void)
+{
+	char part_path[PATH_SIZE];
+	char path[PATH_SIZE];
+	boolean valid;
+
+	fclose(client.stream);
+	client.stream = NULL;
+	client_path(client.file, TRUE, part_path);
+	client_path(client.file, FALSE, path);
+	valid = client.file == _map_download_map ?
+		custom_edition_cache_file_is_map(part_path) || cache_files_xbox_map_playable(part_path) :
+		client_picture_valid(part_path);
+	if (!valid)
+	{
+		DeleteFileA(part_path);
+		/* (a map is the point; without its picture, the menus show the
+		unknown level's) */
+		if (client.file == _map_download_map)
+		{
+			client_fail("What the host sent isn't a Halo map this game can play. It was deleted.");
+			return;
+		}
+		error(_error_silent, "map download: %s: the picture isn't a bitmap; deleted", client.name);
+	}
+	else
+	{
+		DeleteFileA(path);
+		MoveFileA(part_path, path);
+	}
+	if (client.file == _map_download_map && client.sizes[_map_download_picture] != NONE)
+	{
+		if (!client_start_file(_map_download_picture))
+			client_fail("The picture couldn't be saved.");
+		return;
+	}
+	error(_error_silent, "map download: %s: done", client.name);
+	client.state = _client_idle;
+	main_set_multiplayer_map_name(client.map_name);
+}
+
+static void client_handle_answer(
+	struct map_download_answer const *answer,
+	word size)
+{
+	char name[MAP_NAME_SIZE];
+
+	csmemcpy(name, answer->map_name, MAP_NAME_SIZE);
+	name[MAP_NAME_SIZE - 1] = 0;
+	if (client.state == _client_idle || client.state == _client_failed || csstrcmp(name, client.name) ||
+		answer->file >= NUMBER_OF_MAP_DOWNLOAD_FILES || answer->data_size > CHUNK_BYTES ||
+		size != ANSWER_HEAD_BYTES + answer->data_size)
+	{
+		return;
+	}
+	client.heard_time = system_milliseconds();
+	if (client.state == _client_sizing && answer->offset == NONE)
+	{
+		long most = maximum_file_bytes(answer->file);
+
+		client.sizes[answer->file] = answer->size > 0 && answer->size <= most ? answer->size : NONE;
+		SET_FLAG(client.sizes_known, answer->file, TRUE);
+		if (TEST_FLAG(client.sizes_known, _map_download_map) && client.sizes[_map_download_map] == NONE)
+			client_fail("The host can't send this map.");
+		else if (client.sizes[_map_download_map] != NONE && client.sizes[_map_download_map] < CACHE_HEADER_BYTES)
+			client_fail("The host's map isn't a Halo map.");
+		else if (client.sizes_known == FLAG(NUMBER_OF_MAP_DOWNLOAD_FILES) - 1)
+			client.state = _client_asking;
+		return;
+	}
+	if (client.state != _client_downloading || answer->file != client.file || answer->offset != client.received ||
+		answer->size != client.sizes[client.file] || client.received + answer->data_size > client.sizes[client.file])
+	{
+		return;
+	}
+	/* (the first piece shows what the file is: a cache header, or a bitmap's
+	"BM", before any more of it is taken) */
+	if (answer->offset == 0 &&
+		(client.file == _map_download_map ?
+			answer->data_size < CACHE_HEADER_BYTES || memcmp(answer->data, "daeh", 4) ||
+				memcmp(answer->data + CACHE_FOOTER_OFFSET, "toof", 4) :
+			answer->data_size < 2 || memcmp(answer->data, "BM", 2)))
+	{
+		if (client.file == _map_download_map)
+			client_fail("What the host is sending isn't a Halo map. Nothing was kept.");
+		else
+		{
+			client_discard_part();
+			client.state = _client_idle;
+			main_set_multiplayer_map_name(client.map_name);
+		}
+		return;
+	}
+	if (fwrite(answer->data, 1, answer->data_size, client.stream) != answer->data_size)
+	{
+		client_fail("The map couldn't be saved. Is the disk full?");
+		return;
+	}
+	client.received += answer->data_size;
+	if (client.received == client.sizes[client.file])
+		client_finish_file();
+	else
+		client_request_more();
+}
+
+/* (the client's machine gone from the game: whatever it was downloading
+dropped) */
+static void client_forget_if_disconnected(
+	void)
+{
+	if (client.state != _client_idle && !global_network_game_client_get())
+		client_forget();
+}
+
+#endif
+
+/* ---------- public code */
+
+boolean map_download_message(
+	byte type)
+{
+	return type == _distributed_message_map_request || type == _distributed_message_map_answer;
+}
+
+void map_download_handle_message(
+	long machine_index,
+	byte type,
+	void const *data,
+	word size)
+{
+	if (type == _distributed_message_map_request)
+	{
+		if (machine_index != NONE && size == sizeof(struct map_download_request))
+			host_handle_request(machine_index, (struct map_download_request const *)data);
+		return;
+	}
+#ifdef HALO_GAME_BROWSER
+	if (machine_index == NONE && size >= ANSWER_HEAD_BYTES && size <= sizeof(struct map_download_answer))
+		client_handle_answer((struct map_download_answer const *)data, size);
+#endif
+}
+
+boolean map_download_needed(
+	char const *map_name)
+{
+	char const *name = tag_name_strip_path(map_name);
+	char path[PATH_SIZE];
+
+	return map_name_allowed(name) && !custom_edition_cache_map_file(name, path) && !cache_files_map_path(name, path);
+}
+
+#ifdef HALO_GAME_BROWSER
+
+/* ---------- the screen */
+
+enum
+{
+	TITLE_X = 37, TITLE_Y = 22,
+	BODY_X = 37, BODY_Y = 90, BODY_WIDTH = 566,
+	BAR_Y = 210, BAR_HEIGHT = 14,
+	GLASS_TOP = 66, GLASS_BOTTOM = 446,
+	MAXIMUM_BUTTONS = 2,
+};
+
+static char const *const asking_buttons[] = { "DOWNLOAD", "LEAVE" };
+static char const *const sizing_buttons[] = { "LEAVE" };
+static char const *const downloading_buttons[] = { "CANCEL" };
+
+static short screen_buttons(
+	char const *const **labels)
+{
+	switch (client.state)
+	{
+	case _client_asking: *labels = asking_buttons; return NUMBEROF(asking_buttons);
+	case _client_downloading: *labels = downloading_buttons; return NUMBEROF(downloading_buttons);
+	default: *labels = sizing_buttons; return NUMBEROF(sizing_buttons);
+	}
+}
+
+static void screen_press(
+	short button)
+{
+	if (client.state == _client_asking && button == 0)
+	{
+		client.state = _client_downloading;
+		if (!client_start_file(_map_download_map))
+			client_fail("The map couldn't be saved. Is the disk full?");
+		return;
+	}
+	client_leave();
+}
+
+static void megabytes(
+	long bytes,
+	char *text,
+	size_t size)
+{
+	snprintf(text, size, "%.1f MB", (double)bytes / (1024.0 * 1024.0));
+}
+
+boolean map_download_begin(
+	char const *map_name)
+{
+	if (!ui_overlay_available() || !global_network_game_client_get())
+		return FALSE;
+	client_forget();
+	csmemset(&client, 0, sizeof(client));
+	snprintf(client.map_name, sizeof(client.map_name), "%s", map_name);
+	snprintf(client.name, sizeof(client.name), "%s", tag_name_strip_path(map_name));
+	client.sizes[_map_download_map] = NONE;
+	client.sizes[_map_download_picture] = NONE;
+	client.state = _client_sizing;
+	client.heard_time = system_milliseconds();
+	client_send_request(_map_download_map, NONE, 0);
+	client_send_request(_map_download_picture, NONE, 0);
+
+	return TRUE;
+}
+
+boolean map_download_screen_active(
+	void)
+{
+	client_forget_if_disconnected();
+
+	return client.state != _client_idle && ui_overlay_available();
+}
+
+void map_download_screen_process(
+	void)
+{
+	struct event_record event;
+	char const *const *labels;
+	short count = screen_buttons(&labels);
+	short direction = 0;
+
+	if ((client.state == _client_sizing || client.state == _client_downloading) &&
+		system_milliseconds() - client.heard_time > SILENCE_MILLISECONDS)
+	{
+		client_fail("The host stopped answering. It may be on a version that can't send maps.");
+	}
+	while (client.state != _client_idle && get_next_event(&event, NONE))
+	{
+		if (event.type == OVERLAY_EVENT_LEFT_STICK)
+			direction = event.data.stick.x == SHORT_MIN ? -1 : event.data.stick.x == SHORT_MAX ? 1 : direction;
+		else if (event.type == OVERLAY_EVENT_BUTTON)
+		{
+			switch (event.data.button.index)
+			{
+			case _gamepad_binary_button_dpad_left: direction = -1; break;
+			case _gamepad_binary_button_dpad_right: direction = 1; break;
+			case _gamepad_analog_button_a: screen_press(client.selected); break;
+			case _gamepad_analog_button_b: client_leave(); break;
+			default: break;
+			}
+		}
+		count = screen_buttons(&labels);
+	}
+	if (overlay_repeat_step(&client.repeat, direction != 0))
+		client.selected = (short)PIN(client.selected + direction, 0, count - 1);
+	client.selected = (short)PIN(client.selected, 0, count - 1);
+	/* (the menus behind get no input while this is up) */
+	event_manager_flush();
+}
+
+void map_download_screen_pointer(
+	struct halo_ui_pointer const *pointer)
+{
+	char const *const *labels;
+	short count = screen_buttons(&labels);
+	short button;
+
+	if (pointer->moved)
+	{
+		button = overlay_button_at(labels, count, BODY_X, OVERLAY_BUTTON_Y, pointer->x, pointer->y);
+		if (button != NONE)
+			client.selected = button;
+	}
+	if (pointer->left_clicks)
+	{
+		button = overlay_button_at(labels, count, BODY_X, OVERLAY_BUTTON_Y, pointer->click_x, pointer->click_y);
+		if (button != NONE)
+			screen_press(button);
+	}
+}
+
+void map_download_screen_render(
+	void)
+{
+	struct overlay_palette const *palette = overlay_palette_current();
+	float margin = (float)((halo_screen_width() - 640) / 2 + 2);
+	struct overlay_button_colors colors;
+	char const *const *labels;
+	short count = screen_buttons(&labels);
+	char display_name[96];
+	char text[160];
+	char sizes[2][24];
+
+	/* Glassed darkens a band over the scene; Vanilla covers the screen */
+	if (palette->glassed)
+	{
+		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
+		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, palette->rule);
+		ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, palette->rule);
+	}
+	else
+	{
+		ui_overlay_gradient(-margin, 0, 640 + 2 * margin, 480, 0, palette->backdrop, palette->backdrop_bottom);
+		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 1.0f, 0, palette->rule);
+		ui_overlay_rect(BODY_X - 8, BODY_Y - 10, BODY_WIDTH + 16, BAR_Y + BAR_HEIGHT + 66 - BODY_Y, palette->radius,
+			palette->panel);
+	}
+	ui_overlay_text(UI_FONT_BOLD, 24.0f, TITLE_X, TITLE_Y, UI_ALIGN_LEFT, palette->title, "MAP DOWNLOAD");
+
+	overlay_map_name(client.map_name, display_name, sizeof(display_name));
+	overlay_text_fitted(UI_FONT_BOLD, 14.0f, BODY_X, BODY_Y, BODY_WIDTH, palette->text, display_name);
+	megabytes(client.sizes[_map_download_map], sizes[0], sizeof(sizes[0]));
+	megabytes(client.sizes[_map_download_picture], sizes[1], sizeof(sizes[1]));
+	switch (client.state)
+	{
+	case _client_sizing:
+		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, UI_ALIGN_LEFT, palette->dim,
+			"This game's map isn't installed. Asking the host for it\xE2\x80\xA6");
+		break;
+	case _client_asking:
+		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, UI_ALIGN_LEFT, palette->text,
+			"This game's map isn't installed. The host can send it to you.");
+		if (client.sizes[_map_download_picture] != NONE)
+			snprintf(text, sizeof(text), "The map, %s, and its picture, %s.", sizes[0], sizes[1]);
+		else
+			snprintf(text, sizeof(text), "The map, %s.", sizes[0]);
+		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 44, UI_ALIGN_LEFT, palette->text, text);
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, BODY_X, BODY_Y + 74, UI_ALIGN_LEFT, palette->dim,
+			"Only a Halo map and its picture are taken, each checked to really be one before it's kept.");
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, BODY_X, BODY_Y + 88, UI_ALIGN_LEFT, palette->dim,
+			"They're saved in your downloaded_maps folder.");
+		break;
+	case _client_downloading:
+	{
+		long size = client.sizes[client.file];
+		float done = size > 0 ? (float)client.received / (float)size : 0.0f;
+		char received[24];
+
+		megabytes(client.received, received, sizeof(received));
+		snprintf(text, sizeof(text), "Downloading the %s\xE2\x80\xA6 %s of %s",
+			client.file == _map_download_map ? "map" : "picture", received, sizes[client.file]);
+		ui_overlay_text(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, UI_ALIGN_LEFT, palette->text, text);
+		ui_overlay_rect(BODY_X, BAR_Y, BODY_WIDTH, BAR_HEIGHT, palette->radius / 2, palette->panel);
+		ui_overlay_rect(BODY_X, BAR_Y, BODY_WIDTH * done, BAR_HEIGHT, palette->radius / 2, palette->row_selected);
+		ui_overlay_outline(BODY_X, BAR_Y, BODY_WIDTH, BAR_HEIGHT, palette->radius / 2, 0.75f, palette->panel_edge);
+		break;
+	}
+	case _client_failed:
+		overlay_text_fitted(UI_FONT_REGULAR, 10.0f, BODY_X, BODY_Y + 26, BODY_WIDTH, OVERLAY_COLOR_POOR,
+			client.failure);
+		break;
+	}
+
+	colors.fill = palette->panel;
+	colors.fill_lit = palette->row_selected;
+	colors.edge = palette->panel_edge;
+	colors.text = palette->prompt;
+	colors.text_lit = palette->title;
+	colors.text_disabled = palette->dim;
+	colors.radius = palette->radius;
+	overlay_buttons_draw(labels, count, BODY_X, OVERLAY_BUTTON_Y, client.selected, 0, &colors);
+}
+
+#else
+
+boolean map_download_begin(
+	char const *map_name)
+{
+	return FALSE;
+}
+
+#endif

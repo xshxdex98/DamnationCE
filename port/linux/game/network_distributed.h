@@ -106,6 +106,10 @@ enum
 	/* co-op: where the host's devices are (doors, elevators), when they move
 	(network_coop.c) */
 	_distributed_message_coop_device_states = 77,
+	/* a joining client asks for the host's custom map, and the host answers
+	(map_download.c) */
+	_distributed_message_map_request = 78,
+	_distributed_message_map_answer = 79,
 
 	NUMBER_OF_DISTRIBUTED_MESSAGES
 };
@@ -181,6 +185,12 @@ a longer message is split where a batch is full */
 	((short)MIN(255, (MAXIMUM_MESSAGE_SIZE - sizeof(struct distributed_message_header)) / sizeof(type)))
 
 /* ---------- prototypes/NETWORK_DISTRIBUTED.C */
+
+/* fills in a message's header, for one sent other than by distributed_send */
+void distributed_fill_header(void *message, byte type, short count, word size);
+/* whether a message from this client the host takes before the client has
+loaded its game (a map download's) */
+boolean network_distributed_message_before_game(word const *message, word size);
 
 /* sends a message (its header filled in here) where destination says: the
 unreliable ones gathered into one datagram a machine each tick */

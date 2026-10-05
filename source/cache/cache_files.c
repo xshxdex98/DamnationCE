@@ -135,6 +135,7 @@ symbols in this file:
 #include "scenario/scenario_definitions.h"
 #include "sound/sound_manager.h"
 #include "custom_edition_cache.h"
+#include "map_download.h" /* port: port/linux/game/map_download.c */
 
 /* ---------- constants */
 
@@ -704,6 +705,64 @@ char const *cache_files_multiplayer_region(
 	return cache_files_build_region(cache_file_globals.header.build);
 }
 
+/* port: whether a file of that path can be opened */
+static boolean cache_files_path_exists(
+	char const *path)
+{
+	HANDLE file = CreateFileA(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+
+	if (file == INVALID_HANDLE_VALUE)
+		return FALSE;
+	CloseHandle(file);
+
+	return TRUE;
+}
+
+/* port: a cache file's header, read from the file at that path and checked */
+static boolean cache_files_read_header(
+	char const *path,
+	struct cache_file_header *header)
+{
+	HANDLE file = CreateFileA(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+	unsigned long bytes_read;
+	boolean result;
+
+	if (file == INVALID_HANDLE_VALUE)
+		return FALSE;
+	result = ReadFile(file, header, sizeof(*header), &bytes_read, NULL) &&
+		bytes_read == sizeof(*header) &&
+		cache_file_header_verify(header, path, FALSE);
+	CloseHandle(file);
+
+	return result;
+}
+
+boolean cache_files_map_path(
+	char const *map_name,
+	char path[256])
+{
+	char const *name = tag_name_strip_path(map_name);
+
+	snprintf(path, 256, "%s%s.map", cache_files_map_directory(), name);
+	if (cache_files_path_exists(path))
+		return TRUE;
+	snprintf(path, 256, "%s%s.map", DOWNLOADED_MAPS_DIRECTORY, name);
+	if (cache_files_path_exists(path))
+		return TRUE;
+	/* (neither: the maps folder's, as missing maps are told of) */
+	snprintf(path, 256, "%s%s.map", cache_files_map_directory(), name);
+
+	return FALSE;
+}
+
+boolean cache_files_xbox_map_playable(
+	char const *path)
+{
+	struct cache_file_header header;
+
+	return cache_files_read_header(path, &header) && cache_files_build_region(header.build) != NULL;
+}
+
 /* whether the named map plays multiplayer with the others: FALSE only for
 a map whose header is of a build not listed above (a map whose header cannot
 be read is left to precaching, which tells of a missing map); build gets the
@@ -717,7 +776,6 @@ boolean cache_files_map_plays_multiplayer(
 {
 	struct cache_file_header header;
 	char path[256];
-	HANDLE file;
 	boolean result = TRUE;
 
 	build[0] = 0;
@@ -729,21 +787,12 @@ boolean cache_files_map_plays_multiplayer(
 	only logged that it was refused */
 	if (custom_edition_cache_playable(tag_name_strip_path(map_name)))
 		return TRUE;
-	snprintf(path, sizeof(path), "%s%s.map", cache_files_map_directory(), tag_name_strip_path(map_name));
-	file = CreateFileA(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
-	if (file != INVALID_HANDLE_VALUE)
+	cache_files_map_path(map_name, path);
+	if (cache_files_read_header(path, &header))
 	{
-		unsigned long bytes_read;
-
-		if (ReadFile(file, &header, sizeof(header), &bytes_read, NULL) &&
-			bytes_read == sizeof(header) &&
-			cache_file_header_verify(&header, path, FALSE))
-		{
-			csstrncpy(build, header.build, 0x20);
-			build[0x1F] = 0;
-			result = cache_files_build_region(header.build) != NULL;
-		}
-		CloseHandle(file);
+		csstrncpy(build, header.build, 0x20);
+		build[0x1F] = 0;
+		result = cache_files_build_region(header.build) != NULL;
 	}
 
 	return result;

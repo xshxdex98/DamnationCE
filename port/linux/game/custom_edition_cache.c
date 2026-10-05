@@ -28,6 +28,7 @@ where its offset falls in their combined offset space.
 #include "scenario/scenario_definitions.h"
 #include "cache_file_formats.h"
 #include "custom_edition_cache.h"
+#include "map_download.h"
 
 #include <stdlib.h>
 
@@ -139,14 +140,19 @@ static boolean file_path_exists(
 
 /* the file that holds the map `map_name` names: <maps>\<name>.map, or the
 OpenSauce <maps>\<name>.yelo when there is no .map */
-/* the maps folders looked in, in order: the game's, then the Custom Edition
-install's */
+/* the maps folders looked in, in order: the game's, the Custom Edition
+install's, then the maps downloaded from hosts (map_download.c) */
 static char const *maps_folder(
 	short index)
 {
-	return index == 0 ? cache_files_map_directory() : CUSTOM_EDITION_INSTALL_MAP_DIRECTORY;
+	switch (index)
+	{
+	case 0: return cache_files_map_directory();
+	case 1: return CUSTOM_EDITION_INSTALL_MAP_DIRECTORY;
+	default: return DOWNLOADED_MAPS_DIRECTORY;
+	}
 }
-#define NUMBER_OF_MAPS_FOLDERS 2
+#define NUMBER_OF_MAPS_FOLDERS 3
 
 /* whether <folder><name><extension>, made in path, exists */
 static boolean maps_folder_has(
@@ -467,6 +473,38 @@ void opensauce_cache_path_find(
 	}
 
 	return;
+}
+
+boolean custom_edition_cache_map_file(
+	char const *map_name,
+	char *path)
+{
+	char const *name = tag_name_strip_path(map_name);
+	short folder;
+
+	for (folder = 0; folder < NUMBER_OF_MAPS_FOLDERS; folder++)
+	{
+		if (maps_folder_has(maps_folder(folder), name, MAP_FILE_EXTENSION, path))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+boolean custom_edition_cache_file_is_map(
+	char const *path)
+{
+	struct custom_edition_file file;
+	struct cache_file_identity identity;
+	boolean result;
+
+	if (!custom_edition_file_open(&file, path))
+		return FALSE;
+	result = cache_file_identify(&file.source, &identity) == _cache_file_status_ok &&
+		identity.format == _cache_file_format_custom_edition_cache;
+	custom_edition_file_close(&file);
+
+	return result;
 }
 
 boolean custom_edition_cache_playable(
