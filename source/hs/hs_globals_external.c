@@ -920,8 +920,9 @@ typedef char verify_hs_external_global_definition_size[
 
 /* ---------- globals */
 
-/* port: the Xbox's 443, then two of Halo PC's (below) */
-short const hs_external_global_count = 443 + 2;
+/* port: the Xbox's 443, then Halo PC's that its maps' scripts use and the
+Xbox's engine has none of (below) */
+short const hs_external_global_count = 443 + 14;
 
 extern boolean allow_out_of_sync;
 extern boolean breakable_surface_effect_enabled;
@@ -1952,13 +1953,52 @@ display.player_names setting, and there is no developer mode (0, as on
 Halo PC). They come after the Xbox's: Xbox maps refer to globals by their
 place in the table, Custom Edition maps by name (custom_edition_scripts.c). */
 static boolean multiplayer_draw_teammates_names;
-static struct hs_external_global_definition multiplayer_draw_teammates_names_definition =
-	{ "multiplayer_draw_teammates_names", _hs_type_boolean, 0, &multiplayer_draw_teammates_names };
+static struct hs_external_global_definition multiplayer_draw_teammates_names_definition = {
+	"multiplayer_draw_teammates_names", _hs_type_boolean, 0, &multiplayer_draw_teammates_names };
 static short developer_mode;
-static struct hs_external_global_definition developer_mode_definition =
-	{ "developer_mode", _hs_type_short_integer, 0, &developer_mode };
+static struct hs_external_global_definition developer_mode_definition = {
+	"developer_mode", _hs_type_short_integer, 0, &developer_mode };
+/* (and more of Halo PC's that a map's script may set: its settings of the
+server, display, sound and controls, which change nothing here and read as
+they were set, 0 or false at first) */
+static real multiplayer_hit_sound_volume;
+static struct hs_external_global_definition multiplayer_hit_sound_volume_definition = {
+	"multiplayer_hit_sound_volume", _hs_type_real, 0, &multiplayer_hit_sound_volume };
+static boolean hud_filter;
+static struct hs_external_global_definition hud_filter_definition = {
+	"hud_filter", _hs_type_boolean, 0, &hud_filter };
+static boolean object_prediction;
+static struct hs_external_global_definition object_prediction_definition = {
+	"object_prediction", _hs_type_boolean, 0, &object_prediction };
+static boolean sv_public;
+static struct hs_external_global_definition sv_public_definition = {
+	"sv_public", _hs_type_boolean, 0, &sv_public };
+static short sv_tk_ban;
+static struct hs_external_global_definition sv_tk_ban_definition = {
+	"sv_tk_ban", _hs_type_short_integer, 0, &sv_tk_ban };
+static long sv_mapcycle_timeout;
+static struct hs_external_global_definition sv_mapcycle_timeout_definition = {
+	"sv_mapcycle_timeout", _hs_type_long_integer, 0, &sv_mapcycle_timeout };
+static short rasterizer_effects_level;
+static struct hs_external_global_definition rasterizer_effects_level_definition = {
+	"rasterizer_effects_level", _hs_type_short_integer, 0, &rasterizer_effects_level };
+static boolean rasterizer_fps;
+static struct hs_external_global_definition rasterizer_fps_definition = {
+	"rasterizer_fps", _hs_type_boolean, 0, &rasterizer_fps };
+static real mouse_acceleration;
+static struct hs_external_global_definition mouse_acceleration_definition = {
+	"mouse_acceleration", _hs_type_real, 0, &mouse_acceleration };
+static boolean error_suppress_all;
+static struct hs_external_global_definition error_suppress_all_definition = {
+	"error_suppress_all", _hs_type_boolean, 0, &error_suppress_all };
+static boolean director_camera_switching;
+static struct hs_external_global_definition director_camera_switching_definition = {
+	"director_camera_switching", _hs_type_boolean, 0, &director_camera_switching };
+static short rasterizer_frame_drop_ms;
+static struct hs_external_global_definition rasterizer_frame_drop_ms_definition = {
+	"rasterizer_frame_drop_ms", _hs_type_short_integer, 0, &rasterizer_frame_drop_ms };
 
-struct hs_external_global_definition *hs_external_globals[443 + 2] =
+struct hs_external_global_definition *hs_external_globals[443 + 14] =
 {
 	&rasterizer_near_clip_distance_definition,
 	&rasterizer_far_clip_distance_definition,
@@ -2405,6 +2445,18 @@ struct hs_external_global_definition *hs_external_globals[443 + 2] =
 	&run_game_scripts_definition,
 	&multiplayer_draw_teammates_names_definition,
 	&developer_mode_definition,
+	&multiplayer_hit_sound_volume_definition,
+	&hud_filter_definition,
+	&object_prediction_definition,
+	&sv_public_definition,
+	&sv_tk_ban_definition,
+	&sv_mapcycle_timeout_definition,
+	&rasterizer_effects_level_definition,
+	&rasterizer_fps_definition,
+	&mouse_acceleration_definition,
+	&error_suppress_all_definition,
+	&director_camera_switching_definition,
+	&rasterizer_frame_drop_ms_definition,
 };
 
 /* ---------- public code */
