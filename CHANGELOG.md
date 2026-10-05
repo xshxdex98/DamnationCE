@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.18
+
+### Custom Edition maps
+
+- Maps whose scripts use something this engine doesn't have no longer halt
+  the game a moment into play ("script node index ... is unused or
+  changed"). Those calls were made harmless, but the engine's clean-up of
+  script data then threw them away while the scripts still used them.
+- New tool, tools/custom_edition_script_names.py: lists the functions and
+  globals a map's scripts use that this build lacks, checks every call's
+  arguments, and writes a script back out as source. Every one of the 35
+  Custom Edition maps checked has all its script names here.
+
+Still network version 16.
+
 ## 0.3.17
 
 ### Custom Edition maps (adapted from ChupathingyCE's custom map work, by MrMilenko)
