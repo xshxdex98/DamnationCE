@@ -2839,6 +2839,7 @@ symbols in this file:
 #include "units/units.h"
 #include "units/vehicles.h"
 #include "custom_edition_cache.h" /* port: port/linux/game/custom_edition_cache.c */
+#include "coop_scripts.h" /* port: port/linux/game/coop_scripts.c */
 
 /* ---------- constants */
 
@@ -14280,7 +14281,8 @@ HS_EVALUATE_RETURN_BOOLEAN_NO_ARGUMENTS(player_control_action_test_look_relative
 HS_EVALUATE_RETURN_BOOLEAN_NO_ARGUMENTS(player_control_action_test_look_relative_right_evaluate, player_control_action_test_look_relative_right)
 HS_EVALUATE_RETURN_BOOLEAN_NO_ARGUMENTS(player_control_action_test_look_relative_all_directions_evaluate, player_control_action_test_look_relative_all_directions)
 HS_EVALUATE_RETURN_BOOLEAN_NO_ARGUMENTS(player_control_action_test_move_relative_all_directions_evaluate, player_control_action_test_move_relative_all_directions)
-HS_EVALUATE_VOID_FROM_ARGUMENTS(player_add_equipment_evaluate, struct hs_arguments_long_word_boolean, (player_add_equipment(arguments->value0, arguments->value1, arguments->value2)))
+/* port: in network co-op, also for the players the scripts can't name (coop_scripts.c) */
+HS_EVALUATE_VOID_FROM_ARGUMENTS(player_add_equipment_evaluate, struct hs_arguments_long_word_boolean, (coop_scripts_player_add_equipment(arguments->value0, arguments->value1, arguments->value2)))
 HS_EVALUATE_VOID_FROM_ARGUMENTS(debug_player_teleport_evaluate, struct hs_arguments_short_word, (debug_player_teleport(arguments->value0, arguments->value1)))
 HS_EVALUATE_VOID_STRING(main_set_map_name_evaluate, main_set_map_name)
 HS_EVALUATE_VOID_STRING(main_set_multiplayer_map_name_evaluate, main_set_multiplayer_map_name)
