@@ -108,6 +108,8 @@ cache_files_structures.hpp, s_cache_tag_header and s_cache_tag_instance) */
 #define TAG_INDEX_SIGNATURE_OFFSET 0x24
 #define TAG_INSTANCE_BYTES 0x20
 #define TAG_INSTANCE_GROUP_OFFSET 0x00
+#define TAG_INSTANCE_PARENT_GROUP_OFFSET 0x04
+#define NO_GROUP_TAG 0xFFFFFFFFUL
 #define TAG_INSTANCE_HANDLE_OFFSET 0x0C
 #define TAG_INSTANCE_NAME_OFFSET 0x10
 #define TAG_INSTANCE_ADDRESS_OFFSET 0x14
@@ -245,6 +247,15 @@ overlays, whose first field names an animation of the graph or none */
 #define ANIMATION_GRAPH_BYTES 0x80
 #define ANIMATION_GRAPH_OBJECT_OVERLAYS_OFFSET 0x00
 #define ANIMATION_GRAPH_ANIMATIONS_OFFSET 0x74
+#define ANIMATION_GRAPH_NODES_OFFSET 0x68
+#define ANIMATION_GRAPH_NODE_BYTES 0x40
+#define GBXMODEL_BYTES 0xE8
+#define GBXMODEL_NODES_OFFSET 0xB8
+#define GBXMODEL_NODE_BYTES 0x9C
+/* a node's next sibling, first child and parent (shorts), in models and
+animation graphs alike */
+#define NODE_LINKS_OFFSET 0x20
+#define MAXIMUM_REPAIRED_NODES 64
 #define ANIMATION_GRAPH_OBJECT_OVERLAY_BYTES 0x14
 #define ANIMATION_GRAPH_OBJECT_OVERLAY_ANIMATION_INDEX_OFFSET 0x00
 #define NO_BLOCK_INDEX (-1)
@@ -2270,6 +2281,21 @@ enum cache_file_status custom_edition_cache_load(
 	/* the scenario and its structure BSPs */
 	scenario_handle = read_u32(tag_index + TAG_INDEX_SCENARIO_OFFSET);
 	report->scenario_tag_index = (int32_t)(scenario_handle & ABSOLUTE_INDEX_MASK);
+	/* Map protection can rename the scenario's group (to 'prot', say). Halo
+	PC used whatever tag the header named, so give it the scenario's group. */
+	if ((scenario_handle & ABSOLUTE_INDEX_MASK) < (uint32_t)tag_count)
+	{
+		uint8_t *scenario_instance = tag_instances + (scenario_handle & ABSOLUTE_INDEX_MASK) * TAG_INSTANCE_BYTES;
+
+		if (read_u32(scenario_instance + TAG_INSTANCE_HANDLE_OFFSET) == scenario_handle &&
+			read_u32(scenario_instance + TAG_INSTANCE_GROUP_OFFSET) != SCENARIO_GROUP_TAG)
+		{
+			write_u32(scenario_instance + TAG_INSTANCE_GROUP_OFFSET, SCENARIO_GROUP_TAG);
+			write_u32(scenario_instance + TAG_INSTANCE_PARENT_GROUP_OFFSET, NO_GROUP_TAG);
+			write_u32(scenario_instance + TAG_INSTANCE_PARENT_GROUP_OFFSET + 4, NO_GROUP_TAG);
+			report->scenario_regrouped = 1;
+		}
+	}
 	if ((scenario_handle & ABSOLUTE_INDEX_MASK) >= (uint32_t)tag_count ||
 		read_u32(tag_instances + (scenario_handle & ABSOLUTE_INDEX_MASK) * TAG_INSTANCE_BYTES + TAG_INSTANCE_HANDLE_OFFSET) != scenario_handle ||
 		read_u32(tag_instances + (scenario_handle & ABSOLUTE_INDEX_MASK) * TAG_INSTANCE_BYTES + TAG_INSTANCE_GROUP_OFFSET) != SCENARIO_GROUP_TAG ||
@@ -2811,6 +2837,88 @@ static void animation_graph_overlays_repair(
 	return;
 }
 
+/* Repairs a model's or animation graph's node tree (the nodes block at
+`block`). The game walks the tree from node 0 by next sibling and first child,
+so a link that loops back never ends and one past the nodes reads past the
+array. Some Custom Edition maps have both (a sibling link back to the pelvis,
+parents off by 256). Links past the nodes and links to a node already reached
+are cut; a parent past the nodes becomes the parent found in the walk. */
+static void node_links_repair(
+	struct load_state const *state,
+	uint8_t const *block,
+	uint32_t node_bytes,
+	struct custom_edition_conversion_report *report)
+{
+	int32_t node_count;
+	uint32_t nodes_offset;
+	uint8_t reached[MAXIMUM_REPAIRED_NODES];
+	int16_t parents[MAXIMUM_REPAIRED_NODES];
+	int16_t queue[MAXIMUM_REPAIRED_NODES];
+	int32_t read_index = 0, write_index = 0, index;
+
+	if (!loaded_block_get(block, CUSTOM_EDITION_TAG_CACHE_ADDRESS, state->used_bytes, node_bytes,
+			&node_count, &nodes_offset) ||
+		node_count <= 0 || node_count > MAXIMUM_REPAIRED_NODES)
+	{
+		return;
+	}
+	for (index = 0; index < node_count; index++)
+	{
+		uint8_t *links = state->tag_cache + nodes_offset + (uint32_t)index * node_bytes + NODE_LINKS_OFFSET;
+		int link;
+
+		for (link = 0; link < 2; link++)
+		{
+			int16_t linked = read_s16(links + link * 2);
+
+			if (linked != NO_BLOCK_INDEX && (linked < 0 || linked >= node_count))
+			{
+				write_u16(links + link * 2, (uint16_t)NO_BLOCK_INDEX);
+				report->node_links_cut++;
+			}
+		}
+	}
+	memset(reached, 0, sizeof(reached));
+	reached[0] = 1;
+	parents[0] = NO_BLOCK_INDEX;
+	queue[write_index++] = 0;
+	while (read_index < write_index)
+	{
+		int16_t node_index = queue[read_index++];
+		uint8_t *links = state->tag_cache + nodes_offset + (uint32_t)node_index * node_bytes + NODE_LINKS_OFFSET;
+		int link;
+
+		/* link 0 is the next sibling (same parent), link 1 the first child */
+		for (link = 0; link < 2; link++)
+		{
+			int16_t linked = read_s16(links + link * 2);
+
+			if (linked == NO_BLOCK_INDEX)
+				continue;
+			if (reached[linked])
+			{
+				write_u16(links + link * 2, (uint16_t)NO_BLOCK_INDEX);
+				report->node_links_cut++;
+				continue;
+			}
+			reached[linked] = 1;
+			parents[linked] = link ? node_index : parents[node_index];
+			queue[write_index++] = linked;
+		}
+	}
+	for (index = 0; index < node_count; index++)
+	{
+		uint8_t *parent = state->tag_cache + nodes_offset + (uint32_t)index * node_bytes + NODE_LINKS_OFFSET + 4;
+		int16_t parent_index = read_s16(parent);
+
+		if (parent_index != NO_BLOCK_INDEX && (parent_index < 0 || parent_index >= node_count))
+		{
+			write_u16(parent, (uint16_t)(reached[index] ? parents[index] : NO_BLOCK_INDEX));
+			report->node_links_cut++;
+		}
+	}
+}
+
 /* This build's hs_allocate takes the scenario's syntax nodes only when they
 are its own number, and otherwise frees them as if they had been allocated:
 an upgraded array whose nodes in use fit in this build's number is made
@@ -3261,6 +3369,13 @@ enum cache_file_status custom_edition_cache_convert(
 			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), ANIMATION_GRAPH_BYTES, &offset))
 		{
 			animation_graph_overlays_repair(&state, offset, report);
+			node_links_repair(&state, state.tag_cache + offset + ANIMATION_GRAPH_NODES_OFFSET, ANIMATION_GRAPH_NODE_BYTES,
+				report);
+		}
+		if (group_tag == GBXMODEL_GROUP_TAG &&
+			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), GBXMODEL_BYTES, &offset))
+		{
+			node_links_repair(&state, state.tag_cache + offset + GBXMODEL_NODES_OFFSET, GBXMODEL_NODE_BYTES, report);
 		}
 		if (group_tag == SOUND_GROUP_TAG &&
 			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), SOUND_DEFINITION_BYTES, &offset))

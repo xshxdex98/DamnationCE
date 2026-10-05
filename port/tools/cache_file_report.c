@@ -307,6 +307,7 @@ static int report_custom_edition_cache(
 		printf("bitmap_data_ranges_checked: %" PRId32 "\n", report.bitmap_data_ranges_checked);
 		printf("sound_sample_ranges_checked: %" PRId32 "\n", report.sound_sample_ranges_checked);
 		printf("relocated_pointers: %" PRId32 "\n", report.relocated_pointer_count);
+		printf("scenario_regrouped: %" PRId32 "\n", report.scenario_regrouped);
 		printf("computed_checksum: 0x%08" PRIx32 "\n", report.computed_checksum);
 		printf("trailing_bytes: 0x%" PRIx32 "\n", report.trailing_bytes);
 		print_flags("warnings", report.warnings, warning_names, NUMBER_OF_CUSTOM_EDITION_WARNINGS);
@@ -327,6 +328,7 @@ static int report_custom_edition_cache(
 			printf("bitmaps_prepared: %" PRId32 "\n", conversion.bitmaps_prepared);
 			printf("script_nodes_reduced: %" PRId32 "\n", conversion.script_nodes_reduced);
 			printf("animation_overlays_disabled: %" PRId32 "\n", conversion.animation_overlays_disabled);
+			printf("node_links_cut: %" PRId32 "\n", conversion.node_links_cut);
 			printf("sounds_undecodable: %" PRId32 "\n", conversion.sounds_undecodable);
 			printf("hud_placements_rescaled: %" PRId32 "\n", conversion.hud_placements_rescaled);
 			printf("score_hint_converted: %" PRId32 "\n", conversion.score_hint_converted);

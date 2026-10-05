@@ -279,6 +279,9 @@ struct custom_edition_load_report
 	uint32_t computed_checksum;
 	uint32_t trailing_bytes;
 	uint32_t warnings;
+	/* 1 when the scenario tag had another group (map protection renames it)
+	and was given the scenario's */
+	int32_t scenario_regrouped;
 };
 
 /* Where Halo PC keeps what a texture holds in other channels than this
@@ -319,6 +322,9 @@ struct custom_edition_conversion_report
 	/* animation graph object overlays that named an animation the graph
 	does not have, made to name none */
 	int32_t animation_overlays_disabled;
+	/* model and animation graph node links cut because they looped back or
+	pointed past the nodes */
+	int32_t node_links_cut;
 	/* sounds in a compression this build cannot decode (Ogg Vorbis), made
 	unplayable */
 	int32_t sounds_undecodable;
