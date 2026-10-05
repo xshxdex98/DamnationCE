@@ -1861,9 +1861,10 @@ short object_get_marker_by_name(
 
 	struct object_datum const *object = object_get(object_index);
 	struct object_definition const *object_definition = object_definition_get(object->definition_index);
-	struct object_datum *matrix_object = object_get(object_index);
-	real_matrix4x3 const *matrices = (real_matrix4x3 *)object_header_block_get(object_index,
-		&matrix_object->object.node_matrices);
+	/* port: while a frame is drawn, the pose the object is drawn in, so what
+	is placed at a marker (names and triangles over players' heads) moves
+	with it smoothly, not a tick ahead (object_get_node_matrices) */
+	real_matrix4x3 const *matrices = object_get_node_matrices(object_index);
 
 	marker = model_get_marker_by_name(
 		object_definition->object.model.index,
