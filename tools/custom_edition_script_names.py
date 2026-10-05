@@ -1,5 +1,7 @@
 """List what the scripts of Custom Edition maps use that this build lacks.
 
+Xbox maps are read too, so a campaign level's scripts can be written out.
+
 A Custom Edition map's compiled scripts keep the name of every function they
 call and every engine global they use (custom_edition_scripts.c finds them
 again by name). This reads those names out of each map's scenario and checks
@@ -21,7 +23,7 @@ import re
 import struct
 import sys
 
-from custom_edition_tag_footprints import Cache, CUSTOM_EDITION_VERSION, read_cache
+from custom_edition_tag_footprints import Cache, CUSTOM_EDITION_VERSION, XBOX_VERSION, read_cache
 
 SOURCE = Path(__file__).resolve().parent.parent / "source" / "hs"
 
@@ -208,7 +210,9 @@ def maps_in(paths):
     for path in map(Path, paths):
         for candidate in sorted(path.glob("*.map")) if path.is_dir() else [path]:
             try:
-                if read_cache(candidate)[0] == CUSTOM_EDITION_VERSION:
+                # (Xbox maps too: their scripts are laid out the same, which
+                # is handy for reading a campaign level's)
+                if read_cache(candidate)[0] in (CUSTOM_EDITION_VERSION, XBOX_VERSION):
                     yield candidate
             except (ValueError, OSError, struct.error):
                 continue
