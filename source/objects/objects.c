@@ -2298,6 +2298,11 @@ void object_export_function_values(
 				break;
 			default:
 				region_index = object_definition->object.function_modes[i]-_object_function_first_region_damage;
+				/* port: a mode that isn't a region's damage exports 0. A Custom
+				Edition map's object can have one; it asserted here and read past
+				the object's regions. */
+				if (region_index<0 || region_index>=MAXIMUM_REGIONS_PER_OBJECT)
+					break;
 				match_assert("c:\\halo\\SOURCE\\objects\\objects.c", 2630, region_index>=0 && region_index<MAXIMUM_REGIONS_PER_OBJECT);
 				value = object->object.region_damage[region_index] / 255.f;
 				break;

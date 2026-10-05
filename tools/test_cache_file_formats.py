@@ -678,6 +678,19 @@ def test_several_pitch_ranges_are_relocated(report_tool, tmp_path):
     assert report["sound_sample_ranges_checked"] == "3"
 
 
+def test_a_protected_scenario_is_given_the_scenario_group(report_tool, tmp_path):
+    """Map protection renames the scenario tag's group (to 'prot', say). Halo PC
+    used the tag the header names regardless, so the loader gives it the
+    scenario's group and loads the map."""
+    cache = Map()
+    path = cache.write(tmp_path)
+    instance_case(0, 0x00, "<I", code("prot"))(cache, path)
+    returncode, report = report_one(report_tool, path)
+    assert returncode == 0
+    assert report["load"] == "ok"
+    assert report["scenario_regrouped"] == "1"
+
+
 def test_several_structure_bsps_share_the_top_of_the_tag_cache(report_tool, tmp_path):
     """Each BSP is loaded alone at the top of the tag cache; the largest sets
     how much room is left for the tags, and the checksum covers them all,
@@ -1178,8 +1191,6 @@ MALFORMED_CACHES = {
                        "the scenario tag is missing, misplaced or not a scenario"),
     "scenario salt": (tag_data_case("index", 0x04, "<I", 0x12340000), "load",
                       "the scenario tag is missing, misplaced or not a scenario"),
-    "scenario group": (instance_case(0, 0x00, "<I", code("weap")), "load",
-                       "the scenario tag is missing, misplaced or not a scenario"),
     "external scenario": (instance_case(0, 0x18, "<I", 1), "load",
                           "a tag of a group that resource maps never hold is marked as held by one"),
     "bsp count": (tag_data_case("scenario", 0x5A4, "<i", 33), "load",

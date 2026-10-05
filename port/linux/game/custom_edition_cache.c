@@ -313,6 +313,11 @@ static boolean custom_edition_cache_tags_convert(
 		error(_error_silent, "custom edition: %ld shaders whose type was not their group's were given their group's",
 			(long)conversion.shaders_mistyped);
 	}
+	if (conversion.node_links_cut)
+	{
+		error(_error_silent, "custom edition: %ld model and animation node links that looped or pointed past the nodes were cut",
+			(long)conversion.node_links_cut);
+	}
 	if (conversion.animation_overlays_disabled)
 	{
 		error(
@@ -401,6 +406,8 @@ static void custom_edition_cache_report_log(
 		(long)report->sound_sample_ranges_checked,
 		(long)report->relocated_pointer_count,
 		TEST_FLAG(report->warnings, _custom_edition_warning_checksum_mismatch_bit) ? "mismatched" : "matched");
+	if (report->scenario_regrouped)
+		error(_error_silent, "custom edition: the scenario tag had another group (map protection) and was given the scenario's");
 
 	return;
 }

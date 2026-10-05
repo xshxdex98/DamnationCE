@@ -2837,6 +2837,7 @@ symbols in this file:
 #include "main/main.h"
 #include "units/units.h"
 #include "units/vehicles.h"
+#include "custom_edition_cache.h" /* port: port/linux/game/custom_edition_cache.c */
 
 /* ---------- constants */
 
@@ -13997,7 +13998,17 @@ boolean hs_scenario_postprocess(
 		else
 			error(0, "%s: %s", error_source, error_message);
 
-		if (hs_compile_source() && hs_compile_postprocess(&error_message, &error_source))
+		/* port: a Custom Edition map has no script source to recompile and its
+		tags can't be resized, so it plays without its scripts instead of
+		halting in the compiler */
+		if (custom_edition_cache_tags_loaded())
+		{
+			data_delete_all(hs_syntax_data);
+			scenario->hs_scripts.count = 0;
+			scenario->hs_globals.count = 0;
+			success = FALSE;
+		}
+		else if (hs_compile_source() && hs_compile_postprocess(&error_message, &error_source))
 		{
 			success = TRUE;
 		}

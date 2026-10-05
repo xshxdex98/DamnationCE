@@ -1136,8 +1136,14 @@ static long unit_find_dialogue_variant(
 			variant_index,
 			struct unit_dialogue_variant);
 
-		if (variant_number == NONE || variant->variant_number == variant_number)
+		/* port: skip variants with no dialogue (a Custom Edition map's unit can
+		have one, which asserted when picked), and never collect more than the
+		list holds (a map's unit can list more than the tools' 16) */
+		if ((variant_number == NONE || variant->variant_number == variant_number) &&
+			variant->dialogue_index != NONE && variant_count < NUMBEROF(variant_indices))
+		{
 			variant_indices[variant_count++] = variant_index;
+		}
 	}
 
 	if (variant_count > 0)

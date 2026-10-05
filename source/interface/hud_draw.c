@@ -1827,9 +1827,11 @@ void hud_draw_meter(
 
 		meter_parameters.background_color =
 			((UNSIGNED_CHAR_MAX - (meter->empty_color>>24))<<24) | (meter->empty_color&0xFFFFFF);
+		/* port: fade and opacity clamped to [0, 1], as the tools keep them; a
+		Custom Edition map's meter can be outside that, which asserted */
 		meter_parameters.tint_color = real_alpha_intensity_to_pixel32(
-			meter->fade,
-			1.0f-meter->opacity);
+			PIN(meter->fade, 0.0f, 1.0f),
+			PIN(1.0f-meter->opacity, 0.0f, 1.0f));
 		meter_parameters.gradient = 1.0f;
 		meter_parameters.flash_color_is_negative = FALSE;
 		meter_parameters.tint_mode_2 = TRUE;
@@ -1881,6 +1883,11 @@ void hud_draw_numbers(
 			0,
 			0);
 		boolean kilometers = value > 999;
+		/* port: the Xbox's digits are sprites of one bitmap. A Custom Edition
+		map's can be separate bitmaps with no sprites, one per digit; those
+		draw the same, and the one-bitmap asserts below don't apply. */
+		boolean digits_on_one_bitmap = bitmap_group->sequences.count <= 0 ||
+			TAG_BLOCK_GET_ELEMENT(&bitmap_group->sequences, 0, struct bitmap_group_sequence)->sprites.count > 0;
 
 		if (_texture_cache_bitmap_get_hardware_format(source_bitmap, FALSE, TRUE))
 		{
@@ -1979,7 +1986,7 @@ void hud_draw_numbers(
 					match_assert(
 						"c:\\halo\\SOURCE\\interface\\hud_draw.c",
 						515,
-						source_bitmap==number_bitmap);
+						!digits_on_one_bitmap || source_bitmap==number_bitmap);
 					hud_draw_bitmap_direct(
 						number_bitmap,
 						absolute_placement->corner,
@@ -2020,7 +2027,7 @@ void hud_draw_numbers(
 						match_assert(
 							"c:\\halo\\SOURCE\\interface\\hud_draw.c",
 							539,
-							source_bitmap==number_bitmap);
+							!digits_on_one_bitmap || source_bitmap==number_bitmap);
 						hud_draw_bitmap_direct(
 							number_bitmap,
 							absolute_placement->corner,
@@ -2055,7 +2062,7 @@ void hud_draw_numbers(
 						match_assert(
 							"c:\\halo\\SOURCE\\interface\\hud_draw.c",
 							556,
-							source_bitmap==number_bitmap);
+							!digits_on_one_bitmap || source_bitmap==number_bitmap);
 						hud_draw_bitmap_direct(
 							number_bitmap,
 							absolute_placement->corner,
@@ -2092,7 +2099,7 @@ void hud_draw_numbers(
 					match_assert(
 						"c:\\halo\\SOURCE\\interface\\hud_draw.c",
 						575,
-						source_bitmap==number_bitmap);
+						!digits_on_one_bitmap || source_bitmap==number_bitmap);
 					hud_draw_bitmap_direct(
 						number_bitmap,
 						absolute_placement->corner,
@@ -2125,7 +2132,7 @@ void hud_draw_numbers(
 					match_assert(
 						"c:\\halo\\SOURCE\\interface\\hud_draw.c",
 						595,
-						source_bitmap==number_bitmap);
+						!digits_on_one_bitmap || source_bitmap==number_bitmap);
 					hud_draw_bitmap_direct(
 						number_bitmap,
 						absolute_placement->corner,
