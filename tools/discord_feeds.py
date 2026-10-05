@@ -11,6 +11,14 @@
   discord_feeds.py release <tag> <notes file>
       A release's heading drawn as a card (discord_card.py) over its
       changelog's text, posted silently as it is published (release.yml).
+      The text's message IDs are printed, for release-edit.
+        DISCORD_RELEASES_WEBHOOK  the changelog channel's webhook URL
+
+  discord_feeds.py release-edit <tag> <notes file> <message ID>
+      A release's text message edited to match its notes, as they are in
+      CHANGELOG.md now (.github/workflows/discord-release-edit.yml). The ID
+      is the text's, under the card (in Discord: the message's ..., Copy
+      Message ID, with Developer Mode on).
         DISCORD_RELEASES_WEBHOOK  the changelog channel's webhook URL
 
   discord_feeds.py rules
@@ -224,8 +232,20 @@ def post_release(tag, notes_path):
         changelog = f"**DamnationCE {tag}**\n" + changelog
     # (Discord's own text, readable at any length; a long changelog goes on in further messages)
     for part in message_parts(changelog):
-        request(webhook, "POST", {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS,
-                                  "allowed_mentions": {"parse": []}})
+        message = json.loads(request(f"{webhook}?wait=true", "POST",
+                                     {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS,
+                                      "allowed_mentions": {"parse": []}}))
+        print(f"Posted {tag}'s text as message {message['id']}")
+
+
+def edit_release(tag, notes_path, message_id):
+    webhook = os.environ["DISCORD_RELEASES_WEBHOOK"]
+    with open(notes_path, encoding="utf-8") as notes:
+        parts = message_parts(unwrap(notes.read()))
+    if len(parts) != 1:
+        sys.exit(f"{tag}'s notes take {len(parts)} messages; only one can be edited in place.")
+    request(f"{webhook}/messages/{message_id}", "PATCH", {"content": parts[0], "allowed_mentions": {"parse": []}})
+    print(f"Edited {tag}'s text, message {message_id}")
 
 
 def update_rules():
@@ -252,6 +272,8 @@ def main():
         update_servers()
     elif sys.argv[1:2] == ["release"] and len(sys.argv) == 4:
         post_release(sys.argv[2], sys.argv[3])
+    elif sys.argv[1:2] == ["release-edit"] and len(sys.argv) == 5:
+        edit_release(sys.argv[2], sys.argv[3], sys.argv[4])
     elif sys.argv[1:2] == ["rules"]:
         update_rules()
     else:
