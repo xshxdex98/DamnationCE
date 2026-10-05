@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.16
+
+### Custom Edition maps (from ChupathingyCE)
+
+- A map whose scripts use something this engine doesn't know keeps every
+  script that does load. Before, one unknown line cost the map all its
+  scripts; now only the scripts holding it are dropped, and the log says
+  which and why.
+- Halo PC's quit and sound_impulse_predict, which some maps' scripts call,
+  no longer stop those scripts loading.
+- none is accepted as an object name in scripts, as on Halo PC.
+- More room for heavily scripted maps.
+- Scripts' progress messages show on screen only with console_log = "all",
+  as the Xbox never showed them.
+
+Still network version 16.
+
 ## 0.3.15
 
 ### Co-op
