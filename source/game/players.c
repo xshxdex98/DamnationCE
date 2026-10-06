@@ -278,6 +278,7 @@ symbols in this file:
 #include "units/units.h"
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
+#include "editor_play.h" /* port: port/linux/game/editor_play.c */
 #ifdef HALO_64BIT
 #include "cseries/errors.h"
 #include "networking/network_messages.h"
@@ -1371,7 +1372,7 @@ static void player_spawn(
 	struct scenario *scenario;
 	struct game_globals_player_information *player_information;
 	struct game_globals_multiplayer_information *multiplayer_information;
-	struct player_starting_location *starting_location;
+	struct player_starting_location const *starting_location;
 	struct object_placement_data placement_data;
 	real_rgb_color change_color;
 	real_rgb_color change_color_storage;
@@ -1431,7 +1432,12 @@ static void player_spawn(
 
 		starting_location_index =
 			(short)find_best_starting_location_index(player_index);
-		if (starting_location_index != NONE)
+		/* port: a map with no starting location for the player, played from
+		the level editor, starts them where its view was (editor_play.c) */
+		starting_location = starting_location_index != NONE ?
+			player_get_starting_location(starting_location_index) :
+			editor_play_starting_location();
+		if (starting_location)
 		{
 			game_globals = scenario_get_game_globals();
 			player_information = TAG_BLOCK_GET_ELEMENT(
@@ -1440,8 +1446,6 @@ static void player_spawn(
 				struct game_globals_player_information);
 			if (player_information->player_unit.index != NONE)
 			{
-				starting_location =
-					player_get_starting_location(starting_location_index);
 				if (game_engine_running())
 				{
 					multiplayer_information = TAG_BLOCK_GET_ELEMENT(
