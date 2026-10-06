@@ -1,0 +1,158 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<menus root="shell/main">
+	<widget name="shell/panel" controller="1" width="854" height="480" bitmap="shell/panel">
+	</widget>
+	<widget name="shell/title" controller="1" width="390" height="57" bitmap="shell/title">
+		<data input="port title shine" />
+	</widget>
+	<widget name="shell/multiplayer_title" type="text" controller="1" width="300" height="16" text="MULTIPLAYER" font="ui\small_ui" color="#FF8EA4C4" align="center">
+	</widget>
+	<widget name="shell/themes_title" type="text" controller="1" width="300" height="16" text="MENUS" font="ui\small_ui" color="#FF8EA4C4" align="center">
+	</widget>
+	<widget name="shell/campaign_title" type="text" controller="1" width="300" height="16" text="CAMPAIGN" font="ui\small_ui" color="#FF8EA4C4" align="center">
+	</widget>
+	<widget name="shell/subtitle" type="text" controller="1" width="300" height="16" text="COMBAT EVOLVED" font="ui\small_ui" color="#FF8EA4C4" align="center">
+	</widget>
+	<widget name="shell/rule" controller="1" width="420" height="2" bitmap="shell/rule">
+	</widget>
+	<widget name="shell/item_campaign" type="text" width="300" height="22" bitmap="shell/item" text="CAMPAIGN" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" run="new game if no plyr profiles" label="load_campaign" open="shell/campaign" branch="true" />
+		<on event="left_mouse" run="mouse emit accept event" />
+		<conditional widget="main_menu/new_campaign_creating_profile" if_failed="true" />
+	</widget>
+	<widget name="shell/item_multiplayer" type="text" width="300" height="22" bitmap="shell/item" text="MULTIPLAYER" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" open="shell/multiplayer" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_online" type="text" width="300" height="22" bitmap="shell/item" text="ONLINE GAMES" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" run="port online games" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_lan" type="text" width="300" height="22" bitmap="shell/item" text="LAN GAMES" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" run="new game if no plyr profiles" open="main_menu/multiplayer_type_select/multiplayer_type_select_screen" branch="true" />
+		<on event="left_mouse" run="mouse emit accept event" />
+		<conditional widget="main_menu/profile_manager/multiplayer_creating_profile" if_failed="true" />
+	</widget>
+	<widget name="shell/item_split" type="text" width="300" height="22" bitmap="shell/item" text="SPLIT SCREEN" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" open="ui\shell\main_menu\multiplayer_type_select\split_screen\4way_profile_select\4way_start2join_screen" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_gametypes" type="text" width="300" height="22" bitmap="shell/item" text="GAME TYPES" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" open="main_menu/settings_select/multiplayer_setup/playlist_select/gametype_select_screen" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_settings" type="text" width="300" height="22" bitmap="shell/item" text="SETTINGS" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" run="profile set edit begin" label="settings" open="main_menu/settings_select/player_setup/player_profile_edit/player_profile_edit_screen" branch="true" />
+		<on event="left_mouse" run="mouse emit accept event" />
+		<conditional widget="main_menu/profile_manager/settings_creating_profile" if_failed="true" />
+	</widget>
+	<widget name="shell/item_profiles" type="text" width="300" height="22" bitmap="shell/item" text="PROFILES" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" run="new game if no plyr profiles" open="main_menu/profile_manager/player_profile_manager" branch="true" />
+		<on event="left_mouse" run="mouse emit accept event" />
+		<conditional widget="main_menu/profile_manager/pm_entry_creating_profile" if_failed="true" />
+	</widget>
+	<widget name="shell/item_quit" type="text" width="300" height="22" bitmap="shell/item" text="QUIT" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" open="main_menu/quit_select/quit_screen" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_continue" type="text" width="300" height="22" bitmap="shell/item" text="CONTINUE" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" run="campaign menu continue" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_new_game" type="text" width="300" height="22" bitmap="shell/item" text="NEW GAME" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" open="main_menu/solo_level_select/solo_level_select_screen" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_load_game" type="text" width="300" height="22" bitmap="shell/item" text="LOAD GAME" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" open="main_menu/campaign_select/load_level_select_screen" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_menus" type="text" width="300" height="22" bitmap="shell/item" text="MENUS" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" open="shell/themes" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_glassed" type="text" width="300" height="22" bitmap="shell/item" text="GLASSED" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" run="port theme glassed" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_cairo" type="text" width="300" height="22" bitmap="shell/item" text="CAIRO" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" run="port theme cairo" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_vanilla" type="text" width="300" height="22" bitmap="shell/item" text="VANILLA" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" run="port theme vanilla" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/item_back" type="text" width="300" height="22" bitmap="shell/item" text="BACK" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" back="true" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="shell/list_description" controller="1" left="-1" top="-1" width="1" height="1">
+	</widget>
+	<widget name="shell/list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="shell/list_description">
+		<child widget="shell/item_campaign" x="170" y="214" />
+		<child widget="shell/item_multiplayer" x="170" y="237" />
+		<child widget="shell/item_settings" x="170" y="260" />
+		<child widget="shell/item_profiles" x="170" y="283" />
+		<child widget="shell/item_menus" x="170" y="306" />
+		<child widget="shell/item_quit" x="170" y="329" />
+	</widget>
+	<widget name="shell/campaign_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="shell/list_description">
+		<on event="created" run="campaign menu init" branch="true" />
+		<conditional widget="main_menu/difficulty_select/difficulty_select_list_screen" if_failed="true" />
+		<child widget="shell/item_continue" x="170" y="214" />
+		<child widget="shell/item_new_game" x="170" y="237" />
+		<child widget="shell/item_load_game" x="170" y="260" />
+		<child widget="shell/item_back" x="170" y="292" />
+	</widget>
+	<widget name="shell/themes_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="shell/list_description">
+		<child widget="shell/item_glassed" x="170" y="214" />
+		<child widget="shell/item_cairo" x="170" y="237" />
+		<child widget="shell/item_vanilla" x="170" y="260" />
+		<child widget="shell/item_back" x="170" y="292" />
+	</widget>
+	<widget name="shell/multiplayer_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="shell/list_description">
+		<child widget="shell/item_online" x="170" y="214" />
+		<child widget="shell/item_lan" x="170" y="237" />
+		<child widget="shell/item_split" x="170" y="260" />
+		<child widget="shell/item_gametypes" x="170" y="283" />
+		<child widget="shell/item_back" x="170" y="315" />
+	</widget>
+	<widget name="shell/main" width="640" height="480" flags="pass_unhandled_to_focused_child">
+		<on event="created" run="main menu intialize" label="ring_loop" />
+		<on event="b back" open="main_menu/quit_select/quit_screen" />
+		<child widget="shell/panel" x="-107" y="0" />
+		<child widget="shell/title" x="125" y="112" />
+		<child widget="shell/subtitle" x="170" y="176" />
+		<child widget="shell/rule" x="110" y="436" />
+		<child widget="shell/list" />
+		<child widget="main_menu/build_number" x="22" y="446" />
+	</widget>
+	<widget name="shell/campaign" width="640" height="480" flags="pass_unhandled_to_focused_child">
+		<on event="b back" back="true" />
+		<child widget="shell/panel" x="-107" y="0" />
+		<child widget="shell/title" x="125" y="112" />
+		<child widget="shell/campaign_title" x="170" y="176" />
+		<child widget="shell/rule" x="110" y="436" />
+		<child widget="shell/campaign_list" />
+		<child widget="main_menu/build_number" x="22" y="446" />
+	</widget>
+	<widget name="shell/themes" width="640" height="480" flags="pass_unhandled_to_focused_child">
+		<on event="b back" back="true" />
+		<child widget="shell/panel" x="-107" y="0" />
+		<child widget="shell/title" x="125" y="112" />
+		<child widget="shell/themes_title" x="170" y="176" />
+		<child widget="shell/rule" x="110" y="436" />
+		<child widget="shell/themes_list" />
+		<child widget="main_menu/build_number" x="22" y="446" />
+	</widget>
+	<widget name="shell/multiplayer" width="640" height="480" flags="pass_unhandled_to_focused_child">
+		<on event="b back" back="true" />
+		<child widget="shell/panel" x="-107" y="0" />
+		<child widget="shell/title" x="125" y="112" />
+		<child widget="shell/multiplayer_title" x="170" y="176" />
+		<child widget="shell/rule" x="110" y="436" />
+		<child widget="shell/multiplayer_list" />
+		<child widget="main_menu/build_number" x="22" y="446" />
+	</widget>
+</menus>

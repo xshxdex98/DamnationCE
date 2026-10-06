@@ -97,7 +97,6 @@ enum
 /* the layout, in the menus' 640x480 */
 enum
 {
-	GLASS_TOP = 66, GLASS_BOTTOM = 446,
 	/* rows down the left */
 	ROW_X = 37, ROW_Y = 80, ROW_WIDTH = 300, ROW_HEIGHT = 22, LIST_ROWS = 15,
 	/* the selected entry's picture and description on the right */
@@ -135,26 +134,15 @@ static struct step_row const cooperative_rows[] =
 	{ "CAMPAIGN", "The campaign's levels, with\nevery player in the game." },
 };
 
-/* colors (0xRRGGBBAA), matching browser_screen.c's Glassed palette (the
-picker is Glassed's alone: Vanilla keeps the stock map list) */
-struct map_palette
-{
-	unsigned int backdrop, rule, title, chosen, tick, text, dim, edge, panel;
-	float radius;
-};
-static struct map_palette const glassed_palette =
-{
-	0x06080C8C, 0xFFFFFF5A, 0xFFFFFFD7, 0xFFFFFF3E, 0xFFFFFFFF, 0xD2D6DAFF, 0x8C9096FF, 0xFFFFFF46, 0x06080C78, 0.0f,
-};
-static struct map_palette const *const palette = &glassed_palette;
-
-#define COLOR_RULE (palette->rule)
-#define COLOR_TITLE (palette->title)
-#define COLOR_CHOSEN (palette->chosen)
-#define COLOR_TICK (palette->tick)
-#define COLOR_TEXT (palette->text)
-#define COLOR_DIM (palette->dim)
-#define COLOR_EDGE (palette->edge)
+/* colors (0xRRGGBBAA): the theme's (overlay_screens.c; the picker is this
+client's screens' alone: Vanilla keeps the stock map list) */
+#define PALETTE (overlay_palette_current())
+#define COLOR_TITLE (PALETTE->title)
+#define COLOR_CHOSEN (PALETTE->row_selected)
+#define COLOR_TICK 0xFFFFFFFF
+#define COLOR_TEXT (PALETTE->text)
+#define COLOR_DIM (PALETTE->dim)
+#define COLOR_EDGE (PALETTE->panel_edge)
 
 /* interface/ and the platform layer */
 char **ui_widget_port_multiplayer_levels(short *count, short *xbox_count);
@@ -509,18 +497,13 @@ static short item_at(short x, short y)
 	}
 }
 
-static void chosen_row(float x, float y, float width, float height)
-{
-	ui_overlay_rect(x, y, width, height, 0, COLOR_CHOSEN);
-	ui_overlay_rect(x, y, 1.5f, height, 0, COLOR_TICK);
-}
 
 /* draws newline-separated text downward from y (modifies text) */
 static void render_lines(char *text, float x, float y, float size, unsigned int color)
 {
 	char *line = text;
 
-	while (line && *line && y < GLASS_BOTTOM - 12)
+	while (line && *line && y < OVERLAY_FRAME_BOTTOM - 12)
 	{
 		char *end = strchr(line, '\n');
 
@@ -541,8 +524,7 @@ static void render_step_rows(struct step_row const *rows, short count, short sel
 	{
 		float y = (float)(ROW_Y + row * ROW_HEIGHT);
 
-		if (row == selected)
-			chosen_row(ROW_X, y, ROW_WIDTH, ROW_HEIGHT);
+		overlay_row(ROW_X, y, ROW_WIDTH, ROW_HEIGHT, row == selected, FALSE);
 		ui_overlay_text(UI_FONT_BOLD, 12.0f, ROW_X + 10, y + 4, UI_ALIGN_LEFT, COLOR_TEXT, rows[row].name);
 	}
 	ui_overlay_text(UI_FONT_BOLD, 15.0f, PREVIEW_X, PREVIEW_Y, UI_ALIGN_LEFT, COLOR_TITLE, rows[selected].name);
@@ -561,8 +543,7 @@ static void render_categories(short const *counts, short selected, char const *c
 	{
 		float y = (float)(ROW_Y + category * ROW_HEIGHT);
 
-		if (category == selected)
-			chosen_row(ROW_X, y, ROW_WIDTH, ROW_HEIGHT);
+		overlay_row(ROW_X, y, ROW_WIDTH, ROW_HEIGHT, category == selected, FALSE);
 		ui_overlay_text(UI_FONT_BOLD, 12.0f, ROW_X + 10, y + 4, UI_ALIGN_LEFT, COLOR_TEXT, category_names[category]);
 		snprintf(text, sizeof(text), "%d", counts[category]);
 		ui_overlay_text(UI_FONT_REGULAR, 11.0f, ROW_X + ROW_WIDTH - 10, y + 5, UI_ALIGN_RIGHT, COLOR_DIM, text);
@@ -585,8 +566,7 @@ static void render_list(void)
 		float y = (float)(ROW_Y + row * ROW_HEIGHT);
 		short index = (short)(map_screen.first + row);
 
-		if (index == map_screen.selected)
-			chosen_row(ROW_X, y, ROW_WIDTH, ROW_HEIGHT);
+		overlay_row(ROW_X, y, ROW_WIDTH, ROW_HEIGHT, index == map_screen.selected, FALSE);
 		entry_text(&map_screen.entries[index], name, description, sizeof(name));
 		ui_overlay_text(UI_FONT_BOLD, 11.0f, ROW_X + 10, y + 5, UI_ALIGN_LEFT, COLOR_TEXT, name);
 	}
@@ -615,7 +595,7 @@ static void render_grid(void)
 		if (index == map_screen.selected)
 		{
 			ui_overlay_outline(x, y, CARD_WIDTH, CARD_PICTURE, 0, 1.5f, COLOR_TICK);
-			chosen_row(x, (float)(y + CARD_PICTURE), CARD_WIDTH, 15);
+			overlay_row(x, (float)(y + CARD_PICTURE), CARD_WIDTH, 15, TRUE, FALSE);
 		}
 		else
 			ui_overlay_outline(x, y, CARD_WIDTH, CARD_PICTURE, 0, 0.75f, COLOR_EDGE);
@@ -676,7 +656,7 @@ boolean map_screen_active(void)
 without the overlay, or in Vanilla, and the menus' own list is used instead. */
 boolean map_screen_open(void)
 {
-	if (!ui_overlay_available() || !overlay_palette_current()->glassed)
+	if (!ui_overlay_available() || !overlay_palette_current()->own_screens)
 		return FALSE;
 	map_screen.xbox_list = NULL;
 	map_screen.level_names = ui_widget_port_multiplayer_levels(&map_screen.level_count, &map_screen.xbox_count);
@@ -783,17 +763,12 @@ void map_screen_process(void)
 
 void map_screen_render(void)
 {
-	float margin = (float)((halo_screen_width() - 640) / 2 + 2);
 	struct overlay_button_colors colors;
 	struct button_bar bar;
 
 	if (!ui_overlay_available())
 		return;
-	/* a darkened band over the scene */
-	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
-	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
-	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
-	ui_overlay_text(UI_FONT_BOLD, 30.0f, 37, 17, UI_ALIGN_LEFT, COLOR_TITLE, step_title());
+	overlay_screen_frame(step_title(), 37, 17, 30.0f);
 
 	switch (map_screen.step)
 	{
@@ -833,13 +808,13 @@ void map_screen_render(void)
 	}
 
 	step_buttons(&bar);
-	colors.fill = palette->panel;
+	colors.fill = PALETTE->panel;
 	colors.fill_lit = COLOR_CHOSEN;
 	colors.edge = COLOR_EDGE;
 	colors.text = COLOR_TEXT;
 	colors.text_lit = COLOR_TITLE;
 	colors.text_disabled = COLOR_DIM;
-	colors.radius = palette->radius;
+	colors.radius = PALETTE->radius;
 	overlay_buttons_draw(bar.labels, bar.count, (float)ROW_X, OVERLAY_BUTTON_Y, map_screen.button_hovered, 0,
 		&colors);
 }

@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<menus>
+	<bitmap name="shell/panel">
+		<frame png="shell/art/panel.png" width="854" height="480" />
+	</bitmap>
+	<bitmap name="shell/item">
+		<frame png="shell/art/item_0.png" width="300" height="22" />
+		<frame png="shell/art/item_1.png" width="300" height="22" />
+	</bitmap>
+	<bitmap name="shell/title">
+		<frame png="shell/art/title_0.png" width="390" height="57" />
+		<frame png="shell/art/title_1.png" width="390" height="57" />
+		<frame png="shell/art/title_2.png" width="390" height="57" />
+		<frame png="shell/art/title_3.png" width="390" height="57" />
+		<frame png="shell/art/title_4.png" width="390" height="57" />
+		<frame png="shell/art/title_5.png" width="390" height="57" />
+		<frame png="shell/art/title_6.png" width="390" height="57" />
+		<frame png="shell/art/title_7.png" width="390" height="57" />
+		<frame png="shell/art/title_8.png" width="390" height="57" />
+		<frame png="shell/art/title_9.png" width="390" height="57" />
+		<frame png="shell/art/title_10.png" width="390" height="57" />
+		<frame png="shell/art/title_11.png" width="390" height="57" />
+		<frame png="shell/art/title_12.png" width="390" height="57" />
+		<frame png="shell/art/title_13.png" width="390" height="57" />
+		<frame png="shell/art/title_14.png" width="390" height="57" />
+		<frame png="shell/art/title_15.png" width="390" height="57" />
+		<frame png="shell/art/title_16.png" width="390" height="57" />
+	</bitmap>
+	<bitmap name="shell/rule">
+		<frame png="shell/art/rule.png" width="420" height="2" />
+	</bitmap>
+</menus>
