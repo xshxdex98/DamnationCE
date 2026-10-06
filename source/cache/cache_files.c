@@ -123,6 +123,7 @@ symbols in this file:
 /* ---------- headers */
 
 #include "cseries.h"
+#include <stdint.h>
 #include "cseries_windows.h"
 #include "errors.h"
 #include "tag_files/tag_groups.h"
@@ -313,13 +314,13 @@ static boolean cache_file_region_contains(
 	long count,
 	long element_size)
 {
-	unsigned long offset = (unsigned long)address - (unsigned long)region;
+	uintptr_t offset = (uintptr_t)address - (uintptr_t)region;
 
 	if (count == 0)
 		return TRUE;
 
 	return count > 0 &&
-		(unsigned long)address >= (unsigned long)region &&
+		(uintptr_t)address >= (uintptr_t)region &&
 		offset <= region_size &&
 		(unsigned long)count <= (region_size - offset) / (unsigned long)element_size;
 }
@@ -392,10 +393,11 @@ static boolean cache_file_tag_header_verify(
 	else
 	{
 		long scenario_absolute_index = DATUM_INDEX_TO_ABSOLUTE_INDEX(tag_header->scenario_tag_index);
+		struct cache_file_tag_instance *tag_instances = xbox_pointer(tag_header->tag_instances);
 
 		if (scenario_absolute_index >= tag_header->tag_count ||
-			tag_header->tag_instances[scenario_absolute_index].tag_index != tag_header->scenario_tag_index ||
-			tag_header->tag_instances[scenario_absolute_index].group_tag != SCENARIO_TAG)
+			tag_instances[scenario_absolute_index].tag_index != tag_header->scenario_tag_index ||
+			tag_instances[scenario_absolute_index].group_tag != SCENARIO_TAG)
 		{
 			problem = "scenario tag";
 		}
