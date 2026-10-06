@@ -11889,7 +11889,7 @@ static void hs_sv_timelimit_evaluate(
 	boolean initialize)
 {
 	hs_sv_variant_option_evaluate(thread_index, initialize, "time limit (minutes)",
-		game_variant_options_get()->time_limit, 0, SHRT_MAX, game_variant_options_set_time_limit);
+		game_variant_options_get()->time_limit, 0, SHORT_MAX, game_variant_options_set_time_limit);
 }
 
 static void hs_sv_friendly_fire_evaluate(

@@ -338,8 +338,9 @@ static struct cache_file_tag_instance *cache_empty_tag_instance(
 	empty_tag_instance.group_tag = NONE;
 	empty_tag_instance.parent_group_tags[0] = NONE;
 	empty_tag_instance.parent_group_tags[1] = NONE;
-	empty_tag_instance.name = "";
-	empty_tag_instance.base_address = tag_empty_data();
+	/* (named by the empty data's first byte: no name) */
+	empty_tag_instance.base_address = XBOX_ADDRESS(tag_empty_data());
+	empty_tag_instance.name = empty_tag_instance.base_address;
 
 	return &empty_tag_instance;
 }
@@ -1322,7 +1323,7 @@ boolean scenario_structure_bsp_load(
 	being in its own tag cache, so neither are its bsps */
 	if (!custom_edition_cache_tags_loaded() && !tag_validate_structure_bsp(
 		reference->structure_bsp.index,
-		reference->base_address,
+		xbox_pointer(reference->base_address),
 		reference->file_size))
 	{
 		return FALSE;
@@ -1421,7 +1422,7 @@ void *tag_get(
 			tag_instance->parent_group_tags[1] != group_tag) ||
 		!tag_instance->base_address)
 	{
-		return cache_empty_tag_instance(tag_index)->base_address;
+		return xbox_pointer(cache_empty_tag_instance(tag_index)->base_address);
 	}
 	
 	return xbox_pointer(tag_instance->base_address);
