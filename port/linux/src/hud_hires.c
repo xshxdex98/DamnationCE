@@ -177,7 +177,7 @@ static unsigned char *png_decode(const unsigned char *data, unsigned long size, 
 	if (filtered_size + stride * height > MAXIMUM_DECODED_SIZE)
 	{
 		platform_log("png: %lux%lu is too large to decode (more than %lu MB)", width, height,
-			MAXIMUM_DECODED_SIZE >> 20);
+			(unsigned long)(MAXIMUM_DECODED_SIZE >> 20));
 		return NULL;
 	}
 	*png_width = width;
