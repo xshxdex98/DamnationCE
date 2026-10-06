@@ -1434,16 +1434,13 @@ static void player_spawn(
 		starting_location_index =
 			(short)find_best_starting_location_index(player_index);
 		/* port: a network co-op respawn starts behind its teammate
-		(players_coop_spawn_location); a map with no starting location for
-		the player, played from the level editor, where its view was
+		(players_coop_spawn_location), the level editor's PLAY at its camera
 		(editor_play.c) */
 		starting_location = players_coop_spawn_location(&spawn_location);
 		if (!starting_location)
-		{
-			starting_location = starting_location_index != NONE ?
-				player_get_starting_location(starting_location_index) :
-				editor_play_starting_location();
-		}
+			starting_location = editor_play_spawn_location();
+		if (!starting_location && starting_location_index != NONE)
+			starting_location = player_get_starting_location(starting_location_index);
 		if (starting_location)
 		{
 			game_globals = scenario_get_game_globals();
@@ -4584,8 +4581,10 @@ void players_update_before_game(
 						game_engine_client_respawn_countdown(iterator.datum_index);
 				}
 				/* port: in co-op only the host spawns players; clients get their units
-				from the network. One who quit doesn't come back. */
-				else if (!main_menu_is_active() && !network_game_distributed_client() && !player->quit_out_of_game)
+				from the network. One who quit doesn't come back, nor anyone while
+				the level editor's live view edits (editor_play.c) */
+				else if (!main_menu_is_active() && !network_game_distributed_client() && !player->quit_out_of_game &&
+					!editor_play_editing())
 				{
 					if (player->statistics.deaths == 0)
 					{

@@ -2841,6 +2841,7 @@ symbols in this file:
 #include "units/vehicles.h"
 #include "custom_edition_cache.h" /* port: port/linux/game/custom_edition_cache.c */
 #include "coop_scripts.h" /* port: port/linux/game/coop_scripts.c */
+#include "editor_play.h" /* port: port/linux/game/editor_play.c */
 
 /* ---------- constants */
 
@@ -14962,6 +14963,9 @@ static boolean hs_compile_and_evaluate_command(
 	char buffer[1024];
 	char expanded[1024];
 
+	/* port: the level editor's commands to its live view (editor_play.c) */
+	if (editor_play_command(expression))
+		return TRUE;
 	/* port: the co-op host's bringto, which brings every player to the host
 	(players.c; a client is told it is the host's) */
 	if (hs_host_player_command(expression, "bringto"))

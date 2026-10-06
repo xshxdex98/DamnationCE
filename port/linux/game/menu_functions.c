@@ -779,8 +779,9 @@ static void campaign_levels_read(struct player_profile const *profile)
 }
 
 /* plays the map, at the difficulty (a saved game in it goes on: main.c's
-main_new_map, if its difficulty is this one) */
-static void campaign_start(char const *map_name, short difficulty, short controller)
+main_new_map, if its difficulty is this one); the level editor's live view
+starts its map so too (editor_play.c) */
+void menu_start_map(char const *map_name, short difficulty, short controller)
 {
 	if (player_spawn_count < 2)
 		player_ui_set_single_player_local_player_controller(0, controller);
@@ -886,7 +887,7 @@ static boolean campaign_continue(short controller)
 
 	if (!campaign_profile(controller, &profile) || !ui_widget_port_saved_game(&map_name, &level, &difficulty))
 		return campaign_fail();
-	campaign_start(map_name, difficulty, controller);
+	menu_start_map(map_name, difficulty, controller);
 	return TRUE;
 }
 
@@ -1102,7 +1103,7 @@ static boolean level_choose(short controller)
 		{
 			return campaign_fail();
 		}
-		campaign_start(level_list.map_names[level_list.chosen], main_get_difficulty(), controller);
+		menu_start_map(level_list.map_names[level_list.chosen], main_get_difficulty(), controller);
 		return FALSE;
 	}
 	if (level < 0 || level >= NUMBER_OF_SINGLE_PLAYER_LEVELS || !campaign.levels[level].available)
@@ -1125,7 +1126,7 @@ static boolean difficulty_start(short difficulty, short controller)
 		return campaign_fail();
 	if (!map_name || main_get_solo_level_from_name(map_name) == NONE)
 		map_name = main_get_solo_level_name(0);
-	campaign_start(map_name, PIN(difficulty, 0, 3), controller);
+	menu_start_map(map_name, PIN(difficulty, 0, 3), controller);
 	return TRUE;
 }
 
@@ -1251,7 +1252,7 @@ static boolean saved_game_continue(short controller)
 	if (!player_profile_get(saved_game->profile_index, &profile))
 		return campaign_fail();
 	player_ui_set_active_player_profile(0, saved_game->profile_index, &profile);
-	campaign_start(main_get_solo_level_name(saved_game->level), saved_game->difficulty, controller);
+	menu_start_map(main_get_solo_level_name(saved_game->level), saved_game->difficulty, controller);
 	return TRUE;
 }
 
