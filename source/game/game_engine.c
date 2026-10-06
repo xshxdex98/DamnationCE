@@ -930,6 +930,8 @@ extern long timeout_for_endgame_sound;
 changes in the first, from this machine's own start, it only takes: the
 game types show what changes in the next) */
 static boolean game_engine_network_state_read = FALSE;
+/* port: the game ends to begin again at once (game_engine_restart) */
+static boolean game_engine_restart_requested = FALSE;
 
 /* ---------- public code */
 
@@ -4713,8 +4715,9 @@ void game_engine_update_non_deterministic(
 			if (game_engine_globals.postgame_progress > 1.0f)
 				game_engine_globals.postgame_progress = 1.0f;
 
-			if (test_any_gamepad_button(0) || test_any_gamepad_button(12))
+			if (game_engine_restart_requested || test_any_gamepad_button(0) || test_any_gamepad_button(12))
 			{
+				game_engine_restart_requested = FALSE;
 				if (global_network_game_server_get())
 				network_game_server_reset_to_pregame(
 					global_network_game_server_get());
@@ -5238,6 +5241,18 @@ static void game_engine_report_game(
 		count);
 }
 #endif
+
+/* port: a map script's sv_map_reset (hs.c): the host ends the game and,
+once its end is shown, begins it again on the same map and game type, as
+its scoreboard's button does (game_engine_restart_requested) */
+void game_engine_restart(
+	void)
+{
+	if (!game_engine || !global_network_game_server_get())
+		return;
+	game_engine_restart_requested = TRUE;
+	game_engine_end_game();
+}
 
 void game_engine_end_game(
 	void)
@@ -6963,6 +6978,7 @@ void game_engine_initialize_for_new_map(
 		game_engine_vehicle_home_count = NONE;
 		timeout_for_endgame_sound = 0;
 		game_engine_network_state_read = FALSE;
+		game_engine_restart_requested = FALSE;
 
 		if (game_engine->initialize_for_new_map &&
 			!game_engine->initialize_for_new_map())

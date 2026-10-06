@@ -1948,6 +1948,36 @@ long *hs_macro_function_evaluate(
 		initialize);
 }
 
+boolean hs_optional_argument_evaluate(
+	long thread_index,
+	boolean initialize,
+	long *value,
+	boolean *present)
+{
+	struct hs_thread_datum *thread = hs_thread_get(thread_index);
+	long *result = hs_stack_allocate(thread_index, sizeof(long));
+	long argument_index = hs_syntax_get(hs_syntax_get(
+		thread->stack->expression_index)->data)->next_node_index;
+
+	/* port: none on a stack overflow (hs_stack_overflow) */
+	if (!result)
+		return FALSE;
+	*present = argument_index != NONE;
+	if (initialize && *present)
+	{
+		hs_evaluate(thread_index, argument_index, result);
+		return FALSE;
+	}
+	if (*present)
+	{
+		short type = hs_syntax_get(argument_index)->type;
+
+		*value = type == _hs_type_real ? (long)*(real *)result :
+			type == _hs_type_short_integer ? *(short *)result : *result;
+	}
+	return TRUE;
+}
+
 void hs_evaluate_begin(
 	short function_index,
 	long thread_index,

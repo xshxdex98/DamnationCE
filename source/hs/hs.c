@@ -11695,10 +11695,177 @@ static void hs_sv_end_game(
 
 HS_EVALUATE_NO_ARGUMENTS(hs_sv_end_game_evaluate, hs_sv_end_game)
 
+/* port: Halo PC's server commands a map's script may call, done by the host
+of a multiplayer game (each machine runs the map's scripts; a client's call
+does nothing but where it says so). A map does not choose the next map,
+rename the server or change its password: those stay the host's. */
+
+/* (the game begins again on its map and game type: game_engine_restart) */
+static void hs_sv_map_reset(
+	void)
+{
+	if (global_network_game_server_get() && game_engine_running())
+		game_engine_restart();
+}
+
+HS_EVALUATE_NO_ARGUMENTS(hs_sv_map_reset_evaluate, hs_sv_map_reset)
+
+/* a player's name as the host's kick command matches it (a letter with a
+mark its plain one: player_name_character_ascii) */
+static void hs_sv_player_name_text(
+	struct player_datum const *player,
+	char *name,
+	long name_size)
+{
+	long index;
+
+	for (index = 0; index < (long)NUMBEROF(player->name) && player->name[index] && index < name_size - 1; index++)
+		name[index] = player_name_character_ascii(player->name[index]);
+	name[index] = 0;
+}
+
+/* the player a kick names: by name, or by the number sv_players gives them
+(from 1), as Halo PC's sv_kick and sv_ban take either */
+static char const *hs_sv_player_name(
+	char const *text,
+	char *name,
+	long name_size)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+	long number = 0;
+	long wanted;
+	char *end;
+
+	if (!text || !*text)
+		return text;
+	wanted = strtol(text, &end, 10);
+	if (*end)
+		return text;
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		if (!player->quit_out_of_game && ++number == wanted)
+		{
+			hs_sv_player_name_text(player, name, name_size);
+			return name;
+		}
+	}
+	return text;
+}
+
+/* (only the host kicks) */
+static void hs_sv_kick(
+	char const *player)
+{
+	char name[32];
+
+	if (global_network_game_server_get())
+		network_game_server_kick_player(hs_sv_player_name(player, name, sizeof(name)));
+}
+
+HS_EVALUATE_VOID_STRING(hs_sv_kick_evaluate, hs_sv_kick)
+
+static void hs_sv_ban_evaluate(
+	short function_index,
+	long thread_index,
+	boolean initialize)
+{
+	/* (a ban is a kick: a map must not keep anyone out of a host's games, so
+	only the first of its two arguments, the player, is used) */
+	struct hs_arguments_string *arguments =
+		(struct hs_arguments_string *)hs_macro_function_evaluate(function_index, thread_index, initialize);
+
+	if (arguments)
+	{
+		hs_sv_kick(xbox_pointer(arguments->value)); /* an Xbox address */
+		hs_return(thread_index, 0);
+	}
+}
+
+/* (in debug.txt, of every machine that runs it) */
+static void hs_sv_log_note(
+	char const *note)
+{
+	error(_error_silent, "a map's script notes: %s", note ? note : "");
+}
+
+HS_EVALUATE_VOID_STRING(hs_sv_log_note_evaluate, hs_sv_log_note)
+
+/* (the players, numbered as sv_kick takes them, on the host's console) */
+static void hs_sv_players(
+	void)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+	long number = 0;
+	char name[32];
+
+	if (!global_network_game_server_get())
+		return;
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		if (player->quit_out_of_game)
+			continue;
+		hs_sv_player_name_text(player, name, sizeof(name));
+		console_printf(FALSE, "%ld. %s", ++number, name);
+	}
+}
+
+HS_EVALUATE_NO_ARGUMENTS(hs_sv_players_evaluate, hs_sv_players)
+
+/* sv_timelimit and sv_friendly_fire: the game's option set to the argument
+(on every machine: game_variant_options_set_time_limit), or without one
+said on the console */
+static void hs_sv_variant_option_evaluate(
+	long thread_index,
+	boolean initialize,
+	char const *option,
+	short current,
+	short minimum,
+	short maximum,
+	void (*set)(short value))
+{
+	long value = 0;
+	boolean present;
+
+	if (!hs_optional_argument_evaluate(thread_index, initialize, &value, &present))
+		return;
+	if (game_engine_running())
+	{
+		if (!present)
+			console_printf(FALSE, "%s: %d", option, current);
+		else if (value >= minimum && value <= maximum)
+			set((short)value);
+	}
+	hs_return(thread_index, 0);
+}
+
+static void hs_sv_timelimit_evaluate(
+	short function_index,
+	long thread_index,
+	boolean initialize)
+{
+	hs_sv_variant_option_evaluate(thread_index, initialize, "time limit (minutes)",
+		game_variant_options_get()->time_limit, 0, SHRT_MAX, game_variant_options_set_time_limit);
+}
+
+static void hs_sv_friendly_fire_evaluate(
+	short function_index,
+	long thread_index,
+	boolean initialize)
+{
+	hs_sv_variant_option_evaluate(thread_index, initialize, "friendly fire",
+		game_variant_options_get()->friendly_fire, _friendly_fire_on, _friendly_fire_explosives_only,
+		game_variant_options_set_friendly_fire);
+}
+
 /* port: Halo PC's functions that a map's scripts may call and that do
-nothing here: Gearbox's server commands (a server here is run from the
-game's menus and its own settings, not by a map), and its settings of the
-display, sound and controls (the player's own, in config.toml). A map whose
+nothing here: the server commands that choose the map, its name, password
+and player count (the host's, from its menus and settings, not a map's),
+and its settings of the display, sound and controls (the player's own, in
+config.toml). A map whose
 scripts call one keeps them; each call does nothing (its arguments not
 evaluated: Halo PC leaves some out) and returns nothing (0, FALSE), and the
 first is logged */
@@ -11738,8 +11905,8 @@ static struct hs_function_definition const sv_map_next_definition=
 	0,
 	"sv_map_next",
 	hs_macro_function_parse,
-	hs_halo_pc_unsupported_evaluate,
-	"Halo PC's, a server's: begins the next game of its map cycle; does nothing here.",
+	hs_sv_end_game_evaluate,
+	"Halo PC's, a server's: ends the game; the next is the host's choice.",
 	NULL,
 	0,
 };
@@ -11750,8 +11917,8 @@ static struct hs_function_definition const sv_map_reset_definition=
 	0,
 	"sv_map_reset",
 	hs_macro_function_parse,
-	hs_halo_pc_unsupported_evaluate,
-	"Halo PC's, a server's: begins the game again; does nothing here.",
+	hs_sv_map_reset_evaluate,
+	"Halo PC's, a server's: begins the game again on its map and game type.",
 	NULL,
 	0,
 };
@@ -11790,8 +11957,8 @@ static struct hs_function_definition const sv_timelimit_definition=
 	0,
 	"sv_timelimit",
 	hs_macro_function_parse,
-	hs_halo_pc_unsupported_evaluate,
-	"Halo PC's, a server's: overrides the game type's time limit; does nothing here.",
+	hs_sv_timelimit_evaluate,
+	"Halo PC's, a server's: sets the game's time limit in minutes (0: none), or says it.",
 	NULL,
 	0,
 };
@@ -11802,8 +11969,8 @@ static struct hs_function_definition const sv_friendly_fire_definition=
 	0,
 	"sv_friendly_fire",
 	hs_macro_function_parse,
-	hs_halo_pc_unsupported_evaluate,
-	"Halo PC's, a server's: overrides the game type's friendly fire; does nothing here.",
+	hs_sv_friendly_fire_evaluate,
+	"Halo PC's, a server's: sets the game's friendly fire (0 on, 1 off, 2 shields only, 3 explosives only), or says it.",
 	NULL,
 	0,
 };
@@ -11869,8 +12036,8 @@ static struct hs_function_definition_with_1_parameter const sv_log_note_definiti
 		0,
 		"sv_log_note",
 		hs_macro_function_parse,
-		hs_halo_pc_unsupported_evaluate,
-		"Halo PC's, a server's: leaves a note in its log; does nothing here.",
+		hs_sv_log_note_evaluate,
+		"Halo PC's, a server's: leaves a note in debug.txt.",
 		NULL,
 		1,
 		{ _hs_type_string },
@@ -11883,8 +12050,8 @@ static struct hs_function_definition const sv_players_definition=
 	0,
 	"sv_players",
 	hs_macro_function_parse,
-	hs_halo_pc_unsupported_evaluate,
-	"Halo PC's, a server's: lists the players; does nothing here.",
+	hs_sv_players_evaluate,
+	"Halo PC's, a server's: lists the players, numbered, on the host's console.",
 	NULL,
 	0,
 };
@@ -11896,8 +12063,8 @@ static struct hs_function_definition_with_1_parameter const sv_kick_definition=
 		0,
 		"sv_kick",
 		hs_macro_function_parse,
-		hs_halo_pc_unsupported_evaluate,
-		"Halo PC's, a server's: kicks a player; does nothing here.",
+		hs_sv_kick_evaluate,
+		"Halo PC's, a server's: kicks a player, by name or sv_players' number.",
 		NULL,
 		1,
 		{ _hs_type_string },
@@ -11911,8 +12078,8 @@ static struct hs_function_definition_with_2_parameters const sv_ban_definition=
 		0,
 		"sv_ban",
 		hs_macro_function_parse,
-		hs_halo_pc_unsupported_evaluate,
-		"Halo PC's, a server's: bans a player; does nothing here.",
+		hs_sv_ban_evaluate,
+		"Halo PC's, a server's: from a map's script, kicks a player (a map keeps no one out).",
 		NULL,
 		2,
 		{ _hs_type_string },
