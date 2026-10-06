@@ -2930,7 +2930,12 @@ static long hs_type_default_value(
 	case _hs_type_long_integer:
 		return _hs_type_long_integer_default;
 	case _hs_type_string:
+#ifdef HALO_64BIT
+		/* (a string is an Xbox address here: the empty data's, all zeros, is "") */
+		return (long)XBOX_ADDRESS(tag_empty_data());
+#else
 		return (long)_hs_type_string_default;
+#endif
 	default:
 		/* (the rest's defaults, hs.c's _hs_type_*_default, are all NONE) */
 		return NONE;

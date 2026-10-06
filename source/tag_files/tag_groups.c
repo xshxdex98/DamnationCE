@@ -5,6 +5,7 @@ TAG_GROUPS.C
 /* ---------- headers */
 
 #include "cseries.h"
+#include "cseries_windows.h" /* port: XPhysicalAlloc */
 #include "errors.h"
 #include "tag_files.h"
 #include "byte_swapping.h"
@@ -26,8 +27,9 @@ enum
 
 /* ---------- globals */
 
-/* port: (tag_empty_data) */
-static unsigned long tag_empty_data_bytes[TAG_EMPTY_DATA_SIZE / sizeof(unsigned long)];
+/* port: (tag_empty_data) in the Xbox's memory, so that a tag can point at
+it: on the 64-bit builds only that memory has an Xbox address */
+static void *tag_empty_data_bytes = NULL;
 
 /* ---------- private code */
 
@@ -60,7 +62,9 @@ nowhere that matters */
 void *tag_empty_data(
 	void)
 {
-	csmemset(tag_empty_data_bytes, 0, sizeof(tag_empty_data_bytes));
+	if (!tag_empty_data_bytes)
+		tag_empty_data_bytes = XPhysicalAlloc(TAG_EMPTY_DATA_SIZE, (unsigned long)-1, 0, PAGE_READWRITE);
+	csmemset(tag_empty_data_bytes, 0, TAG_EMPTY_DATA_SIZE);
 
 	return tag_empty_data_bytes;
 }
