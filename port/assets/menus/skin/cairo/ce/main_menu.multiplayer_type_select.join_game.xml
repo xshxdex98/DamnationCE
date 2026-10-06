@@ -11,7 +11,7 @@
 		<child widget="error/error_modal" />
 		<child widget="error/error_modal_button_bar" x="194" y="309" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/join_game/header_internet" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/join_game/header_internet">
+	<widget name="main_menu/multiplayer_type_select/join_game/header_internet" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/join_game/header_internet">
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/join_game/header_join_game" controller="1" left="35" top="11" width="363" height="59">
 		<child widget="main_menu/multiplayer_type_select/join_game/header_internet" />
@@ -19,7 +19,7 @@
 		<child widget="main_menu/multiplayer_type_select/join_game/header_server_browser" />
 		<child widget="main_menu/multiplayer_type_select/join_game/header_direct_link" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/join_game/header_lan" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/join_game/header_lan">
+	<widget name="main_menu/multiplayer_type_select/join_game/header_lan" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/join_game/header_lan">
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/join_game/header_sort_arrows" width="64" height="32">
 		<child widget="main_menu/multiplayer_type_select/join_game/header_sort_up_arrow" />

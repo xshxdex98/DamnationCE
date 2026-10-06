@@ -27,7 +27,7 @@
 		<child widget="main_menu/multiplayer_type_select/direct_ip/header_direct_ip" />
 		<child widget="main_menu/multiplayer_type_select/direct_ip/direct_ip_menu" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/direct_ip/header_direct_ip" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/direct_ip/header_direct_ip">
+	<widget name="main_menu/multiplayer_type_select/direct_ip/header_direct_ip" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/direct_ip/header_direct_ip">
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/direct_ip/op_server_address" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FFC8D6EA">
 		<on event="left_mouse" run="mouse emit accept event" />

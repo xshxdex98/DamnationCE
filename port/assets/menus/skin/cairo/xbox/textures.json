@@ -1,0 +1,644 @@
+{
+ "assets": [
+  {
+   "name": "ui__shell__bitmaps__alert_bkd__0",
+   "tag": "ui\\shell\\bitmaps\\alert_bkd",
+   "bitmap": 0,
+   "width": 256,
+   "height": 256,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 2011027826
+  },
+  {
+   "name": "ui__shell__bitmaps__helpbox_center__0",
+   "tag": "ui\\shell\\bitmaps\\helpbox_center",
+   "bitmap": 0,
+   "width": 4,
+   "height": 256,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 577113653
+  },
+  {
+   "name": "ui__shell__bitmaps__helpbox_left__0",
+   "tag": "ui\\shell\\bitmaps\\helpbox_left",
+   "bitmap": 0,
+   "width": 16,
+   "height": 256,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 4250651036
+  },
+  {
+   "name": "ui__shell__bitmaps__helpbox_right__0",
+   "tag": "ui\\shell\\bitmaps\\helpbox_right",
+   "bitmap": 0,
+   "width": 16,
+   "height": 256,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 2285526071
+  },
+  {
+   "name": "ui__shell__bitmaps__menu_bkds__0",
+   "tag": "ui\\shell\\bitmaps\\menu_bkds",
+   "bitmap": 0,
+   "width": 256,
+   "height": 32,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3779468073
+  },
+  {
+   "name": "ui__shell__bitmaps__menu_bkds__1",
+   "tag": "ui\\shell\\bitmaps\\menu_bkds",
+   "bitmap": 1,
+   "width": 256,
+   "height": 32,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 93885396
+  },
+  {
+   "name": "ui__shell__bitmaps__pausebox2_center__0",
+   "tag": "ui\\shell\\bitmaps\\pausebox2_center",
+   "bitmap": 0,
+   "width": 4,
+   "height": 256,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 2477985300
+  },
+  {
+   "name": "ui__shell__bitmaps__pausebox2_left__0",
+   "tag": "ui\\shell\\bitmaps\\pausebox2_left",
+   "bitmap": 0,
+   "width": 16,
+   "height": 256,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 3587005387
+  },
+  {
+   "name": "ui__shell__bitmaps__pausebox2_right__0",
+   "tag": "ui\\shell\\bitmaps\\pausebox2_right",
+   "bitmap": 0,
+   "width": 16,
+   "height": 256,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 1931146562
+  },
+  {
+   "name": "ui__shell__bitmaps__pausebox_center__0",
+   "tag": "ui\\shell\\bitmaps\\pausebox_center",
+   "bitmap": 0,
+   "width": 4,
+   "height": 256,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 436566586
+  },
+  {
+   "name": "ui__shell__bitmaps__pausebox_left__0",
+   "tag": "ui\\shell\\bitmaps\\pausebox_left",
+   "bitmap": 0,
+   "width": 16,
+   "height": 256,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 2913023153
+  },
+  {
+   "name": "ui__shell__bitmaps__pausebox_right__0",
+   "tag": "ui\\shell\\bitmaps\\pausebox_right",
+   "bitmap": 0,
+   "width": 16,
+   "height": 256,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 1134828417
+  },
+  {
+   "name": "ui__shell__bitmaps__arrow_big_left__0",
+   "tag": "ui\\shell\\bitmaps\\arrow_big_left",
+   "bitmap": 0,
+   "width": 32,
+   "height": 256,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3189522937
+  },
+  {
+   "name": "ui__shell__bitmaps__arrow_big_left__1",
+   "tag": "ui\\shell\\bitmaps\\arrow_big_left",
+   "bitmap": 1,
+   "width": 32,
+   "height": 256,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1297557113
+  },
+  {
+   "name": "ui__shell__bitmaps__arrow_big_right__0",
+   "tag": "ui\\shell\\bitmaps\\arrow_big_right",
+   "bitmap": 0,
+   "width": 32,
+   "height": 256,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3336199473
+  },
+  {
+   "name": "ui__shell__bitmaps__arrow_big_right__1",
+   "tag": "ui\\shell\\bitmaps\\arrow_big_right",
+   "bitmap": 1,
+   "width": 32,
+   "height": 256,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 4008726175
+  },
+  {
+   "name": "ui__shell__bitmaps__arrow_sm_left__0",
+   "tag": "ui\\shell\\bitmaps\\arrow_sm_left",
+   "bitmap": 0,
+   "width": 16,
+   "height": 16,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 4174263256
+  },
+  {
+   "name": "ui__shell__bitmaps__arrow_sm_left__1",
+   "tag": "ui\\shell\\bitmaps\\arrow_sm_left",
+   "bitmap": 1,
+   "width": 16,
+   "height": 16,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 766564361
+  },
+  {
+   "name": "ui__shell__bitmaps__arrow_sm_right__0",
+   "tag": "ui\\shell\\bitmaps\\arrow_sm_right",
+   "bitmap": 0,
+   "width": 16,
+   "height": 16,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3252022160
+  },
+  {
+   "name": "ui__shell__bitmaps__arrow_sm_right__1",
+   "tag": "ui\\shell\\bitmaps\\arrow_sm_right",
+   "bitmap": 1,
+   "width": 16,
+   "height": 16,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3536596631
+  },
+  {
+   "name": "ui__shell__bitmaps__gradient__0",
+   "tag": "ui\\shell\\bitmaps\\gradient",
+   "bitmap": 0,
+   "width": 4,
+   "height": 512,
+   "format": "a8r8g8b8",
+   "scale": 4,
+   "crc": 1533313556
+  },
+  {
+   "name": "ui__shell__bitmaps__list_field__0",
+   "tag": "ui\\shell\\bitmaps\\list_field",
+   "bitmap": 0,
+   "width": 512,
+   "height": 512,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3302854869
+  },
+  {
+   "name": "ui__shell__bitmaps__list_item_bkd__0",
+   "tag": "ui\\shell\\bitmaps\\list_item_bkd",
+   "bitmap": 0,
+   "width": 256,
+   "height": 32,
+   "format": "dxt1",
+   "scale": 4,
+   "crc": 2101787454
+  },
+  {
+   "name": "ui__shell__bitmaps__list_item_bkd__1",
+   "tag": "ui\\shell\\bitmaps\\list_item_bkd",
+   "bitmap": 1,
+   "width": 256,
+   "height": 32,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1369083436
+  },
+  {
+   "name": "ui__shell__bitmaps__list_item_bkd_top__0",
+   "tag": "ui\\shell\\bitmaps\\list_item_bkd_top",
+   "bitmap": 0,
+   "width": 256,
+   "height": 32,
+   "format": "dxt1",
+   "scale": 4,
+   "crc": 2101787454
+  },
+  {
+   "name": "ui__shell__bitmaps__list_item_bkd_top__1",
+   "tag": "ui\\shell\\bitmaps\\list_item_bkd_top",
+   "bitmap": 1,
+   "width": 256,
+   "height": 32,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1254714897
+  },
+  {
+   "name": "ui__shell__bitmaps__option_bkds__0",
+   "tag": "ui\\shell\\bitmaps\\option_bkds",
+   "bitmap": 0,
+   "width": 512,
+   "height": 32,
+   "format": "a4r4g4b4",
+   "scale": 4,
+   "crc": 2021874467
+  },
+  {
+   "name": "ui__shell__bitmaps__option_bkds__1",
+   "tag": "ui\\shell\\bitmaps\\option_bkds",
+   "bitmap": 1,
+   "width": 512,
+   "height": 32,
+   "format": "a4r4g4b4",
+   "scale": 4,
+   "crc": 2699346645
+  },
+  {
+   "name": "ui__shell__bitmaps__spinner_list_3_wide_item_background__0",
+   "tag": "ui\\shell\\bitmaps\\spinner_list_3_wide_item_background",
+   "bitmap": 0,
+   "width": 256,
+   "height": 512,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 765743574
+  },
+  {
+   "name": "ui__shell__bitmaps__spinner_list_3_wide_item_background__1",
+   "tag": "ui\\shell\\bitmaps\\spinner_list_3_wide_item_background",
+   "bitmap": 1,
+   "width": 256,
+   "height": 512,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3041769015
+  },
+  {
+   "name": "ui__shell__bitmaps__split_screen_bkd__0",
+   "tag": "ui\\shell\\bitmaps\\split_screen_bkd",
+   "bitmap": 0,
+   "width": 256,
+   "height": 256,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3647202183
+  },
+  {
+   "name": "ui__shell__main_menu__difficulty_select__header_choose_difficulty__0",
+   "tag": "ui\\shell\\main_menu\\difficulty_select\\header_choose_difficulty",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 239132260
+  },
+  {
+   "name": "ui__shell__main_menu__gametype_select__header_select_gametype__0",
+   "tag": "ui\\shell\\main_menu\\gametype_select\\header_select_gametype",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3484251087
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__connected__4way_profile_select__header_select_profile__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\connected\\4way_profile_select\\header_select_profile",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3809957324
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__connected__pregame__header_enlisted_players__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\connected\\pregame\\header_enlisted_players",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 200802299
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__connected__pregame__header_enlisted_players__1",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\connected\\pregame\\header_enlisted_players",
+   "bitmap": 1,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3271397720
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__connected__pregame__pregame_list_field__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\connected\\pregame\\pregame_list_field",
+   "bitmap": 0,
+   "width": 256,
+   "height": 512,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3644312321
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__connected__pregame__pregame_message_field__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\connected\\pregame\\pregame_message_field",
+   "bitmap": 0,
+   "width": 512,
+   "height": 32,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1407099301
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__connected__pregame__pregame_remote_field__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\connected\\pregame\\pregame_remote_field",
+   "bitmap": 0,
+   "width": 256,
+   "height": 128,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1546755199
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__connected__server_list__header_found_games__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\connected\\server_list\\header_found_games",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 2789623685
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__coop__header_select_profile_player_1__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\coop\\header_select_profile_player_1",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3659528822
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__coop__header_select_profile_player_2__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\coop\\header_select_profile_player_2",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 2980623116
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__header_multiplayer__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\header_multiplayer",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1350838763
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__mp_map_select__header_select_map__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\mp_map_select\\header_select_map",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1341267705
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__split_screen__4way_profile_select__4way_profile_border__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\split_screen\\4way_profile_select\\4way_profile_border",
+   "bitmap": 0,
+   "width": 256,
+   "height": 256,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3647202183
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__split_screen__pregame__pregame_field__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\split_screen\\pregame\\pregame_field",
+   "bitmap": 0,
+   "width": 256,
+   "height": 512,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 2944633003
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__split_screen__pregame__pregame_list_field__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\split_screen\\pregame\\pregame_list_field",
+   "bitmap": 0,
+   "width": 512,
+   "height": 512,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 2351993750
+  },
+  {
+   "name": "ui__shell__main_menu__multiplayer_type_select__split_screen__pregame__pregame_message_field_split__0",
+   "tag": "ui\\shell\\main_menu\\multiplayer_type_select\\split_screen\\pregame\\pregame_message_field_split",
+   "bitmap": 0,
+   "width": 1024,
+   "height": 32,
+   "format": "dxt3",
+   "scale": 2,
+   "crc": 3309047260
+  },
+  {
+   "name": "ui__shell__main_menu__player_profiles_select__header_select_profile__0",
+   "tag": "ui\\shell\\main_menu\\player_profiles_select\\header_select_profile",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3809957324
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__multiplayer_setup__indicator_options_edit__header_indicator_options__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\multiplayer_setup\\indicator_options_edit\\header_indicator_options",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1149042616
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__multiplayer_setup__item_options_edit__header_item_options__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\multiplayer_setup\\item_options_edit\\header_item_options",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 321993425
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__multiplayer_setup__name_edit__header_gametype_name__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\multiplayer_setup\\name_edit\\header_gametype_name",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1792021550
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__multiplayer_setup__player_options_edit__header_player_options__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\multiplayer_setup\\player_options_edit\\header_player_options",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3909983543
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__multiplayer_setup__playlist_edit__game_type_select__header_rules__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\multiplayer_setup\\playlist_edit\\game_type_select\\header_rules",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3512933241
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__multiplayer_setup__playlist_edit__header_edit_multiplayer_gametype__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\multiplayer_setup\\playlist_edit\\header_edit_multiplayer_gametype",
+   "bitmap": 0,
+   "width": 1024,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 2,
+   "crc": 2136106939
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__multiplayer_setup__playlist_edit__header_set_options__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\multiplayer_setup\\playlist_edit\\header_set_options",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1019861480
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__multiplayer_setup__playlist_select__header_select_gametype_to_edit__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\multiplayer_setup\\playlist_select\\header_select_gametype_to_edit",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3609062577
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__player_setup__header_select_profile_to_edit__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\player_setup\\header_select_profile_to_edit",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt5",
+   "scale": 4,
+   "crc": 3855363201
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__player_setup__player_profile_edit__advanced_controls__header_advanced_controls__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\player_setup\\player_profile_edit\\advanced_controls\\header_advanced_controls",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 107713830
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__player_setup__player_profile_edit__color_edit__header_profile_color__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\player_setup\\player_profile_edit\\color_edit\\header_profile_color",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3508711134
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__player_setup__player_profile_edit__controller_edit__header_profile_controller_setting__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\player_setup\\player_profile_edit\\controller_edit\\header_profile_controller_setting",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1148848477
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__player_setup__player_profile_edit__header_edit_profile_settings__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\player_setup\\player_profile_edit\\header_edit_profile_settings",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 1018225938
+  },
+  {
+   "name": "ui__shell__main_menu__settings_select__player_setup__player_profile_edit__name_edit__header_profile_name__0",
+   "tag": "ui\\shell\\main_menu\\settings_select\\player_setup\\player_profile_edit\\name_edit\\header_profile_name",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 4190213418
+  },
+  {
+   "name": "ui__shell__main_menu__solo_level_select__header_load_level__0",
+   "tag": "ui\\shell\\main_menu\\solo_level_select\\header_load_level",
+   "bitmap": 0,
+   "width": 512,
+   "height": 64,
+   "format": "dxt3",
+   "scale": 4,
+   "crc": 3307408857
+  }
+ ]
+}
