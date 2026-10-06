@@ -2478,6 +2478,8 @@ void network_objects_handle_states(
 		real blend_distance = REMOTE_BLEND_DISTANCE;
 		real_vector3d forward, up, velocity, angular_velocity;
 		real dx, dy, dz;
+		boolean own_vehicle = FALSE;
+		boolean at_rest;
 
 		if (!distributed_object_index_valid(state->object_index) || !network_objects_client_has(state->object_index))
 			continue;
@@ -2536,12 +2538,15 @@ void network_objects_handle_states(
 				/* (turned as it drives it) */
 				angle_tolerance = -1.0f;
 				blend_distance = 0.0f;
+				own_vehicle = TRUE;
 			}
 		}
 		/* (at rest as the host has it, however close: a copy left at rest
-		while the host's falls hangs there) */
-		SET_FLAG(object->object.flags, _object_at_rest_bit, TEST_FLAG(state->flags, _distributed_object_at_rest_bit) ||
-			distributed_vehicle_unsteered(state->object_index));
+		while the host's falls hangs there; but not one this machine drives,
+		which the host's word, a round trip old, would stop as it sets off) */
+		at_rest = TEST_FLAG(state->flags, _distributed_object_at_rest_bit) || distributed_vehicle_unsteered(state->object_index);
+		if (!own_vehicle)
+			SET_FLAG(object->object.flags, _object_at_rest_bit, at_rest);
 		dx = state->position.x - object->object.position.x;
 		dy = state->position.y - object->object.position.y;
 		dz = state->position.z - object->object.position.z;
@@ -2558,6 +2563,9 @@ void network_objects_handle_states(
 		{
 			distributed_count_correction();
 		}
+		/* (one it drives, put where the host has it, is as the host has it) */
+		if (own_vehicle)
+			SET_FLAG(object->object.flags, _object_at_rest_bit, at_rest);
 	}
 }
 
