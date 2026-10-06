@@ -711,10 +711,8 @@ static void director_choose_camera_game(
 
 		/* (port: not a client in another's game, the host's rules: a flying
 		camera would see all of it, and one behind the player round its
-		corners. The level editor's FLY turns to the flying camera as the
-		key would, once the player is in the map: editor_play.c) */
-		if ((key || (player->unit_index != NONE && editor_play_take_flying_start())) &&
-			!network_game_distributed_client())
+		corners) */
+		if (key && !network_game_distributed_client())
 			director_rotate_cameras(local_player_index, director_game_camera_modes, 3);
 		if (!*director_camera_scripted)
 		{
@@ -956,12 +954,25 @@ static void director_choose_camera(
 	return;
 }
 
+/* port: the level editor's live view (editor_play.c) turns between its
+flying camera, Sapien's, and the game's as PLAY and STOP do */
+void director_set_editing(
+	boolean editing)
+{
+	short local_player_index;
+
+	director_globals.game_mode = editing ? _director_mode_editor : _director_mode_game;
+	for (local_player_index = 0; local_player_index < MAXIMUM_NUMBER_OF_LOCAL_PLAYERS; local_player_index++)
+		director_choose_camera(local_player_index, TRUE, FALSE);
+}
+
 void director_initialize_for_new_map(
 	void)
 {
 	short local_player_index;
 
-	director_globals.game_mode = game_in_editor() ? _director_mode_editor : _director_mode_game;
+	/* (port: and the level editor's live view, editor_play.c) */
+	director_globals.game_mode = game_in_editor() || editor_play_editing() ? _director_mode_editor : _director_mode_game;
 	director_globals.initialize_camera = FALSE;
 	for (local_player_index = 0;
 		local_player_index < MAXIMUM_NUMBER_OF_LOCAL_PLAYERS;
