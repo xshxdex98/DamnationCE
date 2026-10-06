@@ -27,11 +27,6 @@
 - Bodies no longer hang in midair in large games.
 - Killing blows reach every player, so bodies fall as they did on the host.
 
-### Level editor
-
-- PLAY and FLY play the level inside the editor's view, starting from the
-  level's spawns or, with none, below the editor's view.
-
 The flashlight and other dynamic lights, missing in 0.3.20 on Windows,
 work again (since 0.3.21).
 
