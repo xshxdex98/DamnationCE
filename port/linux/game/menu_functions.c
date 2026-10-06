@@ -5024,7 +5024,8 @@ boolean pc_menu_event_function_invoke(
 		{
 			return gametype_setup_edit();
 		}
-		else if (!strcmp(name, "port theme glassed") || !strcmp(name, "port theme vanilla"))
+		else if (!strcmp(name, "port theme glassed") || !strcmp(name, "port theme vanilla") ||
+			!strcmp(name, "port theme cairo"))
 		{
 			extern void pc_menus_theme_choose(char const *theme);
 

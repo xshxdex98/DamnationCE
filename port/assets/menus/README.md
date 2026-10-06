@@ -14,7 +14,7 @@ controller, the keyboard and the mouse, on every port.
 | `UNWIRED.md` | The menus' functions that do nothing yet: the lists they fill are empty, and the settings they change do not change |
 | `menus.json` | The files the game embeds (and every file under `skin/`) |
 | `shell/` | The Glassed theme's left-hand menus: the main menu (the root) and its Campaign, Multiplayer and Menus columns; `tools/shell_art.py` draws their pictures |
-| `skin/glassed/`, `skin/vanilla/` | The two themes' layers (below), written by `tools/shell_skin.py` |
+| `skin/glassed/`, `skin/cairo/`, `skin/vanilla/` | The themes' layers (below), written by `tools/shell_skin.py` |
 
 `tools/ce_menus.py` writes all of them from the PC version's tags and the
 redraws, but the settings screens (Controls Setup, Gamepads, Mouse, Audio,
@@ -35,8 +35,9 @@ one screen (by its name, `main_menu/settings_select/...`), for looking at it.
 ## Themes
 
 `display.theme` picks the menus' theme, and the main menu's MENUS button
-switches it on the spot (`port theme glassed`, `port theme vanilla`; the
-menus are built again in it on the next frame, `menu_tags.c`).
+switches it on the spot (`port theme glassed`, `port theme cairo`,
+`port theme vanilla`; the menus are built again in it on the next frame,
+`menu_tags.c`).
 
 A theme is a layer: `skin/<theme>/` holds files under the same paths as the
 ones they replace while that theme is chosen (`ce/main_menu.xml`,
@@ -51,14 +52,27 @@ theme, so `tools/ce_menus.py` can write it again at any time; run
   `shell_skin.py`, the place for any further layout change);
   `skin/glassed/xbox` redraws the pictures the maps carry themselves (pause
   menus, split screen, the lobby), drawn in place of the maps' bitmaps as
-  the high-res HUD is. The map picker (`port/linux/game/map_screen.c`) and
-  Online Games' look are this theme's too.
+  the high-res HUD is (`skin/xbox` enlarges the maps' and levels' pictures
+  for every theme; `--maps` writes them, and they are not kept in the
+  repository). The map picker (`port/linux/game/map_screen.c`), the lobby
+  and Online Games' wide list are this client's screens, Glassed's and
+  Cairo's.
+- **Cairo**: the menus in the look of Halo 2's. Its main menu is
+  `shell/`'s set out down the middle of the screen under a chrome title
+  (`skin/cairo/shell`, written from `shell/` by the `CAIRO_SHELL` tables in
+  `shell_skin.py`); the same pictures as Glassed's are redrawn by
+  `tools/cairo_art.py` (navy over the scene, header bands that step down
+  at 45 degrees, slate rows behind brackets, gridded panes with steel
+  corners), with the same layout fixes, and the screens' titles moved onto
+  their header bands. The overlay's screens (`overlay_screens.c`) draw its
+  frames, and its text is Titillium Web (`port/assets/fonts`).
 - **Vanilla**: the menus as they were, with a MENUS button
   (`skin/vanilla/ce/main_menu.xml`).
 
-`tools/menu_preview.py <widget> <out.png>` draws a screen roughly as the game
-does, from the XML, with the widgets that draw nothing outlined: a quick
-look for overlaps without running the game.
+`tools/menu_preview.py <widget> <out.png> [--theme cairo]` draws a screen
+roughly as the game does, from the XML (and the theme's layer), with the
+widgets that draw nothing outlined: a quick look for overlaps without
+running the game.
 
 ## Elements
 

@@ -21,6 +21,9 @@ enum
 	/* the Glassed theme's regular and bold (Rajdhani) */
 	POSIX_UI_FONT_GLASSED_REGULAR,
 	POSIX_UI_FONT_GLASSED_BOLD,
+	/* the Cairo theme's (Titillium Web SemiBold and Bold) */
+	POSIX_UI_FONT_CAIRO_REGULAR,
+	POSIX_UI_FONT_CAIRO_BOLD,
 
 	POSIX_UI_FONT_COUNT
 };

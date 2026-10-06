@@ -7,12 +7,13 @@ the game's picture.
 
 Each shape is a quad whose fragment shader works out a rounded rectangle's
 edge (filled, or its outline) from the distance to it, so corners and lines
-are smooth at any size; text is glyphs (posix_ui_font.c) packed into one
+are smooth at any size; its corners may be cut at 45 degrees instead; text is glyphs (posix_ui_font.c) packed into one
 atlas texture as they are first drawn at a size, and drawn as quads too.
 */
 
 #ifdef HALO_GAME_BROWSER
 
+#include "halo_menus.h"
 #include "platform.h"
 #include "port_config.h"
 #include "gl.h"
@@ -44,6 +45,8 @@ struct quad
 {
 	float x, y, width, height;
 	float radius, thickness;
+	/* the corners cut at 45 degrees: top left, top right, bottom right, bottom left */
+	float cuts[4];
 	unsigned int top, bottom;
 	/* a glyph's place in the atlas (u0 < 0: a shape) */
 	float u0, v0, u1, v1;
@@ -55,6 +58,7 @@ struct vertex
 	float u, v;
 	float local_x, local_y, half_width, half_height;
 	float radius, thickness;
+	float cuts[4];
 	unsigned char color[4];
 };
 
@@ -185,6 +189,38 @@ void ui_overlay_rect(float x, float y, float width, float height, float radius, 
 	ui_overlay_gradient(x, y, width, height, radius, color, color);
 }
 
+void ui_overlay_chamfered(float x, float y, float width, float height, const float cuts[4], unsigned int top,
+	unsigned int bottom)
+{
+	struct quad *quad = new_quad();
+
+	if (!quad)
+		return;
+	quad->x = x;
+	quad->y = y;
+	quad->width = width;
+	quad->height = height;
+	memcpy(quad->cuts, cuts, sizeof(quad->cuts));
+	quad->top = top;
+	quad->bottom = bottom;
+}
+
+void ui_overlay_chamfered_outline(float x, float y, float width, float height, const float cuts[4], float thickness,
+	unsigned int color)
+{
+	struct quad *quad = new_quad();
+
+	if (!quad)
+		return;
+	quad->x = x;
+	quad->y = y;
+	quad->width = width;
+	quad->height = height;
+	memcpy(quad->cuts, cuts, sizeof(quad->cuts));
+	quad->thickness = thickness > 0.0f ? thickness : 1.0f;
+	quad->top = quad->bottom = color;
+}
+
 void ui_overlay_outline(float x, float y, float width, float height, float radius, float thickness,
 	unsigned int color)
 {
@@ -222,26 +258,21 @@ static unsigned int next_codepoint(const char **cursor)
 	return codepoint;
 }
 
-/* whether the menus' theme is Glassed, read again when the settings change */
-static int theme_glassed(void)
-{
-	static int glassed;
-	static unsigned long read_at = (unsigned long)-1;
-
-	if (read_at != config_changes())
-	{
-		read_at = config_changes();
-		glassed = strcmp(config_string("display.theme"), "vanilla") != 0;
-	}
-	return glassed;
-}
-
-/* the face for a font: Rajdhani in the Glassed theme, else Noto Sans */
+/* the face for a font in the menus' theme: Rajdhani in Glassed, Titillium
+Web in Cairo, Noto Sans in Vanilla */
 static int posix_font(int font)
 {
-	if (theme_glassed())
-		return font == UI_FONT_BOLD ? POSIX_UI_FONT_GLASSED_BOLD : POSIX_UI_FONT_GLASSED_REGULAR;
-	return font == UI_FONT_BOLD ? POSIX_UI_FONT_BOLD : POSIX_UI_FONT_REGULAR;
+	int bold = font == UI_FONT_BOLD;
+
+	switch (halo_menus_theme())
+	{
+	case HALO_MENU_THEME_GLASSED:
+		return bold ? POSIX_UI_FONT_GLASSED_BOLD : POSIX_UI_FONT_GLASSED_REGULAR;
+	case HALO_MENU_THEME_CAIRO:
+		return bold ? POSIX_UI_FONT_CAIRO_BOLD : POSIX_UI_FONT_CAIRO_REGULAR;
+	default:
+		return bold ? POSIX_UI_FONT_BOLD : POSIX_UI_FONT_REGULAR;
+	}
 }
 
 /* a string's width in the layout at a size: measured at the layout's own
@@ -341,17 +372,20 @@ static const char vertex_source[] =
 	"in vec2 texture_coordinate;\n"
 	"in vec4 shape;\n"
 	"in vec2 edge;\n"
+	"in vec4 cut;\n"
 	"in vec4 color;\n"
 	"uniform vec2 scale;\n"
 	"out vec2 v_texture_coordinate;\n"
 	"out vec4 v_shape;\n"
 	"out vec2 v_edge;\n"
+	"out vec4 v_cut;\n"
 	"out vec4 v_color;\n"
 	"void main()\n"
 	"{\n"
 	"\tv_texture_coordinate = texture_coordinate;\n"
 	"\tv_shape = shape;\n"
 	"\tv_edge = edge;\n"
+	"\tv_cut = cut;\n"
 	"\tv_color = color;\n"
 	"\tgl_Position = vec4(position * scale - vec2(1.0, -1.0), 0.0, 1.0);\n"
 	"}\n";
@@ -360,6 +394,7 @@ static const char fragment_source[] =
 	"in vec2 v_texture_coordinate;\n"
 	"in vec4 v_shape;\n"
 	"in vec2 v_edge;\n"
+	"in vec4 v_cut;\n"
 	"in vec4 v_color;\n"
 	"uniform sampler2D atlas;\n"
 	"uniform vec4 cutouts[" MAXIMUM_CUTOUTS_TEXT "];\n"
@@ -383,6 +418,16 @@ static const char fragment_source[] =
 	thickness (0: filled) */
 	"\t\tvec2 q = abs(v_shape.xy) - v_shape.zw + vec2(v_edge.x);\n"
 	"\t\tfloat d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - v_edge.x;\n"
+	/* the cut corners: the distance to each 45 degree line across one too
+	(cut: top left, top right, bottom right, bottom left; y runs down). A
+	cut may be as long as the side it starts on. */
+	"\t\tvec4 toward = vec4(-v_shape.x - v_shape.y, v_shape.x - v_shape.y,\n"
+	"\t\t\tv_shape.x + v_shape.y, v_shape.y - v_shape.x);\n"
+	"\t\tvec4 beyond = (toward - vec4(v_shape.z + v_shape.w) + v_cut) * 0.70710678;\n"
+	"\t\tif (v_cut.x > 0.0) d = max(d, beyond.x);\n"
+	"\t\tif (v_cut.y > 0.0) d = max(d, beyond.y);\n"
+	"\t\tif (v_cut.z > 0.0) d = max(d, beyond.z);\n"
+	"\t\tif (v_cut.w > 0.0) d = max(d, beyond.w);\n"
 	"\t\talpha = clamp(0.5 - d, 0.0, 1.0);\n"
 	"\t\tif (v_edge.y > 0.0)\n"
 	"\t\t\talpha *= clamp(d + v_edge.y + 0.5, 0.0, 1.0);\n"
@@ -443,6 +488,7 @@ static int set_up(void)
 	glBindAttribLocation(overlay.program, 2, "shape");
 	glBindAttribLocation(overlay.program, 3, "edge");
 	glBindAttribLocation(overlay.program, 4, "color");
+	glBindAttribLocation(overlay.program, 5, "cut");
 	glLinkProgram(overlay.program);
 	glDeleteShader(vertex_shader);
 	glDeleteShader(fragment_shader);
@@ -479,6 +525,8 @@ static int set_up(void)
 	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(struct vertex), (const void *)offsetof(struct vertex, radius));
 	glEnableVertexAttribArray(4);
 	glVertexAttribPointer(4, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(struct vertex), (const void *)offsetof(struct vertex, color));
+	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(struct vertex), (const void *)offsetof(struct vertex, cuts));
 	glBindVertexArray(0);
 
 	glGenTextures(1, &overlay.atlas);
@@ -622,9 +670,8 @@ static void lay_out_text(int index, float scale, float origin_x, float origin_y,
 }
 
 static void put_vertex(struct vertex *vertex, float x, float y, float u, float v, float local_x, float local_y,
-	const struct quad *quad, float half_width, float half_height, float radius, float thickness, unsigned int color)
+	const float cuts[4], float half_width, float half_height, float radius, float thickness, unsigned int color)
 {
-	(void)quad;
 	vertex->x = x;
 	vertex->y = y;
 	vertex->u = u;
@@ -635,6 +682,7 @@ static void put_vertex(struct vertex *vertex, float x, float y, float u, float v
 	vertex->half_height = half_height;
 	vertex->radius = radius;
 	vertex->thickness = thickness;
+	memcpy(vertex->cuts, cuts, sizeof(vertex->cuts));
 	vertex->color[0] = (unsigned char)(color >> 24);
 	vertex->color[1] = (unsigned char)(color >> 16);
 	vertex->color[2] = (unsigned char)(color >> 8);
@@ -711,8 +759,9 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 	{
 		const struct quad *quad = &overlay.quads[index];
 		struct vertex *v = &overlay.vertices[count];
-		float left, top, right, bottom, half_width, half_height, radius, thickness, grow;
+		float left, top, right, bottom, half_width, half_height, radius, thickness, grow, cuts[4];
 		unsigned int top_color = quad->top, bottom_color = quad->bottom;
+		int corner;
 
 		if (index < shape_count)
 		{
@@ -726,13 +775,15 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 			half_height = (bottom - top) * 0.5f;
 			radius = quad->radius * scale;
 			thickness = quad->thickness > 0.0f ? fmaxf(1.0f, quad->thickness * scale) : 0.0f;
+			for (corner = 0; corner < 4; corner++)
+				cuts[corner] = quad->cuts[corner] * scale;
 			grow = 1.0f;
-			put_vertex(&v[0], left - grow, top - grow, -1.0f, 0.0f, -half_width - grow, -half_height - grow, quad, half_width, half_height, radius, thickness, top_color);
-			put_vertex(&v[1], right + grow, top - grow, -1.0f, 0.0f, half_width + grow, -half_height - grow, quad, half_width, half_height, radius, thickness, top_color);
-			put_vertex(&v[2], left - grow, bottom + grow, -1.0f, 0.0f, -half_width - grow, half_height + grow, quad, half_width, half_height, radius, thickness, bottom_color);
-			put_vertex(&v[3], right + grow, top - grow, -1.0f, 0.0f, half_width + grow, -half_height - grow, quad, half_width, half_height, radius, thickness, top_color);
-			put_vertex(&v[4], right + grow, bottom + grow, -1.0f, 0.0f, half_width + grow, half_height + grow, quad, half_width, half_height, radius, thickness, bottom_color);
-			put_vertex(&v[5], left - grow, bottom + grow, -1.0f, 0.0f, -half_width - grow, half_height + grow, quad, half_width, half_height, radius, thickness, bottom_color);
+			put_vertex(&v[0], left - grow, top - grow, -1.0f, 0.0f, -half_width - grow, -half_height - grow, cuts, half_width, half_height, radius, thickness, top_color);
+			put_vertex(&v[1], right + grow, top - grow, -1.0f, 0.0f, half_width + grow, -half_height - grow, cuts, half_width, half_height, radius, thickness, top_color);
+			put_vertex(&v[2], left - grow, bottom + grow, -1.0f, 0.0f, -half_width - grow, half_height + grow, cuts, half_width, half_height, radius, thickness, bottom_color);
+			put_vertex(&v[3], right + grow, top - grow, -1.0f, 0.0f, half_width + grow, -half_height - grow, cuts, half_width, half_height, radius, thickness, top_color);
+			put_vertex(&v[4], right + grow, bottom + grow, -1.0f, 0.0f, half_width + grow, half_height + grow, cuts, half_width, half_height, radius, thickness, bottom_color);
+			put_vertex(&v[5], left - grow, bottom + grow, -1.0f, 0.0f, -half_width - grow, half_height + grow, cuts, half_width, half_height, radius, thickness, bottom_color);
 		}
 		else
 		{
@@ -741,12 +792,12 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 			top = quad->y;
 			right = left + quad->width;
 			bottom = top + quad->height;
-			put_vertex(&v[0], left, top, quad->u0, quad->v0, 0, 0, quad, 0, 0, 0, 0, top_color);
-			put_vertex(&v[1], right, top, quad->u1, quad->v0, 0, 0, quad, 0, 0, 0, 0, top_color);
-			put_vertex(&v[2], left, bottom, quad->u0, quad->v1, 0, 0, quad, 0, 0, 0, 0, top_color);
-			put_vertex(&v[3], right, top, quad->u1, quad->v0, 0, 0, quad, 0, 0, 0, 0, top_color);
-			put_vertex(&v[4], right, bottom, quad->u1, quad->v1, 0, 0, quad, 0, 0, 0, 0, top_color);
-			put_vertex(&v[5], left, bottom, quad->u0, quad->v1, 0, 0, quad, 0, 0, 0, 0, top_color);
+			put_vertex(&v[0], left, top, quad->u0, quad->v0, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
+			put_vertex(&v[1], right, top, quad->u1, quad->v0, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
+			put_vertex(&v[2], left, bottom, quad->u0, quad->v1, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
+			put_vertex(&v[3], right, top, quad->u1, quad->v0, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
+			put_vertex(&v[4], right, bottom, quad->u1, quad->v1, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
+			put_vertex(&v[5], left, bottom, quad->u0, quad->v1, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
 		}
 		count += 6;
 	}

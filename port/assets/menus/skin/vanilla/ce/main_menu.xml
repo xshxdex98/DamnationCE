@@ -75,6 +75,10 @@
 		<frame png="ce/port/main_menu/menu_glassed__0.png" width="256" height="64" />
 		<frame png="ce/port/main_menu/menu_glassed__1.png" width="256" height="64" />
 	</bitmap>
+	<bitmap name="main_menu/menu_cairo">
+		<frame png="ce/port/main_menu/menu_cairo__0.png" width="256" height="64" />
+		<frame png="ce/port/main_menu/menu_cairo__1.png" width="256" height="64" />
+	</bitmap>
 	<bitmap name="main_menu/menu_vanilla">
 		<frame png="ce/port/main_menu/menu_vanilla__0.png" width="256" height="64" />
 		<frame png="ce/port/main_menu/menu_vanilla__1.png" width="256" height="64" />
@@ -87,6 +91,10 @@
 		<on event="a start" run="port theme glassed" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
+	<widget name="main_menu/theme_cairo" type="text" width="256" height="33" bitmap="main_menu/menu_cairo">
+		<on event="a start" run="port theme cairo" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
 	<widget name="main_menu/theme_vanilla" type="text" width="256" height="33" bitmap="main_menu/menu_vanilla">
 		<on event="a start" run="port theme vanilla" />
 		<on event="left_mouse" run="mouse emit accept event" />
@@ -94,7 +102,8 @@
 	<widget name="main_menu/themes_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="main_menu/main_menu_list_ext_desc">
 		<data input="main menu fake animate" />
 		<child widget="main_menu/theme_glassed" x="192" y="247" />
-		<child widget="main_menu/theme_vanilla" x="192" y="283" />
+		<child widget="main_menu/theme_cairo" x="192" y="283" />
+		<child widget="main_menu/theme_vanilla" x="192" y="319" />
 	</widget>
 	<widget name="main_menu/themes_screen" width="640" height="480" flags="pass_unhandled_to_focused_child">
 		<on event="b back" back="true" />

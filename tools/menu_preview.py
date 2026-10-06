@@ -3,15 +3,17 @@
 to look a layout over without running the game:
 
     python tools/menu_preview.py <widget name> <out.png> [focused child index]
+        [--theme glassed|vanilla|cairo] [--backdrop <picture of the scene>]
 
 Every widget's picture is drawn where the game draws it (its first frame;
 its second for the list item with the focus), and its text in a stand-in
 font, with "Text" where the game fills the text in. Boxes outline widgets
-with neither, so overlaps show. Needs Pillow.
+with neither, so overlaps show. A theme's layer (skin/<theme>/) is read in
+place of the files it replaces, as the game reads it. Needs Pillow.
 """
 
+import argparse
 import json
-import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -25,16 +27,20 @@ FONT_SIZES = {"ui\\large_ui": 14, "ui\\small_ui": 10}
 BACKDROP = (58, 50, 52, 255)
 
 
+THEME = "glassed"
+
+
 def menu_file(name):
-    skinned = MENUS / "skin" / name
-    return skinned if skinned.exists() else MENUS / name
+    """A file of the menus: the theme's copy, if its layer has one."""
+    layered = MENUS / "skin" / THEME / name
+    return layered if layered.exists() else MENUS / name
 
 
 class Menus:
     def __init__(self):
         self.widgets, self.bitmaps, self.strings = {}, {}, {}
         for name in json.loads((MENUS / "menus.json").read_text())["files"]:
-            if not name.endswith(".xml"):
+            if not name.endswith(".xml") or name.startswith("skin/") or (THEME == "vanilla" and name.startswith("shell/")):
                 continue
             for element in ET.parse(menu_file(name)).getroot():
                 if element.tag == "widget":
@@ -116,13 +122,23 @@ def draw_widget(menus, image, name, x, y, focused, focus_index, depth=0):
 
 
 def main():
-    name, out = sys.argv[1], sys.argv[2]
-    focus_index = int(sys.argv[3]) if len(sys.argv) > 3 else 0
-    image = Image.new("RGBA", (WIDTH * SCALE, HEIGHT * SCALE), BACKDROP)
-    scene = ImageDraw.Draw(image)
-    scene.ellipse([300 * SCALE, 240 * SCALE, 1100 * SCALE, 1040 * SCALE], fill=(150, 120, 80, 255))
-    draw_widget(Menus(), image, name, 0, 0, False, focus_index)
-    image.convert("RGB").save(out)
+    global THEME
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("widget")
+    parser.add_argument("out")
+    parser.add_argument("focus", nargs="?", type=int, default=0, help="the focused child of the screen's list")
+    parser.add_argument("--theme", default="glassed")
+    parser.add_argument("--backdrop", help="a picture of the scene behind the menus")
+    arguments = parser.parse_args()
+    THEME = arguments.theme
+    if arguments.backdrop:
+        image = Image.open(arguments.backdrop).convert("RGBA").resize((WIDTH * SCALE, HEIGHT * SCALE))
+    else:
+        image = Image.new("RGBA", (WIDTH * SCALE, HEIGHT * SCALE), BACKDROP)
+        scene = ImageDraw.Draw(image)
+        scene.ellipse([300 * SCALE, 240 * SCALE, 1100 * SCALE, 1040 * SCALE], fill=(150, 120, 80, 255))
+    draw_widget(Menus(), image, arguments.widget, 0, 0, False, arguments.focus)
+    image.convert("RGB").save(arguments.out)
 
 
 if __name__ == "__main__":

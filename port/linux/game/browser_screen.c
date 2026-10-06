@@ -671,19 +671,18 @@ static struct browser_column const columns[] =
 column headings, the selected game's details on the right */
 enum
 {
-	GLASS_TOP = 66, GLASS_BOTTOM = 446,
 	COLUMNS_Y = 74, LIST_Y = 92, ROW_HEIGHT = 22,
 	FOOTER_Y = LIST_Y + ROWS_PER_PAGE * ROW_HEIGHT + 6,
 	DETAIL_Y = 78, DETAIL_WIDTH = 183, DETAIL_PICTURE_HEIGHT = 112,
 	ROSTER_COLUMNS = 2, ROSTER_ROWS = 8,
-	/* Glassed: the gap to the screen's edges and between list and details,
-	and the widest the list gets on a very wide screen */
+	/* this client's layout: the gap to the screen's edges and between list
+	and details, and the widest the list gets on a very wide screen */
 	EDGE_GAP = 24, COLUMN_GAP = 24, MAXIMUM_LIST_WIDTH = 560,
 };
 
 /* Where the columns go, in the 640x480 layout's units: Vanilla's are fixed
-and centred; Glassed's list starts at the screen's left edge and the details
-end at its right, however wide the screen. */
+and centred; this client's list starts at the screen's left edge and the
+details end at its right, however wide the screen. */
 static struct
 {
 	float list_x;
@@ -700,7 +699,7 @@ static void layout_update(
 	float edge = (float)((halo_screen_width() - 640) / 2);
 
 	palette = overlay_palette_current();
-	if (!palette->glassed)
+	if (!palette->own_screens)
 	{
 		layout.list_x = 37.0f;
 		layout.list_width = 368.0f;
@@ -769,10 +768,11 @@ static void button_labels_get(struct button_labels *buttons)
 	buttons->labels[BUTTON_BACK] = "BACK";
 }
 
-/* the bar's left edge: at the left in Glassed, centred in Vanilla */
+/* the bar's left edge: at the list's left in this client's layout, centred in Vanilla's */
 static float buttons_left(struct button_labels const *buttons)
 {
-	return palette->glassed ? (float)layout.list_x : 320.0f - overlay_buttons_width(buttons->labels, NUMBER_OF_BUTTONS) / 2;
+	return palette->own_screens ? (float)layout.list_x :
+		320.0f - overlay_buttons_width(buttons->labels, NUMBER_OF_BUTTONS) / 2;
 }
 
 static float cancel_left(void)
@@ -895,16 +895,16 @@ static char const *type_name(
 }
 
 
-/* the title, and how many games and players there are */
+/* the screen's frame and title, and how many games and players there are */
 static void render_header(
 	long players)
 {
 	char text[96];
 
-	ui_overlay_text(UI_FONT_BOLD, 24.0f, layout.list_x, 22, UI_ALIGN_LEFT, COLOR_TITLE, "ONLINE GAMES");
+	overlay_screen_frame("ONLINE GAMES", layout.list_x, 22, 24.0f);
 	snprintf(text, sizeof(text), "%d %s  \xC2\xB7  %ld %s", browser_screen.count, browser_screen.count == 1 ? "GAME" : "GAMES",
 		players, players == 1 ? "PLAYER" : "PLAYERS");
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 1, 50, UI_ALIGN_LEFT, COLOR_DIM, text);
+	overlay_screen_subtitle(text, layout.list_x + 1, 50);
 }
 
 /* the column headings, the one sorted by bright and underlined */
@@ -949,16 +949,7 @@ static void render_row(
 	char text[96];
 	float x;
 
-	if (chosen)
-	{
-		ui_overlay_rect(layout.list_x, y, layout.list_width, ROW_HEIGHT - 1, palette->radius / 2, COLOR_ROW_SELECTED);
-		if (palette->glassed)
-			ui_overlay_rect(layout.list_x, y, 1.5f, ROW_HEIGHT - 1, 0, 0xFFFFFFFF);
-	}
-	else if (row % 2)
-	{
-		ui_overlay_rect(layout.list_x, y, layout.list_width, ROW_HEIGHT - 1, 0, COLOR_ROW_RULE);
-	}
+	overlay_row(layout.list_x, y, layout.list_width, ROW_HEIGHT - 1, chosen, row % 2);
 	ui_overlay_rect(layout.list_x + 0.013f * layout.list_width - 2.5f, y + ROW_HEIGHT / 2 - 3, 5, 5, 2.5f, dot);
 
 	overlay_utf8(game->name, NUMBEROF(game->name), text, sizeof(text));
@@ -1006,7 +997,7 @@ static void render_details(
 	float y = DETAIL_Y + DETAIL_PICTURE_HEIGHT + 8;
 	long index;
 
-	ui_overlay_rect(layout.detail_x - 6, DETAIL_Y - 4, DETAIL_WIDTH + 12, GLASS_BOTTOM - DETAIL_Y - 6, palette->radius, COLOR_PANEL);
+	overlay_panel(layout.detail_x - 6, DETAIL_Y - 4, DETAIL_WIDTH + 12, OVERLAY_FRAME_BOTTOM - DETAIL_Y - 6);
 	if (!game)
 		return;
 	overlay_map_picture(overlay_map_display_index(game->map), layout.detail_x, DETAIL_Y, DETAIL_WIDTH,
@@ -1080,7 +1071,6 @@ void browser_screen_render(
 	short page_first, page_count, row;
 	long players = 0, index;
 	char text[64];
-	float margin = (float)((halo_screen_width() - 640) / 2 + 2);
 	struct overlay_button_colors colors;
 	struct button_labels buttons;
 	struct browser_game const *selected = browser_screen.count ? &browser_screen.games[browser_screen.selected] : NULL;
@@ -1090,27 +1080,14 @@ void browser_screen_render(
 	for (index = 0; index < browser_screen.count; index++)
 		players += browser_screen.games[index].players;
 
-	/* Glassed darkens a band over the scene; Vanilla covers the screen */
 	layout_update();
-	if (palette->glassed)
-	{
-		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
-		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
-	}
-	else
-	{
-		ui_overlay_gradient(-margin, 0, 640 + 2 * margin, 480, 0, palette->backdrop, palette->backdrop_bottom);
-		ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 1.0f, 0, COLOR_RULE);
-	}
 	render_header(players);
 
 	page_first = (short)(browser_screen.selected - browser_screen.selected % ROWS_PER_PAGE);
 	page_count = (short)MAX(1, (browser_screen.count + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE);
-	if (!palette->glassed)
-	{
-		ui_overlay_rect(layout.list_x - 4, COLUMNS_Y - 6, layout.list_width + 8, FOOTER_Y - COLUMNS_Y + 4,
-			palette->radius, COLOR_PANEL);
-	}
+	/* (the list on a panel of its own, but on Glassed's band) */
+	if (!palette->own_screens || palette->framed)
+		overlay_panel(layout.list_x - 4, COLUMNS_Y - 6, layout.list_width + 8, FOOTER_Y - COLUMNS_Y + 4);
 	render_columns();
 	if (!browser_screen.count)
 	{
@@ -1127,7 +1104,6 @@ void browser_screen_render(
 	}
 	render_details(selected);
 
-	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, COLOR_RULE);
 	colors.fill = COLOR_PANEL;
 	colors.fill_lit = COLOR_ROW_SELECTED;
 	colors.edge = COLOR_PANEL_EDGE;
