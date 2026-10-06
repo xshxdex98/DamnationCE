@@ -7,9 +7,9 @@ Playing a map from the level editor (editor_play.c).
 #ifndef __EDITOR_PLAY_H
 #define __EDITOR_PLAY_H
 
-/* at start-up (console_startup): goes straight into the map the level
-editor asked for, if it asked */
-void editor_play_startup(
+/* once the main menu has loaded (main_load_ui_scenario): goes to the map
+the level editor asked for, if it asked, as New Game does */
+void editor_play_main_menu_loaded(
 	void);
 
 /* TRUE once, the first time it is asked once the player is in the map, if
