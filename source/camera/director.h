@@ -148,6 +148,8 @@ void director_save_camera(
 	void);
 void director_load_camera(
 	void);
+void director_set_editing(
+	boolean editing);
 void director_initialize_for_new_map(
 	void);
 void director_script_camera(
