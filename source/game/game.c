@@ -472,6 +472,22 @@ struct game_variant_options const *game_variant_options_get(
 	return &game_variant_options_global;
 }
 
+/* port: a Custom Edition map's script setting the game's time limit
+(minutes, 0: none) or friendly fire (hs.c's sv_timelimit and
+sv_friendly_fire): in multiplayer every machine runs the map's scripts, so
+each shows the same, and the host decides by its own */
+void game_variant_options_set_time_limit(
+	short minutes)
+{
+	game_variant_options_global.time_limit = minutes;
+}
+
+void game_variant_options_set_friendly_fire(
+	short friendly_fire)
+{
+	game_variant_options_global.friendly_fire = friendly_fire;
+}
+
 void game_set_game_engine_index(
 	short index)
 {
