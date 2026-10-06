@@ -227,7 +227,7 @@ symbols in this file:
 which are anyone's files; its inflate needs about 40 KB of ZLIB_BUFFER_SIZE,
 and frees what it takes in the reverse order, as cache_copy_compressed_free
 wants */
-#include "../../port/third_party/zlib/zlib_prefixed.h"
+#include "zlib_prefixed.h" /* port: port/third_party/zlib (port.json) */
 
 #include <xtl.h>
 
