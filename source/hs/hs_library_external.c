@@ -846,12 +846,17 @@ boolean hs_trigger_volume_test_objects_all(
 	short trigger_volume_index,
 	long object_list_index)
 {
+	boolean inside;
+
+	if (!coop_scripts_any_player_will_do(object_list_index))
+		return hs_trigger_volume_test_objects(trigger_volume_index, object_list_index, TRUE);
 	/* port: in network co-op, waiting for every player means waiting for
-	any one of them (coop_scripts.c) */
-	return hs_trigger_volume_test_objects(
-		trigger_volume_index,
-		object_list_index,
-		!coop_scripts_any_player_will_do(object_list_index));
+	any one of them, and the rest are brought to them (coop_scripts.c) */
+	inside = hs_trigger_volume_test_objects(trigger_volume_index, object_list_index, FALSE);
+	if (inside && hs_runtime_waiting_on_call())
+		coop_scripts_gather_in_volume(trigger_volume_index, object_list_index);
+
+	return inside;
 }
 
 boolean hs_trigger_volume_test_objects_any(
