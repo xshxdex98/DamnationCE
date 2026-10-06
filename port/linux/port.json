@@ -60,7 +60,8 @@
       "source/camera",
       "source/bungie_net",
       "source/bitmaps",
-      "source/ai"
+      "source/ai",
+      "port/third_party/zlib"
     ]
   },
   "game_sources": "port/linux/game",
