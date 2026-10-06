@@ -200,6 +200,14 @@ void hs_runtime_update(
 	void);
 long hs_runtime_evaluate(
 	long expression_index);
+/* port: a call's one argument that a script may leave out (Halo PC's server
+commands, hs.c), as a whole number in *value: FALSE while it is evaluated,
+TRUE once there is an answer, *present saying whether the call had one */
+boolean hs_optional_argument_evaluate(
+	long thread_index,
+	boolean initialize,
+	long *value,
+	boolean *present);
 /* port: whether the running script waits on the call it evaluates, which
 is a sleep_until's condition (hs_runtime.c) */
 boolean hs_runtime_waiting_on_call(
