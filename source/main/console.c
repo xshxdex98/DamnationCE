@@ -57,7 +57,6 @@ symbols in this file:
 #include "cseries/errors.h"
 #include "cseries/profile.h"
 #include "editor/editor_stubs.h"
-#include "editor_play.h" /* port: port/linux/game/editor_play.c */
 #include "hs/hs.h"
 #include "networking/network_server_manager.h"
 #include "input/input.h"
@@ -420,8 +419,6 @@ void console_startup(
 
 		fclose(file);
 	}
-	/* port: the level editor's PLAY, after the commands of init.txt */
-	editor_play_startup();
 
 	return;
 }
