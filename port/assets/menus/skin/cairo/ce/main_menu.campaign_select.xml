@@ -12,7 +12,7 @@
 		<child widget="main_menu/campaign_select/menu_item_load_game" x="192" y="355" />
 		<child widget="main_menu/campaign_select/menu_item_back" x="192" y="391" />
 	</widget>
-	<widget name="main_menu/campaign_select/header_load_game" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/campaign_select/header_load_game">
+	<widget name="main_menu/campaign_select/header_load_game" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/campaign_select/header_load_game">
 	</widget>
 	<widget name="main_menu/campaign_select/load_level_extended_desc" width="640" height="480">
 		<child widget="main_menu/current_profile_name" />

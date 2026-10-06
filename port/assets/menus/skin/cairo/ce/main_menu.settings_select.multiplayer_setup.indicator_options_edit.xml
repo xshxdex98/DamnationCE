@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <menus>
-	<widget name="main_menu/settings_select/multiplayer_setup/indicator_options_edit/header_indicator_options" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/indicator_options_edit/header_indicator_options">
+	<widget name="main_menu/settings_select/multiplayer_setup/indicator_options_edit/header_indicator_options" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/indicator_options_edit/header_indicator_options">
 	</widget>
 	<widget name="main_menu/settings_select/multiplayer_setup/indicator_options_edit/indicator_button_bar" type="column_list" width="640" height="28" flags="pass_unhandled_to_focused_child left_right_tabs_items">
 		<data input="common button bar update" />

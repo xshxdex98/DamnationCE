@@ -30,6 +30,7 @@ audio.volume sets the master volume (default 1.0); audio.enabled = false
 skips opening a device (port_config.c).
 */
 
+#include "menu_song.h"
 #include "platform.h"
 #include "sdl_platform.h"
 #include "port_config.h"
@@ -410,6 +411,8 @@ static void mix(float *output, unsigned long frames)
 	for (stream = streams; stream; stream = stream->next)
 		mix_voice(stream, output, frames);
 	pthread_mutex_unlock(&mixer_lock);
+	/* (a menus theme's own song, in place of the game's menu music) */
+	menu_song_mix(output, frames);
 	/* soft limit rather than wrap or hard clip when many voices pile up */
 	for (sample = 0; sample < frames * OUTPUT_CHANNELS; sample++)
 	{

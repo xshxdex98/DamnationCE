@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <menus>
-	<widget name="main_menu/multiplayer_type_select/mp_map_select/header_select_map" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/mp_map_select/header_select_map">
+	<widget name="main_menu/multiplayer_type_select/mp_map_select/header_select_map" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/mp_map_select/header_select_map">
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/mp_map_select/mp_map_extended_desc" width="640" height="480">
 		<child widget="main_menu/current_profile_name" />

@@ -591,10 +591,12 @@ void overlay_map_picture(
 	draw_bitmap_in_rect(bitmap, &bounds, &art, NULL, 0xFFFFFFFF, NULL, FALSE);
 }
 
-/* size of the stock menu list rows (main_menu/new_select/list_item_*) */
+/* size of the stock menu list rows (main_menu/new_select/list_item_*), as
+this client's themes lay them out: clear of the description pane
+(tools/shell_skin.py's SELECTION_ROW_WIDTH) */
 enum
 {
-	LIT_ROW_WIDTH = 390,
+	LIT_ROW_WIDTH = 360,
 	LIT_ROW_HEIGHT = 28,
 };
 

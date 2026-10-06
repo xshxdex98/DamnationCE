@@ -709,6 +709,11 @@ char const *pc_menus_screen(char const *name);
 /* (port/linux/game/menu_tags.c: a menus theme chosen, put on at the start of
 a frame) */
 boolean pc_menus_theme_apply(void);
+/* (port/linux/game/cairo_backdrop.c: the Cairo theme's backdrop, drawn after
+a screen's cover) */
+void cairo_backdrop_render(long bitmap_tag_index);
+/* (port/linux/game/menu_music.c: the main menu's music by theme) */
+void menu_music_update(void);
 
 /* ---------- constants */
 
@@ -4456,6 +4461,8 @@ void ui_start_main_menu_music(
 			error(_error_silent, "starting main menu music");
 			scripted_looping_sound_start(sound_definition_index, NONE, 1.0f);
 			widget_globals.main_menu_music_active = TRUE;
+			/* port: silent at once if the menus' theme plays its own song */
+			menu_music_update();
 		}
 		else
 		{
@@ -6442,6 +6449,10 @@ static void widget_instance_render_recursive(
 			color,
 			&multitexture_params,
 			FALSE);
+		/* port: what the Cairo theme draws across the whole window, behind
+		the rest of a screen (a cover is a picture widened to the window) */
+		if (widen_to_screen)
+			cairo_backdrop_render(definition->background_bitmap.index);
 		if (use_nifty_plasma_fx)
 		{
 			ui_plasma_effect_color.alpha = 0.0f;
@@ -6592,6 +6603,8 @@ void render_ui_widgets(
 		window_bounds != NULL);
 	local_player_index_for_draw_string_and_hack_in_icons =
 		local_player_index == NONE ? 0 : local_player_index;
+	/* port: the main menu's music, by the menus' theme */
+	menu_music_update();
 	if (bink_playback_ui_rendering_inhibited())
 		return;
 #ifdef HALO_GAME_BROWSER
