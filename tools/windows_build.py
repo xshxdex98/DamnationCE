@@ -54,6 +54,13 @@ EXPAT_DIR = Path("port/third_party/expat")
 EXPAT_SOURCES = ("xmlparse.c", "xmlrole.c", "xmltok.c", "random_rand_s.c")
 KCP_DIR = Path("port/third_party/kcp")
 MONOCYPHER_DIR = Path("port/third_party/monocypher")
+# the port's zlib (port/third_party/zlib/zlib_prefixed.h), which inflates
+# the maps, the menus' and the HUD's PNGs and the updates
+ZLIB_DIR = Path("port/third_party/zlib")
+ZLIB_SOURCES = ("adler32.c", "crc32.c", "inffast.c", "inflate.c", "inftrees.c", "uncompr.c", "zutil.c")
+# (its names prefixed, and the one Z_PREFIX leaves, its error messages, which
+# the game's zlib names the same)
+ZLIB_DEFINES = ("-DZ_PREFIX", "-Dz_errmsg=z_port_errmsg")
 
 
 def updater_defines(release: bool) -> str:
@@ -298,8 +305,12 @@ def generate_windows_build(n: Writer, sln: Any) -> None:
                        + ui_fonts_build(n, "windows", BUILD / "generated" / "ui_fonts.c", sln))
 
     # (the game browser, the game list and dedicated servers, as every
-    # desktop build has them: HALO_GAME_BROWSER, configure.py)
-    abi = " ".join(WINDOWS_ABI_FLAGS + [march_flag(sln)] + (["-DHALO_RELEASE"] if getattr(sln, "port_release", False) else [])
+    # desktop build has them: HALO_GAME_BROWSER, configure.py; and a debug
+    # build checks its stack frames, and stops at the first one overrun, as
+    # at the first failed assertion, where a release build does not, so that
+    # an overrun nobody has met cannot end a game)
+    release = getattr(sln, "port_release", False)
+    abi = " ".join(WINDOWS_ABI_FLAGS + [march_flag(sln)] + (["-DHALO_RELEASE"] if release else ["-fstack-protector-strong"])
                    + game_browser_defines(sln))
     sdl_include = SDL_DIR / "include"
     libs = " ".join(
@@ -382,6 +393,7 @@ def generate_windows_build(n: Writer, sln: Any) -> None:
             f"-I{EXPAT_DIR}",
             f"-I{KCP_DIR}",
             f"-I{MONOCYPHER_DIR}",
+            f"-I{ZLIB_DIR}",
             # halo_linux_winsock_names.h, but not the Linux build's C runtime
             # wrappers next to it
             f"-iquote {LINUX_DIR / 'include'}",
@@ -421,6 +433,9 @@ def generate_windows_build(n: Writer, sln: Any) -> None:
         for source in sorted((PORT_DIR / "src").glob("*.c")):
             if source.name == "win32_upnp.c":
                 add_object(source, f"{win32_cflags} {miniupnpc_include}")
+            elif source.name == "win32_crash.c":
+                # the build's number and configuration name its crash reports
+                add_object(source, f"{win32_cflags} {updater_defines(getattr(sln, 'port_release', False))}")
             else:
                 add_object(source, win32_cflags if source.name.startswith("win32_") else platform_cflags)
         # internet play's UPnP (port/third_party/miniupnpc), on Winsock, as
@@ -443,6 +458,9 @@ def generate_windows_build(n: Writer, sln: Any) -> None:
         # (port/third_party/monocypher; p2p_crypto.c)
         for name in ("monocypher.c", "monocypher-ed25519.c"):
             add_object(MONOCYPHER_DIR / name, " ".join([abi, "-std=gnu11", "-w"]))
+        # the port's zlib
+        for name in ZLIB_SOURCES:
+            add_object(ZLIB_DIR / name, " ".join([abi, "-std=gnu11", *ZLIB_DEFINES, "-w"]))
         # the game's sin, pow and the rest, the same on every port
         # (port/include/halo_math.h)
         for source in musl_math_sources():

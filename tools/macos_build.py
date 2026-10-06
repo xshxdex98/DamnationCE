@@ -39,6 +39,9 @@ from .linux_build import (
     STB_DIR,
     TOML_DIR,
     XDK_INCLUDE,
+    ZLIB_DEFINES,
+    ZLIB_DIR,
+    ZLIB_SOURCES,
     compile_launcher,
     game_sources,
     game_browser_defines,
@@ -293,7 +296,10 @@ def generate_macos_build(n: Writer, sln: Any) -> None:
 
         game = linux_config["game"]
         defines = " ".join(f"-D{d}" for d in game.get("defines", []))
-        includes = " ".join(f"-I{_quote(lp64(Path(d)))}" for d in game.get("include_dirs", []))
+        # (the game's folders as rewritten; a third party's headers as they
+        # are, it being built with the host's ABI)
+        includes = " ".join(f"-I{_quote(Path(d) if d.startswith('port/third_party') else lp64(Path(d)))}"
+                            for d in game.get("include_dirs", []))
         game_cflags = " ".join([
             abi, " ".join(MACOS_GAME_FLAGS),
             f"-include {_quote(prefix_header)}", f"-include {_quote(semantics_header)}",
@@ -326,6 +332,8 @@ def generate_macos_build(n: Writer, sln: Any) -> None:
             # (internet play's signatures: p2p_crypto.c; Monocypher is built
             # with the host's ABI, below)
             f"-I{MONOCYPHER_DIR}",
+            # (the port's zlib, built with the host's ABI, below)
+            f"-I{ZLIB_DIR}",
             f"-I{_quote(lp64(Path('source')))} -I{_quote(lp64(Path('source/cseries')))}",
             homebrew_include, f"-idirafter {xdk}",
         ])
@@ -375,6 +383,9 @@ def generate_macos_build(n: Writer, sln: Any) -> None:
         # types (expat.h, which menu_files.c includes unrewritten)
         for name in EXPAT_SOURCES:
             add_object(EXPAT_DIR / name, " ".join([target, "-std=gnu11", OPTIMISATION, "-g", "-w", f"-I{EXPAT_DIR}"]))
+        # the port's zlib (port/third_party/zlib), with the host's ABI, as Expat
+        for name in ZLIB_SOURCES:
+            add_object(ZLIB_DIR / name, " ".join([target, "-std=gnu11", OPTIMISATION, "-g", "-w", *ZLIB_DEFINES]))
         third_party = " ".join([abi, "-std=gnu11", "-w"])
         add_object(lp64(TOML_DIR / "tomlc17.c"), third_party)
         add_object(lp64(KCP_DIR / "ikcp.c"), third_party)
