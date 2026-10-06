@@ -5,28 +5,41 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting. One bug per issue, please. DamnationCE never provides game files, so please don't attach maps or disc images.
+        Thanks for reporting. One bug per issue, please: each gets its own fix. DamnationCE never provides game files, so please don't attach maps or disc images.
   - type: dropdown
     id: platform
     attributes:
       label: Platform
-      options: [Windows, macOS (Apple Silicon), macOS (Intel), Linux, Steam Deck, Android, Xbox]
+      options: [Windows, macOS (Apple Silicon), macOS (Intel), Linux, Steam Deck, Android]
     validations:
       required: true
   - type: input
     id: version
     attributes:
       label: Version
-      description: The release you're on (for example v0.5.3b), or nightly and its date.
+      description: The release you're on (for example v0.3.22), or "latest build" and its date.
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      description: What you were playing, and whether you hosted.
+      options: [Single player, Co-op (host), Co-op (joined), Multiplayer (host), Multiplayer (joined), Level editor, Menus]
     validations:
       required: true
   - type: dropdown
     id: area
     attributes:
       label: Area
-      options: [Crash, Online play, Online Games list, Halo PC maps, Campaign, Menus, Controls, Graphics, Sound, Other]
+      options: [Crash, Co-op, Multiplayer, Online Games list, Custom Edition maps, Campaign, Level editor, Menus, Controls, Graphics, Sound, Other]
     validations:
       required: true
+  - type: input
+    id: map
+    attributes:
+      label: Map
+      description: The map's name (for a Custom Edition map, its file name), if it happened on one.
   - type: textarea
     id: what
     attributes:
@@ -38,4 +51,4 @@ body:
     id: logs
     attributes:
       label: Logs
-      description: For a crash, attach debug.txt from the game's data folder, and on macOS the crash report from ~/Library/Logs/DiagnosticReports (halo-*.ips).
+      description: Attach debug.txt from the game's folder (for a crash, with halo.pdb beside halo.exe, so the log names where it crashed), and on macOS the crash report from ~/Library/Logs/DiagnosticReports (halo-*.ips). In co-op or multiplayer, the host's debug.txt helps too.
