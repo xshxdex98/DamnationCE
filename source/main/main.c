@@ -396,6 +396,7 @@ symbols in this file:
 #include "input/input_abstraction.h"
 #include "interface/player_ui.h"
 #include "interface/marketing_and_strategic_business_development.h"
+#include "editor_play.h" /* port: port/linux/game/editor_play.c */
 #endif
 
 /* ---------- constants */
@@ -1798,6 +1799,8 @@ void main_load_ui_scenario(
 	main_globals.load_last_solo_level = TRUE;
 	if (precache_resources)
 		main_menu_precache_resources();
+	/* port: the level editor's PLAY goes on to its map from here */
+	editor_play_main_menu_loaded();
 
 	return;
 }

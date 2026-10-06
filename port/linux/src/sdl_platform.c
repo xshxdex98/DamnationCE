@@ -388,11 +388,22 @@ static int platform_display_mode(void)
 	return config_boolean("display.fullscreen") ? _display_mode_borderless : _display_mode_windowed;
 }
 
+/* whether the level editor (OpenCE-Tools' PLAY, port/linux/game/editor_play.c)
+puts the window in its view: then it opens hidden and borderless, as a
+window, for the editor to show there, and F11 does not take it fullscreen */
+static BOOL platform_embedded(void)
+{
+	const char *embedded = getenv("HALO_EMBEDDED");
+
+	return embedded && !strcmp(embedded, "1");
+}
+
 /* whether the window opens fullscreen (either kind), never when it is
-hidden */
+hidden or in the level editor's view */
 static BOOL platform_fullscreen_setting(void)
 {
-	return !config_boolean("debug.hidden_window") && platform_display_mode() != _display_mode_windowed;
+	return !config_boolean("debug.hidden_window") && !platform_embedded() &&
+		platform_display_mode() != _display_mode_windowed;
 }
 
 /* a size as a setting has it, "<width>x<height>": whether it is one, and
@@ -757,7 +768,8 @@ BOOL platform_video_initialize(unsigned long width, unsigned long height)
 	platform_window_size_setting(&platform_window_width, &platform_window_height);
 	platform_window = SDL_CreateWindow(title, (int)platform_window_width, (int)platform_window_height,
 		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY |
-		(config_boolean("debug.hidden_window") ? SDL_WINDOW_HIDDEN : 0) |
+		(config_boolean("debug.hidden_window") || platform_embedded() ? SDL_WINDOW_HIDDEN : 0) |
+		(platform_embedded() ? SDL_WINDOW_BORDERLESS : 0) |
 		(platform_fullscreen_setting() ? SDL_WINDOW_FULLSCREEN : 0));
 #endif
 	if (!platform_window)
@@ -1380,7 +1392,8 @@ void platform_pump_events(void)
 #ifndef HALO_ANDROID
 			/* F11 switches between fullscreen and the window (SDL keeps the
 			window's size and place while fullscreen) */
-			if (event.key.down && !event.key.repeat && event.key.scancode == SDL_SCANCODE_F11)
+			if (event.key.down && !event.key.repeat && event.key.scancode == SDL_SCANCODE_F11 &&
+				!platform_embedded())
 			{
 				platform_window_set_fullscreen(!platform_window_fullscreen());
 			}
