@@ -49,7 +49,7 @@
 		<on event="start" run="mp profile set game engine" open="main_menu/settings_select/multiplayer_setup/playlist_edit/slayer_edit/slayer_options_screen" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
-	<widget name="main_menu/settings_select/multiplayer_setup/playlist_edit/game_type_select/header_rules" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/playlist_edit/header_set_options">
+	<widget name="main_menu/settings_select/multiplayer_setup/playlist_edit/game_type_select/header_rules" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/playlist_edit/header_set_options">
 	</widget>
 	<widget name="main_menu/settings_select/multiplayer_setup/playlist_edit/game_type_select/rules_label" type="text" controller="1" width="275" height="22" string_list="multiplayer_game_text" font="ui\large_ui" color="#FFFFFFFF">
 		<data input="mp edit profile set rule text" />

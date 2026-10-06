@@ -50,7 +50,7 @@
 		<child widget="main_menu/gametype_select/gametype_select_list_2" />
 		<child widget="main_menu/gametype_select/header_select_gametype" />
 	</widget>
-	<widget name="main_menu/gametype_select/header_select_gametype" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/gametype_select/header_select_gametype">
+	<widget name="main_menu/gametype_select/header_select_gametype" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/gametype_select/header_select_gametype">
 	</widget>
 	<widget name="main_menu/gametype_select/list_item_0_chooser" controller="1" width="256" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds_sm" font="ui\large_ui" color="#FFC8D6EA" align="center" text_y="3">
 		<child widget="main_menu/gametype_select/list_item_0_chooser_spinner" x="15" y="2" />

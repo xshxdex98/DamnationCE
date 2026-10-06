@@ -46,7 +46,7 @@
 	<widget name="main_menu/multiplayer_type_select/join_game/filters/game_type_spinner" type="spinner" left="3" top="2" width="187" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" string_list="main_menu/multiplayer_type_select/join_game/filters/var_filter_gametype" font="ui\large_ui" color="#FFC8D6EA" align="center" list_flags="items_from_strings one_tooltip" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 190 19 196">
 		<on event="left_mouse" run="mouse spinner 1wide click" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/join_game/filters/header_filters" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/join_game/filters/header_filters">
+	<widget name="main_menu/multiplayer_type_select/join_game/filters/header_filters" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/join_game/filters/header_filters">
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/join_game/filters/installed_maps_label" type="text" width="300" height="22" string_list="main_menu/multiplayer_type_select/join_game/filters/filter_options" string_index="5" font="ui\large_ui" color="#FFC8D6EA" text_x="13" text_y="4">
 	</widget>

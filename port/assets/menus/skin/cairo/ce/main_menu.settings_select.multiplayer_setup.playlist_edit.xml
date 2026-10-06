@@ -20,9 +20,9 @@
 	<widget name="main_menu/settings_select/multiplayer_setup/playlist_edit/gametype_label" type="text" controller="1" width="235" height="22" font="ui\large_ui" color="#FFFFFFFF">
 		<data input="get edit game settings name" />
 	</widget>
-	<widget name="main_menu/settings_select/multiplayer_setup/playlist_edit/header_edit_multiplayer_gametype" controller="1" left="-107" top="11" width="1024" height="59" bitmap="main_menu/settings_select/multiplayer_setup/playlist_edit/header_edit_multiplayer_gametype">
+	<widget name="main_menu/settings_select/multiplayer_setup/playlist_edit/header_edit_multiplayer_gametype" controller="1" left="0" top="11" width="1024" height="59" bitmap="main_menu/settings_select/multiplayer_setup/playlist_edit/header_edit_multiplayer_gametype">
 	</widget>
-	<widget name="main_menu/settings_select/multiplayer_setup/playlist_edit/header_set_options" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/playlist_edit/game_type_select/header_rules">
+	<widget name="main_menu/settings_select/multiplayer_setup/playlist_edit/header_set_options" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/playlist_edit/game_type_select/header_rules">
 	</widget>
 	<widget name="main_menu/settings_select/multiplayer_setup/playlist_edit/playlist_edit_button_bar" type="column_list" width="640" height="28" flags="pass_unhandled_to_focused_child left_right_tabs_items">
 		<data input="common button bar update" />

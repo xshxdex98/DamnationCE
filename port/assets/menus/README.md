@@ -53,8 +53,8 @@ theme, so `tools/ce_menus.py` can write it again at any time; run
   `skin/glassed/xbox` redraws the pictures the maps carry themselves (pause
   menus, split screen, the lobby), drawn in place of the maps' bitmaps as
   the high-res HUD is (`skin/xbox` enlarges the maps' and levels' pictures
-  for every theme; `--maps` writes them, and they are not kept in the
-  repository). The map picker (`port/linux/game/map_screen.c`), the lobby
+  for every theme; `--maps` writes them, and only the themes' redrawings
+  are kept in the repository). The map picker (`port/linux/game/map_screen.c`), the lobby
   and Online Games' wide list are this client's screens, Glassed's and
   Cairo's.
 - **Cairo**: the menus in the look of Halo 2's. Its main menu is
@@ -64,8 +64,14 @@ theme, so `tools/ce_menus.py` can write it again at any time; run
   `tools/cairo_art.py` (navy over the scene, header bands that step down
   at 45 degrees, slate rows behind brackets, gridded panes with steel
   corners), with the same layout fixes, and the screens' titles moved onto
-  their header bands. The overlay's screens (`overlay_screens.c`) draw its
-  frames, and its text is Titillium Web (`port/assets/fonts`).
+  their header bands. The game draws what crosses the whole window, at any
+  width: the streams of data and the rulers, sliding, and the header band's
+  left end (`port/linux/game/cairo_backdrop.c`). The overlay's screens
+  (`overlay_screens.c`) draw its frames, and its text is Titillium Web
+  (`port/assets/fonts`). Its main menu plays a song of the player's own in
+  place of the game's music, if there is one beside `config.toml` as
+  `music/cairo.wav` (`port/linux/src/menu_song.c`; the music fades from one to
+  the other as the theme changes, `port/linux/game/menu_music.c`).
 - **Vanilla**: the menus as they were, with a MENUS button
   (`skin/vanilla/ce/main_menu.xml`).
 

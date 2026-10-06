@@ -6,7 +6,7 @@
 	</widget>
 	<widget name="main_menu/player_profiles_select/empty_profile_slot_text" type="text" controller="1" width="150" height="200" string_list="main_menu/player_profiles_select/profile_description_labels" string_index="4" font="ui\small_ui" color="#FFC8D6EA" align="center">
 	</widget>
-	<widget name="main_menu/player_profiles_select/header_select_profile" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/player_profiles_select/header_select_profile">
+	<widget name="main_menu/player_profiles_select/header_select_profile" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/player_profiles_select/header_select_profile">
 	</widget>
 	<widget name="main_menu/player_profiles_select/joystick_controls" type="text" controller="1" width="150" height="25" string_list="main_menu/player_profiles_select/joystick_set_defaults_descriptions" font="ui\small_ui" color="#FFC8D6EA">
 	</widget>

@@ -11,7 +11,7 @@
 		<child widget="main_menu/multiplayer_type_select/coop/header_player_2" />
 		<child widget="main_menu/multiplayer_type_select/coop/player_2_help" x="20" y="416" />
 	</widget>
-	<widget name="main_menu/multiplayer_type_select/coop/header_player_2" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/coop/header_player_2">
+	<widget name="main_menu/multiplayer_type_select/coop/header_player_2" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/coop/header_player_2">
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/coop/player_2_profile_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children" description="main_menu/profile_manager/player_profile_extended_desc">
 		<data input="3wide player profile list update" />
