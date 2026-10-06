@@ -11,6 +11,7 @@ gain (0 to 1); it keeps playing, silent, while the theme's song plays.
 */
 
 #include "cseries.h"
+#include "cseries/cseries_windows.h"
 #include "interface/ui_widget.h"
 #include "sound/game_sound.h"
 #include "sound/sound_definitions.h"

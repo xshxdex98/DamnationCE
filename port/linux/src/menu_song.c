@@ -8,6 +8,9 @@ music/cairo.wav), which a player puts there, mixed into the game's sound
 
 It fades in and out, and loops as the game's menu music does: each time
 round it fades in from its start and out at its end.
+
+The file is read here rather than by SDL, which the Android build runs in
+another process: 16-bit PCM, mono or stereo, at any rate.
 */
 
 #include "menu_song.h"
@@ -17,6 +20,7 @@ round it fades in from its start and out at its end.
 #include <SDL3/SDL.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* ---------- constants */
@@ -51,24 +55,97 @@ static struct
 
 /* ---------- private code */
 
+static Uint32 little_endian(Uint8 const *bytes, int count)
+{
+	Uint32 value = 0;
+
+	while (count--)
+		value = value << 8 | bytes[count];
+	return value;
+}
+
+/* a WAV file's samples, its channel count and rate, or NULL if it is not
+16-bit PCM in one or two channels */
+static Sint16 *wav_read(FILE *file, int *channels, unsigned long *rate, unsigned long *frames)
+{
+	Uint8 header[12], chunk[8], format[16];
+	Sint16 *samples = NULL;
+
+	*channels = 0;
+	if (fread(header, 1, sizeof(header), file) != sizeof(header) ||
+		memcmp(header, "RIFF", 4) || memcmp(header + 8, "WAVE", 4))
+		return NULL;
+	while (!samples && fread(chunk, 1, sizeof(chunk), file) == sizeof(chunk))
+	{
+		Uint32 size = little_endian(chunk + 4, 4);
+
+		if (!memcmp(chunk, "fmt ", 4) && size >= sizeof(format))
+		{
+			if (fread(format, 1, sizeof(format), file) != sizeof(format) ||
+				little_endian(format, 2) != 1 || little_endian(format + 14, 2) != 16)
+				return NULL;
+			*channels = (int)little_endian(format + 2, 2);
+			*rate = little_endian(format + 4, 4);
+			size -= sizeof(format);
+		}
+		else if (!memcmp(chunk, "data", 4) && *channels >= 1 && *channels <= 2 && *rate)
+		{
+			*frames = size / (*channels * sizeof(Sint16));
+			samples = malloc(*frames * *channels * sizeof(Sint16));
+			if (samples && fread(samples, *channels * sizeof(Sint16), *frames, file) != *frames)
+			{
+				free(samples);
+				samples = NULL;
+			}
+			break;
+		}
+		/* (chunks are padded to an even size) */
+		fseek(file, (long)(size + (size & 1)), SEEK_CUR);
+	}
+	return samples;
+}
+
 /* a WAV file as SONG_CHANNELS 16-bit samples at SONG_RATE, or NULL */
 static Sint16 *song_read(char const *path, unsigned long *frames)
 {
-	SDL_AudioSpec spec, wanted = { SDL_AUDIO_S16, SONG_CHANNELS, SONG_RATE };
-	Uint8 *data, *converted = NULL;
-	Uint32 size;
-	int converted_size = 0;
+	FILE *file = fopen(path, "rb");
+	Sint16 *source, *song_samples = NULL;
+	unsigned long rate = 0, source_frames = 0, frame;
+	int channels;
 
-	if (!SDL_LoadWAV(path, &spec, &data, &size))
+	if (!file)
 		return NULL;
-	if (!SDL_ConvertAudioSamples(&spec, data, (int)size, &wanted, &converted, &converted_size))
+	source = wav_read(file, &channels, &rate, &source_frames);
+	fclose(file);
+	if (!source)
 	{
-		platform_log("menu song: cannot convert %s (%s)", path, SDL_GetError());
-		converted = NULL;
+		platform_log("menu song: %s is not 16-bit PCM in one or two channels", path);
+		return NULL;
 	}
-	SDL_free(data);
-	*frames = converted ? (unsigned long)converted_size / (SONG_CHANNELS * sizeof(Sint16)) : 0;
-	return (Sint16 *)converted;
+	/* (resampled by straight lines between the source's samples) */
+	*frames = (unsigned long)((unsigned long long)source_frames * SONG_RATE / rate);
+	if (*frames)
+		song_samples = malloc(*frames * SONG_CHANNELS * sizeof(Sint16));
+	for (frame = 0; song_samples && frame < *frames; frame++)
+	{
+		double at = (double)frame * rate / SONG_RATE;
+		unsigned long before = (unsigned long)at;
+		unsigned long after = SDL_min(before + 1, source_frames - 1);
+		double blend = at - before;
+		int channel;
+
+		for (channel = 0; channel < SONG_CHANNELS; channel++)
+		{
+			int from = channel < channels ? channel : 0;
+			double a = source[before * channels + from], b = source[after * channels + from];
+
+			song_samples[frame * SONG_CHANNELS + channel] = (Sint16)(a + (b - a) * blend);
+		}
+	}
+	free(source);
+	if (!song_samples)
+		*frames = 0;
+	return song_samples;
 }
 
 /* ---------- public code */
@@ -87,7 +164,7 @@ int menu_song_load(char const *theme)
 	if (samples)
 		platform_log("menu song: %s, %lu seconds", path, frames / SONG_RATE);
 	pthread_mutex_lock(&song.lock);
-	SDL_free(song.samples);
+	free(song.samples);
 	song.samples = frames ? samples : NULL;
 	song.frames = frames;
 	song.position = 0;

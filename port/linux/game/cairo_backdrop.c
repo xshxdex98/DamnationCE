@@ -13,6 +13,7 @@ stands on, so that it lies behind everything else on the screen.
 */
 
 #include "cseries.h"
+#include "cseries/cseries_windows.h"
 #include "bitmaps/bitmap_group.h"
 #include "rasterizer/rasterizer.h"
 #include "tag_files/tag_groups.h"
