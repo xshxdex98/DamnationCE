@@ -125,9 +125,9 @@ static const struct config_setting config_settings[] =
 		"PC version's main menu (port/assets/menus, and a menus folder here for\n"
 		"your own; not all of it is wired yet)." },
 	{ "display.theme", _config_string, "\"glassed\"", "HALO_THEME", _environment_value, _platform_all,
-		"The menus' theme (with menus = \"pc\"): \"glassed\", this client's, or\n"
-		"\"vanilla\", the menus as they were; the main menu's MENUS button\n"
-		"chooses it too." },
+		"The menus' theme (with menus = \"pc\"): \"glassed\", this client's,\n"
+		"\"cairo\", in the look of Halo 2's menus, or \"vanilla\", the menus as\n"
+		"they were; the main menu's MENUS button chooses it too." },
 	{ "display.player_names", _config_string, "\"all\"", "HALO_PLAYER_NAMES", _environment_value, _platform_all,
 		"In multiplayer, whose names are drawn above their heads: \"all\",\n"
 		"\"allies\", \"enemies\" or \"none\". An enemy's shows only within the\n"

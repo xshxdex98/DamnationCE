@@ -50,18 +50,10 @@ static struct menu_file *files;
 static long file_count;
 static char folder[1024];
 
-/* The menus' themes (display.theme). A theme's layer, skin/<theme>/, holds
-files read in place of those of the same path below it while the theme is
-chosen (tools/shell_skin.py writes them); the left-hand menus, shell/, are
-the Glassed theme's alone. */
-enum
-{
-	THEME_GLASSED,
-	THEME_VANILLA,
-	NUMBER_OF_THEMES,
-};
-static const char *const theme_names[NUMBER_OF_THEMES] = { "glassed", "vanilla" };
-/* the chosen theme's layer, "skin/glassed/" */
+/* the themes' names (halo_menus.h), and the chosen theme's layer,
+"skin/glassed/". The main menu of shell/ is the Glassed theme's, and the
+Cairo theme's in its own layer; Vanilla has the PC version's. */
+static const char *const theme_names[NUMBER_OF_HALO_MENU_THEMES] = { "glassed", "vanilla", "cairo" };
 static char theme_layer[32];
 
 static long file_find(const char *path)
@@ -844,13 +836,38 @@ static int read_file(struct reader *reader, const struct menu_file *file)
 
 /* ---------- public code */
 
+enum halo_menu_theme halo_menus_theme(void)
+{
+	static enum halo_menu_theme theme;
+	static unsigned long read_at = (unsigned long)-1;
+
+	if (read_at != config_changes())
+	{
+		int index;
+
+		read_at = config_changes();
+		theme = HALO_MENU_THEME_GLASSED;
+		for (index = 0; index < NUMBER_OF_HALO_MENU_THEMES; index++)
+		{
+			if (!strcmp(config_string("display.theme"), theme_names[index]))
+				theme = (enum halo_menu_theme)index;
+		}
+	}
+	return theme;
+}
+
+char const *halo_menus_theme_name(enum halo_menu_theme theme)
+{
+	return theme >= 0 && theme < NUMBER_OF_HALO_MENU_THEMES ? theme_names[theme] : theme_names[0];
+}
+
 struct halo_menus const *halo_menus_load(void)
 {
 	static int gathered;
-	static int read[NUMBER_OF_THEMES];
-	static struct halo_menus menus[NUMBER_OF_THEMES];
-	static int succeeded[NUMBER_OF_THEMES];
-	int theme = strcmp(config_string("display.theme"), theme_names[THEME_VANILLA]) ? THEME_GLASSED : THEME_VANILLA;
+	static int read[NUMBER_OF_HALO_MENU_THEMES];
+	static struct halo_menus menus[NUMBER_OF_HALO_MENU_THEMES];
+	static int succeeded[NUMBER_OF_HALO_MENU_THEMES];
+	enum halo_menu_theme theme = halo_menus_theme();
 	struct reader reader;
 	long index;
 
@@ -870,7 +887,7 @@ struct halo_menus const *halo_menus_load(void)
 		long chosen;
 
 		if (length <= 4 || strcmp(path + length - 4, ".xml") || !strncmp(path, "skin/", 5) ||
-			(theme != THEME_GLASSED && !strncmp(path, "shell/", 6)))
+			(theme == HALO_MENU_THEME_VANILLA && !strncmp(path, "shell/", 6)))
 		{
 			continue;
 		}

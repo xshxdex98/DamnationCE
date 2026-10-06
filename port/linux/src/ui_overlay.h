@@ -56,6 +56,13 @@ top's to the bottom's */
 void ui_overlay_rect(float x, float y, float width, float height, float radius, unsigned int color);
 void ui_overlay_gradient(float x, float y, float width, float height, float radius, unsigned int top,
 	unsigned int bottom);
+/* a filled rectangle cut at 45 degrees at its corners by cuts[4] units (top
+left, top right, bottom right, bottom left; 0 uncut), from the top's color
+to the bottom's; and its outline, thickness wide, inside it */
+void ui_overlay_chamfered(float x, float y, float width, float height, const float cuts[4], unsigned int top,
+	unsigned int bottom);
+void ui_overlay_chamfered_outline(float x, float y, float width, float height, const float cuts[4], float thickness,
+	unsigned int color);
 /* a rectangle's outline, thickness wide, inside it */
 void ui_overlay_outline(float x, float y, float width, float height, float radius, float thickness,
 	unsigned int color);

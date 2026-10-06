@@ -112,6 +112,7 @@ def main() -> int:
     # SIL Open Font License asks each copy to carry it
     shutil.copy2(ROOT / "port/assets/fonts/Overpass-OFL.txt", dist / "Overpass-OFL.txt")
     shutil.copy2(ROOT / "port/assets/fonts/Rajdhani-OFL.txt", dist / "Rajdhani-OFL.txt")
+    shutil.copy2(ROOT / "port/assets/fonts/TitilliumWeb-OFL.txt", dist / "TitilliumWeb-OFL.txt")
     # the overlay's fonts (port/linux/ui/fonts), in every build: Noto Sans's
     # license asks the same; Kenney's Input Prompts are CC0, credited all
     # the same

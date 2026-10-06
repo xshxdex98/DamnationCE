@@ -137,8 +137,26 @@ struct halo_menus
 	char const *root;
 };
 
-/* the menus, read from the files (once; the same each call after); NULL if
-there are none, or a file has an error (logged) */
+/* The menus' themes (display.theme): Glassed, this client's look; Vanilla,
+the PC version's own menus; and Cairo, Halo 2's look. A theme's layer,
+skin/<name>/, holds files read in place of those of the same path below it
+while it is chosen (tools/shell_skin.py writes them). */
+enum halo_menu_theme
+{
+	HALO_MENU_THEME_GLASSED,
+	HALO_MENU_THEME_VANILLA,
+	HALO_MENU_THEME_CAIRO,
+	NUMBER_OF_HALO_MENU_THEMES
+};
+
+/* the theme chosen, read again when the settings change (a name it doesn't
+know: Glassed) */
+enum halo_menu_theme halo_menus_theme(void);
+/* a theme's name, as display.theme and its layer's folder have it ("glassed") */
+char const *halo_menus_theme_name(enum halo_menu_theme theme);
+
+/* the menus, read from the files (once for each theme; the same each call
+after); NULL if there are none, or a file has an error (logged) */
 struct halo_menus const *halo_menus_load(void);
 /* text as UTF-16, its terminator included, "\n" written as the game's line
 breaks ("\r\n"): the number of characters written (at most capacity) */

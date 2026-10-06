@@ -222,21 +222,21 @@ def test_menus_are_well_formed():
     when the game loads them, but the map's own names (paths with backslashes),
     which only the map has. Each theme is checked as the game loads it: its
     layer's files (skin/<theme>/, not listed: embed_assets.py finds them) in
-    place of those they shadow, and the left-hand menus (shell/) Glassed's
-    alone."""
+    place of those they shadow, and the main menu of shell/ every theme's but
+    Vanilla's. (skin/xbox holds the maps' pictures, not a theme.)"""
     import json
 
     listed = json.loads((MENUS / "menus.json").read_text())["files"]
     menus = sorted(path.relative_to(MENUS).as_posix() for path in MENUS.rglob("*.xml")
                    if path.relative_to(MENUS).parts[0] != "skin")
     assert menus == sorted(name for name in listed if name.endswith(".xml"))
-    for layer in sorted(path for path in (MENUS / "skin").iterdir() if path.is_dir()):
+    for layer in sorted(path for path in (MENUS / "skin").iterdir() if path.is_dir() and path.name != "xbox"):
         def resolve(name, layer=layer):
             return layer / name if (layer / name).is_file() else MENUS / name
 
         for path in layer.rglob("*.xml"):
             assert path.relative_to(layer).as_posix() in menus, path
-        check_menus([name for name in menus if layer.name == "glassed" or not name.startswith("shell/")],
+        check_menus([name for name in menus if layer.name != "vanilla" or not name.startswith("shell/")],
                     listed, resolve)
 
 

@@ -20,6 +20,11 @@ enum
 	/* the button bar along the foot of the 640x480 layout */
 	OVERLAY_BUTTON_Y = 450,
 	OVERLAY_BUTTON_HEIGHT = 22,
+
+	/* the screens' frame: Glassed's band over the scene, and the line over
+	the buttons in every theme */
+	OVERLAY_FRAME_TOP = 66,
+	OVERLAY_FRAME_BOTTOM = 446,
 };
 
 /* ---------- structures */
@@ -38,11 +43,17 @@ struct overlay_button_colors
 	float radius;
 };
 
-/* The list screens' colors (0xRRGGBBAA) in a theme: Glassed darkens a band
-over the scene, Vanilla covers the screen in the Xbox's blues. */
+/* How the screens drawn over the menus look in a theme (colors 0xRRGGBBAA):
+Glassed darkens a band over the scene, Vanilla covers the screen in the
+Xbox's blues, Cairo covers it in Halo 2's navy under a header band. */
 struct overlay_palette
 {
-	boolean glassed;
+	/* this client's own screens (the map picker, the lobby's, the game list
+	reaching the screen's edges), rather than the PC version's */
+	boolean own_screens;
+	/* Halo 2's frames: the title on a header band, panels cut at their
+	corners with steel brackets, rows on slate bars behind brackets */
+	boolean framed;
 	unsigned int backdrop, backdrop_bottom, rule, title, panel, panel_edge, panel_head, head, row_selected, row_rule;
 	unsigned int text, dim, label, prompt, connecting;
 	float radius;
@@ -102,6 +113,47 @@ short overlay_button_at(
 struct overlay_palette const *overlay_palette_current(
 	void);
 
+/* The parts every screen has, in the theme's look. What lies behind the
+screen, and its title: at title_x, title_y, title_size high in Glassed and
+Vanilla; on its header band in Cairo. */
+void overlay_screen_frame(
+	char const *title,
+	float title_x,
+	float title_y,
+	float title_size);
+/* a line of small print under the title (how many games there are): at x,
+y in Glassed and Vanilla, after Cairo's header band */
+void overlay_screen_subtitle(
+	char const *text,
+	float x,
+	float y);
+/* a panel things are set out on */
+void overlay_panel(
+	float x,
+	float y,
+	float width,
+	float height);
+/* A list's row: lit if chosen; else in Glassed and Vanilla shaded if
+striped (every other row), and in Cairo on its slate bar. */
+void overlay_row(
+	float x,
+	float y,
+	float width,
+	float height,
+	boolean chosen,
+	boolean striped);
+/* one button, its label in its middle: lit (the pointer or the focus is on
+it), or greyed when not usable */
+void overlay_button_draw(
+	char const *label,
+	float x,
+	float y,
+	float width,
+	float height,
+	boolean lit,
+	boolean usable,
+	struct overlay_button_colors const *colors);
+
 /* Draws UTF-8 text left-aligned at x, cut to `width` with an ellipsis if it
 doesn't fit. */
 void overlay_text_fitted(
@@ -140,8 +192,9 @@ void overlay_map_picture(
 	float width,
 	float height);
 
-/* Glassed: highlights the focused row of the gametype lists, matching the
-overlay's own lists. Called by ui_widget.c after the menus are drawn. */
+/* This client's screens: highlights the focused row of the gametype lists,
+matching the overlay's own lists. Called by ui_widget.c after the menus are
+drawn. */
 void overlay_lit_row_render(
 	void);
 

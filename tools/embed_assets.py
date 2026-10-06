@@ -41,15 +41,17 @@ FONT_LIST = FONT_ASSETS / "fonts.json"
 MENU_ASSETS = Path("port/assets/menus")
 MENU_LIST = MENU_ASSETS / "menus.json"
 # the menus' themes' layers (tools/shell_skin.py), and the maps' own menu
-# pictures in the Glassed theme (--maps), drawn only while it is chosen
+# pictures (--maps): each theme's, drawn only while it is chosen, then
+# those for every theme
 SKIN_FOLDER = MENU_ASSETS / "skin"
-SKIN_ASSETS = SKIN_FOLDER / "glassed" / "xbox"
-SKIN_LIST = SKIN_ASSETS / "textures.json"
+SKIN_ASSETS = [(SKIN_FOLDER / theme / "xbox", theme) for theme in ("glassed", "cairo")] + [(SKIN_FOLDER / "xbox", None)]
+SKIN_LISTS = [folder / "textures.json" for folder, _ in SKIN_ASSETS]
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 # the overlay's fonts (the game browser's; posix_ui_font.c), in its order
 UI_FONTS = Path("port/linux/ui/fonts")
 UI_FONT_FILES = ["NotoSans-Regular.ttf", "NotoSans-Bold.ttf", "input_xbox.ttf", "input_playstation.ttf",
-                 "input_nintendo.ttf", "input_keyboard.ttf", "Rajdhani-Medium.ttf", "Rajdhani-Bold.ttf"]
+                 "input_nintendo.ttf", "input_keyboard.ttf", "Rajdhani-Medium.ttf", "Rajdhani-Bold.ttf",
+                 "TitilliumWeb-SemiBold.ttf", "TitilliumWeb-Bold.ttf"]
 
 
 def font_files() -> List[str]:
@@ -62,16 +64,16 @@ def font_files() -> List[str]:
 
 def textures() -> List[tuple]:
     """The textures: each one's folder, its entry in its list, whether it is
-    a title, and whether it is the Glassed theme's."""
+    a title, and the menus theme whose it is (None: every theme's)."""
     result = []
-    # (the Glassed theme's before the titles, which stand for some of the same
-    # bitmaps in the Vanilla theme: hud_hires.c takes the first that applies)
-    for folder, listing, title, glassed in ((HUD_ASSETS, LAYOUT, False, False), (SKIN_ASSETS, SKIN_LIST, True, True),
-                                            (TITLE_ASSETS, TITLE_LIST, True, False)):
+    # (the themes' before the titles, which stand for some of the same bitmaps
+    # in the Vanilla theme: hud_hires.c takes the first that applies)
+    sources = [(HUD_ASSETS, LAYOUT, False, None),
+               *((folder, folder / "textures.json", True, theme) for folder, theme in SKIN_ASSETS),
+               (TITLE_ASSETS, TITLE_LIST, True, None)]
+    for folder, listing, title, theme in sources:
         if (ROOT / listing).is_file():
-            # (an entry may say otherwise: the maps' pictures are in both themes)
-            result += [(folder, asset, title, asset.get("glassed", glassed))
-                       for asset in json.loads((ROOT / listing).read_text())["assets"]]
+            result += [(folder, asset, title, theme) for asset in json.loads((ROOT / listing).read_text())["assets"]]
     return result
 
 
@@ -89,7 +91,7 @@ def menu_files() -> List[str]:
 
 def hud_asset_inputs() -> List[Path]:
     """The files the generated source is made from."""
-    inputs = [listing for listing in (LAYOUT, CUSTOM_EDITION_HUD, TITLE_LIST, SKIN_LIST, FONT_LIST, MENU_LIST)
+    inputs = [listing for listing in (LAYOUT, CUSTOM_EDITION_HUD, TITLE_LIST, *SKIN_LISTS, FONT_LIST, MENU_LIST)
               if (ROOT / listing).is_file()]
     if not inputs:
         return []
@@ -102,7 +104,8 @@ def hud_configure_inputs() -> List[Path]:
     folders, for files added or removed), not each file, which a change of a
     list may rename or remove."""
     inputs = []
-    for folder, listing in ((HUD_ASSETS, LAYOUT), (TITLE_ASSETS, TITLE_LIST), (SKIN_ASSETS, SKIN_LIST),
+    for folder, listing in ((HUD_ASSETS, LAYOUT), (TITLE_ASSETS, TITLE_LIST),
+                            *((folder, folder / "textures.json") for folder, _ in SKIN_ASSETS),
                             (FONT_ASSETS, FONT_LIST), (MENU_ASSETS, MENU_LIST)):
         if (ROOT / listing).is_file():
             inputs += [folder, listing]
@@ -200,7 +203,7 @@ def main() -> None:
     if (ROOT / CUSTOM_EDITION_HUD).is_file():
         custom_edition = {(entry["tag"], entry["bitmap"])
                           for entry in json.loads((ROOT / CUSTOM_EDITION_HUD).read_text())["assets"]}
-    for index, (folder, asset, title, glassed) in enumerate(textures()):
+    for index, (folder, asset, title, theme) in enumerate(textures()):
         name = f"{asset['name']}.png"
         data = (ROOT / folder / name).read_bytes()
         width, height = png_size(data, name)
@@ -213,8 +216,9 @@ def main() -> None:
         lines.append("")
         tag = asset["tag"].replace("\\", "\\\\")
         coverage = int(any(cell["kind"] == "meter" for cell in asset.get("cells", [])))
+        theme_name = f'"{theme}"' if theme else "NULL"
         table.append(f'\t{{ "{tag}", {asset["bitmap"]}, {width}, {height}, 0x{asset["crc"]:08x}u, {coverage}, '
-                     f'{int(title)}, {int(glassed)}, {int((asset["tag"], asset["bitmap"]) in custom_edition)}, '
+                     f'{int(title)}, {theme_name}, {int((asset["tag"], asset["bitmap"]) in custom_edition)}, '
                      f'asset{index}, {len(data)} }},')
     lines.append("const struct hud_hires_embedded hud_hires_embedded[] =")
     lines.append("{")

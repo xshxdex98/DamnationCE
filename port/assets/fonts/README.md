@@ -12,6 +12,7 @@ place of the bitmap fonts of the maps (`port/linux/src/text_hires.c`).
 | `Newtown-Regular.ttf` | (OpenCE's source) | Newtown by Roger White, unmodified |
 | `Rajdhani-Bold.ttf` | `ui\large_ui`, `ui\interstate`, in the Glassed theme | Rajdhani Bold, Latin subset |
 | `Rajdhani-SemiBold.ttf` | `ui\small_ui`, in the Glassed theme | Rajdhani SemiBold, Latin subset |
+| `TitilliumWeb-SemiBold.ttf` | all three, in the Cairo theme | Titillium Web SemiBold |
 
 The maps' fonts are Interstate (Tobias Frere-Jones, The Font Bureau), a
 commercial typeface that cannot be shipped. Overpass (Red Hat, Delve
@@ -57,3 +58,10 @@ fontTools, which drops the Devanagari:
     python3 -m fontTools.subset Rajdhani-Bold.ttf --layout-features=kern,liga         --unicodes=U+0020-007E,U+00A0-017F,U+2010-2027,U+2030-203A,U+20AC,U+2122
 
 The release packages carry `Rajdhani-OFL.txt` too.
+
+The Cairo theme draws all three tags in Titillium Web SemiBold (Accademia
+di Belle Arti di Urbino), the free face nearest Halo 2's menus' Conduit
+ITC. It is under the SIL Open Font License 1.1 (`TitilliumWeb-OFL.txt`),
+without a Reserved Font Name, and unmodified: Google Fonts' file
+(`ofl/titilliumweb`, google/fonts commit 7085eb89a950), Latin only as it
+comes. The release packages carry `TitilliumWeb-OFL.txt`.

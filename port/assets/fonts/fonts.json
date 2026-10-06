@@ -6,6 +6,9 @@
   {"tag": "ui\\small_ui", "file": "Overpass-750.ttf"},
   {"tag": "ui\\large_ui", "file": "Rajdhani-Bold.ttf", "theme": "glassed"},
   {"tag": "ui\\interstate", "file": "Rajdhani-Bold.ttf", "theme": "glassed"},
-  {"tag": "ui\\small_ui", "file": "Rajdhani-SemiBold.ttf", "theme": "glassed"}
+  {"tag": "ui\\small_ui", "file": "Rajdhani-SemiBold.ttf", "theme": "glassed"},
+  {"tag": "ui\\large_ui", "file": "TitilliumWeb-SemiBold.ttf", "theme": "cairo"},
+  {"tag": "ui\\interstate", "file": "TitilliumWeb-SemiBold.ttf", "theme": "cairo"},
+  {"tag": "ui\\small_ui", "file": "TitilliumWeb-SemiBold.ttf", "theme": "cairo"}
  ]
 }

@@ -45,7 +45,6 @@ static char const *const button_labels[NUMBER_OF_BUTTONS] = { "SWITCH TEAM", "ST
 /* the rest of the layout, in the menus' 640x480 */
 enum
 {
-	GLASS_TOP = 66, GLASS_BOTTOM = 446,
 	HEADING_Y = 74,
 	PANEL_X = 420, PANEL_WIDTH = 196, PANEL_TOP = 78, PICTURE_HEIGHT = 118,
 	RIGHT = PANEL_X + PANEL_WIDTH,
@@ -114,7 +113,7 @@ static float detail_line(
 	return y + 14;
 }
 
-/* the title, and the countdown (or what the game waits for) at the right */
+/* what the game is, and the countdown (or what it waits for) at the right */
 static void render_header(
 	struct overlay_palette const *palette,
 	struct network_game const *game,
@@ -126,9 +125,8 @@ static void render_header(
 
 	overlay_utf8((unsigned short const *)game->variant.human_readable_game_description,
 		NUMBEROF(game->variant.human_readable_game_description), description, sizeof(description));
-	ui_overlay_text(UI_FONT_BOLD, 24.0f, ROW_LEFT, 22, UI_ALIGN_LEFT, palette->title, "LOBBY");
 	snprintf(text, sizeof(text), "%s  \xC2\xB7  %d / %d PLAYERS", description, player_count, game->maximum_players);
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, ROW_LEFT + 1, 50, UI_ALIGN_LEFT, palette->dim, text);
+	overlay_screen_subtitle(text, ROW_LEFT + 1, 50);
 	if (seconds > 0)
 	{
 		ui_overlay_text(UI_FONT_REGULAR, 9.0f, RIGHT, 22, UI_ALIGN_RIGHT, palette->dim, "STARTING IN");
@@ -143,7 +141,7 @@ static void render_header(
 }
 
 /* A player's row: the name, a bar of its team's color in a team game, and
-YOU on this machine's players. */
+YOU on this machine's players; lit, or striped (every other row). */
 static void render_player_row(
 	struct overlay_palette const *palette,
 	struct network_player const *player,
@@ -151,16 +149,12 @@ static void render_player_row(
 	float y,
 	float width,
 	boolean teams,
-	boolean lit)
+	boolean lit,
+	boolean striped)
 {
 	char name[64];
 
-	if (lit)
-	{
-		ui_overlay_rect(x, y, width, ROW_HEIGHT - 1, palette->radius / 2, palette->row_selected);
-		if (!teams)
-			ui_overlay_rect(x, y, 1.5f, ROW_HEIGHT - 1, 0, 0xFFFFFFFF);
-	}
+	overlay_row(x, y, width, ROW_HEIGHT - 1, lit, striped);
 	if (teams)
 	{
 		ui_overlay_rect(x, y, 3.0f, ROW_HEIGHT - 1, 0,
@@ -208,9 +202,7 @@ static void render_teams(
 				ui_overlay_text(UI_FONT_BOLD, 9.0f, x + 10, y + 6, UI_ALIGN_LEFT, palette->dim, text);
 				break;
 			}
-			if (shown % 2)
-				ui_overlay_rect(x, y, width, ROW_HEIGHT - 1, 0, palette->row_rule);
-			render_player_row(palette, players[index], x, y, width, TRUE, FALSE);
+			render_player_row(palette, players[index], x, y, width, TRUE, FALSE, shown % 2);
 			shown++;
 		}
 	}
@@ -246,9 +238,7 @@ static void render_players(
 		float y = (float)(ROW_TOP + index * ROW_HEIGHT);
 		boolean lit = row && list->focused_child == row;
 
-		if (!lit && index % 2)
-			ui_overlay_rect(ROW_LEFT, y, ROW_WIDTH, ROW_HEIGHT - 1, 0, palette->row_rule);
-		render_player_row(palette, players[first + index], ROW_LEFT, y, ROW_WIDTH, FALSE, lit);
+		render_player_row(palette, players[first + index], ROW_LEFT, y, ROW_WIDTH, FALSE, lit, index % 2);
 	}
 }
 
@@ -263,8 +253,7 @@ static void render_panel(
 	char link[256];
 	float y = PANEL_TOP + PICTURE_HEIGHT + 8;
 
-	ui_overlay_rect(PANEL_X - 6, PANEL_TOP - 4, PANEL_WIDTH + 12, GLASS_BOTTOM - PANEL_TOP - 6, palette->radius,
-		palette->panel);
+	overlay_panel(PANEL_X - 6, PANEL_TOP - 4, PANEL_WIDTH + 12, OVERLAY_FRAME_BOTTOM - PANEL_TOP - 6);
 	overlay_map_picture(overlay_map_display_index(game->map.name), PANEL_X, PANEL_TOP, PANEL_WIDTH, PICTURE_HEIGHT);
 	ui_overlay_outline(PANEL_X, PANEL_TOP, PANEL_WIDTH, PICTURE_HEIGHT, 0, 0.75f, palette->panel_edge);
 	overlay_map_name(game->map.name, text, sizeof(text));
@@ -285,9 +274,9 @@ static void render_panel(
 
 	if (global_network_game_server_get() && p2p_invite_link(link, sizeof(link)))
 	{
-		ui_overlay_text(UI_FONT_REGULAR, 9.0f, PANEL_X, GLASS_BOTTOM - 40, UI_ALIGN_LEFT, OVERLAY_COLOR_NOTICE,
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, PANEL_X, OVERLAY_FRAME_BOTTOM - 40, UI_ALIGN_LEFT, OVERLAY_COLOR_NOTICE,
 			"Invite link copied");
-		ui_overlay_text(UI_FONT_REGULAR, 9.0f, PANEL_X, GLASS_BOTTOM - 27, UI_ALIGN_LEFT, palette->dim,
+		ui_overlay_text(UI_FONT_REGULAR, 9.0f, PANEL_X, OVERLAY_FRAME_BOTTOM - 27, UI_ALIGN_LEFT, palette->dim,
 			"Paste it to friends to bring them in.");
 	}
 }
@@ -298,21 +287,24 @@ static void render_buttons(
 	struct widget_instance *list)
 {
 	struct widget_instance *bar = child_named(list, "lobby_button_bar");
+	struct overlay_button_colors colors;
 	short index;
 
+	colors.fill = palette->panel;
+	colors.fill_lit = palette->row_selected;
+	colors.edge = palette->panel_edge;
+	colors.text = palette->prompt;
+	colors.text_lit = palette->title;
+	colors.text_disabled = palette->dim;
+	colors.radius = palette->radius / 2;
 	for (index = 0; bar && index < NUMBER_OF_BUTTONS; index++)
 	{
 		struct widget_instance *button = child_named(bar, button_names[index]);
 		boolean lit = button && list->focused_child == bar && bar->focused_child == button;
-		float x = (float)button_lefts[index];
 
-		if (!button || !button->visible)
-			continue;
-		ui_overlay_rect(x, BUTTONS_TOP, BUTTON_WIDTH, BUTTON_HEIGHT, palette->radius / 2,
-			lit ? palette->row_selected : palette->panel);
-		ui_overlay_outline(x, BUTTONS_TOP, BUTTON_WIDTH, BUTTON_HEIGHT, palette->radius / 2, 0.75f, palette->panel_edge);
-		ui_overlay_text(UI_FONT_BOLD, 10.0f, x + BUTTON_WIDTH / 2, BUTTONS_TOP + 5, UI_ALIGN_CENTER,
-			lit ? palette->title : palette->prompt, button_labels[index]);
+		if (button && button->visible)
+			overlay_button_draw(button_labels[index], (float)button_lefts[index], BUTTONS_TOP, BUTTON_WIDTH, BUTTON_HEIGHT,
+				lit, TRUE, &colors);
 	}
 }
 
@@ -334,12 +326,12 @@ static void render_join_help(
 
 /* ---------- public code */
 
-/* whether the lobby is the screen up, which this draws over (Glassed only:
-Vanilla keeps the stock lobby) */
+/* whether the lobby is the screen up, which this draws over (this client's
+screens: Vanilla keeps the stock lobby) */
 boolean lobby_screen_active(
 	void)
 {
-	return ui_overlay_available() && overlay_palette_current()->glassed && lobby_list() != NULL;
+	return ui_overlay_available() && overlay_palette_current()->own_screens && lobby_list() != NULL;
 }
 
 /* ui_widget.c, after the menus are drawn */
@@ -352,18 +344,14 @@ void lobby_screen_render(
 	struct network_game *game = client ? network_game_client_get_game(client) : NULL;
 	struct network_player *const *players;
 	short first, player_count = pc_menu_lobby_players(&players, &first);
-	float margin = (float)((halo_screen_width() - 640) / 2 + 2);
 
 	if (!list)
 		return;
-	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, GLASS_BOTTOM - GLASS_TOP, 0, palette->backdrop);
-	ui_overlay_rect(-margin, GLASS_TOP, 640 + 2 * margin, 0.75f, 0, palette->rule);
-	ui_overlay_rect(-margin, GLASS_BOTTOM - 0.75f, 640 + 2 * margin, 0.75f, 0, palette->rule);
+	overlay_screen_frame("LOBBY", ROW_LEFT, 22, 24.0f);
 	render_buttons(palette, list);
 	render_join_help(palette);
 	if (!game)
 	{
-		ui_overlay_text(UI_FONT_BOLD, 24.0f, ROW_LEFT, 22, UI_ALIGN_LEFT, palette->title, "LOBBY");
 		ui_overlay_text(UI_FONT_REGULAR, 10.0f, ROW_LEFT + 10, ROW_TOP + 6, UI_ALIGN_LEFT, palette->dim,
 			"Joining the game\xE2\x80\xA6");
 		return;

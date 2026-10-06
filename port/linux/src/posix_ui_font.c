@@ -32,16 +32,20 @@ static struct
 	stbtt_fontinfo info;
 } fonts[POSIX_UI_FONT_COUNT];
 
-/* Rajdhani's capitals are shorter than Noto Sans's for the same pixel
-height (cap height over ascent plus descent: 0.504 against 0.524), so it
-is drawn this much bigger to keep the overlay's text the same size */
+/* The themes' faces' capitals are shorter than Noto Sans's for the same
+pixel height (cap height over ascent plus descent: Rajdhani's 0.504,
+Titillium Web's 0.450, against 0.524), so they are drawn this much bigger
+to keep the overlay's text the same size. */
 #define GLASSED_SIZE_SCALE 1.04f
+#define CAIRO_SIZE_SCALE 1.164f
 
 /* the scale from font units to pixels for a pixel height */
 static float pixel_scale(stbtt_fontinfo *info, int font, float pixel_height)
 {
 	if (font == POSIX_UI_FONT_GLASSED_REGULAR || font == POSIX_UI_FONT_GLASSED_BOLD)
 		pixel_height *= GLASSED_SIZE_SCALE;
+	else if (font == POSIX_UI_FONT_CAIRO_REGULAR || font == POSIX_UI_FONT_CAIRO_BOLD)
+		pixel_height *= CAIRO_SIZE_SCALE;
 	return stbtt_ScaleForPixelHeight(info, pixel_height);
 }
 
