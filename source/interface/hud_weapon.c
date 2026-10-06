@@ -1595,7 +1595,7 @@ static void render_weapon_hud(
 		SET_FLAG(flags, _weapon_overlay_on_always_bit, TRUE);
 		overlay_flags[3] = flags;
 
-		flags = overlay_flags[0];
+		flags = overlay_flags[4];
 		SET_FLAG(
 			flags,
 			_weapon_overlay_on_flashing_bit,
@@ -1614,9 +1614,9 @@ static void render_weapon_hud(
 			_weapon_overlay_on_default_bit,
 			flags == 0);
 		SET_FLAG(flags, _weapon_overlay_on_always_bit, TRUE);
-		overlay_flags[0] = flags;
+		overlay_flags[4] = flags;
 
-		flags = overlay_flags[1];
+		flags = overlay_flags[5];
 		SET_FLAG(
 			flags,
 			_weapon_overlay_on_flashing_bit,
@@ -1634,7 +1634,7 @@ static void render_weapon_hud(
 			_weapon_overlay_on_default_bit,
 			flags == 0);
 		SET_FLAG(flags, _weapon_overlay_on_always_bit, TRUE);
-		overlay_flags[1] = flags;
+		overlay_flags[5] = flags;
 
 		number_values[0] = weapon_state->magazines[0].rounds_remaining;
 		number_values[1] = weapon_state->magazines[0].rounds_loaded;
