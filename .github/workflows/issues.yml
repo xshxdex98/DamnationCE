@@ -1,0 +1,50 @@
+name: Issues
+
+# A new issue is labelled from its bug report's answers (Mode and Area) and
+# given its own branch, issue-<number>, off main, so each is fixed and
+# reviewed on its own (not those the upstream workflow opens). Discord hears
+# of every issue through the repository's webhook.
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  triage:
+    if: ${{ github.event.issue.user.type != 'Bot' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const answer = (question) => {
+              const match = (issue.body || '').match(new RegExp(`### ${question}\\s+([^\\n]+)`));
+              return match ? match[1].trim() : '';
+            };
+            const labels = {
+              'Crash': 'crash',
+              'Co-op': 'co-op', 'Co-op (host)': 'co-op', 'Co-op (joined)': 'co-op',
+              'Multiplayer': 'multiplayer', 'Multiplayer (host)': 'multiplayer', 'Multiplayer (joined)': 'multiplayer',
+              'Online Games list': 'multiplayer',
+              'Custom Edition maps': 'custom-edition',
+              'Campaign': 'campaign',
+              'Level editor': 'level-editor',
+              'Menus': 'menus', 'Controls': 'controls', 'Graphics': 'graphics', 'Sound': 'sound',
+            };
+            const wanted = [...new Set([answer('Mode'), answer('Area')].map((value) => labels[value]).filter(Boolean))];
+            if (wanted.length)
+              await github.rest.issues.addLabels({ ...context.repo, issue_number: issue.number, labels: wanted });
+
+            const branch = `issue-${issue.number}`;
+            const main = await github.rest.git.getRef({ ...context.repo, ref: 'heads/main' });
+            await github.rest.git.createRef({ ...context.repo, ref: `refs/heads/${branch}`, sha: main.data.object.sha });
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: issue.number,
+              body: `Its fix goes on the branch \`${branch}\`, made from main as it was when this was opened.`,
+            });
