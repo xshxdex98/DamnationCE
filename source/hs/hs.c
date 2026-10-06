@@ -2787,7 +2787,7 @@ symbols in this file:
 #include "ai/ai.h"
 #include "ai/ai_debug.h"
 #include "cache/cache_files.h"
-#include "cache/physical_memory_map.h" /* port: hs_scenario_syntax_data_valid */
+#include <stdint.h> /* port: hs_scenario_syntax_data_valid */
 #include "cache/texture_cache.h"
 #include "camera/camera_scripting.h"
 #include "cutscene/cinematics.h"
@@ -12608,7 +12608,7 @@ static boolean hs_scenario_syntax_data_valid(
 
 	if (scenario->hs_syntax_data.size != syntax_data_size ||
 		!cache_file_tag_cache_contains(address, syntax_data_size) ||
-		((unsigned long)address & 3))
+		((uintptr_t)address & 3))
 	{
 		return FALSE;
 	}
