@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.3.20
+
+### Menus
+
+- A new menu theme, Cairo, in the style of Halo 2's menus. Choose it under
+  SETTINGS > MENUS. It covers every screen, from the main menu to the
+  lobby, the pause menu and split screen, and fills the window at any
+  width, with its data streams and rulers sliding behind the menus.
+- In Cairo, the main menu can play a song of your own in place of the
+  game's music: put it beside `config.toml` as `music/cairo.wav`. The
+  music fades from one to the other as you change themes, and loops
+  with a fade.
+- The gametype and settings lists' highlight no longer runs past the panel.
+
+### Co-op
+
+- The garbage collection notices are gone from the screen for host and
+  clients (they show with `console_log = "all"`).
+- Clients draw enemies with the right shader for their variant.
+
+### From OpenCE
+
+- Damaged maps and network messages are refused instead of crashing the
+  game.
+- Breaking glass over the network no longer misreads the level.
+
+Network version 18: everyone needs 0.3.20 to play together.
+
 ## 0.3.19
 
 ### Co-op
