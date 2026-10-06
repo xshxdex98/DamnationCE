@@ -423,6 +423,8 @@ typedef char players_static_data_screen_flash_offset_assert[
 
 static boolean players_respawn_network_coop(
 	void);
+static struct player_starting_location const *players_coop_spawn_location(
+	struct player_starting_location *location);
 static long is_player_in_trigger(
 	short bsp_switch_trigger_volume_index,
 	long object_index);
@@ -1373,6 +1375,7 @@ static void player_spawn(
 	struct game_globals_player_information *player_information;
 	struct game_globals_multiplayer_information *multiplayer_information;
 	struct player_starting_location const *starting_location;
+	struct player_starting_location spawn_location;
 	struct object_placement_data placement_data;
 	real_rgb_color change_color;
 	real_rgb_color change_color_storage;
@@ -1432,11 +1435,17 @@ static void player_spawn(
 
 		starting_location_index =
 			(short)find_best_starting_location_index(player_index);
-		/* port: a map with no starting location for the player, played from
-		the level editor, starts them where its view was (editor_play.c) */
-		starting_location = starting_location_index != NONE ?
-			player_get_starting_location(starting_location_index) :
-			editor_play_starting_location();
+		/* port: a network co-op respawn starts behind its teammate
+		(players_coop_spawn_location); a map with no starting location for
+		the player, played from the level editor, where its view was
+		(editor_play.c) */
+		starting_location = players_coop_spawn_location(&spawn_location);
+		if (!starting_location)
+		{
+			starting_location = starting_location_index != NONE ?
+				player_get_starting_location(starting_location_index) :
+				editor_play_starting_location();
+		}
 		if (starting_location)
 		{
 			game_globals = scenario_get_game_globals();
@@ -2668,6 +2677,38 @@ static long players_coop_unit_where(
 	return NONE;
 }
 
+/* the teammate a network co-op respawn is for, while player_spawn makes
+the player (players_respawn_network_coop), else NONE */
+static long players_coop_spawn_beside_index = NONE;
+
+/* how far behind the teammate a respawn starts (world units) past what it
+rides (its bounding sphere) */
+#define COOP_SPAWN_BEHIND_DISTANCE 0.5f
+
+/* port: where player_spawn makes a network co-op respawn: behind the
+teammate it is for, facing their way, in the loaded structure BSP (or on the
+teammate, where behind them is outside it). Spawned at the level's start, a
+player whose teleport beside the teammate found no room (one riding a
+vehicle) was left there, outside the BSP, for the stranded rescue to take
+to the last checkpoint. NULL when no respawn is being made. */
+static struct player_starting_location const *players_coop_spawn_location(
+	struct player_starting_location *location)
+{
+	struct object_datum *beside;
+
+	if (players_coop_spawn_beside_index == NONE)
+		return NULL;
+	beside = object_get(object_get_ultimate_parent(players_coop_spawn_beside_index));
+	csmemset(location, 0, sizeof(*location));
+	point_from_line3d(&beside->object.position, &beside->object.forward,
+		-(beside->object.bounding_sphere_radius + COOP_SPAWN_BEHIND_DISTANCE), &location->position);
+	if (scenario_leaf_index_from_point(&location->position) == NONE)
+		location->position = beside->object.position;
+	location->facing = arctangent(beside->object.forward.j, beside->object.forward.i);
+
+	return location;
+}
+
 /* Network co-op respawn: the dead come back beside the first teammate who
 is safe, or after COOP_RESPAWN_FALLBACK_TICKS beside one at least on the
 ground, so a long fight can't keep them out. The campaign's own test
@@ -2705,11 +2746,13 @@ static boolean players_respawn_network_coop(
 		{
 			continue;
 		}
+		players_coop_spawn_beside_index = safe_unit_index;
 		player_spawn(iterator.datum_index);
+		players_coop_spawn_beside_index = NONE;
 		if (player->unit_index == NONE)
 			result = FALSE;
-		/* (beside the safe teammate, else any with room: never left at the
-		level's start, where player_spawn put them) */
+		/* (beside the safe teammate, else any with room; with none, left
+		behind the teammate, where player_spawn put them) */
 		else if (!player_teleport(iterator.datum_index, safe_unit_index,
 				&object_get(safe_unit_index)->object.bounding_sphere_center) &&
 			!player_place_beside_teammate(iterator.datum_index))
