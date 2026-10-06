@@ -3204,6 +3204,7 @@ void players_reconnect_to_structure_bsp(
 	boolean found_player;
 	short cutscene_flag_index;
 	long player_unit_index;
+	short pass;
 
 	/* port: also on a network co-op host, whose other players are remote */
 	if (players_globals->pending_teleport_starting_location_index != NONE &&
@@ -3243,46 +3244,54 @@ void players_reconnect_to_structure_bsp(
 			teleport_position_valid = adjustment < 0.3f;
 		}
 
-		data_iterator_new(&iterator, player_data);
-		while ((player = data_iterator_next(&iterator)) && !found_player)
+		/* port: this machine's players first (the network co-op host's, whose
+		crossing switched: players_coop_bsp_switch_allowed), not a client
+		waiting on the trigger for them */
+		for (pass = 0; pass < 2 && !found_player; pass++)
 		{
-			player_unit_index = player->unit_index;
-			if (player_unit_index != NONE &&
-				players_globals->pending_teleport_starting_location_index != NONE)
+			data_iterator_new(&iterator, player_data);
+			while ((player = data_iterator_next(&iterator)) && !found_player)
 			{
-				if (is_player_in_trigger(
-					players_globals->pending_teleport_starting_location_index,
-					player_unit_index))
+				player_unit_index = player->unit_index;
+				if (pass == 0 && player->local_player_index == NONE)
+					continue;
+				if (player_unit_index != NONE &&
+					players_globals->pending_teleport_starting_location_index != NONE)
 				{
-					real_point3d biped_base;
-					real biped_height;
-					real biped_width;
-					long cluster_index;
-
-					biped_get_physics_pill(
-						player->unit_index,
-						&biped_base,
-						&biped_height,
-						&biped_width);
-					cluster_index = scenario_leaf_index_from_point(&biped_base) == NONE ?
-						NONE :
-						TAG_BLOCK_GET_ELEMENT(
-							&global_structure_bsp_get()->leaves,
-							scenario_leaf_index_from_point(&biped_base) & LONG_MAX,
-							struct structure_leaf)->cluster_index;
-					if (cluster_index != NONE)
+					if (is_player_in_trigger(
+						players_globals->pending_teleport_starting_location_index,
+						player_unit_index))
 					{
-						if (!teleport_position_valid)
-						{
-							teleport_position = biped_base;
-						}
-						else
-						{
-							teleport_position.z += biped_width;
-						}
+						real_point3d biped_base;
+						real biped_height;
+						real biped_width;
+						long cluster_index;
 
-						source_unit_index = player->unit_index;
-						found_player = TRUE;
+						biped_get_physics_pill(
+							player->unit_index,
+							&biped_base,
+							&biped_height,
+							&biped_width);
+						cluster_index = scenario_leaf_index_from_point(&biped_base) == NONE ?
+							NONE :
+							TAG_BLOCK_GET_ELEMENT(
+								&global_structure_bsp_get()->leaves,
+								scenario_leaf_index_from_point(&biped_base) & LONG_MAX,
+								struct structure_leaf)->cluster_index;
+						if (cluster_index != NONE)
+						{
+							if (!teleport_position_valid)
+							{
+								teleport_position = biped_base;
+							}
+							else
+							{
+								teleport_position.z += biped_width;
+							}
+
+							source_unit_index = player->unit_index;
+							found_player = TRUE;
+						}
 					}
 				}
 			}
