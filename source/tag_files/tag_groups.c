@@ -5,6 +5,7 @@ TAG_GROUPS.C
 /* ---------- headers */
 
 #include "cseries.h"
+#include "errors.h"
 #include "tag_files.h"
 #include "byte_swapping.h"
 #include "errors.h"
@@ -14,37 +15,55 @@ TAG_GROUPS.C
 boolean custom_edition_cache_tags_loaded(void);
 boolean tag_index_is_group(long tag_index, long group_tag);
 
-/* port: Halo PC's release build reads a Custom Edition map's tags unchecked,
-and maps made for it can hold an index past a block's end or an offset past
-a tag data's, which never stopped a game there (docs/custom_edition_caches.md).
-With such a map loaded, one out of range gets a zeroed spare of the size
-asked for, and the first few are logged, instead of the game stopping. Xbox
-maps keep their checks. */
-#define CUSTOM_EDITION_SPARE_BYTES 0x10000
-#define MAXIMUM_CUSTOM_EDITION_RANGE_MESSAGES 8
+/* ---------- constants */
 
-static void *custom_edition_out_of_range(
+enum
+{
+	/* port: the most bytes of the empty data (tag_empty_data): more than
+	any tag's root or any block's element */
+	TAG_EMPTY_DATA_SIZE = 0x10000,
+};
+
+/* ---------- globals */
+
+/* port: (tag_empty_data) */
+static unsigned long tag_empty_data_bytes[TAG_EMPTY_DATA_SIZE / sizeof(unsigned long)];
+
+/* ---------- private code */
+
+/* port: an index past what it indexes, logged once */
+static void tag_index_error(
 	char const *what,
 	long index,
-	long count,
-	long size)
+	long count)
 {
-	static long spare[CUSTOM_EDITION_SPARE_BYTES / sizeof(long)];
-	static long messages;
+	static boolean logged = FALSE;
 
-	if (size < 0 || size > (long)sizeof(spare))
-		return NULL;
-	if (messages++ < MAXIMUM_CUSTOM_EDITION_RANGE_MESSAGES)
+	if (!logged)
 	{
-		error(_error_silent, "custom edition: #%ld is not a valid %s index in [#0,#%ld): given zeros", index, what,
-			count);
+		logged = TRUE;
+		error(_error_silent, "#%ld is not a %s index in [#0,#%ld): an empty one is used", index, what, count);
 	}
-	/* (zeroed each time: the reader may have written to it) */
-	csmemset(spare, 0, (size_t)size);
-	return spare;
+
+	return;
 }
 
 /* ---------- public code */
+
+/* port: what an index into a tag block, a tag's data or the tags that is
+not one gives (tag_block_get_element_with_size, tag_data_get_pointer,
+tag_get): TAG_EMPTY_DATA_SIZE bytes of zeros, zeroed again each time, in
+place of whatever lies past the block, the data or the tags. Whatever
+reads it reads an element or tag with nothing in it (no elements in its
+blocks, no tags referenced, every index 0); whatever writes it writes
+nowhere that matters */
+void *tag_empty_data(
+	void)
+{
+	csmemset(tag_empty_data_bytes, 0, sizeof(tag_empty_data_bytes));
+
+	return tag_empty_data_bytes;
+}
 
 long verify_tag_reference(
 	const struct tag_reference *reference)
@@ -82,15 +101,22 @@ void* tag_data_get_pointer(
 	long offset, 
 	long size) 
 {
-	if (custom_edition_cache_tags_loaded() && (size < 0 || offset < 0 || offset + size > data->size))
+	/* port: Halo PC reads a Custom Edition map's tags unchecked, and maps
+	made for it can hold an offset past a tag data's end, which never
+	stopped a game there (docs/custom_edition_caches.md): it gets the empty
+	data below without an assertion. Xbox maps keep theirs */
+	if (!custom_edition_cache_tags_loaded())
 	{
-		void *spare = custom_edition_out_of_range("tag data byte", offset + size, data->size, size);
-
-		if (spare)
-			return spare;
+		match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3073, size>=0);
+		match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3074, offset>=0 && offset+size<=data->size);
 	}
-	match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3073, size>=0);
-	match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3074, offset>=0 && offset+size<=data->size);
+	/* port: bytes past the data are the empty data's (tag_empty_data), as
+	far as they go */
+	if (size < 0 || offset < 0 || offset > data->size || size > data->size - offset || (size && !data->address))
+	{
+		tag_index_error("data", offset, data->size);
+		return size <= TAG_EMPTY_DATA_SIZE ? tag_empty_data() : NULL;
+	}
 
 #ifdef HALO_64BIT
 	return (void *)((byte *)TAG_DATA_ADDRESS(data) + offset);
@@ -110,28 +136,29 @@ void *tag_block_get_element_with_size(
 	match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3086, !block->definition || block->definition->element_size==element_size);
 #endif
 
-	if (custom_edition_cache_tags_loaded() && (index < 0 || index >= block->count || !block->address))
+	/* port: and an index past a Custom Edition map's block (see
+	tag_data_get_pointer) */
+	if (!custom_edition_cache_tags_loaded())
 	{
+		match_vassert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3089, index>=0 && index<block->count,
+			csprintf(temporary,
+				"#%d is not a valid %s index in [#0,#%d)",
+				index,
 #ifdef HALO_64BIT
-		void *spare = custom_edition_out_of_range("<unknown>", index, block->count, element_size);
+				"<unknown>", block->count));
 #else
-		void *spare = custom_edition_out_of_range(block->definition ? block->definition->name : "<unknown>", index,
-			block->count, element_size);
+				block->definition ? block->definition->name : "<unknown>", block->count));
 #endif
-
-		if (spare)
-			return spare;
+		match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3090, block->address);
 	}
-	match_vassert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3089, index>=0 && index<block->count,
-		csprintf(temporary,
-			"#%d is not a valid %s index in [#0,#%d)",
-			index,
-#ifdef HALO_64BIT
-			"<unknown>", block->count));
-#else
-			block->definition ? block->definition->name : "<unknown>", block->count));
-#endif
-	match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3090, block->address);
+	/* port: an element past the block (an index a map's data gave, which
+	nothing checked) is the empty data (tag_empty_data), not whatever lies
+	past the block */
+	if (index < 0 || index >= block->count || !block->address)
+	{
+		tag_index_error("block element", index, block->count);
+		return element_size <= TAG_EMPTY_DATA_SIZE ? tag_empty_data() : NULL;
+	}
 
 #ifdef HALO_64BIT
 	return (void *)((byte *)TAG_BLOCK_ADDRESS(block) + (index * element_size));
