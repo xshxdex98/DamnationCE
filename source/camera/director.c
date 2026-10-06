@@ -122,6 +122,7 @@ symbols in this file:
 #include "camera_scripting.h"
 #include "dead_camera.h"
 #include "coop_spectate.h" /* port: port/linux/game/coop_spectate.c */
+#include "editor_play.h" /* port: port/linux/game/editor_play.c */
 #include "editor_flying_camera.h"
 #include "first_person_camera.h"
 #include "flying_camera.h"
@@ -710,8 +711,10 @@ static void director_choose_camera_game(
 
 		/* (port: not a client in another's game, the host's rules: a flying
 		camera would see all of it, and one behind the player round its
-		corners) */
-		if (key && !network_game_distributed_client())
+		corners. The level editor's FLY turns to the flying camera as the
+		key would, once the player is in the map: editor_play.c) */
+		if ((key || (player->unit_index != NONE && editor_play_take_flying_start())) &&
+			!network_game_distributed_client())
 			director_rotate_cameras(local_player_index, director_game_camera_modes, 3);
 		if (!*director_camera_scripted)
 		{
