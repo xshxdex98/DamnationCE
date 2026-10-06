@@ -237,7 +237,13 @@ changed:
   This build ignores the flag, so it drew them twice too large; the
   placements of the unit, weapon and grenade HUD interfaces and the HUD
   globals' messages that have it get half their scale, and lose the flag (32
-  in `bloodgulch.map`, 14 in `beavercreek_halo3.yelo`).
+  in `bloodgulch.map`, 14 in `beavercreek_halo3.yelo`). A bitmap may ask the
+  same of every element that draws it, with Halo PC's bitmap flags *half hud
+  scale* and *force hud use highres scale* (Invader's `bitmap.json`): an
+  element drawing such a bitmap (a static or meter, its bitmap after its
+  placement; a crosshair's or overlay's items, their crosshair's or
+  overlay's) gets half its scale too. None of the 18 Custom Edition maps on
+  hand, nor `bitmaps.map`, sets either.
 - **The score hint.** String 100 of `ui\multiplayer_game_text` is Halo PC's
   `Hold "%s" for score`, which Halo PC fills in with its score key; this
   build copies it as it is (`game_engine.c`, the press-back-for-score
@@ -365,7 +371,9 @@ silences them.
   taken from `sounds.map`; an Ogg Vorbis sound made unplayable; upgraded
   script nodes reduced, stock ones kept, too many refused; animation overlays
   kept and disabled; HUD placements with the high resolution scale halved
-  (in a weapon HUD's statics and crosshair items) and ones without it kept;
+  (in a weapon HUD's statics and crosshair items) and ones without it kept,
+  and those drawing a bitmap with either of Halo PC's half scale flags
+  halved;
   the score hint made to name BACK, and a placeholder left alone in another
   string list and in another string.
 - Malformed input: every check of the loader and the conversion, with at
