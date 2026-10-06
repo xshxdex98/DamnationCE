@@ -320,9 +320,10 @@ def add_hud_placement(blob, placement, scale, flags):
     blob.u16(placement + 0x0C, flags)
 
 
-def add_weapon_hud(blob, placements):
+def add_weapon_hud(blob, placements, bitmap_index=None):
     """A weapon HUD interface with a static element for each of the first two
-    placements and a crosshair of one item for the third, each (scale, flags)."""
+    placements and a crosshair of one item for the third, each (scale, flags);
+    the first static and the crosshair draw the bitmap of tag bitmap_index."""
     hud = blob.reserve(0x17C)
     statics = blob.reserve(2 * 0xB4)
     crosshairs = blob.reserve(0x68)
@@ -333,6 +334,9 @@ def add_weapon_hud(blob, placements):
     add_hud_placement(blob, statics + 0x24, *placements[0])
     add_hud_placement(blob, statics + 0xB4 + 0x24, *placements[1])
     add_hud_placement(blob, items, *placements[2])
+    if bitmap_index is not None:
+        blob.u32(statics + 0x48 + 0x0C, bitmap_index)
+        blob.u32(crosshairs + 0x24 + 0x0C, bitmap_index)
     return hud
 
 
@@ -403,7 +407,7 @@ class Map:
                  extra_tags=(), bsp_gap=None, bitmap_pixels_size=16, sound_samples_size=32,
                  font_style_reference=NONE, pitch_ranges=1, bsp_sizes=(0x1000,), sound_compression=1,
                  model=None, bsp_material=None, shaders=(), animation_overlay=None, script_nodes=None,
-                 weapon_hud=None, strings_name="test\\strings", strings=("hello", "world!")):
+                 weapon_hud=None, hud_bitmap_flags=None, strings_name="test\\strings", strings=("hello", "world!")):
         self.bsp_sizes = bsp_sizes
         self.sound_compression = sound_compression
         # opt-in tags and content, so the defaults above keep their counts
@@ -413,6 +417,7 @@ class Map:
         self.animation_overlay = animation_overlay
         self.script_nodes = script_nodes
         self.weapon_hud = weapon_hud
+        self.hud_bitmap_flags = hud_bitmap_flags
         self.strings_name = strings_name
         self.strings = strings
         self.addresses = {}
@@ -551,7 +556,11 @@ class Map:
         if self.animation_overlay is not None:
             address_of["test\\animations"] = add_animation_graph(tag_data, self.animation_overlay)
         if self.weapon_hud is not None:
-            address_of["test\\weapon hud"] = add_weapon_hud(tag_data, self.weapon_hud)
+            hud_bitmap_index = None
+            if self.hud_bitmap_flags is not None:
+                tag_data.u16(address_of["test\\in map bitmap"] + 6, self.hud_bitmap_flags)
+                hud_bitmap_index = [name for _, name, _ in tags].index("test\\in map bitmap")
+            address_of["test\\weapon hud"] = add_weapon_hud(tag_data, self.weapon_hud, hud_bitmap_index)
         if self.script_nodes is not None:
             add_script_nodes(tag_data, scenario, *self.script_nodes)
         for tag_index, (group_name, name, external) in enumerate(tags):
@@ -1048,6 +1057,22 @@ def test_hud_elements_without_the_high_resolution_scale_keep_theirs(report_tool,
     assert returncode == 0 and report["hud_placements_rescaled"] == "0"
     statics = u32_at(tags, cache.addresses["test\\weapon hud"] + 0x64)
     assert (f32_at(tags, statics + 0xB4 + 0x28), u16_at(tags, statics + 0xB4 + 0x30)) == (0.75, 3)
+
+
+@pytest.mark.parametrize("flag", [1 << 4, 1 << 7], ids=["half hud scale", "force hud use highres scale"])
+def test_hud_elements_drawing_a_halo_pc_half_scale_bitmap_are_halved(report_tool, tmp_path, flag):
+    """Halo PC's bitmap flags halve the scale of every HUD element drawing the
+    bitmap, as the element's own high resolution scale does: the first static
+    and the crosshair's item draw it, the second static does not."""
+    cache = Map(weapon_hud=[((1.0, 0.5), 1), ((1.0, 1.0), 1), ((2.0, 2.0), 0)], hud_bitmap_flags=flag)
+    returncode, report, tags = converted(report_tool, cache, tmp_path)
+    assert returncode == 0 and report["hud_placements_rescaled"] == "2"
+    hud = cache.addresses["test\\weapon hud"]
+    statics = u32_at(tags, hud + 0x64)
+    items = u32_at(tags, u32_at(tags, hud + 0x88) + 0x38)
+    assert (f32_at(tags, statics + 0x28), f32_at(tags, statics + 0x2C), u16_at(tags, statics + 0x30)) == (0.5, 0.25, 1)
+    assert (f32_at(tags, statics + 0xB4 + 0x28), u16_at(tags, statics + 0xB4 + 0x30)) == (1.0, 1)
+    assert (f32_at(tags, items + 4), f32_at(tags, items + 8)) == (1.0, 1.0)
 
 
 SCORE_HINT = 'Hold "%s" for score'
