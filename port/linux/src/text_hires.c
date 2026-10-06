@@ -15,6 +15,7 @@ scale (a window made fullscreen) or a full atlas starts it over.
 */
 
 #include "text_hires.h"
+#include "halo_menus.h"
 #include "platform.h"
 #include "port_config.h"
 #include "xgpu.h"
@@ -89,20 +90,6 @@ static int text_enabled(void)
 	return enabled;
 }
 
-/* the menus' theme (display.theme), read again when the settings change */
-static const char *text_theme(void)
-{
-	static char theme[16];
-	static unsigned long read_at = (unsigned long)-1;
-
-	if (read_at != config_changes())
-	{
-		read_at = config_changes();
-		snprintf(theme, sizeof(theme), "%s", config_string("display.theme"));
-	}
-	return theme;
-}
-
 /* the embedded font for a tag: the theme's own, else the one for every theme */
 static const struct text_hires_embedded *embedded_font(char const *tag_name, char const *theme)
 {
@@ -143,7 +130,7 @@ static void atlas_reset(float scale)
 long text_hires_font(char const *tag_name, float cap_height, float oversample)
 {
 	const struct text_hires_embedded *embedded;
-	const char *theme = text_theme();
+	const char *theme = halo_menus_theme_name(halo_menus_theme());
 	long font;
 	int x0, y0, x1, y1;
 

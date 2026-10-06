@@ -354,6 +354,7 @@ static char const *const port_function_names[] =
 	"port map list back",
 	"port theme glassed",
 	"port theme vanilla",
+	"port theme cairo",
 	"port pause end game",
 	"port coop begin", "port coop player 2 list initialize", "port coop player 2",
 	"port lobby open", "port lobby add player", "port lobby join", "port lobby leave",
@@ -1347,16 +1348,15 @@ static void menu_tags_release(void)
 	memset(&menu_tags, 0, sizeof(menu_tags));
 }
 
-/* the maps' own widgets' text colors (as 0xAARRGGBB), and the Glassed
-theme's for them (tools/shell_skin.py's TEXT_COLORS): every map has some
-(its pause menus, the split screen and lobby screens in ui.map) */
-static struct
+/* the maps' own widgets' text colors (as 0xAARRGGBB) in each theme: the
+maps' own in Vanilla's column, and the others' for them (tools/shell_skin.py's
+looks' text_colors). Every map has some (its pause menus, the split screen
+and lobby screens in ui.map). */
+static unsigned long const text_colors[][NUMBER_OF_HALO_MENU_THEMES] =
 {
-	unsigned long map, ours;
-} const text_colors[] =
-{
-	{ 0xFF2896FF, 0xFFD2D6DA },
-	{ 0xFF0080FF, 0xFFA8ACB0 },
+	/* Glassed, Vanilla, Cairo */
+	{ 0xFFD2D6DA, 0xFF2896FF, 0xFFC8D6EA },
+	{ 0xFFA8ACB0, 0xFF0080FF, 0xFF8EA4C4 },
 };
 
 static unsigned long argb_of(real_argb_color const *color)
@@ -1365,9 +1365,8 @@ static unsigned long argb_of(real_argb_color const *color)
 		((unsigned long)(color->green * 255.0f + 0.5f) << 8) | (unsigned long)(color->blue * 255.0f + 0.5f);
 }
 
-/* the map's widgets in the chosen theme's colors: the Glassed theme's, or
-back to their own */
-static void recolor_map_widgets(boolean glassed)
+/* the map's widgets in a theme's colors, whichever theme's they had */
+static void recolor_map_widgets(enum halo_menu_theme theme)
 {
 	struct tag_iterator iterator;
 	long tag_index;
@@ -1377,20 +1376,22 @@ static void recolor_map_widgets(boolean glassed)
 	{
 		struct ui_widget_definition *definition = tag_get(UI_WIDGET_DEFINITION_TAG, tag_index);
 		unsigned long color = argb_of(&definition->text_color);
-		long index;
+		long row, column;
 
-		for (index = 0; index < NUMBEROF(text_colors); index++)
+		for (row = 0; row < NUMBEROF(text_colors); row++)
 		{
-			unsigned long from = glassed ? text_colors[index].map : text_colors[index].ours;
-			unsigned long to = glassed ? text_colors[index].ours : text_colors[index].map;
+			for (column = 0; column < NUMBER_OF_HALO_MENU_THEMES && color != text_colors[row][column]; column++)
+				;
+			if (column < NUMBER_OF_HALO_MENU_THEMES)
+			{
+				unsigned long to = text_colors[row][theme];
 
-			if (color != from)
-				continue;
-			definition->text_color.alpha = (real)(to >> 24) / 255.0f;
-			definition->text_color.red = (real)((to >> 16) & 0xFF) / 255.0f;
-			definition->text_color.green = (real)((to >> 8) & 0xFF) / 255.0f;
-			definition->text_color.blue = (real)(to & 0xFF) / 255.0f;
-			break;
+				definition->text_color.alpha = (real)(to >> 24) / 255.0f;
+				definition->text_color.red = (real)((to >> 16) & 0xFF) / 255.0f;
+				definition->text_color.green = (real)((to >> 8) & 0xFF) / 255.0f;
+				definition->text_color.blue = (real)(to & 0xFF) / 255.0f;
+				break;
+			}
 		}
 	}
 }
@@ -1687,7 +1688,7 @@ void menu_tags_loaded(
 
 	if (strcmp(config_string("display.menus"), "pc"))
 		return;
-	recolor_map_widgets(!strcmp(config_string("display.theme"), "glassed"));
+	recolor_map_widgets(halo_menus_theme());
 	/* (ui.map, and a multiplayer map: its pause menu's SETTINGS) */
 	if (game_map && tag_loaded('Soul', MULTIPLAYER_COLLECTION) == NONE)
 		return;
@@ -1841,7 +1842,7 @@ void pc_menus_theme_choose(
 
 /* (ui_widget.c, before the menus' frame) the theme chosen put on: every
 screen closed, the menus' tags built again in it, the textures drawn again
-(the maps' pictures are the Glassed theme's, hud_hires.c), and its main menu
+(the maps' pictures are each theme's own, hud_hires.c), and its main menu
 opened; FALSE when none was chosen */
 boolean pc_menus_theme_apply(
 	void)

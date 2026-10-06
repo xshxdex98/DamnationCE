@@ -30,8 +30,9 @@ struct hud_hires_embedded
 	unsigned int crc;
 	int coverage;
 	int title;
-	/* the Glassed menus theme's (display.theme), drawn only while it is chosen */
-	int glassed;
+	/* the menus theme whose it is (display.theme, as "glassed"), drawn only
+	while it is chosen; NULL in every theme */
+	const char *theme;
 	/* drawn for a Custom Edition map's stock bitmap of its name too, whose
 	layout is its own (port/assets/hud/custom_edition.json) */
 	int custom_edition;

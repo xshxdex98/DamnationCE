@@ -90,6 +90,10 @@ of a 16:9 window.
 		<on event="a start" run="port theme glassed"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
 	</widget>
+	<widget name="shell/item_cairo" type="text" width="300" height="22" bitmap="shell/item" text="CAIRO" font="ui\large_ui" color="#FFD2D6DA" text_x="8" text_y="1">
+		<on event="a start" run="port theme cairo"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
 	<widget name="shell/item_vanilla" type="text" width="300" height="22" bitmap="shell/item" text="VANILLA" font="ui\large_ui" color="#FFD2D6DA" text_x="8" text_y="1">
 		<on event="a start" run="port theme vanilla"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
@@ -119,8 +123,9 @@ of a 16:9 window.
 	</widget>
 	<widget name="shell/themes_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="shell/list_description">
 		<child widget="shell/item_glassed" x="14" y="190"/>
-		<child widget="shell/item_vanilla" x="14" y="213"/>
-		<child widget="shell/item_back" x="14" y="245"/>
+		<child widget="shell/item_cairo" x="14" y="213"/>
+		<child widget="shell/item_vanilla" x="14" y="236"/>
+		<child widget="shell/item_back" x="14" y="268"/>
 	</widget>
 	<widget name="shell/multiplayer_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="shell/list_description">
 		<child widget="shell/item_online" x="14" y="190"/>

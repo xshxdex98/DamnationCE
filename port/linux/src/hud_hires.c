@@ -18,6 +18,7 @@ what they write is read: 8-bit RGBA, not interlaced, its data inflated with
 the game's zlib.
 */
 
+#include "halo_menus.h"
 #include "hud_hires.h"
 #include "platform.h"
 #include "port_config.h"
@@ -76,10 +77,16 @@ long hud_hires_asset_fits(long asset, long width, long height)
 		embedded->width / width == embedded->height / height && embedded->width / width > 1;
 }
 
+/* whether an embedded texture is drawn in the menus theme chosen */
+static int in_chosen_theme(const struct hud_hires_embedded *embedded)
+{
+	return !embedded->theme || !strcmp(embedded->theme, halo_menus_theme_name(halo_menus_theme()));
+}
+
 long hud_hires_override_find(unsigned long address, unsigned long width, unsigned long height,
 	unsigned long level0_size)
 {
-	static int hud_enabled, titles_enabled, glassed;
+	static int hud_enabled, titles_enabled;
 	static unsigned long read_at = (unsigned long)-1;
 	long asset;
 
@@ -88,13 +95,12 @@ long hud_hires_override_find(unsigned long address, unsigned long width, unsigne
 		read_at = config_changes();
 		hud_enabled = config_boolean("display.high_res_hud");
 		titles_enabled = config_boolean("display.high_res_text");
-		glassed = !strcmp(config_string("display.theme"), "glassed");
 	}
 	if (!hud_enabled && !titles_enabled)
 		return -1;
-	/* (a bitmap may have a Glassed theme's texture and then a title's) */
+	/* (a bitmap may have a texture in each theme, and then a title's) */
 	asset = hud_hires_asset_at(address, (long)width, (long)height);
-	while (asset >= 0 && asset < hud_hires_asset_count() && hud_hires_embedded[asset].glassed && !glassed)
+	while (asset >= 0 && asset < hud_hires_asset_count() && !in_chosen_theme(&hud_hires_embedded[asset]))
 		asset = hud_hires_asset_after(address, (long)width, (long)height, asset);
 	if (asset < 0 || asset >= hud_hires_asset_count())
 		return -1;
