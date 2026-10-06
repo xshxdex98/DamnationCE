@@ -163,6 +163,10 @@ enum
 	(or the other way round) before it is put where the host has it: its
 	own prediction reaches the host and comes back in about a round trip */
 	SEAT_DISAGREEMENT_TICKS = 15,
+	/* how long a client waits for a player's killing blow once the host's
+	states say the player died, before the unit dies without it (an
+	actor's waits as long: network_objects.c) */
+	DEATH_BLOW_WAIT_TICKS = TICKS_PER_SECOND / 2,
 	/* the machines, and the host: a client's messages' sender */
 	MAXIMUM_SENDERS = HALO_PORT_MAXIMUM_NETWORK_MACHINES + 1,
 	HOST_SENDER = HALO_PORT_MAXIMUM_NETWORK_MACHINES,
@@ -462,6 +466,10 @@ static struct distributed_death
 	short killing_player_index;
 	boolean friendly_fire;
 	boolean killed_by_vehicle;
+	/* a client: when the host's states first said the player's living unit
+	here was dead (NONE: not), to wait for the killing blow
+	(DEATH_BLOW_WAIT_TICKS) */
+	long dead_since;
 } distributed_deaths[MAXIMUM_TRACKED_PLAYERS];
 /* the host: a kill this tick, whose statistics the clients should have
 with it */
@@ -2153,12 +2161,22 @@ static void distributed_handle_unit_state(
 	unit_index = distributed_living_unit(player);
 	if (!alive)
 	{
-		/* died on the host (who counts it; the damage that killed it,
-		network_damage.c, usually kills it here first) */
-		if (unit_index != NONE)
-			unit_kill_no_statistics(unit_index);
+		/* died on the host, who counts it. Its killing blow (network_damage.c)
+		kills it here with the death the host's had, so it is given a while
+		to come before the unit dies without one, as it falls. */
+		if (unit_index != NONE && state->player_index < MAXIMUM_TRACKED_PLAYERS)
+		{
+			long *dead_since = &distributed_deaths[state->player_index].dead_since;
+
+			if (*dead_since == NONE)
+				*dead_since = game_time_get();
+			else if (game_time_get() - *dead_since >= DEATH_BLOW_WAIT_TICKS)
+				unit_kill_no_statistics(unit_index);
+		}
 		return;
 	}
+	if (state->player_index < MAXIMUM_TRACKED_PLAYERS)
+		distributed_deaths[state->player_index].dead_since = NONE;
 	/* spawned on the host: the host's unit is the player's here too, once
 	this machine has it (network_objects.c) */
 	if (state->unit_index == NONE || !network_objects_client_has(state->unit_index) ||
@@ -3241,6 +3259,7 @@ void network_distributed_new_game(
 	distributed_host_update_number = NONE;
 	for (player_index = 0; player_index < MAXIMUM_TRACKED_PLAYERS; player_index++)
 	{
+		distributed_deaths[player_index].dead_since = NONE;
 		distributed_sent_units[player_index].flags = 0;
 		distributed_sent_units[player_index].unit_index = NONE;
 		distributed_sent_units[player_index].vehicle_index = NONE;
