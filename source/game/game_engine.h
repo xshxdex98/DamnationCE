@@ -634,6 +634,8 @@ void game_engine_switch_to_postgame(
 void game_engine_load_stage(
 	char const *map_name);
 
+void game_engine_restart(
+	void);
 void game_engine_end_game(
 	void);
 
