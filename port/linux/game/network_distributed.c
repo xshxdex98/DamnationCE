@@ -3845,6 +3845,12 @@ boolean distributed_machine_clock_fast(
 		distributed_client_clocks[machine_index].fast;
 }
 
+/* whether the messages handled now came in a batch (the unreliable ones;
+one sent reliably comes on its own): a killing blow sent again reliably is
+not overtaken by the newer damage sent with the ticks since
+(distributed_message_stale) */
+static boolean distributed_handling_batch;
+
 /* a message of the distributed kind; machine_index is the sender's on the
 host, NONE on a client */
 void network_distributed_handle_message(
@@ -3883,7 +3889,11 @@ void network_distributed_handle_message(
 			offset += length;
 			/* (no batch in a batch) */
 			if (((struct distributed_message_header const *)buffer)->type != _distributed_message_batch)
+			{
+				distributed_handling_batch = TRUE;
 				network_distributed_handle_message(machine_index, buffer, (word)(sizeof(message_header) + length));
+				distributed_handling_batch = FALSE;
+			}
 		}
 		return;
 	}
@@ -3962,8 +3972,11 @@ void network_distributed_handle_message(
 			distributed_host_time = header.game_time;
 		break;
 	}
-	if (distributed_message_stale(machine_index, &header))
+	if ((distributed_handling_batch || header.type != _distributed_message_damage_events) &&
+		distributed_message_stale(machine_index, &header))
+	{
 		return;
+	}
 	/* (the host: a client's clock, by its messages' ticks; and its players'
 	predictions not taken while its game runs fast) */
 	if (machine_index != NONE)
