@@ -8,7 +8,7 @@
 		<child widget="main_menu/settings_select/multiplayer_setup/playlist_select/playlist_select_list" />
 		<child widget="main_menu/settings_select/multiplayer_setup/playlist_select/header_select_gametype_to_edit" />
 	</widget>
-	<widget name="main_menu/settings_select/multiplayer_setup/playlist_select/header_select_gametype_to_edit" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/playlist_select/header_select_gametype_to_edit">
+	<widget name="main_menu/settings_select/multiplayer_setup/playlist_select/header_select_gametype_to_edit" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/playlist_select/header_select_gametype_to_edit">
 	</widget>
 	<widget name="main_menu/settings_select/multiplayer_setup/playlist_select/playlist_button_bar" type="column_list" width="640" height="28" flags="pass_unhandled_to_focused_child left_right_tabs_items">
 		<data input="common button bar update" />

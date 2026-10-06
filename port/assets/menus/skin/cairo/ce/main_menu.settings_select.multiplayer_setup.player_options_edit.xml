@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <menus>
-	<widget name="main_menu/settings_select/multiplayer_setup/player_options_edit/header_player_options" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/player_options_edit/header_player_options">
+	<widget name="main_menu/settings_select/multiplayer_setup/player_options_edit/header_player_options" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/player_options_edit/header_player_options">
 	</widget>
 	<widget name="main_menu/settings_select/multiplayer_setup/player_options_edit/invisible_players_label" type="text" controller="1" width="320" height="22" string_list="main_menu/settings_select/multiplayer_setup/player_options_edit/player_options_labels" string_index="6" font="ui\large_ui" color="#FFC8D6EA" text_x="13" text_y="4">
 	</widget>

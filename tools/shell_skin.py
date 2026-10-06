@@ -17,9 +17,10 @@ skin/glassed  This client's look. The PC screens are built from a few shared
               below fix their layout for it.
 skin/cairo    Halo 2's look: the same pictures redrawn by cairo_art.py, the
               same layout fixes, and the screens' titles moved onto header
-              bands that reach the window's left edge. Its main menu is the
-              Glassed one (shell/) set out down the middle of the screen
-              (the CAIRO_SHELL tables).
+              bands (the game draws a band's left end, and the backdrop's
+              sliding pieces, listed in shell/bitmaps.xml here). Its main
+              menu is the Glassed one (shell/) set out down the middle of
+              the screen (the CAIRO_SHELL tables).
 skin/vanilla  The stock main menu with a MENUS button, which opens the choice
               of theme. (The other themes' MENUS is in shell/main.xml.)
 
@@ -28,9 +29,9 @@ the menu pictures the maps carry themselves (pause menus, split screen and
 lobby screens), drawn in place of the maps' bitmaps as the high-res HUD is
 (port/linux/src/hud_hires.c), listed in its textures.json for
 tools/embed_assets.py. The maps', levels' and game types' pictures are
-enlarged for every theme, in skin/xbox. (The xbox/ folders are made from
-the maps' own pictures, so they are not kept in the repository.) Needs
-Pillow, NumPy and SciPy.
+enlarged for every theme, in skin/xbox, which is not kept in the repository
+(it is the maps' own pictures); the looks' redrawings are. Needs Pillow,
+NumPy and SciPy.
 """
 
 import argparse
@@ -272,7 +273,7 @@ GLASSED = Look("glassed", pane, bar, tab, strip, header, arrow, three_part_box,
 CAIRO = Look("cairo", cairo_art.pane, cairo_art.bar, cairo_art.tab, cairo_art.strip, cairo_art.header,
              cairo_art.arrow, cairo_art.three_part_box,
              text_colors={"#FF2896FF": cairo_art.TEXT, "#FF0080FF": cairo_art.TEXT_DIM},
-             header_left=-cairo_art.HEADER_LEFT_OF_SCREEN, solid_rows=True)
+             header_left=0, solid_rows=True)
 LOOKS = (GLASSED, CAIRO)
 
 
@@ -424,16 +425,25 @@ def look_layer(look):
 # down the middle of the screen
 
 CAIRO_SHELL_BITMAPS = {"shell/panel": cairo_art.BACKDROP, "shell/title": cairo_art.TITLE}
+# the pictures port/linux/game/cairo_backdrop.c draws, by name: their PNG
+# (in shell/art) and size
+CAIRO_BACKDROP_PIECES = {
+    "shell/cairo_stream_0": ("stream_0.png", cairo_art.STREAM),
+    "shell/cairo_stream_1": ("stream_1.png", cairo_art.STREAM),
+    "shell/cairo_ruler": ("ruler.png", cairo_art.RULER),
+    "shell/cairo_band": ("band.png", cairo_art.BAND),
+}
 CAIRO_SHELL_TITLES = ("shell/subtitle", "shell/campaign_title", "shell/multiplayer_title", "shell/themes_title")
 CAIRO_SHELL_WIDGETS = {
-    "shell/panel": {"width": str(cairo_art.BACKDROP[0])},
+    # (the whole screen: the game widens a strip that covers it to the window)
+    "shell/panel": {"width": "640"},
     "shell/title": {"width": str(cairo_art.TITLE[0]), "height": str(cairo_art.TITLE[1])},
     **{name: {"width": "300", "align": "center", "color": cairo_art.TEXT_DIM} for name in CAIRO_SHELL_TITLES},
 }
 CAIRO_SHELL_ITEM = {"text_x": "0", "align": "center", "color": cairo_art.TEXT}
 # where each screen's parts go, and the lists' items: across, and how much lower
 CAIRO_SHELL_PLACES = {
-    "shell/panel": (-cairo_art.HEADER_LEFT_OF_SCREEN, 0),
+    "shell/panel": (0, 0),
     "shell/title": ((640 - cairo_art.TITLE[0]) // 2, 112),
     **{name: (170, 176) for name in CAIRO_SHELL_TITLES},
     "shell/rule": ((640 - cairo_art.RULE[0]) // 2, 436),
@@ -450,6 +460,9 @@ def cairo_shell():
             width, height = CAIRO_SHELL_BITMAPS[bitmap.get("name")]
             for frame in bitmap.iter("frame"):
                 change_attributes(frame, {"width": str(width), "height": str(height)})
+    for name, (png, (width, height)) in CAIRO_BACKDROP_PIECES.items():
+        bitmap = ET.SubElement(tree.getroot(), "bitmap", {"name": name})
+        ET.SubElement(bitmap, "frame", {"png": f"shell/art/{png}", "width": str(width), "height": str(height)})
     write_xml(tree, out / "bitmaps.xml")
 
     tree = ET.parse(MENUS / "shell" / "main.xml")

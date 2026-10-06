@@ -15,7 +15,7 @@
 	<widget name="main_menu/settings_select/multiplayer_setup/vehicle_options_edit/ghost_spinner" type="spinner" top="2" width="206" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" string_list="main_menu/settings_select/multiplayer_setup/vehicle_options_edit/var_vehicle_options" font="ui\large_ui" color="#FFC8D6EA" align="center" text_y="4" list_flags="items_from_strings" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -13 19 -7" footer_bounds="7 208 19 214">
 		<on event="left_mouse" run="mouse spinner 1wide click" />
 	</widget>
-	<widget name="main_menu/settings_select/multiplayer_setup/vehicle_options_edit/header_vehicle_options" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/vehicle_options_edit/header_vehicle_options">
+	<widget name="main_menu/settings_select/multiplayer_setup/vehicle_options_edit/header_vehicle_options" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/vehicle_options_edit/header_vehicle_options">
 	</widget>
 	<widget name="main_menu/settings_select/multiplayer_setup/vehicle_options_edit/op_banshee" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FFC8D6EA">
 		<child widget="main_menu/settings_select/multiplayer_setup/vehicle_options_edit/banshee_label" />

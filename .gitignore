@@ -21,6 +21,9 @@ compile_commands.json
 *.pdb
 xbox/
 !source/**/xbox/
+# (but the menus themes' redrawings of the maps' menu pictures, drawn by
+# tools/shell_skin.py --maps; skin/xbox, the maps' own pictures enlarged, stays out)
+!port/assets/menus/skin/*/xbox/
 
 # Locally extracted proprietary game data (never commit)
 /assets

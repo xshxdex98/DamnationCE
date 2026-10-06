@@ -2,7 +2,7 @@
 <menus>
 	<widget name="main_menu/solo_level_select/difficulty_indicator" controller="1" width="44" height="48" bitmap="ui\shell\main_menu\difficulty_select\difficulty_options_small">
 	</widget>
-	<widget name="main_menu/solo_level_select/header_replay_level" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/solo_level_select/header_load_level">
+	<widget name="main_menu/solo_level_select/header_replay_level" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/solo_level_select/header_load_level">
 	</widget>
 	<widget name="main_menu/solo_level_select/replay_level_right_data" type="text" controller="1" left="417" top="258" width="146" height="136" string_list="main_menu/solo_level_select/map_data" string_index="2" font="ui\small_ui" color="#FFC8D6EA">
 	</widget>

@@ -4,6 +4,6 @@
 		<on event="created" run="NULL" />
 		<child widget="main_menu/settings_select/multiplayer_setup/name_edit/header_gametype_name" />
 	</widget>
-	<widget name="main_menu/settings_select/multiplayer_setup/name_edit/header_gametype_name" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/name_edit/header_gametype_name">
+	<widget name="main_menu/settings_select/multiplayer_setup/name_edit/header_gametype_name" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/settings_select/multiplayer_setup/name_edit/header_gametype_name">
 	</widget>
 </menus>

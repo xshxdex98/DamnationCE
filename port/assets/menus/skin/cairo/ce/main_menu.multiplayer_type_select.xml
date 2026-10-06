@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <menus>
-	<widget name="main_menu/multiplayer_type_select/header_multiplayer" controller="1" left="-107" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/header_multiplayer">
+	<widget name="main_menu/multiplayer_type_select/header_multiplayer" controller="1" left="0" top="11" width="512" height="59" bitmap="main_menu/multiplayer_type_select/header_multiplayer">
 	</widget>
 	<widget name="main_menu/multiplayer_type_select/multiplayer_options_pic" controller="1" left="288" top="82" width="307" height="244" bitmap="main_menu/multiplayer_type_select/mp_options">
 	</widget>

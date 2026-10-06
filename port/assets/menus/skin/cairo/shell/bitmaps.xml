@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <menus>
 	<bitmap name="shell/panel">
-		<frame png="shell/art/panel.png" width="854" height="480" />
+		<frame png="shell/art/panel.png" width="4" height="480" />
 	</bitmap>
 	<bitmap name="shell/item">
 		<frame png="shell/art/item_0.png" width="300" height="22" />
@@ -28,5 +28,17 @@
 	</bitmap>
 	<bitmap name="shell/rule">
 		<frame png="shell/art/rule.png" width="420" height="2" />
+	</bitmap>
+	<bitmap name="shell/cairo_stream_0">
+		<frame png="shell/art/stream_0.png" width="320" height="12" />
+	</bitmap>
+	<bitmap name="shell/cairo_stream_1">
+		<frame png="shell/art/stream_1.png" width="320" height="12" />
+	</bitmap>
+	<bitmap name="shell/cairo_ruler">
+		<frame png="shell/art/ruler.png" width="48" height="8" />
+	</bitmap>
+	<bitmap name="shell/cairo_band">
+		<frame png="shell/art/band.png" width="4" height="28" />
 	</bitmap>
 </menus>
