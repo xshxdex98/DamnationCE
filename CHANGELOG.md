@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.3.22
+
+### Co-op
+
+- Only the host's crossing of a loading zone switches the BSP, and it brings
+  every player to the host, however far behind. No more being teleported
+  back through the level by someone running ahead. A player standing on a
+  loading zone is told it waits for the host.
+- A dead host (or anyone) respawns beside a living teammate, not at the
+  last checkpoint.
+- The Maw's lift, and every other point where the level waits for the whole
+  team, brings the stragglers along instead of leaving them behind.
+- The Pillar of Autumn tutorial's look-at-the-lights step works for every
+  player.
+- `bringto` in the console brings every player to the host (host only).
+- A scoreboard in the campaign: hold BACK (Tab) for the players' names and
+  pings.
+- Hosts with many extra enemies run faster: bodies far from every player
+  are cleaned up, and the cleanup no longer runs every tick.
+
+### Multiplayer
+
+- A player joining a game in progress starts at zero, not with the score of
+  whoever had their slot before.
+- Bodies no longer hang in midair in large games.
+- Killing blows reach every player, so bodies fall as they did on the host.
+
+### Level editor
+
+- PLAY and FLY play the level inside the editor's view, starting from the
+  level's spawns or, with none, below the editor's view.
+
+The flashlight and other dynamic lights, missing in 0.3.20 on Windows,
+work again (since 0.3.21).
+
+Network version 20, as 0.3.21: players on either can play together.
+
 ## 0.3.21
 
 ### From OpenCE
