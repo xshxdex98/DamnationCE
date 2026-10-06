@@ -103,6 +103,7 @@ symbols in this file:
 #include "scenario/scenario_definitions.h"
 #include "sound/sound_definitions.h"
 #include "units/units.h"
+#include "hs/hs.h"
 #include "object_lists.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
 #include "coop_scripts.h" /* port: port/linux/game/coop_scripts.c */
