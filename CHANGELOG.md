@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.21
+
+### From OpenCE
+
+- Anti-aliasing, in Video Setup: FXAA, SMAA, 2x supersampling, or 2x to 8x
+  multisampling.
+- Per-pixel lighting of models, and sharper shadows (Shadow Resolution, up
+  to 1024), in Video Setup.
+- Reverb: sounds echo as the room they are in does, and are muffled behind
+  walls (Audio Setup's Reverb). The sound is cleaner too: better
+  resampling, a limiter in place of clipping, 3D sounds at the right
+  distance, and Xbox ADPCM decoded properly.
+- Public lobbies can have a password; the server browser shows a lock on
+  them.
+- Multiplayer maps can be played alone.
+- A co-op option for players to collide with one another.
+- The profile settings show the gamepad's layout.
+- Dynamic lights no longer corrupt on Windows.
+- More checks against damaged maps and network messages.
+
+Network version 20: everyone needs 0.3.21 to play together.
+
 ## 0.3.20
 
 ### Menus
