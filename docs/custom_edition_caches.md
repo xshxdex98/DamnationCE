@@ -106,11 +106,15 @@ optional files beside the map give it what the Xbox levels have:
   version" of this build's caches:
 
   ```
-  'd:\maps\ui.map' is a Halo Custom Edition cache (build 01.00.00.0609): this build recognizes it but cannot run it (docs/custom_edition_caches.md)
+  'd:\maps\ui.map' is a Halo Custom Edition cache (build 01.00.00.0609) this build cannot run: Custom Edition maps are turned off (docs/custom_edition_caches.md)
   ```
 
-  The message is logged to `debug.txt` in every build, and debug builds stop
-  on it as the original check stops on a bad cache
+  With the setting on, a cache the loader's checks refuse gets the same
+  line with the check it failed in place of the setting. Either way the map
+  is not loaded and the game goes back to its menus (it used to stop on the
+  Xbox's damaged disc error).
+
+  The message is logged to `debug.txt` in every build
   (`port/linux/game/custom_edition_cache.c`, called from
   `cache_file_header_verify` in `source/cache/cache_files.c`).
 - **An OpenSauce `.yelo` file** is found when there is no `.map` of that name,
@@ -160,13 +164,14 @@ tags to a file, as they would sit at `0x40440000`.
 Loading, step by step (`custom_edition_cache_load`):
 
 1. The header: signatures, version 609, terminated strings, file length
-   within the file and the size limit (`0x18000000`, or `0x24000000` with
+   (0, as Invader leaves it, for the whole file) within the file and the size limit (`0x18000000`, or `0x24000000` with
    OpenSauce memory upgrades), no compression, tag data within the file and
    the tag cache (23 MB, or 1.5 times that with memory upgrades). An
    OpenSauce header at offset `0x70` is checked as OpenSauce checks it:
    header version 1 or 2, `project_yellow` and `project_yellow_globals` tag
    versions 2, memory upgrade factor at most 1.5, no undefined flags, a mod
-   name when the mod-set flag is set, and its tag definitions within the file.
+   name when the mod-set flag is set, and its tag definitions within the file
+   and past its header (bigass_v3's header counts them in its file length).
 2. The tag data is read to the start of the tag cache, which stands for
    `0x40440000`.
 3. The tag index (`tags` signature), every tag instance (its handle must
@@ -274,7 +279,9 @@ changed:
   of a kind the texture cache and the swizzling code handle (a format with a
   hardware texture, a compressed flag that agrees with the format,
   power-of-two sizes unless linear, square cube maps, all its pixels
-  present). Its pixels are laid out for Halo PC, levels as the tag stores
+  present). Halo PC draws a 2D bitmap of any size, so an uncompressed one
+  whose sides are not powers of two is made linear as the map loads, and
+  drawn from its first level (birdcage-plus's 3840 by 64 needler plasma). Its pixels are laid out for Halo PC, levels as the tag stores
   them, unswizzled; as they arrive, the game's own
   `rasterizer_xbox_bitmap_rebuild_hardware_format` lays them out as an Xbox
   cache would (swizzled, cube maps face by face, padded).

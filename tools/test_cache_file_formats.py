@@ -1315,13 +1315,29 @@ def test_malformed_opensauce_headers_are_rejected(report_tool, tmp_path, case):
     assert report["identify"] == message
 
 
-def test_opensauce_definitions_outside_the_file_are_rejected(report_tool, tmp_path):
+def test_opensauce_definitions_outside_the_file_or_in_its_header_are_rejected(report_tool, tmp_path):
     path = Map(opensauce={"flags": 1, "definitions_offset": 0x10}, definitions=b"x" * 64).write(tmp_path, "test.yelo")
     _, report = report_one(report_tool, path)
     assert report["identify"] == "the OpenSauce tag definitions lie outside the file"
     path = Map(opensauce={"flags": 1, "definitions_offset": 0x7FFFFFF0}, definitions=b"x" * 64).write(tmp_path, "test.yelo")
     _, report = report_one(report_tool, path)
     assert report["identify"] == "the OpenSauce tag definitions lie outside the file"
+
+
+def test_opensauce_definitions_counted_in_the_file_length_are_accepted(report_tool, tmp_path):
+    """bigass_v3's header counts its OpenSauce definitions in the cache's
+    length: the length is the whole file's."""
+    path = Map(opensauce={"flags": 1}, definitions=b"x" * 64).write(tmp_path, "test.yelo")
+    returncode, report = report_one(report_tool, patched(path, 0x08, "<I", path.stat().st_size))
+    assert returncode == 0 and report["identify"] == "ok" and report["load"] == "ok"
+
+
+def test_a_file_length_of_zero_is_the_whole_file(report_tool, tmp_path):
+    """Invader leaves the header's file length 0 (blood_covenantv3)."""
+    path = Map().write(tmp_path, "test.map")
+    returncode, report = report_one(report_tool, patched(path, 0x08, "<I", 0))
+    assert returncode == 0 and report["identify"] == "ok" and report["load"] == "ok"
+    assert report["file_length"] == hex(path.stat().st_size)
 
 
 def test_unterminated_opensauce_strings_are_rejected(report_tool, tmp_path):
