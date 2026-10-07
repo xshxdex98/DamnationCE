@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.3.30
+
+### Co-op
+
+- Extra enemies per player stop growing a squad at 8 times its size. With
+  dozens of players the squads grew past what the host and clients could
+  run: freezes, floating bodies, teleporting players and sudden deaths.
+- A client no longer erases the host's bipeds that fall outside the map;
+  the host does.
+- The follow camera no longer halts the game when the host looks straight
+  up or down.
+
+### Multiplayer
+
+- Plasma bolts and flashlight beams no longer go invisible in big games.
+- Oddball on a map with no ball spawn starts the ball at the first player
+  spawn instead of a random place.
+- Vehicles past the 64th on a map respawn again (up to 1024).
+
+### Custom Edition maps
+
+- Blocks past the Xbox tools' limits (scenario vehicles, animations, seats)
+  are kept instead of cut.
+- Some bitmaps drew garbled and now draw right.
+- A client whose copy of a map differs from the host's can't join, instead
+  of playing a different map.
+
+Network version 23, OpenCE's: 0.3.29 and older can't join these games, or
+host them for this one.
+
 ## 0.3.29
 
 ### From OpenCE
