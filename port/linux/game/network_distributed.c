@@ -67,6 +67,7 @@ machine (their datum identifiers need not be).
 #include "scenario/scenario.h"
 #include "scenario/scenario_definitions.h"
 #include "structures/structure_bsp_definitions.h"
+#include "tag_files/tag_files.h"
 #include "units/units.h"
 #include "units/biped_definitions.h"
 #include "units/bipeds.h"
@@ -509,6 +510,27 @@ static struct
 	long taken_host_time;
 	real_point3d taken_host_position;
 } distributed_accepted[MAXIMUM_TRACKED_PLAYERS];
+
+/* What the netcode logs to debug.txt every DIAGNOSTICS_INTERVAL_TICKS of a
+network game, to tell rubber banding apart: on the host, what became of
+each client player's predictions; on a client, how often and how far its
+own players were put where the host has them. */
+#define DIAGNOSTICS_INTERVAL_TICKS (10 * TICKS_PER_SECOND)
+enum
+{
+	_prediction_taken,
+	_prediction_too_far,
+	_prediction_too_fast,
+	_prediction_too_high,
+	_prediction_bsp_not_loaded,
+	NUMBER_OF_PREDICTION_OUTCOMES
+};
+static long distributed_prediction_outcomes[MAXIMUM_TRACKED_PLAYERS][NUMBER_OF_PREDICTION_OUTCOMES];
+static struct
+{
+	long count;
+	real largest;
+} distributed_own_corrections;
 /* ... what its own ticks did to its copy of each client's player's unit on
 foot, beyond the client's word it took (an explosion's throw, a jump): how
 fast they sent it, and how fast up, the most of this span of
@@ -1633,6 +1655,15 @@ static void distributed_note_own_positions(
 	}
 }
 
+/* (a client) its own player put where the host has it: counted, for the
+diagnostics */
+static void distributed_note_own_correction(
+	real distance)
+{
+	distributed_own_corrections.count++;
+	distributed_own_corrections.largest = MAX(distributed_own_corrections.largest, distance);
+}
+
 /* (a client) its own player's unit where the host has it, if that is
 further than a tolerance from where this machine had it at the tick the
 host has it at (its own prediction come back): moved by the difference,
@@ -1682,6 +1713,7 @@ static void distributed_correct_own_unit(
 			{
 				return;
 			}
+			distributed_note_own_correction(magnitude3d(&error));
 			{
 				real_point3d before = object->object.position;
 
@@ -1707,6 +1739,12 @@ static void distributed_correct_own_unit(
 				return;
 			}
 		}
+	}
+	{
+		real distance = distance3d(&position, &object_get(unit_index)->object.position);
+
+		if (distance > LOCAL_CORRECTION_TOLERANCE)
+			distributed_note_own_correction(distance);
 	}
 	distributed_apply_state(unit_index, state, &position, LOCAL_CORRECTION_TOLERANCE, 0.0f, 0.0f, 0.0f);
 }
@@ -2022,7 +2060,10 @@ static void distributed_take_prediction(
 	real dz = state->position.z - object->object.position.z;
 
 	if (!(dx * dx + dy * dy + dz * dz <= HOST_ACCEPT_TOLERANCE * HOST_ACCEPT_TOLERANCE))
+	{
+		distributed_prediction_outcomes[player_index][_prediction_too_far]++;
 		return;
+	}
 	if (distributed_accepted[player_index].valid)
 	{
 		long ticks = MIN(distributed_predictions[player_index].time - distributed_accepted[player_index].time,
@@ -2042,6 +2083,7 @@ static void distributed_take_prediction(
 		else if (ticks <= 0 || !distributed_on_foot_move_valid(bound, &distributed_accepted[player_index].position,
 			&state->position, ticks))
 		{
+			distributed_prediction_outcomes[player_index][_prediction_too_fast]++;
 			return;
 		}
 	}
@@ -2051,12 +2093,14 @@ static void distributed_take_prediction(
 	if (!(state->position.z - distributed_host_speeds[player_index].ground_height <=
 		distributed_on_foot_ceiling(player_index, bound)))
 	{
+		distributed_prediction_outcomes[player_index][_prediction_too_high]++;
 		return;
 	}
 	/* (the client told which of its ticks the host has it at) */
 	if (distributed_apply_state(unit_index, state, &state->position, 0.0f, HOST_BLEND_DISTANCE, bound->speed,
 		distributed_on_foot_fall_speed(bound, state->position.z)))
 	{
+		distributed_prediction_outcomes[player_index][_prediction_taken]++;
 		distributed_predictions[player_index].taken_time = distributed_predictions[player_index].time;
 		distributed_predictions[player_index].taken_host_time = now;
 		/* (a new anchor: the first, one a second on, or after a jump) */
@@ -2121,10 +2165,12 @@ static void distributed_apply_predictions(
 			from a co-op client still loading the host's BSP, whose player
 			falls there with no floor under it) */
 			if (unit_index != NONE && unit_index == state->unit_index &&
-				unit_get(unit_index)->unit.player_index != NONE &&
-				network_coop_player_has_structure_bsp(unit_get(unit_index)->unit.player_index))
+				unit_get(unit_index)->unit.player_index != NONE)
 			{
-				distributed_take_prediction(player_index, unit_index, &bound);
+				if (network_coop_player_has_structure_bsp(unit_get(unit_index)->unit.player_index))
+					distributed_take_prediction(player_index, unit_index, &bound);
+				else
+					distributed_prediction_outcomes[player_index][_prediction_bsp_not_loaded]++;
 			}
 		}
 		/* (what the host's next tick starts from) */
@@ -2889,6 +2935,23 @@ void network_distributed_player_killed(
 		death->killed_by_vehicle = *killing_player_index == NONE && killing_object &&
 			killing_object->object.type == _object_type_vehicle;
 		distributed_statistics_due = TRUE;
+		/* (a client's player: what killed its copy here, and how far that
+		copy was from where the client had it, for the diagnostics) */
+		if (distributed_player_machines[dead_absolute_index] != NONE)
+		{
+			struct player_datum *dead = player_try_and_get(dead_player_index);
+			struct object_datum *unit = dead && dead->unit_index != NONE ? object_try_and_get(dead->unit_index) : NULL;
+			long taken = dead && distributed_accepted[dead_absolute_index].unit_index == dead->unit_index ?
+				distributed_accepted[dead_absolute_index].taken_host_time : NONE;
+			real apart = unit ?
+				distance3d(&distributed_predictions[dead_absolute_index].state.position, &unit->object.position) : -1.0f;
+
+			error(_error_silent, "netcode: player %d died, killed by player %ld with '%s'; its prediction was last "
+				"taken %ld ticks before, and its latest was %.1f world units from the host's copy",
+				dead_absolute_index, *killing_player_index == NONE ? -1L : DATUM_INDEX_TO_ABSOLUTE_INDEX(*killing_player_index),
+				killing_object ? tag_get_name(killing_object->definition_index) : "nothing",
+				taken == NONE ? -1L : game_time_get() - taken, apart);
+		}
 	}
 	else if (game_connection() == _game_connection_network_client && death->valid)
 	{
@@ -3309,12 +3372,49 @@ void network_distributed_new_game(
 	distributed_host_time = NONE;
 	distributed_statistics_due = FALSE;
 	distributed_pickup_count = 0;
+	csmemset(distributed_prediction_outcomes, 0, sizeof(distributed_prediction_outcomes));
+	csmemset(&distributed_own_corrections, 0, sizeof(distributed_own_corrections));
 	/* (each player's latest input: player_queues_new.c) */
 	update_queues_distributed_reset();
 	network_objects_new_game();
 	network_damage_new_game();
 	network_actors_new_game();
 	network_coop_new_game();
+}
+
+/* the diagnostics of the last DIAGNOSTICS_INTERVAL_TICKS, to debug.txt, and
+counted afresh: on the host, each client player whose predictions were not
+all taken; on a client, its own players put where the host has them */
+static void distributed_log_diagnostics(
+	void)
+{
+	if (game_connection() == _game_connection_network_server)
+	{
+		short player_index;
+
+		for (player_index = 0; player_index < MAXIMUM_TRACKED_PLAYERS; player_index++)
+		{
+			long const *outcomes = distributed_prediction_outcomes[player_index];
+
+			if (outcomes[_prediction_too_far] || outcomes[_prediction_too_fast] || outcomes[_prediction_too_high] ||
+				outcomes[_prediction_bsp_not_loaded])
+			{
+				error(_error_silent, "netcode: player %d's predictions: %ld taken, %ld too far from the host's copy, "
+					"%ld faster than it moves, %ld higher than it jumps, %ld before it loaded the BSP (ping %ld ms)",
+					player_index, outcomes[_prediction_taken], outcomes[_prediction_too_far],
+					outcomes[_prediction_too_fast], outcomes[_prediction_too_high],
+					outcomes[_prediction_bsp_not_loaded], distributed_player_ping(player_index));
+			}
+		}
+	}
+	else if (distributed_own_corrections.count)
+	{
+		error(_error_silent, "netcode: this machine's player was put where the host has it %ld times (up to %.1f "
+			"world units; round trip %.0f ms)", distributed_own_corrections.count,
+			distributed_own_corrections.largest, distributed_own_round_trip * 1000.0f / TICKS_PER_SECOND);
+	}
+	csmemset(distributed_prediction_outcomes, 0, sizeof(distributed_prediction_outcomes));
+	csmemset(&distributed_own_corrections, 0, sizeof(distributed_own_corrections));
 }
 
 /* after each tick (game_time.c) */
@@ -3383,6 +3483,8 @@ void network_distributed_tick(
 	distributed_batches_flush();
 	distributed_machines.in_tick = FALSE;
 	distributed_machines.valid = FALSE;
+	if (game_time_get() % DIAGNOSTICS_INTERVAL_TICKS == 0)
+		distributed_log_diagnostics();
 }
 
 /* whether an unreliable message of the kind is older than one had already
