@@ -755,7 +755,13 @@ static boolean texture_cache_bitmap_valid(
 {
 	static boolean reported = FALSE;
 	boolean linear = TEST_FLAG(bitmap->flags, _bitmap_linear_bit);
-	short maximum_dimension = bitmap->type==_bitmap_type_3d ? 512 : 4096;
+	/* port: 8192 for swizzled and compressed textures, whose sizes Direct3D
+	keeps as powers of two (Halo PC maps have 1024x8192 skins); a linear
+	texture's size fields hold 4096 */
+	short maximum_dimension =
+		bitmap->type==_bitmap_type_3d ? 512 :
+		linear ? 4096 :
+		8192;
 	boolean valid =
 		VALID_INDEX(bitmap->type, NUMBER_OF_BITMAP_TYPES) &&
 		VALID_INDEX(bitmap->format, NUMBER_OF_BITMAP_FORMATS) &&
