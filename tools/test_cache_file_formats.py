@@ -419,7 +419,7 @@ class Map:
         self.script_nodes = script_nodes
         self.weapon_hud = weapon_hud
         self.hud_bitmap_flags = hud_bitmap_flags
-        # (width, height, type, flags) of the bitmap kept in the map
+        # (width, height, type, format, flags) of the bitmap kept in the map
         self.in_map_bitmap = in_map_bitmap
         self.strings_name = strings_name
         self.strings = strings
@@ -545,10 +545,11 @@ class Map:
         tag_data.u32(bitmap + 0x18, pixels_offset)
         tag_data.u32(bitmap + 0x1C, len(in_map_pixels))
         if self.in_map_bitmap is not None:
-            width, height, kind, flags = self.in_map_bitmap
+            width, height, kind, bitmap_format, flags = self.in_map_bitmap
             tag_data.u16(bitmap + 0x04, width)
             tag_data.u16(bitmap + 0x06, height)
             tag_data.u16(bitmap + 0x0A, kind)
+            tag_data.u16(bitmap + 0x0C, bitmap_format)
             tag_data.u16(bitmap + 0x0E, flags)
         address_of["in map bitmap data"] = bitmap
         address_of["test\\in map bitmap"] = group
@@ -964,12 +965,13 @@ def test_a_shader_with_another_groups_type_is_given_its_groups(report_tool, tmp_
 
 
 @pytest.mark.parametrize("bitmap, made_linear, flags", [
-    ((3840, 64, 0, 0x81), 1, 0x90),  # birdcage's needler plasma: linear, no longer "power of two"
-    ((256, 64, 0, 0x01), 0, 0x01),   # powers of two: swizzled as before
-    ((96, 96, 0, 0x03), 0, 0x03),    # compressed: linear ones cannot be, so it stays
-    ((96, 96, 2, 0x00), 0, 0x00),    # a cube map: only 2D bitmaps can be linear
-    ((100, 50, 0, 0x10), 0, 0x10),   # linear already
-], ids=["npot", "power of two", "compressed", "cube map", "linear"])
+    ((3840, 64, 0, 11, 0x81), 1, 0x90),  # birdcage's needler plasma: linear, no longer "power of two"
+    ((256, 64, 0, 11, 0x01), 0, 0x01),   # powers of two: swizzled as before
+    ((96, 96, 0, 14, 0x03), 0, 0x03),    # DXT1: linear ones cannot be compressed, so it stays
+    ((96, 96, 0, 17, 0x04), 0, 0x04),    # P8: nor palettized
+    ((96, 96, 2, 11, 0x00), 0, 0x00),    # a cube map: only 2D bitmaps can be linear
+    ((100, 50, 0, 11, 0x10), 0, 0x10),   # linear already
+], ids=["npot", "power of two", "dxt1", "p8", "cube map", "linear"])
 def test_bitmaps_of_sides_only_halo_pc_draws_are_made_linear(report_tool, tmp_path, bitmap, made_linear, flags):
     cache = Map(in_map_bitmap=bitmap)
     returncode, report, tags = converted(report_tool, cache, tmp_path)

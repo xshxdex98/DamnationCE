@@ -371,10 +371,12 @@ s_bitmap_group_sequence 0x40, s_bitmap_group_sprite 0x20, s_bitmap_data 0x30) */
 #define BITMAP_DATA_WIDTH_OFFSET 0x04
 #define BITMAP_DATA_HEIGHT_OFFSET 0x06
 #define BITMAP_DATA_TYPE_OFFSET 0x0A
+#define BITMAP_DATA_FORMAT_OFFSET 0x0C
 #define BITMAP_DATA_FLAGS_OFFSET 0x0E
 #define BITMAP_TYPE_2D 0
+/* the first of the formats a linear bitmap cannot have: DXT1, 3 and 5, and P8 */
+#define BITMAP_FORMAT_DXT1 14
 #define BITMAP_DATA_POWER_OF_TWO_DIMENSIONS_BIT 0
-#define BITMAP_DATA_COMPRESSED_BIT 1
 #define BITMAP_DATA_LINEAR_BIT 4
 #define BITMAP_DATA_PIXELS_OFFSET_OFFSET 0x18
 #define BITMAP_DATA_PIXELS_SIZE_OFFSET 0x1C
@@ -2783,7 +2785,8 @@ static int power_of_two(
 /* Halo PC draws a 2D bitmap of any size; this build swizzles all but linear
 ones, which takes power-of-two sides. An uncompressed one that has not got
 them is drawn as linear (its first level: linear bitmaps have no others),
-as Halo PC's texture is: birdcage's needler plasma, 3840 by 64. */
+as Halo PC's texture is: birdcage's needler plasma, 3840 by 64. Compressed
+and palettized ones cannot be linear, and are left as they were. */
 static void bitmap_npot_make_linear(
 	uint8_t *bitmap,
 	struct custom_edition_conversion_report *report)
@@ -2793,7 +2796,7 @@ static void bitmap_npot_make_linear(
 	uint16_t height = read_u16(bitmap + BITMAP_DATA_HEIGHT_OFFSET);
 
 	if (read_u16(bitmap + BITMAP_DATA_TYPE_OFFSET) != BITMAP_TYPE_2D ||
-		flag_is_set(flags, BITMAP_DATA_COMPRESSED_BIT) || flag_is_set(flags, BITMAP_DATA_LINEAR_BIT) ||
+		read_u16(bitmap + BITMAP_DATA_FORMAT_OFFSET) >= BITMAP_FORMAT_DXT1 || flag_is_set(flags, BITMAP_DATA_LINEAR_BIT) ||
 		!width || !height || (power_of_two(width) && power_of_two(height)))
 	{
 		return;
