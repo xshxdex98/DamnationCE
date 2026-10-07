@@ -313,6 +313,11 @@ static boolean custom_edition_cache_tags_convert(
 		error(_error_silent, "custom edition: %ld shaders whose type was not their group's were given their group's",
 			(long)conversion.shaders_mistyped);
 	}
+	if (conversion.bitmaps_made_linear)
+	{
+		error(_error_silent, "custom edition: %ld bitmaps of sides only Halo PC draws are drawn linear (their first level)",
+			(long)conversion.bitmaps_made_linear);
+	}
 	if (conversion.node_links_cut)
 	{
 		error(_error_silent, "custom edition: %ld model and animation node links that looped or pointed past the nodes were cut",

@@ -317,6 +317,8 @@ struct custom_edition_conversion_report
 	int32_t shaders_mistyped;
 	/* bitmaps given their own tag and the state of a bitmap not yet drawn */
 	int32_t bitmaps_prepared;
+	/* ... of them drawn as linear: 2D, uncompressed, sides not powers of two */
+	int32_t bitmaps_made_linear;
 	/* 1 when the scenario's script syntax nodes, upgraded by OpenSauce, were
 	made this build's number */
 	int32_t script_nodes_reduced;
