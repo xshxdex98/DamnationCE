@@ -246,7 +246,11 @@ changed:
   This build ignores the flag, so it drew them twice too large; the
   placements of the unit, weapon and grenade HUD interfaces and the HUD
   globals' messages that have it get half their scale, and lose the flag (32
-  in `bloodgulch.map`, 14 in `beavercreek_halo3.yelo`). A bitmap may ask the
+  in `bloodgulch.map`, 14 in `beavercreek_halo3.yelo`). Halo PC reads the
+  flag only on statics, meters and numbers (Chimera's `hud_bitmap_scale.cpp`):
+  crosshair and overlay items keep their scale. A number's scale is not its
+  digits', so a flagged number keeps the flag and `hud_draw_numbers` draws
+  its digits at half their size, spaced as the digits tag says. A bitmap may ask the
   same of every element that draws it, with Halo PC's bitmap flags *half hud
   scale* and *force hud use highres scale* (Invader's `bitmap.json`): an
   element drawing such a bitmap (a static or meter, its bitmap after its
