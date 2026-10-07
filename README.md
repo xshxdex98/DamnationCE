@@ -35,13 +35,14 @@ support and synced AI on top.
 - The menu scene keeps running behind every screen
 
 **Halo Custom Edition maps** (`docs/custom_edition_caches.md`)
-- Custom Edition multiplayer maps load and run
+- Custom Edition maps load and run, listed as CUSTOM SINGLEPLAYER (played
+  alone or as network co-op) and CUSTOM MULTIPLAYER
 - Their Ogg Vorbis sounds play (announcer, dialogue, music)
 - Their scripts run; OpenSauce-only effect calls do nothing instead of
   refusing the map
 - Their stock HUD is drawn with the port's high-res HUD where the layouts match
 - Models of up to 64 bones
-- Up to 1024 maps in the list, with names of up to 56 characters
+- Up to 1024 maps in the list, with names of up to 51 characters
 
 **Multiplayer**
 - AI synced to every player in a game (no "ghost" AI)
@@ -54,8 +55,9 @@ starts, it asks for the image and copies the game's `maps` folder out of it.
 
 ### Custom Edition Map Support
 
-Put these from a Halo Custom Edition install's `maps` folder into the game's
-`maps` folder:
+Put these from a Halo Custom Edition install's `maps` folder into a
+`custom_maps` folder beside the game's `maps` folder (the game's own maps stay
+in `maps`):
 
 - `bitmaps.map`, `sounds.map` and `loc.map`, which every Custom Edition map
   draws its stock art, sounds and text from

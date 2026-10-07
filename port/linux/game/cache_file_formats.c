@@ -7,10 +7,10 @@ Halo Custom Edition caches and Custom Edition resource maps
 Sources for the layouts, cited per structure below:
 - OpenSauce (GPL-3.0, Kornner Studios; the snapshot examined is the
   OpenSauce-master archive of the upstream Mercurial repository, whose newest
-  version file names OpenSauce 4.0.0): the cache header and the OpenSauce
-  header's flags, the tag index, tag instance, resource map ("data file")
-  header and item, the structure BSP header and reference, and the bitmap,
-  sound and HUD message tag layouts, all with static size assertions.
+  version file names OpenSauce 4.0.0): the cache header, tag index, tag
+  instance, resource map ("data file") header and item, the structure BSP
+  header and reference, and the bitmap, sound and HUD message tag layouts,
+  all with static size assertions.
 - BlamLib, in the same archive: the font and unicode string list layouts.
 - Reclaimer (GPL-3.0, Gravemind2401; the Reclaimer-master archive): how
   bitmap tags and pixel data are found in bitmaps.map.
@@ -35,7 +35,15 @@ docs/custom_edition_caches.md lists each with its evidence.
 #define CACHE_FOOTER_SIGNATURE 'foot'
 #define TAG_INDEX_SIGNATURE 'tags'
 #define STRUCTURE_BSP_SIGNATURE 'sbsp'
+/* OpenSauce's own header, at CACHE_HEADER_OPENSAUCE_OFFSET, where a Custom
+Edition cache has padding: its signature and its flags (OpenSauce
+cache_files_structures_yelo.hpp, s_cache_header_yelo). A cache that sets
+none of the flags (memory upgrades, mod data files and the like) needs
+nothing of OpenSauce's, and is run as stock Custom Edition runs it, the
+header and the OpenSauce tags it holds (project_yellow, project_yellow
+globals) never read; one that sets any is refused. */
 #define OPENSAUCE_HEADER_SIGNATURE 'yelo'
+#define OPENSAUCE_HEADER_FLAGS_OFFSET 0x06
 
 #define BITMAP_GROUP_TAG 'bitm'
 #define SOUND_GROUP_TAG 'snd!'
@@ -45,8 +53,6 @@ docs/custom_edition_caches.md lists each with its evidence.
 #define SCENARIO_GROUP_TAG 'scnr'
 #define STRUCTURE_BSP_GROUP_TAG 'sbsp'
 #define GBXMODEL_GROUP_TAG 'mod2'
-#define PROJECT_YELLOW_GROUP_TAG 'yelo'
-#define PROJECT_YELLOW_GLOBALS_GROUP_TAG 'gelo'
 
 #define NO_TAG_INDEX (-1)
 #define ABSOLUTE_INDEX_MASK 0xFFFFUL
@@ -63,12 +69,6 @@ docs/custom_edition_caches.md lists each with its evidence.
 #define CACHE_HEADER_CHECKSUM_OFFSET 0x64
 #define CACHE_HEADER_OPENSAUCE_OFFSET 0x70
 #define CACHE_HEADER_FOOTER_OFFSET 0x7FC
-
-/* the flags of the OpenSauce header, for what only OpenSauce provides:
-memory upgrades, mod data files and game state upgrades (OpenSauce
-cache_files_structures_yelo.hpp, s_cache_header_yelo::s_flags) */
-#define OPENSAUCE_FLAGS_OFFSET 0x06
-#define OPENSAUCE_RUNTIME_FLAGS 0x000BU
 
 /* the tag index at the start of the tag data (OpenSauce
 cache_files_structures.hpp, s_cache_tag_header and s_cache_tag_instance) */
@@ -109,16 +109,6 @@ the offset holds in every map examined) */
 #define SCENARIO_STRUCTURE_BSPS_OFFSET 0x5A4
 #define SCENARIO_BYTES 0x5B0
 
-/* The scenario's script syntax data (OpenSauce scenario_definitions.hpp,
-hs_syntax_data): a data array (this build's memory/data.h) of 20-byte
-syntax nodes. This build has room for 19001 nodes (hs.c,
-MAXIMUM_HS_SYNTAX_NODES_PER_SCENARIO), as stock Custom Edition does;
-OpenSauce's memory upgrades make room for 1.5 times as many (OpenSauce
-blam_memory_upgrades.hpp, k_maximum_hs_syntax_nodes_per_scenario_upgrade). */
-#define SCENARIO_HS_SYNTAX_DATA_OFFSET 0x474
-#define DATA_ARRAY_HEADER_BYTES 0x38
-#define HS_SYNTAX_NODE_BYTES 20
-#define MAXIMUM_HS_SYNTAX_NODES_PER_SCENARIO_UPGRADED 28501
 #define STRUCTURE_BSP_REFERENCE_BYTES 0x20
 #define STRUCTURE_BSP_REFERENCE_FILE_OFFSET_OFFSET 0x00
 #define STRUCTURE_BSP_REFERENCE_SIZE_OFFSET 0x04
@@ -290,6 +280,15 @@ starting with its placement */
 #define GRENADE_HUD_INTERFACE_OVERLAY_BITMAP_OFFSET 0x14C
 #define GRENADE_HUD_INTERFACE_OVERLAY_ITEMS_OFFSET 0x15C
 #define UNIT_HUD_INTERFACE_BLIPS_OFFSET 0x35C
+/* Where a meter element of the Xbox's has its multitexture overlays (a
+block, which the Xbox's tags leave empty), Halo PC's meters have a minimum
+alpha and padding (Invader's unit_hud_interface.json and
+weapon_hud_interface.json): read as a block, its count is the alpha's bits.
+The unit HUD's shield and health meters, an auxiliary meter's meter, and a
+weapon HUD meter's after its 0x24-byte header. */
+#define HUD_METER_OVERLAYS_OFFSET 0x58
+#define UNIT_HUD_INTERFACE_SHIELD_METER_OFFSET 0xF4
+#define UNIT_HUD_INTERFACE_HEALTH_METER_OFFSET 0x1E4
 #define HUD_GLOBALS_GROUP_TAG 'hudg'
 #define HUD_GLOBALS_BYTES 0x450
 #define HUD_GLOBALS_MESSAGING_PLACEMENT_OFFSET 0x24
@@ -349,6 +348,10 @@ s_data_file_item) */
 s_bitmap_group_sequence 0x40, s_bitmap_group_sprite 0x20, s_bitmap_data 0x30) */
 #define BITMAP_GROUP_BYTES 0x6C
 #define BITMAP_GROUP_BITMAPS_OFFSET 0x60
+/* the group's processed pixel data: a tag data field, whose file offset this
+build adds to each bitmap's (texture_cache_bitmap_new), where Halo PC's
+bitmaps' offsets are their own (timberland's waterfall has one) */
+#define BITMAP_GROUP_PIXEL_DATA_OFFSET 0x30
 #define BITMAP_DATA_BYTES 0x30
 #define BITMAP_DATA_WIDTH_OFFSET 0x04
 #define BITMAP_DATA_HEIGHT_OFFSET 0x06
@@ -466,6 +469,13 @@ struct load_state
 	lowest structure BSP address, relative to the tag cache */
 	uint32_t used_bytes;
 	uint32_t usable_bytes;
+	/* the map's own tag data (the first used bytes), and where its tag
+	instances end within it: a tag the map keeps a header of (a resource
+	map's sound) must keep it in the tag data after the instances, so that
+	filling it in writes over neither the instances nor a tag placed from a
+	resource map */
+	uint32_t tag_data_bytes;
+	uint32_t instances_end;
 	uint32_t file_length;
 	/* the model data in the file: vertices, then from `index_data_offset`
 	the strips */
@@ -769,7 +779,7 @@ static char const *const cache_file_status_descriptions[NUMBER_OF_CACHE_FILE_STA
 	"the file length in the header does not fit the file or the size limit",
 	"the cache is compressed, which Custom Edition caches never are",
 	"the tag data range in the header does not fit the file or the tag cache",
-	"the map needs OpenSauce: it uses its memory upgrades, mod data files or game state upgrades",
+	"an OpenSauce map that needs OpenSauce (its header asks for memory upgrades, mod data files or the like), which this build does not run",
 	"the tag index signature is not 'tags'",
 	"the tag instances do not fit in the tag data",
 	"a tag handle does not match its position in the index",
@@ -1005,12 +1015,10 @@ static enum cache_file_status custom_edition_header_verify(
 	uint8_t const *bytes,
 	struct cache_file_identity *identity)
 {
-	identity->has_opensauce_header =
-		read_u32(bytes + CACHE_HEADER_OPENSAUCE_OFFSET) == OPENSAUCE_HEADER_SIGNATURE;
-	if (identity->has_opensauce_header &&
-		read_u16(bytes + CACHE_HEADER_OPENSAUCE_OFFSET + OPENSAUCE_FLAGS_OFFSET) & OPENSAUCE_RUNTIME_FLAGS)
+	if (read_u32(bytes + CACHE_HEADER_OPENSAUCE_OFFSET) == OPENSAUCE_HEADER_SIGNATURE &&
+		read_u16(bytes + CACHE_HEADER_OPENSAUCE_OFFSET + OPENSAUCE_HEADER_FLAGS_OFFSET))
 	{
-		return _cache_file_status_needs_opensauce;
+		return _cache_file_status_opensauce_cache;
 	}
 	if (identity->compressed_file_length)
 	{
@@ -1587,7 +1595,11 @@ static enum cache_file_status resource_sound_load(
 	{
 		return load_fail(state, _cache_file_status_missing_resource_map, header_address);
 	}
-	if (!tag_cache_offset(state, header_address, SOUND_DEFINITION_BYTES, &header_offset))
+	/* (in the map's own tag data, after its tag instances: the header is
+	written into below) */
+	if (!tag_cache_offset(state, header_address, SOUND_DEFINITION_BYTES, &header_offset) ||
+		header_offset < state->instances_end ||
+		!range_fits(header_offset, SOUND_DEFINITION_BYTES, state->tag_data_bytes))
 	{
 		return load_fail(state, _cache_file_status_bad_tag_address, header_address);
 	}
@@ -1997,13 +2009,11 @@ enum cache_file_status cache_file_identify(
 }
 
 enum cache_file_format cache_file_header_format(
-	void const *header,
-	int *has_opensauce_header)
+	void const *header)
 {
 	uint8_t const *bytes = header;
 	enum cache_file_format format;
 
-	*has_opensauce_header = 0;
 	if (read_u32(bytes) != CACHE_HEADER_SIGNATURE ||
 		read_u32(bytes + CACHE_HEADER_FOOTER_OFFSET) != CACHE_FOOTER_SIGNATURE)
 	{
@@ -2016,8 +2026,6 @@ enum cache_file_format cache_file_header_format(
 		break;
 	case CACHE_FILE_VERSION_CUSTOM_EDITION:
 		format = _cache_file_format_custom_edition_cache;
-		*has_opensauce_header =
-			read_u32(bytes + CACHE_HEADER_OPENSAUCE_OFFSET) == OPENSAUCE_HEADER_SIGNATURE;
 		break;
 	default:
 		format = _cache_file_format_other_cache;
@@ -2171,6 +2179,7 @@ enum cache_file_status custom_edition_cache_load(
 		return load_fail(&state, _cache_file_status_read_failed, identity->tag_data_offset);
 	}
 	state.used_bytes = identity->tag_data_size;
+	state.tag_data_bytes = identity->tag_data_size;
 	report->tag_data_bytes = identity->tag_data_size;
 
 	/* the tag index */
@@ -2196,6 +2205,7 @@ enum cache_file_status custom_edition_cache_load(
 		return load_fail(&state, _cache_file_status_bad_tag_instances_range, read_u32(tag_index + TAG_INDEX_INSTANCES_OFFSET));
 	}
 	tag_instances = tag_cache + instances_offset;
+	state.instances_end = instances_offset + (uint32_t)tag_count * TAG_INSTANCE_BYTES;
 
 	/* the model vertex and index data (in the file; the index data offset
 	counts from the vertex data) */
@@ -2229,10 +2239,6 @@ enum cache_file_status custom_edition_cache_load(
 		if (!tag_name_get(&state, instance))
 		{
 			return load_fail(&state, _cache_file_status_bad_tag_name, read_u32(instance + TAG_INSTANCE_NAME_OFFSET));
-		}
-		if (group_tag == PROJECT_YELLOW_GROUP_TAG || group_tag == PROJECT_YELLOW_GLOBALS_GROUP_TAG)
-		{
-			report->warnings |= 1UL << _custom_edition_warning_opensauce_tags_bit;
 		}
 		if (read_u32(instance + TAG_INSTANCE_IN_RESOURCE_MAP_OFFSET))
 		{
@@ -2710,6 +2716,7 @@ static void bitmaps_prepare(
 	uint32_t bitmaps_offset;
 	int32_t bitmap_index;
 
+	write_u32(state->tag_cache + group_offset + BITMAP_GROUP_PIXEL_DATA_OFFSET + TAG_DATA_FILE_OFFSET_OFFSET, 0);
 	if (!loaded_block_get(
 		state->tag_cache + group_offset + BITMAP_GROUP_BITMAPS_OFFSET,
 		CUSTOM_EDITION_TAG_CACHE_ADDRESS,
@@ -2807,11 +2814,43 @@ static void sound_prepare(
 	return;
 }
 
+/* A weapon's four exported functions: Halo PC has two inputs this build has
+not, primary and secondary firing on (17 and 18, Invader's weapon.json),
+after its primary and secondary firing, which they are made. */
+#define WEAPON_GROUP_TAG 'weap'
+#define WEAPON_BYTES 0x508
+#define WEAPON_FUNCTION_MODES_OFFSET 0x330
+#define WEAPON_FUNCTION_MODE_COUNT 4
+#define WEAPON_FUNCTION_PRIMARY_FIRING 15
+#define WEAPON_FUNCTION_PRIMARY_FIRING_ON 17
+#define WEAPON_FUNCTION_SECONDARY_FIRING_ON 18
+
+static void weapon_functions_convert(
+	uint8_t *weapon,
+	struct custom_edition_conversion_report *report)
+{
+	int index;
+
+	for (index = 0; index < WEAPON_FUNCTION_MODE_COUNT; index++)
+	{
+		uint8_t *mode = weapon + WEAPON_FUNCTION_MODES_OFFSET + index * 2;
+		int16_t value = read_s16(mode);
+
+		if (value == WEAPON_FUNCTION_PRIMARY_FIRING_ON || value == WEAPON_FUNCTION_SECONDARY_FIRING_ON)
+		{
+			write_u16(mode, (uint16_t)(value - WEAPON_FUNCTION_PRIMARY_FIRING_ON + WEAPON_FUNCTION_PRIMARY_FIRING));
+			report->weapon_functions_converted++;
+		}
+	}
+
+	return;
+}
+
 /* Object overlays of the animation graph at `graph_offset` that name an
 animation the graph does not have are made to name none, which the game
 skips (objects.c, object_compute_node_matrices). Maps built with the editing
-kit can have them (beavercreek_halo3.yelo has two); Custom Edition reads
-past the graph's animations there, and this build asserts. */
+kit can have them; Custom Edition reads past the graph's animations there,
+and this build asserts. */
 static void animation_graph_overlays_repair(
 	struct load_state const *state,
 	uint32_t graph_offset,
@@ -2930,35 +2969,68 @@ static void node_links_repair(
 	}
 }
 
-/* OpenSauce's memory upgrades make room for more script syntax nodes than
-this build's hs_allocate takes */
-static enum cache_file_status scenario_script_nodes_verify(
-	struct load_state const *state,
-	uint8_t const *instances,
-	int32_t tag_count,
+/* the overlays block of the meter element at meter: Halo PC's minimum
+alpha, made an empty block */
+static void hud_meter_overlays_clear(
+	uint8_t *meter,
 	struct custom_edition_conversion_report *report)
 {
-	uint32_t scenario_index = read_u32(state->tag_cache + TAG_INDEX_SCENARIO_OFFSET) & ABSOLUTE_INDEX_MASK;
-	uint32_t scenario_offset;
+	uint8_t *block = meter + HUD_METER_OVERLAYS_OFFSET;
 
-	/* custom_edition_cache_load checked the scenario */
-	if (scenario_index >= (uint32_t)tag_count ||
-		!tag_cache_offset(
-			state,
-			read_u32(instances + scenario_index * TAG_INSTANCE_BYTES + TAG_INSTANCE_ADDRESS_OFFSET),
-			SCENARIO_BYTES,
-			&scenario_offset))
+	if (read_s32(block + TAG_BLOCK_COUNT_OFFSET) || read_u32(block + TAG_BLOCK_ADDRESS_OFFSET) ||
+		read_u32(block + TAG_BLOCK_DEFINITION_OFFSET))
 	{
-		return _cache_file_status_bad_scenario_tag;
-	}
-	if (read_s32(state->tag_cache + scenario_offset + SCENARIO_HS_SYNTAX_DATA_OFFSET + TAG_DATA_SIZE_OFFSET) ==
-		DATA_ARRAY_HEADER_BYTES + MAXIMUM_HS_SYNTAX_NODES_PER_SCENARIO_UPGRADED * HS_SYNTAX_NODE_BYTES)
-	{
-		report->problem_tag_index = (int32_t)scenario_index;
-		return _cache_file_status_needs_opensauce;
+		memset(block, 0, TAG_BLOCK_BYTES);
+		report->hud_meter_alphas_cleared++;
 	}
 
-	return _cache_file_status_ok;
+	return;
+}
+
+/* every meter element of the HUD definition of group_tag at offset */
+static void hud_meters_convert(
+	struct load_state const *state,
+	uint32_t group_tag,
+	uint32_t offset,
+	struct custom_edition_conversion_report *report)
+{
+	uint8_t *definition = state->tag_cache + offset;
+	int32_t count;
+	uint32_t elements_offset;
+	int32_t index;
+
+	switch (group_tag)
+	{
+	case UNIT_HUD_INTERFACE_GROUP_TAG:
+		hud_meter_overlays_clear(definition + UNIT_HUD_INTERFACE_SHIELD_METER_OFFSET, report);
+		hud_meter_overlays_clear(definition + UNIT_HUD_INTERFACE_HEALTH_METER_OFFSET, report);
+		if (loaded_block_get(definition + UNIT_HUD_INTERFACE_AUXILIARY_METERS_OFFSET, CUSTOM_EDITION_TAG_CACHE_ADDRESS,
+			state->used_bytes, UNIT_HUD_INTERFACE_AUXILIARY_METER_BYTES, &count, &elements_offset))
+		{
+			for (index = 0; index < count; index++)
+			{
+				hud_meter_overlays_clear(state->tag_cache + elements_offset +
+					(uint32_t)index * UNIT_HUD_INTERFACE_AUXILIARY_METER_BYTES + UNIT_HUD_INTERFACE_AUXILIARY_METER_METER_OFFSET,
+					report);
+			}
+		}
+		break;
+	case WEAPON_HUD_INTERFACE_GROUP_TAG:
+		if (loaded_block_get(definition + WEAPON_HUD_INTERFACE_METERS_OFFSET, CUSTOM_EDITION_TAG_CACHE_ADDRESS,
+			state->used_bytes, WEAPON_HUD_STATIC_OR_METER_BYTES, &count, &elements_offset))
+		{
+			for (index = 0; index < count; index++)
+			{
+				hud_meter_overlays_clear(state->tag_cache + elements_offset +
+					(uint32_t)index * WEAPON_HUD_STATIC_OR_METER_BYTES + WEAPON_HUD_ELEMENT_PLACEMENT_OFFSET, report);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	return;
 }
 
 /* Halo PC draws a HUD element whose placement has the high resolution scale
@@ -3522,6 +3594,11 @@ enum cache_file_status custom_edition_cache_convert(
 		{
 			bitmaps_prepare(&state, offset, read_u32(instance + TAG_INSTANCE_HANDLE_OFFSET), report);
 		}
+		if (group_tag == WEAPON_GROUP_TAG &&
+			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), WEAPON_BYTES, &offset))
+		{
+			weapon_functions_convert(tag_cache + offset, report);
+		}
 		if (group_tag == ANIMATION_GRAPH_GROUP_TAG &&
 			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), ANIMATION_GRAPH_BYTES, &offset))
 		{
@@ -3543,6 +3620,7 @@ enum cache_file_status custom_edition_cache_convert(
 			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), hud_definition_bytes(group_tag), &offset))
 		{
 			hud_placements_convert(&state, group_tag, offset, report);
+			hud_meters_convert(&state, group_tag, offset, report);
 		}
 		if (group_tag == UNICODE_STRING_LIST_GROUP_TAG &&
 			!strcmp(custom_edition_cache_tag_name(tag_cache, loaded_bytes, tag_index), MULTIPLAYER_GAME_TEXT_NAME) &&
@@ -3592,7 +3670,7 @@ enum cache_file_status custom_edition_cache_convert(
 		TRANSPARENT_CHICAGO_EXTENDED_GROUP_TAG,
 		TRANSPARENT_CHICAGO_GROUP_TAG);
 
-	return scenario_script_nodes_verify(&state, instances, tag_count, report);
+	return _cache_file_status_ok;
 }
 
 void custom_edition_cache_combine_resource_offsets(

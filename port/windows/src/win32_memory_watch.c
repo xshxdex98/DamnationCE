@@ -17,7 +17,7 @@ game's main thread is that often, which finds hangs without a debugger
 
 #include "port_config.h"
 
-/* the Xbox memory window (port/linux/src/platform.h) */
+/* the Xbox memory window (port/linux/src/platform.h: the desktop builds') */
 #define PLATFORM_CONTIGUOUS_BASE 0x80000000UL
 #define PLATFORM_CONTIGUOUS_SIZE 0x20000000UL
 

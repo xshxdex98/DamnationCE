@@ -123,9 +123,12 @@ symbols in this file:
 
 /* ---------- constants */
 
+typedef char verify_xbox_texture_cache_size[
+	HALO_PORT_TEXTURE_CACHE_SIZE == HALO_PORT_TEXTURE_CACHE_PAGE_COUNT * 0x4000 ? 1 : -1];
+
 enum
 {
-	/* the native builds' larger texture cache (halo_port_capacity.h) */
+	/* port: the native builds' larger cache (halo_port_capacity.h) */
 	XBOX_TEXTURE_CACHE_PAGE_COUNT = HALO_PORT_TEXTURE_CACHE_PAGE_COUNT,
 	XBOX_TEXTURE_CACHE_PAGE_SIZE_BITS = 14,
 	XBOX_TEXTURE_CACHE_PAGE_SIZE = 1 << XBOX_TEXTURE_CACHE_PAGE_SIZE_BITS,

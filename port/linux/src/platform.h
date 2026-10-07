@@ -173,6 +173,15 @@ void halo_custom_edition_texels_forget(void);
 channel order only then (rasterizer_xbox_dynavobgeom.c) */
 void halo_hud_meter_drawing(int drawing);
 
+/* The window Halo Custom Edition tag data are linked to (0x40440000):
+reserved at start-up when the game.custom_edition setting is on, else NULL
+(also declared for the game in halo_linux_source_fixups.h). */
+void *halo_custom_edition_tag_cache(void);
+/* which textures hold their channels where Halo PC keeps them
+(xbox_textures.c; also declared for the game there) */
+void halo_custom_edition_texels_channels(const void *texels, unsigned char channel_order);
+void halo_custom_edition_texels_forget(void);
+
 /* ---------- guest memory write tracking (memory_watch.c)
 
 Pages of the contiguous window that the renderer has cached (textures) are

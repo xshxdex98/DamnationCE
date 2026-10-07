@@ -4,6 +4,8 @@ CUSTOM_EDITION_CACHE.C
 Halo Custom Edition caches in the native builds' cache file loader
 (custom_edition_cache.h). The loader runs only Xbox caches of this build;
 without this unit it rejects a Custom Edition cache as "an old version".
+OpenSauce caches are refused (cache_file_formats.c), and ".yelo" files are
+never looked for.
 
 With the game.custom_edition setting on (the platform then reserves the
 Custom Edition tag cache, port/linux/src/xbox_memory.c), a Custom Edition
@@ -27,6 +29,7 @@ where its offset falls in their combined offset space.
 #include "scenario/scenario_definitions.h"
 #include "cache_file_formats.h"
 #include "custom_edition_cache.h"
+#include "tag_schema.h"
 
 #include <stdlib.h>
 
@@ -37,6 +40,10 @@ where its offset falls in their combined offset space.
 #define MAP_PATH_SIZE 256
 /* where a cache header keeps the file's length (cache_files.c) */
 #define CACHE_FILE_HEADER_FILE_LENGTH_OFFSET 0x08
+
+/* (the validator has room for the tag cache's tags) */
+typedef char verify_custom_edition_tag_cache_bytes[
+	CUSTOM_EDITION_TAG_CACHE_BYTES <= TAG_VALIDATE_MAXIMUM_TAG_CACHE_SIZE ? 1 : -1];
 
 /* the combined offset space: the map (CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES
 at most), the Ogg Vorbis sounds decoded at load (custom_edition_sounds.c)
@@ -70,6 +77,10 @@ struct custom_edition_cache_globals
 	/* the tag cache and the bytes of it the loaded tags use */
 	uint8_t *tag_cache;
 	uint32_t loaded_bytes;
+	/* the tag cache the map's structure BSPs load to the top of, and the
+	length of its cache data */
+	uint32_t tag_cache_bytes;
+	uint32_t file_length;
 	struct custom_edition_file map;
 	struct custom_edition_file resource_files[NUMBER_OF_RESOURCE_MAP_TYPES];
 	struct resource_map resource_map_storage[NUMBER_OF_RESOURCE_MAP_TYPES];
@@ -155,12 +166,22 @@ static boolean file_path_exists(
 	return file_exists(file_reference_create_from_path(&reference, path, FALSE));
 }
 
-/* the maps folders looked in, in order: the game's, then the Custom Edition
-install's */
+/* whether a Halo Custom Edition install is set (paths.custom_edition), the
+platform's h:\ (port/linux/src/xbox_files.c) */
+boolean custom_edition_install_present(
+	void)
+{
+	extern char const *platform_custom_edition_root(void);
+
+	return platform_custom_edition_root()[0] != 0;
+}
+
+/* the maps folders looked in, in order: the game's custom_maps, then the
+Custom Edition install's */
 static char const *maps_folder(
 	short index)
 {
-	return index == 0 ? cache_files_map_directory() : CUSTOM_EDITION_INSTALL_MAP_DIRECTORY;
+	return index == 0 ? CUSTOM_EDITION_MAP_DIRECTORY : CUSTOM_EDITION_INSTALL_MAP_DIRECTORY;
 }
 #define NUMBER_OF_MAPS_FOLDERS 2
 
@@ -171,7 +192,10 @@ static boolean maps_folder_has(
 	char const *extension,
 	char *path)
 {
-	if (strlen(folder) + strlen(name) + strlen(extension) >= MAP_PATH_SIZE)
+	/* (the install's only when there is one: an Xbox drive of the save
+	folder is made when first looked in, port/linux/src/xbox_files.c) */
+	if (strlen(folder) + strlen(name) + strlen(extension) >= MAP_PATH_SIZE ||
+		(folder == maps_folder(1) && !custom_edition_install_present()))
 	{
 		return FALSE;
 	}
@@ -180,7 +204,8 @@ static boolean maps_folder_has(
 	return file_path_exists(path);
 }
 
-/* the file that holds the map `map_name` names: <maps>\<name>.map */
+/* the file that holds the map `map_name` names (a level name or a file
+name): <custom maps folder>\<name>.map */
 static boolean custom_edition_map_path(
 	char const *map_name,
 	char *path)
@@ -199,8 +224,8 @@ static boolean custom_edition_map_path(
 	return FALSE;
 }
 
-/* the resource map of `type` (bitmaps.map and so on) in the first maps folder
-that has it; the game's when none does, for the message */
+/* A cache's resource map of `type`, bitmaps.map and so on, in the first maps
+folder that has it; the game's when none does, for the message. */
 static boolean custom_edition_resource_map_path(
 	enum resource_map_type type,
 	char *path)
@@ -302,9 +327,56 @@ static void custom_edition_behaviours_log(
 	return;
 }
 
+/* The tags custom_edition_cache_load loaded and custom_edition_cache_convert
+converted, checked as an Xbox map's are before the game reads them
+(port/linux/game/tag_validate.c): their pixels and samples in the files of
+the combined offset space, and the sounds decoded at load. */
+static boolean custom_edition_cache_tags_validate(
+	uint8_t *tag_cache,
+	struct custom_edition_load_report const *report)
+{
+	struct custom_edition_cache_globals *globals = &custom_edition_cache_globals;
+	struct tag_validate_file_range ranges[MAXIMUM_TAG_VALIDATE_FILE_RANGES];
+	short range_count = 0;
+
+	ranges[range_count].offset = 0;
+	ranges[range_count++].size = report->identity.file_length;
+	ranges[range_count].offset = COMBINED_DECODED_OFFSET;
+	ranges[range_count++].size = custom_edition_sounds_decoded_bytes();
+	if (globals->resource_files[_resource_map_bitmaps].stream)
+	{
+		ranges[range_count].offset = COMBINED_BITMAPS_OFFSET;
+		ranges[range_count++].size = globals->resource_files[_resource_map_bitmaps].source.size;
+	}
+	if (globals->resource_files[_resource_map_sounds].stream)
+	{
+		ranges[range_count].offset = COMBINED_SOUNDS_OFFSET;
+		ranges[range_count++].size = globals->resource_files[_resource_map_sounds].source.size;
+	}
+	if (!tag_validate_custom_edition_tags(
+		tag_cache,
+		(long)(report->tag_data_bytes + report->resource_tag_bytes),
+		report->tag_cache_bytes,
+		ranges,
+		range_count,
+		report->identity.name))
+	{
+		return FALSE;
+	}
+	if (tag_validate_corrections())
+	{
+		error(_error_silent, "custom edition: the map's tags needed %ld corrections (above)",
+			tag_validate_corrections());
+	}
+
+	return TRUE;
+}
+
 /* Makes the tags custom_edition_cache_load loaded into `tag_cache` this
-build's: their resource offsets combined, their bytes converted, their
-bitmaps checked, their models converted. */
+build's: their resource offsets combined, their bytes converted, then
+checked as an Xbox map's tags are; then their bitmaps checked, their
+scripts given this build's functions and their models converted, all from
+tags the checks passed. */
 static boolean custom_edition_cache_tags_convert(
 	uint8_t *tag_cache,
 	struct custom_edition_load_report const *report)
@@ -388,7 +460,8 @@ static boolean custom_edition_cache_tags_convert(
 			conversion.pause_menu_trimmed ? "; the multiplayer pause menu is the Xbox's resume and quit" : "");
 	}
 
-	return custom_edition_bitmaps_verify(tag_cache, loaded_bytes) &&
+	return custom_edition_cache_tags_validate(tag_cache, report) &&
+		custom_edition_bitmaps_verify(tag_cache, loaded_bytes) &&
 		custom_edition_reordered_bitmaps_find(tag_cache, loaded_bytes) &&
 		custom_edition_scripts_convert(tag_cache, loaded_bytes) &&
 		custom_edition_cache_models_convert(tag_cache, report);
@@ -459,38 +532,118 @@ boolean custom_edition_cache_refuse(
 	struct cache_file_identity identity;
 	enum cache_file_status status = _cache_file_status_read_failed;
 	char map_path[MAP_PATH_SIZE];
-	int has_opensauce_header;
 
-	if (cache_file_header_format(header, &has_opensauce_header) != _cache_file_format_custom_edition_cache)
+	if (cache_file_header_format(header) != _cache_file_format_custom_edition_cache)
 	{
 		return FALSE;
 	}
-	/* (why the Custom Edition loader passed it by: what its checks found,
-	or why it cannot run any when they found nothing; `path` is a file's or
-	a scenario's, by the caller) */
-	if (custom_edition_file_open(&file, path) ||
-		(custom_edition_map_path(path, map_path) && custom_edition_file_open(&file, map_path)))
+	/* (why the Custom Edition loader passed it by: what its checks found, or
+	why it cannot run any when they found nothing. It reaches the Xbox loader
+	from the game's own maps folder, by `path`, a file's or a scenario's) */
+	snprintf(map_path, sizeof(map_path), "%s%s%s", cache_files_map_directory(), tag_name_strip_path(path),
+		MAP_FILE_EXTENSION);
+	if (custom_edition_file_open(&file, path) || custom_edition_file_open(&file, map_path))
 	{
 		status = cache_file_identify(&file.source, &identity);
 		custom_edition_file_close(&file);
 	}
 	error(
 		_error_silent,
-		"'%.96s' is a Halo Custom Edition cache%s (build %.31s) this build cannot run: %s (docs/custom_edition_caches.md)",
+		"'%.96s' is a Halo Custom Edition cache (build %.31s) this build cannot run: %s (docs/custom_edition_caches.md)",
 		path,
-		has_opensauce_header ? " with an OpenSauce header" : "",
 		build,
-		status == _cache_file_status_ok ? custom_edition_unavailable_reason() : cache_file_status_describe(status));
+		status != _cache_file_status_ok ? cache_file_status_describe(status) :
+		halo_custom_edition_tag_cache() ? "Custom Edition maps are played from the custom_maps folder" :
+		custom_edition_unavailable_reason());
+
+	return TRUE;
+}
+
+boolean custom_edition_level_name(
+	char const *level_name)
+{
+	return level_name &&
+		!_strnicmp(level_name, CUSTOM_EDITION_LEVEL_NAME_PREFIX, csstrlen(CUSTOM_EDITION_LEVEL_NAME_PREFIX));
+}
+
+boolean custom_edition_map_file_present(
+	char const *map_name)
+{
+	char path[MAP_PATH_SIZE];
+
+	return custom_edition_map_path(map_name, path);
+}
+
+boolean custom_edition_cache_present(
+	char const *level_name,
+	char *message,
+	long message_size)
+{
+	char const *name = tag_name_strip_path(level_name);
+	char path[MAP_PATH_SIZE];
+	struct custom_edition_file file;
+	struct cache_file_identity identity;
+	enum cache_file_status status = _cache_file_status_read_failed;
+	short folder;
+	short type;
+
+	if (!custom_edition_map_path(level_name, path))
+	{
+		snprintf(message, message_size, "You don't have the map %.64s.map. If you have it, copy it into custom_maps.",
+			name);
+		return FALSE;
+	}
+	if (!halo_custom_edition_tag_cache())
+	{
+		error(_error_silent, "custom edition: the map '%s' cannot be played: %s", level_name,
+			custom_edition_unavailable_reason());
+		snprintf(message, message_size, "The map %.64s can't be played: Custom Edition maps can't run (see debug.txt).",
+			name);
+		return FALSE;
+	}
+	if (custom_edition_file_open(&file, path))
+	{
+		status = cache_file_identify(&file.source, &identity);
+		custom_edition_file_close(&file);
+	}
+	if (status != _cache_file_status_ok || identity.format != _cache_file_format_custom_edition_cache)
+	{
+		error(_error_silent, "custom edition: '%s' cannot be played: %s", path,
+			status != _cache_file_status_ok ? cache_file_status_describe(status) :
+			"it is not a Halo Custom Edition cache");
+		snprintf(message, message_size, "Your %.64s.map can't be played (debug.txt says why).", name);
+		return FALSE;
+	}
+	/* (the resource maps every Custom Edition map's tags are read from) */
+	for (type = _resource_map_bitmaps; type < NUMBER_OF_RESOURCE_MAP_TYPES; type++)
+	{
+		char const *resource_name = resource_map_type_describe((enum resource_map_type)type);
+		char resource_path[MAP_PATH_SIZE];
+
+		for (folder = 0; folder < NUMBER_OF_MAPS_FOLDERS; folder++)
+		{
+			if (maps_folder_has(maps_folder(folder), resource_name, MAP_FILE_EXTENSION, resource_path))
+				break;
+		}
+		if (folder == NUMBER_OF_MAPS_FOLDERS)
+		{
+			error(_error_silent, "custom edition: the map '%s' needs %s.map, which no maps folder has", level_name,
+				resource_name);
+			snprintf(message, message_size,
+				"The map %.64s needs Custom Edition's bitmaps.map, sounds.map and loc.map in custom_maps.", name);
+			return FALSE;
+		}
+	}
 
 	return TRUE;
 }
 
 boolean custom_edition_cache_playable(
-	char const *map_name)
+	char const *level_name)
 {
 	struct cache_file_identity identity;
 
-	return custom_edition_cache_identify(map_name, &identity);
+	return custom_edition_level_name(level_name) && custom_edition_cache_identify(level_name, &identity);
 }
 
 boolean custom_edition_cache_campaign(
@@ -524,9 +677,16 @@ struct cache_file_tag_header *custom_edition_cache_tags_load(
 	short type;
 
 	assert(!globals->tags_loaded);
-	if (!tag_cache || !custom_edition_map_path(map_name, path) || !custom_edition_file_open(&globals->map, path))
+	if (!tag_cache)
 	{
-		error(_error_silent, "custom edition: cannot open the map '%s'", map_name);
+		error(_error_silent, "custom edition: cannot load the map '%s': %s", map_name,
+			custom_edition_unavailable_reason());
+		return NULL;
+	}
+	if (!custom_edition_map_path(map_name, path) || !custom_edition_file_open(&globals->map, path))
+	{
+		error(_error_silent, "custom edition: cannot open the map '%s' (it is looked for in the custom_maps folder)",
+			map_name);
 		return NULL;
 	}
 	status = cache_file_identify(&globals->map.source, &identity);
@@ -545,10 +705,7 @@ struct cache_file_tag_header *custom_edition_cache_tags_load(
 
 		memcpy((byte *)header + CACHE_FILE_HEADER_FILE_LENGTH_OFFSET, &file_length, sizeof(file_length));
 	}
-	error(_error_silent, "custom edition: loading '%s' (build %s%s)",
-		path,
-		identity.build,
-		identity.has_opensauce_header ? ", OpenSauce" : "");
+	error(_error_silent, "custom edition: loading '%s' (build %s)", path, identity.build);
 
 	for (type = _resource_map_bitmaps; type < NUMBER_OF_RESOURCE_MAP_TYPES; type++)
 	{
@@ -614,6 +771,8 @@ struct cache_file_tag_header *custom_edition_cache_tags_load(
 	}
 	globals->tag_cache = tag_cache;
 	globals->loaded_bytes = report.tag_data_bytes + report.resource_tag_bytes;
+	globals->tag_cache_bytes = report.tag_cache_bytes;
+	globals->file_length = report.identity.file_length;
 	globals->tags_loaded = TRUE;
 
 	return (struct cache_file_tag_header *)tag_cache;
@@ -627,6 +786,32 @@ boolean custom_edition_cache_stock_tag(
 	return globals->tags_loaded && tag_index != NONE &&
 		custom_edition_cache_tag_in_resource_map(globals->tag_cache, globals->loaded_bytes,
 			(int32_t)DATUM_INDEX_TO_ABSOLUTE_INDEX(tag_index));
+}
+
+boolean custom_edition_structure_bsp_reference_valid(
+	struct scenario_structure_bsp_reference const *reference)
+{
+	struct custom_edition_cache_globals *globals = &custom_edition_cache_globals;
+	unsigned long address = (unsigned long)reference->base_address;
+	unsigned long top = CUSTOM_EDITION_TAG_CACHE_ADDRESS + globals->tag_cache_bytes;
+
+	/* (in the map's cache data, read to the top of its tag cache, above its
+	tags, as its loader found them) */
+	if (!globals->tags_loaded ||
+		reference->file_offset < CACHE_FILE_HEADER_BYTES ||
+		reference->file_size < 0x18 ||
+		(unsigned long)reference->file_offset > globals->file_length ||
+		(unsigned long)reference->file_size > globals->file_length - (unsigned long)reference->file_offset ||
+		address < CUSTOM_EDITION_TAG_CACHE_ADDRESS + globals->loaded_bytes ||
+		address > top ||
+		(unsigned long)reference->file_size > top - address)
+	{
+		error(_error_silent, "custom edition: a structure bsp's %08lx bytes at %08lx would load to %08lx, outside its tag cache",
+			(unsigned long)reference->file_size, (unsigned long)reference->file_offset, address);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 boolean custom_edition_cache_tags_loaded(

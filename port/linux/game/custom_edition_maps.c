@@ -3,16 +3,19 @@ CUSTOM_EDITION_MAPS.C
 
 Lists Custom Edition maps for the menus (custom_edition_maps.h).
 
-Whenever the level list opens, the maps folder and then the Halo Custom
-Edition install's maps folder are scanned for CE caches. Multiplayer maps join the level list; campaign maps
-(solo scenarios) are kept apart for co-op. The stock campaign levels get
-display indices here too, so the menus can show them the same way.
+Whenever a map list opens, the custom_maps folder and then the Halo Custom
+Edition install's maps folder are scanned for CE caches (.map; OpenSauce
+caches are refused by the loader, so not listed). Multiplayer maps join the
+level list after the Xbox levels, and the map lists' CUSTOM MULTIPLAYER;
+campaign maps (solo scenarios) are the map lists' CUSTOM SINGLEPLAYER,
+played alone or as network co-op. The stock campaign levels get display
+indices here too, so the menus can show them the same way.
 
-A map's level name is levels\test\<name>\<name>, like the Xbox levels;
-the cache loader finds a map by the last part. The game engine keeps 63
-characters of a level name, so a name over 25 characters becomes
-levels\<name>, and one over 56 is skipped. A map named like an Xbox level
-is skipped too, since that level is already listed.
+A map's level name is custom_maps\<name> (CUSTOM_EDITION_LEVEL_NAME_PREFIX),
+which the cache loader reads from the custom maps folders alone: a map named
+as one of the game's own levels (a30.map, bloodgulch.map) is listed and
+played as itself. The game engine keeps 63 characters of a level name, so a
+map whose name is longer than 51 is skipped.
 
 Each map can have, beside it in its folder:
 - <name>.bmp, its picture (bmp_files.c). The middle is cropped to the
@@ -50,12 +53,10 @@ Each map can have, beside it in its folder:
 /* room for the level list's Xbox levels (ui_widget_event_handler_functions.c has 13) */
 #define MAXIMUM_XBOX_LEVELS 16
 
-/* Level names. The game engine keeps 63 characters of one (game_engine.c,
-struct game_engine_stage), so long map names use the short form. */
-#define LEVEL_NAME_FORMAT "levels\\test\\%s\\%s"
-#define LONG_LEVEL_NAME_FORMAT "levels\\%s"
-#define LONGEST_LEVEL_NAME_FORMAT_NAME 25
-#define MAXIMUM_MAP_NAME_LENGTH 56
+/* the longest map file name whose level name
+(CUSTOM_EDITION_LEVEL_NAME_PREFIX and it) the game engine keeps whole */
+#define MAXIMUM_MAP_NAME_LENGTH \
+	(CUSTOM_EDITION_MAXIMUM_LEVEL_NAME_LENGTH - (NUMBEROF(CUSTOM_EDITION_LEVEL_NAME_PREFIX) - 1))
 
 /* Display indices for CE multiplayer maps, clear of every string and frame
 index in the menus' tags (15 level names, 14 level pictures), and below the
@@ -177,23 +178,6 @@ static void custom_edition_maps_forget(
 	return;
 }
 
-static boolean xbox_level_named(
-	char const *name)
-{
-	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
-	short level_index;
-
-	for (level_index = 0; level_index < globals->xbox_level_count; level_index++)
-	{
-		if (!csstrcasecmp(tag_name_strip_path(globals->levels[level_index]), name))
-		{
-			return TRUE;
-		}
-	}
-
-	return FALSE;
-}
-
 /* the map's index in stock_maps, or NONE */
 static short stock_map_index(
 	char const *name)
@@ -209,8 +193,8 @@ static short stock_map_index(
 }
 
 /* A map's menu name: Halo PC's name for its own maps, otherwise the file
-name with underscores as spaces and words capitalized ("beavercreek_halo3"
-becomes "Beavercreek Halo3"). */
+name with underscores as spaces and words capitalized ("the_bay_of_pigs"
+becomes "The Bay Of Pigs"). */
 static void display_name_make(
 	char const *name,
 	wchar_t *display_name)
@@ -314,7 +298,7 @@ static void custom_edition_map_description_read(
 }
 
 /* Adds the file `name`.`extension` from `folder` if it is a CE map that
-isn't listed yet (from the folder before). */
+isn't listed yet. */
 static void custom_edition_map_add(
 	char const *folder,
 	char const *name,
@@ -342,10 +326,6 @@ static void custom_edition_map_add(
 		{
 			return;
 		}
-	}
-	if (xbox_level_named(name))
-	{
-		return;
 	}
 	/* campaign maps go to co-op; anything that isn't multiplayer either is skipped */
 	campaign = custom_edition_cache_campaign(name);
@@ -388,14 +368,7 @@ static void custom_edition_map_add(
 	csmemset(map, 0, sizeof(*map));
 	csstrcpy(map->name, name);
 	csstrncpy(map->folder, folder, sizeof(map->folder) - 1);
-	if (csstrlen(name) <= LONGEST_LEVEL_NAME_FORMAT_NAME)
-	{
-		csprintf(map->level_name, LEVEL_NAME_FORMAT, name, name);
-	}
-	else
-	{
-		csprintf(map->level_name, LONG_LEVEL_NAME_FORMAT, name);
-	}
+	csprintf(map->level_name, "%s%s", CUSTOM_EDITION_LEVEL_NAME_PREFIX, name);
 	display_name_make(name, map->display_name);
 	custom_edition_map_description_read(map);
 
@@ -419,7 +392,7 @@ static void custom_edition_maps_look_for(
 	struct file_reference file;
 	char name[MAXIMUM_FILENAME_LENGTH + 1];
 	char extension[MAXIMUM_FILENAME_LENGTH + 1];
-	char const *folders[] = { cache_files_map_directory(), CUSTOM_EDITION_INSTALL_MAP_DIRECTORY };
+	char const *folders[] = { CUSTOM_EDITION_MAP_DIRECTORY, CUSTOM_EDITION_INSTALL_MAP_DIRECTORY };
 	short folder_index;
 
 	custom_edition_maps_forget();
@@ -429,9 +402,12 @@ static void custom_edition_maps_look_for(
 		return;
 	}
 
-	/* the game's own folder first, so its copy wins */
+	/* the game's custom_maps first, so its copy wins */
 	for (folder_index = 0; folder_index < NUMBEROF(folders); folder_index++)
 	{
+		/* (the install's only when there is one) */
+		if (folder_index && !custom_edition_install_present())
+			continue;
 		file_reference_create_from_path(&directory, folders[folder_index], TRUE);
 		find_files_start(0, &directory);
 		while (find_files_next(&file, NULL))
@@ -574,7 +550,12 @@ char **custom_edition_maps_level_list(
 	{
 		globals->levels[level_index] = xbox_levels[level_index];
 	}
-	custom_edition_maps_look_for();
+	/* (the menus ask for the list every tick, so the folders are scanned
+	once, and again when a map list opens: custom_edition_maps_look_again) */
+	if (!globals->looked_for)
+	{
+		custom_edition_maps_look_for();
+	}
 	for (map_index = 0; map_index < globals->map_count; map_index++)
 	{
 		globals->levels[globals->xbox_level_count + map_index] = globals->maps[map_index].level_name;
@@ -582,6 +563,14 @@ char **custom_edition_maps_level_list(
 	*level_count = globals->xbox_level_count + globals->map_count;
 
 	return globals->levels;
+}
+
+void custom_edition_maps_look_again(
+	void)
+{
+	custom_edition_maps_globals.looked_for = FALSE;
+
+	return;
 }
 
 short custom_edition_maps_level_display_index(
@@ -598,12 +587,15 @@ short custom_edition_maps_display_index(
 {
 	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
 	char const *name = tag_name_strip_path(level_name);
-	short level = campaign_level_from_name(level_name);
 	short map_index;
 
-	if (level != NONE)
+	/* (only a custom_maps\ name is a CE map's; any other is the game's own,
+	a stock campaign level or none of these) */
+	if (!custom_edition_level_name(level_name))
 	{
-		return FIRST_CAMPAIGN_DISPLAY_INDEX + level;
+		short level = campaign_level_from_name(level_name);
+
+		return level != NONE ? FIRST_CAMPAIGN_DISPLAY_INDEX + level : NONE;
 	}
 	if (!globals->looked_for)
 	{
@@ -640,23 +632,31 @@ short custom_edition_maps_campaign_level(
 	return campaign_level_get(display_index);
 }
 
-short custom_edition_maps_custom_campaigns(
-	short *display_indices,
-	short maximum)
+boolean custom_edition_maps_level_campaign(
+	char const *level_name)
+{
+	return level_name && custom_edition_maps_campaign(custom_edition_maps_display_index(level_name));
+}
+
+short custom_edition_maps_count(
+	boolean campaign)
 {
 	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
-	short count;
 
 	if (!globals->looked_for)
 	{
 		custom_edition_maps_look_for();
 	}
-	for (count = 0; count < globals->campaign_count && count < maximum; count++)
-	{
-		display_indices[count] = FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX + count;
-	}
 
-	return count;
+	return campaign ? globals->campaign_count : globals->map_count;
+}
+
+short custom_edition_maps_display_index_of(
+	boolean campaign,
+	short index)
+{
+	return index < 0 || index >= custom_edition_maps_count(campaign) ? NONE :
+		(campaign ? FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX : FIRST_DISPLAY_INDEX) + index;
 }
 
 char const *custom_edition_maps_level_name(
