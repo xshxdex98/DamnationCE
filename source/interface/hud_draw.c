@@ -110,6 +110,8 @@ symbols in this file:
 enum
 {
 	_hud_dont_scale_offset_bit = 0,
+	/* port: Halo PC's, which the Xbox's tags never set */
+	_hud_use_high_resolution_scale_bit = 2,
 };
 
 /* hud number and meter definitions (no shared header declares these yet;
@@ -1949,6 +1951,7 @@ void hud_draw_numbers(
 			real decimal_point_width = (real)(numbers->fractional_digits ?
 				hud_number->decimal_point_width : 0);
 			real scale;
+			real digit_scale;
 			point2d origin;
 			point2d cursor;
 			short digit_index;
@@ -1962,6 +1965,12 @@ void hud_draw_numbers(
 				scale = hud_globals_get_scale(
 					TEST_FLAG(draw_flags, _hud_draw_in_multiplayer_bit));
 			}
+			/* port: Halo PC draws the digits of a number flagged to use its
+			high resolution scale at half their size, spaced as the digits tag
+			says: its Custom Edition maps' digits are drawn from bitmaps twice
+			the size */
+			digit_scale = TEST_FLAG(numbers->placement.multiplayer_scaling_flags,
+				_hud_use_high_resolution_scale_bit) ? scale*0.5f : scale;
 
 			if (TEST_FLAG(numbers->number_flags, _hud_number_show_trailing_m_bit))
 			{
@@ -2043,7 +2052,7 @@ void hud_draw_numbers(
 						absolute_placement->corner,
 						&point,
 						clip,
-						scale,
+						digit_scale,
 						0.0f,
 						color,
 						bitmap_group->type == _bitmap_group_type_interface_bitmaps);
@@ -2084,7 +2093,7 @@ void hud_draw_numbers(
 							absolute_placement->corner,
 							&point,
 							clip,
-							scale,
+							digit_scale,
 							0.0f,
 							color,
 							bitmap_group->type == _bitmap_group_type_interface_bitmaps);
@@ -2119,7 +2128,7 @@ void hud_draw_numbers(
 							absolute_placement->corner,
 							&point,
 							clip,
-							scale,
+							digit_scale,
 							0.0f,
 							color,
 							bitmap_group->type == _bitmap_group_type_interface_bitmaps);
@@ -2156,7 +2165,7 @@ void hud_draw_numbers(
 						absolute_placement->corner,
 						&point,
 						clip,
-						scale,
+						digit_scale,
 						0.0f,
 						color,
 						bitmap_group->type == _bitmap_group_type_interface_bitmaps);
@@ -2189,7 +2198,7 @@ void hud_draw_numbers(
 						absolute_placement->corner,
 						&point,
 						clip,
-						scale,
+						digit_scale,
 						0.0f,
 						color,
 						bitmap_group->type == _bitmap_group_type_interface_bitmaps);
