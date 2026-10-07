@@ -60,7 +60,7 @@ The game writes the copy to `maps.partial`. When the copy is complete, the
 game changes the name to `maps`. If the copy stops before it is complete,
 the game asks for the disc image again at the next start.
 
-The game refuses Halo Custom Edition maps and OpenSauce (`.yelo`) maps.
+The game refuses Halo Custom Edition maps.
 With the setting `game.custom_edition`, it loads and runs them. This
 function is experimental. Refer to
 [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md).
@@ -259,7 +259,7 @@ the setting for one start of the game. It has priority over the file.
 | `controls.<action>` | (the table in "Controls") | `HALO_KEY_<ACTION>` | The keys and mouse buttons of an action, up to two, separated by a comma: `move_forward`, `move_backward`, `strafe_left`, `strafe_right`, `jump`, `crouch`, `fire`, `throw_grenade`, `melee`, `reload`, `zoom`, `switch_weapon`, `switch_grenade`, `action`, `flashlight`, `scoreboard`, `pause`. Keys by their names (`"W"`, `"Space"`, `"Left Ctrl"`, `"F1"`), and `"Mouse Left"`, `"Mouse Right"`, `"Mouse Middle"`, `"Mouse 4"`, `"Mouse 5"`, `"Wheel"` (either way), `"Wheel Up"`, `"Wheel Down"`. |
 | `game.console_log` | `"important"` | `HALO_CONSOLE_LOG` | What the console shows on the screen. `"important"`: bans, players that the host drops for cheating, the reasons that the game refuses a command, and the asserts that stop the game. `"all"`: all the lines. `"none"`: only the asserts that stop the game. The output of a command always shows. `debug.txt` gets all the lines. |
 | `game.language` | `""` | `HALO_LANGUAGE` | The language of the menus: `ja`, `de`, `fr`, `es` or `it`. Empty: English. |
-| `game.custom_edition` | `false` | `HALO_CUSTOM_EDITION=1` sets `true` | `true`: the game loads and runs Halo Custom Edition and OpenSauce maps. This function is experimental. Refer to [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md). `false`: the game refuses these maps. |
+| `game.custom_edition` | `false` | `HALO_CUSTOM_EDITION=1` sets `true` | `true`: the game loads and runs Halo Custom Edition maps. This function is experimental. Refer to [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md). `false`: the game refuses these maps. |
 | `paths.data` | `""` | `HALO_DATA_ROOT` | The data root. Refer to "Start the game". |
 | `paths.saves` | `""` | `HALO_SAVE_ROOT` | The save root. Refer to "Files and folders". |
 | `network.address` | `""` | `HALO_NET_ADDRESS` | The IPv4 address of this machine for system link. Refer to "Play on one computer". |
@@ -802,7 +802,7 @@ Other changes:
 | `render/render.c` | The 3D view of each window is antialiased before the HUD is drawn (`display.anti_aliasing`). |
 | `interface/hud.c` | In multiplayer, players' names are drawn above their heads (`display.player_names`, `display.player_name_scale`). |
 | `rasterizer/rasterizer_text.c`, `text/draw_string.c` | Text is drawn from an atlas of the fonts' glyphs, rasterized at the resolution the game draws at (`src/text_hires.c`), when the font has every character of the string. Text can be drawn scaled about a point (`rasterizer_text_set_scale`), as the players' names are. Each glyph's advance is centred on the font tag character's, so the layout is the same, and a glyph is cut at a text box only where the font tag's character visibly was. |
-| `cache/cache_files.c`, `cache/cache_files_windows.c` | The game names a Halo Custom Edition map and refuses it, not as "an old version". It finds an OpenSauce `.yelo` map when there is no `.map`. With `game.custom_edition`, it reads such a map where it is and converts it (`game/custom_edition_cache.c`). Refer to [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md). |
+| `cache/cache_files.c`, `cache/cache_files_windows.c` | The game names a Halo Custom Edition map and refuses it, not as "an old version". With `game.custom_edition`, it reads such a map where it is and converts it (`game/custom_edition_cache.c`). Refer to [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md). |
 | `rasterizer/rasterizer_geometry.h` | The declarations of the vertex and triangle buffer functions of `rasterizer_xbox_hardware_geometry.c`, for the geometry of Custom Edition maps. |
 | `rasterizer/xbox/rasterizer_xbox_transparent_geometry.c` | The loop over the extra layers of a transparent chicago shader goes to the next layer. In January it does not (a bug). No Xbox map has such layers, but Custom Edition maps have them, and the game then stops. |
 | `cache/physical_memory_map.c`, `cache/xbox_texture_cache.c` | The texture cache is two times the 22 MB of the Xbox (`include/halo_port_capacity.h`). A frame of a Custom Edition map can use more textures than the Xbox cache holds. |

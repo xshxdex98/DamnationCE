@@ -2,9 +2,8 @@
 CACHE_FILE_FORMATS.H
 
 Recognition, validation and loading of the Halo 1 map files that this build
-did not ship with: Halo Custom Edition caches (version 609), the OpenSauce
-extension of their header (".yelo" maps), and the Custom Edition resource
-maps bitmaps.map, sounds.map and loc.map. docs/custom_edition_caches.md
+did not ship with: Halo Custom Edition caches (version 609) and the Custom
+Edition resource maps bitmaps.map, sounds.map and loc.map. docs/custom_edition_caches.md
 defines what each milestone (recognize, load, run) means, which of them this
 module reaches, and the evidence behind every layout used here.
 
@@ -36,15 +35,11 @@ against the file or buffer it refers to before it is used.
 
 /* Halo PC and Custom Edition keep tag data at a fixed address, as the Xbox
 does at 0x803A6000: 0x40440000, above a 0x440000-byte game state at
-0x40000000, with 23 MB of room, or 1.5 times that for caches built with
-OpenSauce's memory upgrades (OpenSauce cache_constants.hpp,
-blam_memory_upgrades.hpp). Every map examined puts its structure BSPs at the
-top of that room. */
+0x40000000, with 23 MB of room (OpenSauce cache_constants.hpp). Every map
+examined puts its structure BSPs at the top of that room. */
 #define CUSTOM_EDITION_TAG_CACHE_ADDRESS 0x40440000UL
 #define CUSTOM_EDITION_TAG_CACHE_BYTES 0x01700000UL
-#define CUSTOM_EDITION_TAG_CACHE_BYTES_UPGRADED 0x02280000UL
-/* the largest map: Halo PC's were 384 MiB (576 with OpenSauce's memory
-upgrades), and Invader builds larger ones that Chimera runs. This build
+/* the largest map: Halo PC's were 384 MiB, and Invader builds larger ones that Chimera runs. This build
 reads a map by its offsets, so the map need only fit before the sounds it
 decodes in the combined offset space (custom_edition_cache.c) */
 #define CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES 0x30000000UL
@@ -73,19 +68,6 @@ enum resource_map_type
 	_resource_map_locale,
 
 	NUMBER_OF_RESOURCE_MAP_TYPES
-};
-
-/* the flags of the OpenSauce header (OpenSauce
-cache_files_structures_yelo.hpp, s_cache_header_yelo::s_flags) */
-enum opensauce_cache_flag
-{
-	_opensauce_cache_uses_memory_upgrades_bit,
-	_opensauce_cache_uses_mod_data_files_bit,
-	_opensauce_cache_is_protected_bit,
-	_opensauce_cache_uses_game_state_upgrades_bit,
-	_opensauce_cache_has_compression_parameters_bit,
-
-	NUMBER_OF_OPENSAUCE_CACHE_FLAGS
 };
 
 /* findings that do not stop a load but must be reported */
@@ -121,10 +103,9 @@ enum cache_file_status
 	_cache_file_status_compressed_cache,
 	_cache_file_status_bad_tag_data_range,
 
-	/* the OpenSauce header */
-	_cache_file_status_bad_opensauce_header,
-	_cache_file_status_unknown_opensauce_flags,
-	_cache_file_status_bad_opensauce_definitions_range,
+	/* built with OpenSauce's memory upgrades, mod data files or game state
+	upgrades, which only OpenSauce provides */
+	_cache_file_status_needs_opensauce,
 
 	/* the tag index */
 	_cache_file_status_bad_tag_index_signature,
@@ -149,7 +130,6 @@ enum cache_file_status
 
 	/* conversion */
 	_cache_file_status_bad_shader_type,
-	_cache_file_status_bad_script_nodes,
 
 	/* resource maps and the tags they hold */
 	_cache_file_status_bad_resource_map_header,
@@ -181,36 +161,6 @@ struct cache_file_source
 	uint32_t size;
 };
 
-/* the OpenSauce header at offset 0x70 of a Custom Edition cache header */
-struct opensauce_cache_header
-{
-	int16_t version;
-	uint16_t flags;
-	uint8_t project_yellow_version;
-	uint8_t project_yellow_globals_version;
-	float memory_upgrade_amount;
-	/* the zlib-compressed tag definitions of the OpenSauce editing kit,
-	appended after the cache data */
-	uint32_t definitions_size;
-	uint32_t definitions_decompressed_size;
-	uint32_t definitions_offset;
-	char definitions_build[CACHE_FILE_STRING_BYTES];
-	char mod_name[CACHE_FILE_STRING_BYTES];
-	int16_t build_stage;
-	uint32_t build_revision;
-	int64_t build_timestamp;
-	char build_string[CACHE_FILE_STRING_BYTES];
-	uint8_t tools_version_major;
-	uint8_t tools_version_minor;
-	uint16_t tools_version_build;
-	uint8_t minimum_version_major;
-	uint8_t minimum_version_minor;
-	uint16_t minimum_version_build;
-	/* OpenSauce resource storage: compression parameters, tag symbols,
-	string ids, tag string to string id tables */
-	uint32_t resource_offsets[4];
-};
-
 struct cache_file_identity
 {
 	enum cache_file_format format;
@@ -226,8 +176,9 @@ struct cache_file_identity
 	uint32_t checksum;
 	char name[CACHE_FILE_STRING_BYTES];
 	char build[CACHE_FILE_STRING_BYTES];
+	/* the map was built with OpenSauce's tools, which leave a header of
+	their own in the cache header */
 	int has_opensauce_header;
-	struct opensauce_cache_header opensauce;
 
 	/* resource maps */
 	enum resource_map_type resource_map_type;
@@ -354,9 +305,6 @@ struct custom_edition_conversion_report
 	int32_t bitmaps_prepared;
 	/* ... of them drawn as linear: 2D, uncompressed, sides not powers of two */
 	int32_t bitmaps_made_linear;
-	/* 1 when the scenario's script syntax nodes, upgraded by OpenSauce, were
-	made this build's number */
-	int32_t script_nodes_reduced;
 	/* animation graph object overlays that named an animation the graph
 	does not have, made to name none */
 	int32_t animation_overlays_disabled;
@@ -406,12 +354,6 @@ enum cache_file_format cache_file_header_format(
 	void const *header,
 	int *has_opensauce_header);
 
-/* The room for tag data a Custom Edition cache needs at
-CUSTOM_EDITION_TAG_CACHE_ADDRESS: 23 MB, or 1.5 times that with memory
-upgrades. */
-uint32_t custom_edition_tag_cache_bytes(
-	struct cache_file_identity const *identity);
-
 enum cache_file_status resource_map_open(
 	struct cache_file_source *source,
 	enum resource_map_type expected_type,
@@ -421,7 +363,7 @@ void resource_map_close(
 
 /* Loads a Custom Edition cache into `tag_cache`, which stands for the
 `tag_cache_bytes` bytes at CUSTOM_EDITION_TAG_CACHE_ADDRESS and must be at
-least custom_edition_tag_cache_bytes() long. The map's tag data is copied to
+least CUSTOM_EDITION_TAG_CACHE_BYTES long. The map's tag data is copied to
 the start, the tags kept in resource maps are placed after it with their
 addresses resolved, and every structure BSP, bitmap and sound sample range is
 checked. `resource_maps` is indexed by resource_map_type; entries may be NULL
@@ -441,9 +383,8 @@ their bytes need to change: every shader's type as this build numbers them,
 transparent chicago extended shaders made transparent chicago shaders,
 bitmaps and sound permutations in the state of ones not yet drawn or played
 and naming their own tags, sounds this build cannot decode made unplayable,
-animation overlays naming animations that do not exist made to name none,
-and OpenSauce's upgraded script node array made this build's size when its
-nodes fit; and what this build can of the Halo PC behaviours the map named
+and animation overlays naming animations that do not exist made to name
+none; and what this build can of the Halo PC behaviours the map named
 `map_name` relies on. Returns the first problem: tags already converted stay
 converted. */
 enum cache_file_status custom_edition_cache_convert(
