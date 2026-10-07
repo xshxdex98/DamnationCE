@@ -245,8 +245,10 @@ static short *step_row_selected(void)
 	}
 }
 
-/* an entry's display name and description (empty if it has none) */
-static void entry_text(struct map_entry const *entry, char *name, char *description, long size)
+/* an entry's display name and description (empty if it has none), each in
+a buffer of its own size */
+static void entry_text(struct map_entry const *entry, char *name, long name_size, char *description,
+	long description_size)
 {
 	description[0] = 0;
 	if (map_screen.step == STEP_MAPS && entry->level < map_screen.xbox_count)
@@ -254,14 +256,14 @@ static void entry_text(struct map_entry const *entry, char *name, char *descript
 		long strings = tag_loaded('ustr', LEVEL_DESCRIPTIONS);
 
 		csstrncpy(name, entry->level < NUMBEROF(xbox_level_names) ? xbox_level_names[entry->level] : "?",
-			(size_t)size - 1);
-		name[size - 1] = 0;
+			(size_t)name_size - 1);
+		name[name_size - 1] = 0;
 		if (strings != NONE)
-			utf8_of(unicode_string_list_get_string(strings, entry->level), description, size);
+			utf8_of(unicode_string_list_get_string(strings, entry->level), description, description_size);
 		return;
 	}
-	utf8_of(custom_edition_maps_name(entry->display), name, size);
-	utf8_of(custom_edition_maps_description(entry->display), description, size);
+	utf8_of(custom_edition_maps_name(entry->display), name, name_size);
+	utf8_of(custom_edition_maps_description(entry->display), description, description_size);
 }
 
 /* whether a multiplayer level is stock (the Xbox's or Halo PC's own) */
@@ -567,7 +569,7 @@ static void render_list(void)
 		short index = (short)(map_screen.first + row);
 
 		overlay_row(ROW_X, y, ROW_WIDTH, ROW_HEIGHT, index == map_screen.selected, FALSE);
-		entry_text(&map_screen.entries[index], name, description, sizeof(name));
+		entry_text(&map_screen.entries[index], name, sizeof(name), description, sizeof(description));
 		ui_overlay_text(UI_FONT_BOLD, 11.0f, ROW_X + 10, y + 5, UI_ALIGN_LEFT, COLOR_TEXT, name);
 	}
 	if (!map_screen.count)
@@ -575,7 +577,7 @@ static void render_list(void)
 	chosen = &map_screen.entries[map_screen.selected];
 	overlay_map_picture(chosen->display, PREVIEW_X, PREVIEW_Y, PREVIEW_WIDTH, PREVIEW_HEIGHT);
 	ui_overlay_outline(PREVIEW_X, PREVIEW_Y, PREVIEW_WIDTH, PREVIEW_HEIGHT, 0, 0.75f, COLOR_EDGE);
-	entry_text(chosen, name, description, sizeof(description));
+	entry_text(chosen, name, sizeof(name), description, sizeof(description));
 	ui_overlay_text(UI_FONT_BOLD, 15.0f, PREVIEW_X, PREVIEW_Y + PREVIEW_HEIGHT + 8, UI_ALIGN_LEFT, COLOR_TITLE, name);
 	render_lines(description, PREVIEW_X, PREVIEW_Y + PREVIEW_HEIGHT + 30, 10.0f, COLOR_DIM);
 }
@@ -599,7 +601,7 @@ static void render_grid(void)
 		}
 		else
 			ui_overlay_outline(x, y, CARD_WIDTH, CARD_PICTURE, 0, 0.75f, COLOR_EDGE);
-		entry_text(&map_screen.entries[index], name, description, sizeof(name));
+		entry_text(&map_screen.entries[index], name, sizeof(name), description, sizeof(description));
 		ui_overlay_text(UI_FONT_BOLD, 10.0f, x + 6, y + CARD_PICTURE + 2, UI_ALIGN_LEFT,
 			index == map_screen.selected ? COLOR_TITLE : COLOR_TEXT, name);
 	}
