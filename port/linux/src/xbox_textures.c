@@ -623,6 +623,8 @@ static const unsigned char custom_edition_channel_sources[NUMBER_OF_CUSTOM_EDITI
 	{ 2, 1, 3, 0 },
 	/* the fill order in color, the shape in alpha */
 	{ 3, 3, 3, 0 },
+	/* (the meter's, while a meter draws them: texture_channel_order) */
+	{ 3, 3, 3, 0 },
 };
 
 struct custom_edition_texels
@@ -632,6 +634,7 @@ struct custom_edition_texels
 };
 
 static struct custom_edition_texels *custom_edition_texels;
+static BOOL hud_meter_drawing;
 static unsigned long custom_edition_texel_count;
 static unsigned long custom_edition_texel_capacity;
 
@@ -695,6 +698,59 @@ void halo_custom_edition_texels_channels(const void *texels, unsigned char chann
 	}
 }
 
+void halo_hud_meter_drawing(int drawing)
+{
+	hud_meter_drawing = drawing != 0;
+}
+
+/* the order a texture's texels are sampled in for the draw at hand */
+static unsigned char texture_channel_order(unsigned char channel_order)
+{
+	if (channel_order != _custom_edition_channels_hud_meter_when_metered)
+		return channel_order;
+	return hud_meter_drawing ? _custom_edition_channels_hud_meter : _custom_edition_channels_xbox;
+}
+
+/* whether a texture's texels are converted to 32-bit BGRA on upload (all
+but compressed ones the GL draws as they are) */
+static BOOL texture_converted(const struct xgpu_texture_description *description)
+{
+#ifdef HALO_ANDROID
+	return !description->compressed || !xgpu_capabilities.s3tc;
+#else
+	return !description->compressed;
+#endif
+}
+
+/* the bound texture's channels sampled in `channel_order`; converted texels
+are BGRA in memory (32-bit ARGB words), which ES takes as RGBA */
+static void texture_swizzle(GLenum target, BOOL converted, unsigned char channel_order)
+{
+	GLint channels[4] = { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA };
+
+#ifdef HALO_ANDROID
+	if (converted)
+	{
+		channels[0] = GL_BLUE;
+		channels[2] = GL_RED;
+	}
+#else
+	(void)converted;
+#endif
+	if (channel_order != _custom_edition_channels_xbox)
+	{
+		GLint stored[4] = { channels[0], channels[1], channels[2], channels[3] };
+		unsigned long channel;
+
+		for (channel = 0; channel < 4; channel++)
+			channels[channel] = stored[custom_edition_channel_sources[channel_order][channel]];
+	}
+	glTexParameteri(target, GL_TEXTURE_SWIZZLE_R, channels[0]);
+	glTexParameteri(target, GL_TEXTURE_SWIZZLE_G, channels[1]);
+	glTexParameteri(target, GL_TEXTURE_SWIZZLE_B, channels[2]);
+	glTexParameteri(target, GL_TEXTURE_SWIZZLE_A, channels[3]);
+}
+
 void halo_custom_edition_texels_forget(void)
 {
 	free(custom_edition_texels);
@@ -728,31 +784,7 @@ static void upload(GLuint texture, GLenum target, const struct xgpu_texture_desc
 	xgpu_gl_state_invalidate();
 	/* the channel of the texture each channel is sampled from, set on every
 	upload: a texture object can be reused for different texels */
-	{
-		GLint channels[4] = { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA };
-
-#ifdef HALO_ANDROID
-		/* converted texels are BGRA in memory (32-bit ARGB words); ES takes
-		RGBA */
-		if (converted)
-		{
-			channels[0] = GL_BLUE;
-			channels[2] = GL_RED;
-		}
-#endif
-		if (channel_order != _custom_edition_channels_xbox)
-		{
-			GLint stored[4] = { channels[0], channels[1], channels[2], channels[3] };
-			unsigned long channel;
-
-			for (channel = 0; channel < 4; channel++)
-				channels[channel] = stored[custom_edition_channel_sources[channel_order][channel]];
-		}
-		glTexParameteri(target, GL_TEXTURE_SWIZZLE_R, channels[0]);
-		glTexParameteri(target, GL_TEXTURE_SWIZZLE_G, channels[1]);
-		glTexParameteri(target, GL_TEXTURE_SWIZZLE_B, channels[2]);
-		glTexParameteri(target, GL_TEXTURE_SWIZZLE_A, channels[3]);
-	}
+	texture_swizzle(target, converted != NULL, channel_order);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
 	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, (GLint)description->levels - 1);
@@ -822,6 +854,10 @@ struct texture_entry
 	memory watch serial read before it was found: the same while no watched
 	page has been written since (0: never found) */
 	unsigned long watched_serial, watched_generation;
+	/* the order of its texels (enum custom_edition_channel_order), and the
+	order it is sampled in now: they differ for a HUD meter's texels drawn
+	as they are too, which a meter samples in its own */
+	unsigned char channel_order, sampled_order;
 };
 
 #define TEXTURE_BUCKET_COUNT 4096
@@ -897,6 +933,13 @@ static GLuint texture_entry_result(struct texture_entry *entry, GLenum *target,
 			description->hires = TRUE;
 			return art;
 		}
+	}
+	if (entry->override < 0 && texture_channel_order(entry->channel_order) != entry->sampled_order)
+	{
+		entry->sampled_order = texture_channel_order(entry->channel_order);
+		glBindTexture(entry->target, entry->texture);
+		xgpu_gl_state_invalidate();
+		texture_swizzle(entry->target, texture_converted(&entry->description), entry->sampled_order);
 	}
 	if (entry->override >= 0)
 	{
@@ -1061,8 +1104,10 @@ GLuint xgpu_texture_get(const DWORD *resource, const D3DCOLOR *palette, GLenum *
 					entry->description.height, entry->size, entry->generation,
 					ones * 100 / entry->size, zeros * 100 / entry->size);
 			}
+			entry->channel_order = custom_edition_texels_order(entry->address);
+			entry->sampled_order = texture_channel_order(entry->channel_order);
 			upload(entry->texture, entry->target, &entry->description, (const unsigned char *)xbox_pointer(entry->address), palette,
-				custom_edition_texels_order(entry->address));
+				entry->sampled_order);
 			xgpu_statistics_texture_upload(entry->size);
 		}
 	}

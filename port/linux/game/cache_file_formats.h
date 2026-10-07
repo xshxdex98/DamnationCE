@@ -305,6 +305,9 @@ enum custom_edition_channel_order
 	where this build's meters take the fill order from color and discard
 	what has no alpha */
 	_custom_edition_channels_hud_meter,
+	/* a HUD meter's that is drawn as it is too: in the meter's order only
+	while a meter draws it */
+	_custom_edition_channels_hud_meter_when_metered,
 
 	NUMBER_OF_CUSTOM_EDITION_CHANNEL_ORDERS
 };
