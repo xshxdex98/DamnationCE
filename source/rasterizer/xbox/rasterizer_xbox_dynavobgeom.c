@@ -650,12 +650,16 @@ void _rasterizer_psuedo_dynamic_screen_quad_draw(
 		SCREEN_GEOMETRY_VERTEX_TYPE,
 		SCREEN_GEOMETRY_VERTEX_SHADER_PERMUTATION);
 
+	/* (port: the textures of a Custom Edition HUD meter drawn as they are
+	too are sampled in the meter's order only now: xbox_textures.c) */
+	halo_hud_meter_drawing(meter != NULL);
 	IDirect3DDevice8_Begin(global_d3d_device, D3DPT_TRIANGLEFAN);
 	for (vertex_index = 0; vertex_index < NUMBER_OF_VERTICES_PER_QUADRILATERAL; vertex_index++)
 	{
 		submit_screen_vertex(&vertices[vertex_index]);
 	}
 	IDirect3DDevice8_End(global_d3d_device);
+	halo_hud_meter_drawing(FALSE);
 
 	IDirect3DDevice8_SetTextureStageState(
 		global_d3d_device,
