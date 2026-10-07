@@ -141,10 +141,9 @@ void xbox_address_out_of_range(void const *pointer)
 #endif
 }
 
-/* The Custom Edition tag cache, with room for OpenSauce's memory upgrades,
-reserved and committed (lazily, pages are backed when touched) before
-anything else can map into it; only when asked for, since it takes 36 MB of
-address space below 2 GB. */
+/* The Custom Edition tag cache, reserved and committed (lazily, pages are
+backed when touched) before anything else can map into it; only when asked
+for, since it takes 23 MB of address space below 2 GB. */
 __attribute__((constructor(102)))
 static void custom_edition_tag_cache_reserve(void)
 {
@@ -160,7 +159,7 @@ static void custom_edition_tag_cache_reserve(void)
 
 	if (!config_boolean("game.custom_edition"))
 		return;
-	result = mmap(wanted, CUSTOM_EDITION_TAG_CACHE_BYTES_UPGRADED, PROT_READ | PROT_WRITE,
+	result = mmap(wanted, CUSTOM_EDITION_TAG_CACHE_BYTES, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED_NOREPLACE, -1, 0);
 	if (result == wanted)
 	{
@@ -169,7 +168,7 @@ static void custom_edition_tag_cache_reserve(void)
 	else
 	{
 		if (result != MAP_FAILED)
-			munmap(result, CUSTOM_EDITION_TAG_CACHE_BYTES_UPGRADED);
+			munmap(result, CUSTOM_EDITION_TAG_CACHE_BYTES);
 		platform_log("cannot reserve the Custom Edition tag cache at %p (%s)",
 			wanted, strerror(errno));
 	}
