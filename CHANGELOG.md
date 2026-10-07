@@ -19,6 +19,9 @@
 - A weapon's ammunition warnings follow its own ammunition: weapons with
   one magazine (coldsnap's flamethrower among them) no longer show "out of
   ammo" or "no fuel" while loaded.
+- Weapons with one magazine no longer set off the secondary magazine's
+  warnings, which showed NO FUEL beside NO AMMO on every weapon on maps
+  whose master HUD warns of a secondary reload (coldsnap, hugeass).
 
 ### Multiplayer and co-op
 
