@@ -42,11 +42,20 @@ were made for Halo PC, which has no such bound: a frame of
 beavercreek_halo3.yelo draws more than 22 MB of textures, and a texture that
 does not fit is drawn as the default one ("YOU GOT STABBED" in debug.txt).
 foundation@ce's Reach grenade alone is a 5.3 MB texture, which a 44 MB
-cache could not place among the others. The native builds' cache is 64 MB;
-with a 44 MB one and beavercreek_halo3.yelo loaded, 52 MB of the memory
-window were free, so about 32 MB are left. */
+cache could not place among the others, and a frame of bigass_v3 draws more
+than 64 MB: the textures pushed out are drawn as the default one and loaded
+again every frame (420 MB a second).
 
+The desktop builds' cache is 256 MB, half their 512 MB memory window
+(port/linux/src/platform.h). Android's window is 128 MB, and with a 44 MB
+cache and beavercreek_halo3.yelo loaded 52 MB of it were free: its cache is
+64 MB. */
+
+#ifdef HALO_ANDROID
 #define HALO_PORT_TEXTURE_CACHE_PAGE_COUNT 0x1000 /* (0x580) */
+#else
+#define HALO_PORT_TEXTURE_CACHE_PAGE_COUNT 0x4000 /* (0x580) */
+#endif
 #define HALO_PORT_TEXTURE_CACHE_SIZE (HALO_PORT_TEXTURE_CACHE_PAGE_COUNT*0x4000) /* (0x1600000) */
 
 /* ---------- AI

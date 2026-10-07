@@ -408,8 +408,12 @@ class Map:
                  font_style_reference=NONE, pitch_ranges=1, bsp_sizes=(0x1000,), sound_compression=1,
                  model=None, bsp_material=None, shaders=(), animation_overlay=None, script_nodes=None,
                  weapon_hud=None, hud_bitmap_flags=None, in_map_bitmap=None, strings_name="test\\strings",
-                 strings=("hello", "world!")):
+                 strings=("hello", "world!"), name=b"test", tags_checksum=0):
         self.bsp_sizes = bsp_sizes
+        # the header's name and the tag data's checksum, by which Chimera's
+        # map list knows a map
+        self.name = name
+        self.tags_checksum = tags_checksum
         self.sound_compression = sound_compression
         # opt-in tags and content, so the defaults above keep their counts
         self.model = model
@@ -505,6 +509,7 @@ class Map:
         instances = tag_data.reserve(len(tags) * 0x20)
         tag_data.u32(index + 0x00, instances)
         tag_data.u32(index + 0x04, salt << 16)
+        tag_data.u32(index + 0x08, self.tags_checksum)
         tag_data.u32(index + 0x0C, len(tags))
         tag_data.u32(index + 0x10, 3)
         tag_data.u32(index + 0x14, model_offset)
@@ -589,7 +594,7 @@ class Map:
         header = data
         struct.pack_into("<IiIIII", header, 0, code("head"), 609, file_length, 0,
                          tag_data_offset, len(tag_data.bytes))
-        header[0x20:0x20 + 5] = b"test\0"
+        header[0x20:0x20 + len(self.name) + 1] = self.name + b"\0"
         header[0x40:0x40 + 14] = b"01.00.00.0609\0"
         struct.pack_into("<h", header, 0x60, 1)
         struct.pack_into("<I", header, 0x7FC, code("foot"))
@@ -1075,15 +1080,17 @@ def f32_at(tags, address):
 
 def test_hud_elements_with_the_high_resolution_scale_are_halved(report_tool, tmp_path):
     """Halo PC draws them from bitmaps at twice the Xbox's size; this build
-    ignores the flag, so the scale takes it in and the flag goes."""
+    ignores the flag, so the scale takes it in and the flag goes. Halo PC
+    reads it only on statics, meters and numbers: a crosshair's item keeps
+    its scale and flag."""
     cache = Map(weapon_hud=[((1.0, 0.5), 4 | 1), ((1.0, 1.0), 1), ((2.0, 2.0), 4)])
     returncode, report, tags = converted(report_tool, cache, tmp_path)
-    assert returncode == 0 and report["hud_placements_rescaled"] == "2"
+    assert returncode == 0 and report["hud_placements_rescaled"] == "1"
     hud = cache.addresses["test\\weapon hud"]
     statics = u32_at(tags, hud + 0x64)
     items = u32_at(tags, u32_at(tags, hud + 0x88) + 0x38)
     assert (f32_at(tags, statics + 0x28), f32_at(tags, statics + 0x2C), u16_at(tags, statics + 0x30)) == (0.5, 0.25, 1)
-    assert (f32_at(tags, items + 4), f32_at(tags, items + 8), u16_at(tags, items + 0x0C)) == (1.0, 1.0, 0)
+    assert (f32_at(tags, items + 4), f32_at(tags, items + 8), u16_at(tags, items + 0x0C)) == (2.0, 2.0, 4)
 
 
 def test_hud_elements_without_the_high_resolution_scale_keep_theirs(report_tool, tmp_path):
@@ -1108,6 +1115,25 @@ def test_hud_elements_drawing_a_halo_pc_half_scale_bitmap_are_halved(report_tool
     assert (f32_at(tags, statics + 0x28), f32_at(tags, statics + 0x2C), u16_at(tags, statics + 0x30)) == (0.5, 0.25, 1)
     assert (f32_at(tags, statics + 0xB4 + 0x28), u16_at(tags, statics + 0xB4 + 0x30)) == (1.0, 1)
     assert (f32_at(tags, items + 4), f32_at(tags, items + 8)) == (1.0, 1.0)
+
+
+@pytest.mark.parametrize("name, tags_checksum, listed", [
+    (b"rev_snowcast_cavebeta", 1683840640, True),
+    (b"Rev_Snowcast_CaveBeta", 1683840640, True),
+    (b"rev_snowcast_cavebeta", 1683840641, False),
+], ids=["listed", "name in another case", "another checksum"])
+def test_maps_chimera_lists_get_halo_pc_behaviours(report_tool, tmp_path, name, tags_checksum, listed):
+    """Chimera's map list knows a map by its name in lower case and its tag
+    data checksum. This one relies on, among others, bitmaps' half HUD scale
+    flags being ignored, so the static drawing a bitmap with one keeps its
+    scale."""
+    cache = Map(weapon_hud=[((1.0, 0.5), 1), ((1.0, 1.0), 1), ((2.0, 2.0), 0)], hud_bitmap_flags=1 << 4,
+                name=name, tags_checksum=tags_checksum)
+    returncode, report, tags = converted(report_tool, cache, tmp_path)
+    assert returncode == 0
+    assert report["halo_pc_behaviours"] == (
+        "gearbox_chicago_multiply gearbox_meters hud_number_scale disable_bitmap_hud_scale_flags" if listed else "none")
+    assert report["hud_placements_rescaled"] == ("0" if listed else "2")
 
 
 SCORE_HINT = 'Hold "%s" for score'
