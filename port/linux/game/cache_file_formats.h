@@ -43,8 +43,11 @@ top of that room. */
 #define CUSTOM_EDITION_TAG_CACHE_ADDRESS 0x40440000UL
 #define CUSTOM_EDITION_TAG_CACHE_BYTES 0x01700000UL
 #define CUSTOM_EDITION_TAG_CACHE_BYTES_UPGRADED 0x02280000UL
-#define CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES 0x18000000UL
-#define CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES_UPGRADED 0x24000000UL
+/* the largest map: Halo PC's were 384 MiB (576 with OpenSauce's memory
+upgrades), and Invader builds larger ones that Chimera runs. This build
+reads a map by its offsets, so the map need only fit before the sounds it
+decodes in the combined offset space (custom_edition_cache.c) */
+#define CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES 0x30000000UL
 
 enum cache_file_format
 {
@@ -317,6 +320,8 @@ struct custom_edition_conversion_report
 	int32_t shaders_mistyped;
 	/* bitmaps given their own tag and the state of a bitmap not yet drawn */
 	int32_t bitmaps_prepared;
+	/* ... of them drawn as linear: 2D, uncompressed, sides not powers of two */
+	int32_t bitmaps_made_linear;
 	/* 1 when the scenario's script syntax nodes, upgraded by OpenSauce, were
 	made this build's number */
 	int32_t script_nodes_reduced;

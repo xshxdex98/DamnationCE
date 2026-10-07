@@ -2374,7 +2374,8 @@ enum
 	MAP_STEP_DIFFICULTIES,
 };
 
-#define MAXIMUM_MAP_ENTRIES 256
+/* the rows of a step: the Xbox's levels and the CE maps (custom_edition_maps.h) */
+#define MAXIMUM_MAP_ENTRIES (16 + CUSTOM_EDITION_MAPS_MAXIMUM)
 
 static wchar_t const *const map_kind_names[] = { L"CO-OP CAMPAIGN", L"MULTIPLAYER" };
 static wchar_t const *const map_category_names[] = { L"VANILLA MAPS", L"CUSTOM MAPS" };

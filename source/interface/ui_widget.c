@@ -1482,8 +1482,10 @@ static wchar_t *spinner_string_list_get_string(
 /* ---------- globals */
 
 /* port: text boxes' string list indices from here are the descriptions of
-spinners' extra items (kills_to_win_extra_descriptions) */
-#define SPINNER_EXTRA_DESCRIPTION_BASE 0x5000
+spinners' extra items (kills_to_win_extra_descriptions); above the CE maps'
+display indices, which text boxes show the names of (custom_edition_maps.c),
+where 0x5000 showed six custom campaigns' names as these */
+#define SPINNER_EXTRA_DESCRIPTION_BASE 0x7000
 /* ... and the pixels a spinner with extra items is wider (for three digits) */
 #define SPINNER_EXTRA_WIDTH 12
 

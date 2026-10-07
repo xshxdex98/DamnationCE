@@ -565,10 +565,14 @@ void _rasterizer_screen_flash(
 	void);
 /* ---------- globals */
 
+/* port: the far clip distance (1024 world units) raised to Chimera's, for
+Custom Edition maps drawn further away (1026 x 1.34^5 / 1.97) */
+#define FAR_CLIP_DISTANCE 2250.f
+
 const struct rasterizer_global_defaults rasterizer_global_defaults =
 {
 	0.0625f,
-	1024.f,
+	FAR_CLIP_DISTANCE,
 	0.01171875f,
 	1024.f
 };
@@ -592,7 +596,7 @@ struct rasterizer_globals_definition rasterizer_globals =
 	0,
 	{ 0 },
 	0.0625f,
-	1024.f,
+	FAR_CLIP_DISTANCE,
 	0.01171875f,
 	1024.f,
 	NULL,

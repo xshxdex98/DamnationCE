@@ -45,10 +45,9 @@ Each map can have, beside it in its folder:
 
 /* ---------- constants */
 
-#define MAXIMUM_CUSTOM_EDITION_MAPS 1024
 /* Custom Edition campaign maps, for co-op */
-#define MAXIMUM_CUSTOM_EDITION_CAMPAIGNS 256
-#define FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX 0x5000
+#define MAXIMUM_CUSTOM_EDITION_CAMPAIGNS 1024
+#define FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX 0x6000
 /* room for the level list's Xbox levels (ui_widget_event_handler_functions.c has 13) */
 #define MAXIMUM_XBOX_LEVELS 16
 
@@ -60,7 +59,8 @@ struct game_engine_stage), so long map names use the short form. */
 #define MAXIMUM_MAP_NAME_LENGTH 56
 
 /* Display indices for CE multiplayer maps, clear of every string and frame
-index in the menus' tags (15 level names, 14 level pictures). */
+index in the menus' tags (15 level names, 14 level pictures), and below the
+custom campaigns' and ui_widget.c's spinner descriptions' (0x7000). */
 #define FIRST_DISPLAY_INDEX 0x4000
 
 /* The stock campaign levels, for co-op: their display indices, names, and
@@ -99,6 +99,13 @@ enum
 	_bitmap_format_a8r8g8b8 = 11,
 };
 
+/* (the multiplayer maps', custom campaigns' and spinner descriptions'
+display indices do not meet) */
+typedef char verify_multiplayer_display_indices[
+	FIRST_DISPLAY_INDEX + CUSTOM_EDITION_MAPS_MAXIMUM <= FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX ? 1 : -1];
+typedef char verify_campaign_display_indices[
+	FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX + MAXIMUM_CUSTOM_EDITION_CAMPAIGNS <= 0x7000 ? 1 : -1];
+
 /* ---------- structures */
 
 struct custom_edition_map
@@ -119,13 +126,13 @@ struct custom_edition_maps_globals
 {
 	boolean looked_for;
 	short map_count;
-	struct custom_edition_map maps[MAXIMUM_CUSTOM_EDITION_MAPS];
+	struct custom_edition_map maps[CUSTOM_EDITION_MAPS_MAXIMUM];
 	/* campaign maps, kept out of the level list */
 	short campaign_count;
 	struct custom_edition_map campaigns[MAXIMUM_CUSTOM_EDITION_CAMPAIGNS];
 	/* the latest level list: the Xbox levels, then the CE maps */
 	short xbox_level_count;
-	char *levels[MAXIMUM_XBOX_LEVELS + MAXIMUM_CUSTOM_EDITION_MAPS];
+	char *levels[MAXIMUM_XBOX_LEVELS + CUSTOM_EDITION_MAPS_MAXIMUM];
 };
 
 /* ---------- globals */
@@ -367,13 +374,13 @@ static void custom_edition_map_add(
 			MAXIMUM_MAP_NAME_LENGTH);
 		return;
 	}
-	else if (globals->map_count == MAXIMUM_CUSTOM_EDITION_MAPS)
+	else if (globals->map_count == CUSTOM_EDITION_MAPS_MAXIMUM)
 	{
 		error(
 			_error_silent,
 			"custom edition: the map '%s' is not in the level list, which holds %d of them",
 			name,
-			MAXIMUM_CUSTOM_EDITION_MAPS);
+			CUSTOM_EDITION_MAPS_MAXIMUM);
 		return;
 	}
 	else

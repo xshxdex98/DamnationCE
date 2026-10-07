@@ -6112,9 +6112,12 @@ boolean unit_update(
 			unit->unit.flags ^= FLAG(_unit_integrated_night_vision_on_bit);
 		}
 
+		/* port: in a seat too, as Halo PC lets it: Custom Edition maps light
+		their vehicles by the player's flashlight
+		(unit_get_current_flashlight_state). The Xbox's toggled it only out
+		of one */
 		if (!(active && TEST_FLAG(unit->unit.control_flags, _unit_control_integrated_light_bit)) &&
-			(TEST_FLAG(unit->unit.flags, _unit_integrated_light_on_bit) || unit->unit.integrated_light_battery > 0.2f) &&
-			unit->object.parent_object_index==NONE)
+			(TEST_FLAG(unit->unit.flags, _unit_integrated_light_on_bit) || unit->unit.integrated_light_battery > 0.2f))
 		{
 			effect_new_from_object(unit_definition->unit.integrated_light_toggle_effect.index, unit_index, unit_index, NONE, 0.f, 0.f, NULL, NULL);
 			unit->unit.flags ^= FLAG(_unit_integrated_light_on_bit);
@@ -6128,7 +6131,8 @@ boolean unit_update(
 			unit->unit.integrated_light_battery = unit->unit.integrated_light_battery - 1.f/(2.f*TICKS_PER_MINUTE);
 		}
 
-		if (unit->object.parent_object_index!=NONE || TEST_FLAG(unit->object.damage_flags, _object_dead_bit))
+		/* port: (and kept on in one, which the Xbox turned it off in) */
+		if (TEST_FLAG(unit->object.damage_flags, _object_dead_bit))
 		{
 			SET_FLAG(unit->unit.flags, _unit_integrated_light_on_bit, FALSE);
 		}
