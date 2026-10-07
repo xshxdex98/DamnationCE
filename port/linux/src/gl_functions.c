@@ -24,12 +24,14 @@ int gl_functions_load(void)
 		!strcmp(#name, "glDebugMessageCallback") || !strcmp(#name, "glBufferStorage") || \
 		!strcmp(#name, "glMemoryBarrier") || !strcmp(#name, "glGetQueryBufferObjectuiv") || \
 		GL_UNCALLED_FUNCTION(name))
-/* OpenGL 4.3's vertex attribute binding: macOS points at each attribute on
-its own, elsewhere these are called unchecked */
+/* OpenGL 4.3's vertex attribute binding and 4.4's multi-bind: macOS points
+at each attribute and binds each texture unit on its own, elsewhere these
+are called unchecked */
 #ifdef __APPLE__
 #define GL_UNCALLED_FUNCTION(name) \
 	(!strcmp(#name, "glVertexAttribFormat") || !strcmp(#name, "glVertexAttribIFormat") || \
-		!strcmp(#name, "glVertexAttribBinding") || !strcmp(#name, "glBindVertexBuffer"))
+		!strcmp(#name, "glVertexAttribBinding") || !strcmp(#name, "glBindVertexBuffer") || \
+		!strcmp(#name, "glBindTextures"))
 #else
 #define GL_UNCALLED_FUNCTION(name) FALSE
 #endif

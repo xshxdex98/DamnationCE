@@ -810,7 +810,7 @@ static int texture_slot(GLenum target)
 	return target == GL_TEXTURE_CUBE_MAP ? 1 : target == GL_TEXTURE_3D ? 2 : 0;
 }
 
-#ifdef HALO_ANDROID
+#if defined(HALO_ANDROID) || defined(__APPLE__)
 static void state_texture(int unit, GLenum target, GLuint texture)
 {
 	int slot = texture_slot(target);
@@ -3182,7 +3182,7 @@ static void bind_textures(struct nv2a_pixel_shader_key *key, float texture_scale
 				gl_target == GL_TEXTURE_3D ? _xgpu_sampler_3d : _xgpu_sampler_2d;
 		}
 	}
-#ifdef HALO_ANDROID
+#if defined(HALO_ANDROID) || defined(__APPLE__)
 	for (stage = 0; stage < D3DTSS_MAXSTAGES; stage++)
 		state_texture(stage, gl_targets[stage], gl_textures[stage]);
 #else
