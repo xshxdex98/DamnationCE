@@ -28,3 +28,22 @@ unsigned char tag_validate_structure_bsp(int tag_index, void *base, int size)
 	(void)size;
 	return 1;
 }
+
+struct tag_validate_file_range;
+
+unsigned char tag_validate_custom_edition_tags(void *tag_header, int loaded_size, unsigned int tag_cache_size,
+	struct tag_validate_file_range const *file_ranges, short file_range_count, char const *map_name)
+{
+	(void)tag_header;
+	(void)loaded_size;
+	(void)tag_cache_size;
+	(void)file_ranges;
+	(void)file_range_count;
+	(void)map_name;
+	return 1;
+}
+
+int tag_validate_corrections(void)
+{
+	return 0;
+}
