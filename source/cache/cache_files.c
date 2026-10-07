@@ -298,9 +298,10 @@ static struct cache_file_tag_instance *cache_get_tag_instance(
 		csprintf(temporary, "i don't think %08x is a tag index", tag_index));
 	/* port: an index that is not a tag (NONE, or one a map's data gave
 	that nothing checked) is the empty tag, not whatever lies around the
-	tag table */
+	tag table. The table is the map's tags and the ones the menus add after
+	them (menu_tags.c): global_tag_count, not the map header's count */
 	if (!cache_file_globals.tags_loaded || !global_tag_instances ||
-		absolute_index < 0 || absolute_index >= cache_file_globals.tag_header->tag_count)
+		absolute_index < 0 || absolute_index >= global_tag_count)
 	{
 		return cache_empty_tag_instance(tag_index);
 	}

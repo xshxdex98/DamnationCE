@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.24
+
+- The menus show again. 0.3.23's map checks treated every tag the menus
+  add to a map as missing, so the menus drew nothing.
+
+Network version 20, as 0.3.21: players on either can play together.
+
 ## 0.3.23
 
 ### Custom Edition maps
