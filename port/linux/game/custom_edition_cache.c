@@ -66,6 +66,9 @@ struct custom_edition_file
 struct custom_edition_cache_globals
 {
 	boolean tags_loaded;
+	/* the Halo PC behaviours the loaded map relies on (enum
+	custom_edition_behaviour, flags) */
+	uint32_t behaviours;
 	/* the tag cache and the bytes of it the loaded tags use */
 	uint8_t *tag_cache;
 	uint32_t loaded_bytes;
@@ -289,6 +292,37 @@ static boolean custom_edition_cache_models_convert(
 	return success;
 }
 
+/* the Halo PC behaviours this build follows (cache_file_formats.c and
+hud_draw.c) */
+#define FOLLOWED_BEHAVIOURS ( \
+	1U << _custom_edition_behaviour_gearbox_multitexture_blend_modes | \
+	1U << _custom_edition_behaviour_invert_detail_after_reflection | \
+	1U << _custom_edition_behaviour_hud_number_scale | \
+	1U << _custom_edition_behaviour_disable_bitmap_hud_scale_flags | \
+	1U << _custom_edition_behaviour_block_multitexture_overlays)
+
+/* logs each Halo PC behaviour the map relies on, and whether this build
+follows it */
+static void custom_edition_behaviours_log(
+	uint32_t behaviours)
+{
+	short behaviour;
+
+	for (behaviour = 0; behaviour < NUMBER_OF_CUSTOM_EDITION_BEHAVIOURS; behaviour++)
+	{
+		if (!((behaviours >> behaviour) & 1))
+			continue;
+		error(
+			_error_silent,
+			(FOLLOWED_BEHAVIOURS >> behaviour) & 1 ?
+				"custom edition: relies on Halo PC's %s (Chimera's map list), which this build follows" :
+				"custom edition: relies on Halo PC's %s (Chimera's map list), which this build does not do yet",
+			custom_edition_behaviour_name(behaviour));
+	}
+
+	return;
+}
+
 /* Makes the tags custom_edition_cache_load loaded into `tag_cache` this
 build's: their resource offsets combined, their bytes converted, their
 bitmaps checked, their models converted. */
@@ -308,7 +342,7 @@ static boolean custom_edition_cache_tags_convert(
 	/* (before the conversion, which silences sounds this build cannot play) */
 	custom_edition_sounds_decode(tag_cache, loaded_bytes, (long)COMBINED_DECODED_OFFSET,
 		COMBINED_BITMAPS_OFFSET - COMBINED_DECODED_OFFSET);
-	status = custom_edition_cache_convert(tag_cache, loaded_bytes, &conversion);
+	status = custom_edition_cache_convert(tag_cache, loaded_bytes, report->identity.name, &conversion);
 	if (status != _cache_file_status_ok)
 	{
 		error(
@@ -325,6 +359,8 @@ static boolean custom_edition_cache_tags_convert(
 		(long)conversion.chicago_extended_shaders,
 		(long)conversion.bitmaps_prepared,
 		conversion.script_nodes_reduced ? ", OpenSauce's script nodes made this build's number" : "");
+	custom_edition_cache_globals.behaviours = conversion.behaviours;
+	custom_edition_behaviours_log(conversion.behaviours);
 	if (conversion.shaders_mistyped)
 	{
 		error(_error_silent, "custom edition: %ld shaders whose type was not their group's were given their group's",
@@ -647,6 +683,14 @@ boolean custom_edition_cache_tags_loaded(
 	return custom_edition_cache_globals.tags_loaded;
 }
 
+boolean custom_edition_cache_relies_on(
+	short behaviour)
+{
+	return custom_edition_cache_globals.tags_loaded &&
+		behaviour >= 0 && behaviour < NUMBER_OF_CUSTOM_EDITION_BEHAVIOURS &&
+		((custom_edition_cache_globals.behaviours >> behaviour) & 1);
+}
+
 void custom_edition_cache_tags_unload(
 	void)
 {
@@ -658,6 +702,7 @@ void custom_edition_cache_tags_unload(
 	custom_edition_bitmaps_dispose();
 	custom_edition_cache_files_close();
 	custom_edition_cache_globals.tags_loaded = FALSE;
+	custom_edition_cache_globals.behaviours = 0;
 	custom_edition_cache_globals.tag_cache = NULL;
 	custom_edition_cache_globals.loaded_bytes = 0;
 
