@@ -82,6 +82,23 @@ static struct custom_edition_cache_globals custom_edition_cache_globals;
 
 /* ---------- private code */
 
+/* (port_config.c) */
+int config_boolean(char const *name);
+
+/* why Custom Edition maps cannot run at all, when a cache's own checks
+found nothing wrong: no tag cache to load them into */
+static char const *custom_edition_unavailable_reason(
+	void)
+{
+#ifdef HALO_64BIT
+	return "Custom Edition maps are not supported on the 64-bit builds yet";
+#else
+	return config_boolean("game.custom_edition") ?
+		"the Custom Edition tag cache could not be reserved at startup (the log's first lines say why)" :
+		"Custom Edition maps are turned off (game.custom_edition)";
+#endif
+}
+
 static int custom_edition_file_read(
 	void *context,
 	uint32_t offset,
@@ -417,28 +434,34 @@ static void custom_edition_cache_report_log(
 boolean custom_edition_cache_refuse(
 	void const *header,
 	char const *build,
-	char const *scenario_name,
-	boolean fatal)
+	char const *path)
 {
+	struct custom_edition_file file;
+	struct cache_file_identity identity;
+	enum cache_file_status status = _cache_file_status_read_failed;
+	char map_path[MAP_PATH_SIZE];
 	int has_opensauce_header;
 
 	if (cache_file_header_format(header, &has_opensauce_header) != _cache_file_format_custom_edition_cache)
 	{
 		return FALSE;
 	}
-
-	/* temporary holds 256 characters: bound the name and build strings */
-	csprintf(
-		temporary,
-		"'%.96s' is a Halo Custom Edition cache%s (build %.31s): this build recognizes it but cannot run it (docs/custom_edition_caches.md)",
-		scenario_name,
-		has_opensauce_header ? " with an OpenSauce header" : "",
-		build);
-	error(_error_silent, "%s", temporary);
-	if (fatal)
+	/* (why the Custom Edition loader passed it by: what its checks found,
+	or why it cannot run any when they found nothing; `path` is a file's or
+	a scenario's, by the caller) */
+	if (custom_edition_file_open(&file, path) ||
+		(custom_edition_map_path(path, map_path) && custom_edition_file_open(&file, map_path)))
 	{
-		vassert(FALSE, temporary);
+		status = cache_file_identify(&file.source, &identity);
+		custom_edition_file_close(&file);
 	}
+	error(
+		_error_silent,
+		"'%.96s' is a Halo Custom Edition cache%s (build %.31s) this build cannot run: %s (docs/custom_edition_caches.md)",
+		path,
+		has_opensauce_header ? " with an OpenSauce header" : "",
+		build,
+		status == _cache_file_status_ok ? custom_edition_unavailable_reason() : cache_file_status_describe(status));
 
 	return TRUE;
 }

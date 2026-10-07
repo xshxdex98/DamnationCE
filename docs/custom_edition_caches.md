@@ -106,11 +106,17 @@ optional files beside the map give it what the Xbox levels have:
   version" of this build's caches:
 
   ```
-  'd:\maps\ui.map' is a Halo Custom Edition cache (build 01.00.00.0609): this build recognizes it but cannot run it (docs/custom_edition_caches.md)
+  'd:\maps\ui.map' is a Halo Custom Edition cache (build 01.00.00.0609) this build cannot run: Custom Edition maps are turned off (game.custom_edition) (docs/custom_edition_caches.md)
   ```
 
-  The message is logged to `debug.txt` in every build, and debug builds stop
-  on it as the original check stops on a bad cache
+  With the setting on, a cache the loader's checks refuse gets the same
+  line with the check it failed in place of the setting, or, when its checks
+  pass, that the Custom Edition tag cache could not be reserved at startup
+  (the 64-bit builds have none yet). Either way the map
+  is not loaded and the game goes back to its menus (it used to stop on the
+  Xbox's damaged disc error).
+
+  The message is logged to `debug.txt` in every build
   (`port/linux/game/custom_edition_cache.c`, called from
   `cache_file_header_verify` in `source/cache/cache_files.c`).
 - **An OpenSauce `.yelo` file** is found when there is no `.map` of that name,
