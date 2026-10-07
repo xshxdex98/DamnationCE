@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.29
+
+### From OpenCE
+
+- Loading a Custom Edition map no longer crashes when one of its sounds
+  fails to decode, or when it has no sounds to decode (CMT's a30 with
+  Custom Edition's `sounds.map` crashed on loading).
+
+Network version 22, as before: 0.3.28 and 0.3.29 play together.
+
 ## 0.3.28
 
 ### Custom Edition maps move to custom_maps
