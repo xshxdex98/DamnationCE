@@ -1079,8 +1079,10 @@ static enum cache_file_status opensauce_header_verify(
 	{
 		return _cache_file_status_bad_opensauce_header;
 	}
+	/* (in the file, past its header: after the cache data, or counted in
+	its length, as bigass_v3's are; only OpenSauce's editing kit reads them) */
 	if (header->definitions_size &&
-		(header->definitions_offset < identity->file_length ||
+		(header->definitions_offset < CACHE_FILE_HEADER_BYTES ||
 		!range_fits(header->definitions_offset, header->definitions_size, identity->file_size) ||
 		!header->definitions_decompressed_size))
 	{
@@ -1110,6 +1112,12 @@ static enum cache_file_status custom_edition_header_verify(
 	if (identity->compressed_file_length)
 	{
 		return _cache_file_status_compressed_cache;
+	}
+	/* Invader leaves the file length 0 (blood_covenantv3), which Halo PC
+	never reads: the cache is the whole file */
+	if (!identity->file_length)
+	{
+		identity->file_length = identity->file_size;
 	}
 	maximum_file_length = identity->has_opensauce_header &&
 		flag_is_set(identity->opensauce.flags, _opensauce_cache_uses_memory_upgrades_bit) ?
@@ -2479,7 +2487,8 @@ enum cache_file_status custom_edition_cache_load(
 
 	/* anything after the cache data and the OpenSauce definitions */
 	data_end = identity->file_length;
-	if (identity->has_opensauce_header && identity->opensauce.definitions_size)
+	if (identity->has_opensauce_header && identity->opensauce.definitions_size &&
+		identity->opensauce.definitions_offset + identity->opensauce.definitions_size > data_end)
 	{
 		data_end = identity->opensauce.definitions_offset + identity->opensauce.definitions_size;
 	}

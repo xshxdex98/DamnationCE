@@ -37,6 +37,8 @@ where its offset falls in their combined offset space.
 #define OPENSAUCE_MAP_FILE_EXTENSION ".yelo"
 /* as the cache file loader's own map paths */
 #define MAP_PATH_SIZE 256
+/* where a cache header keeps the file's length (cache_files.c) */
+#define CACHE_FILE_HEADER_FILE_LENGTH_OFFSET 0x08
 
 /* where bitmaps.map and sounds.map start in the combined offset space; the
 largest map is 0x24000000 bytes long (cache_file_formats.h) */
@@ -522,6 +524,12 @@ struct cache_file_tag_header *custom_edition_cache_tags_load(
 		error(_error_silent, "custom edition: '%s' is not a loadable cache (%s)", path, cache_file_status_describe(status));
 		custom_edition_cache_files_close();
 		return NULL;
+	}
+	/* (the length the loader went by: the whole file's where Invader left 0) */
+	{
+		uint32_t file_length = identity.file_length;
+
+		memcpy((byte *)header + CACHE_FILE_HEADER_FILE_LENGTH_OFFSET, &file_length, sizeof(file_length));
 	}
 	error(_error_silent, "custom edition: loading '%s' (build %s%s)",
 		path,
