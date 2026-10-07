@@ -22,6 +22,31 @@ More of the maps people play now load:
   The first six custom campaigns no longer show the Slayer kills-to-win
   descriptions as their names.
 
+Big maps draw properly and run smoothly:
+
+- A 256 MB texture cache on the desktop builds (64 MB before). bigass_v3
+  flashed green and red and lost its frame rate reloading textures every
+  frame.
+- Textures up to 8192 on a side, such as bigass_v3's rifle skins.
+
+HUDs look as they do on Halo PC:
+
+- Crosshairs keep the size Halo PC draws them at, and flagged numbers draw
+  their digits at half size, as Halo PC does.
+- Maps that Chimera lists as made around Halo PC's own behaviour are drawn
+  that way where this build can (adapted from Chimera, by SnowyMouse):
+  overlay blend modes, HUD number size, HUD scale flags and model shader
+  detail. bigass_v3's DMR reticle is no longer a white square and its ammo
+  counters are no longer oversized.
+- HUD overlays drawn from linear bitmaps sample the whole bitmap, and an
+  overlay added to the screen adds only its shape (bigass_v3's reticle had
+  a blue square around it).
+- A HUD meter sharing its bitmap tag with other HUD art draws only its bar
+  (blood_covenantv3's shield bar had a green square around it).
+
+A map script kicking players by name (bigass_v3 kicks its test bots every
+tick) kicks only a player of that exact name, without filling the console.
+
 A map the game cannot run, or that is missing, now goes back to the menu,
 and the log says why. Joining a game on such a map leaves it with a
 message. Before, all of these ended the game on the Xbox's damaged disc
@@ -34,7 +59,18 @@ error.
 - Every player's flashlight is carried over the network, so it no longer
   goes wrong for a player who joined late or missed the press.
 
-Network version 20, as 0.3.21: players on either can play together.
+### From OpenCE
+
+- Faster rendering: fewer OpenGL calls per draw, no GPU stalls on
+  visibility tests, and water's mip texture rebuilt only when it changes.
+- Co-op: only the host's crossing of a loading zone switches the BSP and
+  brings the team along; respawns start behind a teammate; the campaign has
+  a scoreboard.
+- Netcode: killing blows and bodies at rest reach every client, and a
+  player joining in progress starts at zero.
+- The host's garbage collection is throttled in network co-op only.
+
+Network version 21: players of earlier versions cannot play with this one.
 
 ## 0.3.24
 
