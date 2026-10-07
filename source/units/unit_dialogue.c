@@ -275,6 +275,10 @@ short unit_test_speech(
 				144,
 				(vocalization_type >= 0) &&
 					(vocalization_type < NUMBER_OF_VOCALIZATION_TYPES));
+			/* port: a vocalization that is not one (from a map's command
+			list or a script) has no sound */
+			if (vocalization_type < 0 || vocalization_type >= NUMBER_OF_VOCALIZATION_TYPES)
+				break;
 
 			sound_definition_index =
 				dialogue_definition->vocalizations[vocalization_type].index;
@@ -407,7 +411,8 @@ void unit_dialogue_determine_variant(
 		short variant_count = 0;
 		short variant_index;
 
-		for (variant_index = 0; variant_index < definition->unit.dialogue_variants.count; variant_index++)
+		/* port: a short counter stops at SHORT_MAX (a map's count) */
+		for (variant_index = 0; variant_index < MIN(definition->unit.dialogue_variants.count, SHORT_MAX); variant_index++)
 		{
 			struct unit_dialogue_variant *variant = TAG_BLOCK_GET_ELEMENT(
 				&definition->unit.dialogue_variants,
@@ -1129,7 +1134,8 @@ static long unit_find_dialogue_variant(
 	short variant_count = 0;
 	short variant_index;
 
-	for (variant_index = 0; variant_index < definition->unit.dialogue_variants.count; variant_index++)
+	/* port: a short counter stops at SHORT_MAX (a map's count) */
+	for (variant_index = 0; variant_index < MIN(definition->unit.dialogue_variants.count, SHORT_MAX); variant_index++)
 	{
 		struct unit_dialogue_variant *variant = TAG_BLOCK_GET_ELEMENT(
 			&definition->unit.dialogue_variants,
@@ -1137,11 +1143,24 @@ static long unit_find_dialogue_variant(
 			struct unit_dialogue_variant);
 
 		/* port: skip variants with no dialogue (a Custom Edition map's unit can
-		have one, which asserted when picked), and never collect more than the
-		list holds (a map's unit can list more than the tools' 16) */
+		have one, which asserted when picked) */
 		if ((variant_number == NONE || variant->variant_number == variant_number) &&
-			variant->dialogue_index != NONE && variant_count < NUMBEROF(variant_indices))
+			variant->dialogue_index != NONE)
 		{
+			/* port: no more than the array holds (a map's count; released
+			maps have at most 6 variants) */
+			if (variant_count >= (short)NUMBEROF(variant_indices))
+			{
+				static boolean reported = FALSE;
+
+				if (!reported)
+				{
+					reported = TRUE;
+					error(_error_silent, "unit_find_dialogue_variant overflowed variant array");
+				}
+				break;
+			}
+
 			variant_indices[variant_count++] = variant_index;
 		}
 	}

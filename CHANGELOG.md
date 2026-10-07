@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.3.23
+
+### Custom Edition maps
+
+- Halo PC's server commands work in map scripts: `sv_say`, `sv_end_game`,
+  `sv_map_next`, `sv_map_reset`, `sv_kick`, `sv_ban` (kicks), `sv_players`,
+  `sv_timelimit`, `sv_friendly_fire` and `sv_log_note`.
+- HUD bitmaps marked *half hud scale* or *force hud use highres scale* are
+  drawn at half size, as on Halo PC.
+- Map scripts may set any global, as Halo PC allowed (lolcano's jetpack,
+  coldsnap's cheat guard).
+- The multiplayer pause menu is centred in its box again; it had slid down
+  once SETTINGS and END GAME were added.
+
+### Weapons HUD
+
+- A weapon's ammunition warnings follow its own ammunition: weapons with
+  one magazine (coldsnap's flamethrower among them) no longer show "out of
+  ammo" or "no fuel" while loaded.
+- Weapons with one magazine no longer set off the secondary magazine's
+  warnings, which showed NO FUEL beside NO AMMO on every weapon on maps
+  whose master HUD warns of a secondary reload (coldsnap, hugeass).
+
+### Multiplayer and co-op
+
+- Vehicles' (and players') lights stay in step: a client that missed the
+  press, or joined after it, no longer sees a vehicle's lights the wrong
+  way round, and scripts asking whether they are on get the host's answer.
+
+### From OpenCE (build-139)
+
+- Every map's tags are checked before it loads: a damaged map is refused
+  with a reason instead of crashing, and what can be corrected is.
+  Custom Edition maps keep their own loader's checks. Map scripts may only
+  call the functions maps need. (Not yet on macOS.)
+
+### Level editor
+
+- The game side of OpenCE-Tools' live view (a Sapien-style running game
+  beside the editor). Not ready for use yet: it is being tested.
+
+Network version 20, as 0.3.21: players on either can play together.
+
 ## 0.3.22
 
 ### Co-op

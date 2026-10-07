@@ -1434,16 +1434,13 @@ static void player_spawn(
 		starting_location_index =
 			(short)find_best_starting_location_index(player_index);
 		/* port: a network co-op respawn starts behind its teammate
-		(players_coop_spawn_location); a map with no starting location for
-		the player, played from the level editor, where its view was
+		(players_coop_spawn_location), the level editor's PLAY at its camera
 		(editor_play.c) */
 		starting_location = players_coop_spawn_location(&spawn_location);
 		if (!starting_location)
-		{
-			starting_location = starting_location_index != NONE ?
-				player_get_starting_location(starting_location_index) :
-				editor_play_starting_location();
-		}
+			starting_location = editor_play_spawn_location();
+		if (!starting_location && starting_location_index != NONE)
+			starting_location = player_get_starting_location(starting_location_index);
 		if (starting_location)
 		{
 			game_globals = scenario_get_game_globals();
@@ -3118,7 +3115,8 @@ static short players_coop_bsp_switch_trigger(
 	struct scenario *scenario = global_scenario_get();
 	short index;
 
-	for (index = 0; index < scenario->bsp_switch_trigger_volumes.count; index++)
+	/* port: a short counter stops at SHORT_MAX (a map's count) */
+	for (index = 0; index < MIN(scenario->bsp_switch_trigger_volumes.count, SHORT_MAX); index++)
 	{
 		struct scenario_bsp_switch_trigger_volume *volume = TAG_BLOCK_GET_ELEMENT(
 			&scenario->bsp_switch_trigger_volumes, index, struct scenario_bsp_switch_trigger_volume);
@@ -4320,6 +4318,23 @@ static long create_weapon(
 			starting_weapon->weapon.index,
 			unit_index);
 		weapon_index = object_new(&placement_data);
+		/* port: only a weapon gets a weapon's rounds (a map's tag reference
+		can name any object; its datum was written as a weapon's). Anything
+		else isn't kept */
+		if (weapon_index != NONE &&
+			object_get(weapon_index)->object.type != _object_type_weapon)
+		{
+			static boolean reported = FALSE;
+
+			if (!reported)
+			{
+				reported = TRUE;
+				error(_error_silent, "### ERROR starting weapon %s isn't a weapon",
+					tag_get_name(starting_weapon->weapon.index));
+			}
+			object_delete(weapon_index);
+			weapon_index = NONE;
+		}
 		if (weapon_index != NONE)
 		{
 			weapon = weapon_get(weapon_index);
@@ -4584,8 +4599,10 @@ void players_update_before_game(
 						game_engine_client_respawn_countdown(iterator.datum_index);
 				}
 				/* port: in co-op only the host spawns players; clients get their units
-				from the network. One who quit doesn't come back. */
-				else if (!main_menu_is_active() && !network_game_distributed_client() && !player->quit_out_of_game)
+				from the network. One who quit doesn't come back, nor anyone while
+				the level editor's live view edits (editor_play.c) */
+				else if (!main_menu_is_active() && !network_game_distributed_client() && !player->quit_out_of_game &&
+					!editor_play_editing())
 				{
 					if (player->statistics.deaths == 0)
 					{
