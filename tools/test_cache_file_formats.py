@@ -700,6 +700,15 @@ def test_a_protected_scenario_is_given_the_scenario_group(report_tool, tmp_path)
     assert report["scenario_regrouped"] == "1"
 
 
+def test_a_structure_bsp_instance_with_its_load_address_loads(report_tool, tmp_path):
+    """Invader writes the address a structure BSP loads at in its tag
+    instance (cursed-damnation); it has none until it is loaded."""
+    cache = Map()
+    path = instance_case(1, 0x14, "<I", BASE + 0x1500000)(cache, cache.write(tmp_path))
+    returncode, report = report_one(report_tool, path)
+    assert returncode == 0 and report["load"] == "ok"
+
+
 def test_several_structure_bsps_share_the_top_of_the_tag_cache(report_tool, tmp_path):
     """Each BSP is loaded alone at the top of the tag cache; the largest sets
     how much room is left for the tags, and the checksum covers them all,
@@ -1224,8 +1233,6 @@ MALFORMED_CACHES = {
                           "the scenario's structure BSP block is not valid"),
     "bsp reference to a weapon": (tag_data_case("reference", 0x1C, "<I", (0xE174 + 8) << 16 | 8), "load",
                                   "the scenario's structure BSP block is not valid"),
-    "bsp tag already loaded": (instance_case(1, 0x14, "<I", BASE + 0x28), "load",
-                               "the scenario's structure BSP block is not valid"),
     "bsp beyond file": (tag_data_case("reference", 0x04, "<i", 0x7FFFFF00), "load",
                         "a structure BSP does not fit in the file or in the tag cache"),
     "bsp in header": (tag_data_case("reference", 0x00, "<i", 0x10), "load",
