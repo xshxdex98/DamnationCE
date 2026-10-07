@@ -257,6 +257,22 @@ changed:
   placement; a crosshair's or overlay's items, their crosshair's or
   overlay's) gets half its scale too. None of the 18 Custom Edition maps on
   hand, nor `bitmaps.map`, sets either.
+- **Maps made around Halo PC's own behaviour.** Chimera fixes Halo PC to draw
+  as the Xbox does, and keeps a list of the maps made around Halo PC's way
+  instead, by map name (in lower case) and tag data checksum, with the
+  behaviours each relies on (`map_hacks_config.json`, by SnowyMouse; here
+  `port/linux/game/custom_edition_behaviours.inc`, generated from it). This
+  build draws as the Xbox does, so for a listed map it follows these where it
+  can, and logs each: HUD multitexture overlays' blend functions in Halo PC's
+  order (`gearbox_multitexture_blend_modes`: Halo PC picks its shader by the
+  Xbox's value from shaders in alphabetical order), overlays not drawn
+  (`block_multitexture_overlays`), the HUD digits' metrics halved and every
+  number's digits drawn at half size (`hud_number_scale`), bitmaps' HUD scale
+  flags cleared (`disable_bitmap_hud_scale_flags`), and model shaders'
+  detail after reflection flag flipped (`invert_detail_after_reflection`).
+  Not yet: Halo PC's fixed-function meters (`gearbox_meters`), its
+  transparent chicago multiply, bump attenuation and environment shader
+  types, the old widescreen HUD and embedded Lua.
 - **The score hint.** String 100 of `ui\multiplayer_game_text` is Halo PC's
   `Hold "%s" for score`, which Halo PC fills in with its score key; this
   build copies it as it is (`game_engine.c`, the press-back-for-score

@@ -76,6 +76,10 @@ struct cache_file_tag_header *custom_edition_cache_tags_load(
 
 boolean custom_edition_cache_tags_loaded(
 	void);
+/* Whether the Custom Edition map loaded relies on a Halo PC behaviour (enum
+custom_edition_behaviour, cache_file_formats.h); FALSE when none is loaded. */
+boolean custom_edition_cache_relies_on(
+	short behaviour);
 void custom_edition_cache_tags_unload(
 	void);
 
