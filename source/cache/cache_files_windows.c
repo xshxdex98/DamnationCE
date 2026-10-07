@@ -660,10 +660,6 @@ boolean cache_files_precache_map_begin(
 			{
 				error(_error_silent, "no cache file can hold map '%s' (%08x bytes, type %d)",
 					cache_map_name, header.file_length, header.scenario_type);
-				if (copy_map)
-				{
-					display_error_damaged_media();
-				}
 
 				return FALSE;
 			}
@@ -693,12 +689,12 @@ boolean cache_files_precache_map_begin(
 		}
 		else
 		{
+			/* port: a map not there, or one no loader can run (a Custom
+			Edition cache its checks refused, which says why), is not loaded:
+			the game goes back to its menus. The Xbox showed its damaged disc
+			error here, which ends the game (main_loop_of_death) */
 			error(_error_silent, "couldn't find map '%s' on the DVD", cache_map_name);
 			error(_error_silent, "full path name '%s'", map_name);
-			if (copy_map)
-			{
-				display_error_damaged_media();
-			}
 
 			return FALSE;
 		}
