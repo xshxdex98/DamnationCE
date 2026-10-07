@@ -765,6 +765,12 @@ static void hud_draw_multitexture_overlay(
 		}
 	}
 
+	/* port: Halo PC adds a Custom Edition overlay's color weighted by its
+	alpha, where those overlays keep their shape (bigass_v3's dynamic DMR
+	reticle added its whole square) */
+	parameters.alpha_weighted = custom_edition_cache_tags_loaded() &&
+		parameters.framebuffer_blend_function == _shader_framebuffer_blend_function_add;
+
 	for (function_index = 0;
 		function_index < overlay->functions.count;
 		function_index++)
