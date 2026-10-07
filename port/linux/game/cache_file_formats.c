@@ -2318,7 +2318,7 @@ enum cache_file_status custom_edition_cache_load(
 	/* every tag instance, and the tags held by resource maps */
 	for (tag_index_value = 0; tag_index_value < tag_count; tag_index_value++)
 	{
-		uint8_t const *instance = tag_instances + (uint32_t)tag_index_value * TAG_INSTANCE_BYTES;
+		uint8_t *instance = tag_instances + (uint32_t)tag_index_value * TAG_INSTANCE_BYTES;
 		uint32_t group_tag = read_u32(instance + TAG_INSTANCE_GROUP_OFFSET);
 		uint32_t handle = read_u32(instance + TAG_INSTANCE_HANDLE_OFFSET);
 		uint32_t address = read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET);
@@ -2349,11 +2349,15 @@ enum cache_file_status custom_edition_cache_load(
 				return load_fail(&state, _cache_file_status_bad_tag_address, address);
 			}
 		}
-		else if (address ?
-			!tag_cache_offset(&state, address, 1, &offset) :
-			group_tag != STRUCTURE_BSP_GROUP_TAG)
+		else if (group_tag == STRUCTURE_BSP_GROUP_TAG)
 		{
-			/* structure BSPs alone have no address until they are loaded */
+			/* structure BSPs alone have no address until they are loaded;
+			Invader writes the one each loads at (cursed-damnation), which
+			is past the tags */
+			write_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET, 0);
+		}
+		else if (!address || !tag_cache_offset(&state, address, 1, &offset))
+		{
 			return load_fail(&state, _cache_file_status_bad_tag_address, address);
 		}
 	}
