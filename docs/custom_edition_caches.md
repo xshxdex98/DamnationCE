@@ -274,8 +274,11 @@ changed:
   of a kind the texture cache and the swizzling code handle (a format with a
   hardware texture, a compressed flag that agrees with the format,
   power-of-two sizes unless linear, square cube maps, all its pixels
-  present). Its pixels are laid out for Halo PC, levels as the tag stores
-  them, unswizzled; as they arrive, the game's own
+  present). Halo PC draws a 2D bitmap of any size, so an uncompressed one
+  whose sides are not powers of two is made linear as the map loads, and
+  drawn from its first level (birdcage-plus's 3840 by 64 needler plasma).
+  Its pixels are laid out for Halo PC, levels as the tag stores them,
+  unswizzled; as they arrive, the game's own
   `rasterizer_xbox_bitmap_rebuild_hardware_format` lays them out as an Xbox
   cache would (swizzled, cube maps face by face, padded).
 - **Chicago extra layers.** January's transparent chicago shader draws its
