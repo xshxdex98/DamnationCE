@@ -605,8 +605,10 @@ static void structure_visibility_traverse_surface_lists(
 						(byte *)xbox_pointer(material->compressed_vertex_data.address) +
 						surface->vertex_indices[2] * COMPRESSED_STRUCTURE_VERTEX_SIZE);
 
-					/* port: (vertex_limit) */
-					if (surface->vertex_indices[0] < vertex_limit &&
+					/* port: (vertex_limit); and no more surfaces than are
+					drawn, which the count's short holds */
+					if (render.environment_surface_count < MAXIMUM_RENDERED_ENVIRONMENT_SURFACES &&
+						surface->vertex_indices[0] < vertex_limit &&
 						surface->vertex_indices[1] < vertex_limit &&
 						surface->vertex_indices[2] < vertex_limit &&
 						render_frustum_triangle_visible(

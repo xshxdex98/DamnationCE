@@ -20,7 +20,10 @@ enum
 {
 	MAXIMUM_RENDERED_DISTANT_LIGHTS = 2,
 	MAXIMUM_RENDERED_POINT_LIGHTS = 2,
-	MAXIMUM_RENDERED_ENVIRONMENT_SURFACES = 16384,
+	/* port: the most structure surfaces drawn in a frame (16384), raised
+	as Chimera raises it for Custom Edition maps: as many as the count's
+	short holds */
+	MAXIMUM_RENDERED_ENVIRONMENT_SURFACES = 0x7FFE,
 	MAXIMUM_RENDERED_CLUSTERS = 128,
 	MAXIMUM_SURFACES_PER_STRUCTURE = 0x20000,
 	MAXIMUM_RENDERED_LIGHTS = 128,

@@ -72,8 +72,8 @@ enum
 	OPEN_SETTLE = 600,
 
 	NUMBER_OF_CATEGORIES = 2,
-	/* the Xbox's levels plus custom_edition_maps.c's maximum */
-	MAXIMUM_LEVELS = 16 + 1024,
+	/* the Xbox's levels plus the CE maps' */
+	MAXIMUM_LEVELS = 16 + CUSTOM_EDITION_MAPS_MAXIMUM,
 
 	MAXIMUM_BUTTONS = 3,
 };

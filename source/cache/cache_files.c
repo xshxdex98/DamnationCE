@@ -857,7 +857,7 @@ boolean cache_file_header_verify(
 	/* the native builds say what a Halo Custom Edition cache is instead of
 	calling it an old version of this build's caches, and still refuse it
 	(port/linux/game/custom_edition_cache.c) */
-	if (custom_edition_cache_refuse(header, header->build, scenario_name, fatal))
+	if (custom_edition_cache_refuse(header, header->build, scenario_name))
 	{
 		return FALSE;
 	}
@@ -879,15 +879,15 @@ boolean cache_file_header_verify(
 		return FALSE;
 	}
 
+	/* port: a cache of another version (an MCC map, say) that is to be
+	loaded is refused with its version named, not stopped on: the game goes
+	back to its menus (the map list's checks pass it by quietly) */
 	if (header->version != 5)
 	{
 		if (fatal)
 		{
-			match_vassert(
-				"c:\\halo\\SOURCE\\cache\\cache_files.c",
-				548,
-				FALSE,
-				csprintf(temporary, "the cache file '%s' is an old version", scenario_name));
+			error(_error_silent, "'%.96s' is a cache of version %ld, which this build cannot run (it runs Xbox caches, 5, and Custom Edition caches, 609)",
+				scenario_name, (long)header->version);
 		}
 
 		return FALSE;
@@ -962,13 +962,13 @@ char const *cache_files_multiplayer_region(
 	return cache_files_build_region(cache_file_globals.header.build);
 }
 
-/* whether the named map plays multiplayer with the others: FALSE only for
-a map whose header is of a build not listed above (a map whose header cannot
-be read is left to precaching, which tells of a missing map); build gets the
-map's build, empty if unread. The multiplayer menus check the loaded map's
-(ui.map's) build; this checks a multiplayer map's own, which may be of
-another build: the object and damage messages name definitions by tag
-index, which differs between builds */
+/* whether the named map plays multiplayer with the others: FALSE for a map
+whose header is of a build not listed above, and for one that is not there
+or that no loader can run (precaching it ended the game on the damaged disc
+error); build gets the map's build, empty if unread. The multiplayer menus
+check the loaded map's (ui.map's) build; this checks a multiplayer map's
+own, which may be of another build: the object and damage messages name
+definitions by tag index, which differs between builds */
 boolean cache_files_map_plays_multiplayer(
 	char const *map_name,
 	char build[0x20])
@@ -976,7 +976,7 @@ boolean cache_files_map_plays_multiplayer(
 	struct cache_file_header header;
 	char path[256];
 	HANDLE file;
-	boolean result = TRUE;
+	boolean result = FALSE;
 
 	build[0] = 0;
 	if (!map_name || !map_name[0])
@@ -993,6 +993,7 @@ boolean cache_files_map_plays_multiplayer(
 	{
 		unsigned long bytes_read;
 
+		/* (a Custom Edition cache its loader refused says why here) */
 		if (ReadFile(file, &header, sizeof(header), &bytes_read, NULL) &&
 			bytes_read == sizeof(header) &&
 			cache_file_header_verify(&header, path, FALSE))
@@ -1017,7 +1018,16 @@ void cache_files_show_multiplayer_unavailable(
 	void platform_show_message(char const *title, char const *message);
 	char message[320];
 
-	if (map_name)
+	if (map_name && !build[0])
+	{
+		platform_log("multiplayer is unavailable: the map %s is not there, or cannot run", map_name);
+		snprintf(
+			message,
+			sizeof(message),
+			"You don't have the map %s, or this version can't run it (debug.txt says why).",
+			tag_name_strip_path(map_name));
+	}
+	else if (map_name)
 	{
 		platform_log("multiplayer is unavailable: the map %s is of build %s, which is not supported", map_name, build);
 		snprintf(

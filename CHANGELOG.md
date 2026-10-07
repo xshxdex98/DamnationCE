@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.3.25
+
+### Custom Edition maps
+
+More of the maps people play now load:
+
+- Maps built with Invader: a header file length of 0 (blood_covenantv3,
+  cursed-damnation), and a structure BSP's instance holding the address it
+  loads at (cursed-damnation).
+- OpenSauce maps whose header counts the tag definitions in its length
+  (bigass_v3).
+- Bitmaps of sizes only Halo PC draws, such as 3840x64, are drawn linear
+  instead of refusing the map (birdcage-plus).
+- A model part naming a shader its model lacks gets the model's last one
+  instead of refusing the map (bigass_v3's oak tree).
+- Raised limits, as Chimera raises them: big maps' geometry no longer goes
+  undrawn ("too many dynamic triangles"), up to 32766 structure surfaces a
+  frame, a 2250-unit draw distance, and maps up to 768 MiB.
+- Map lists, in every menu and on the Map screen, hold up to 8192 maps.
+  The first six custom campaigns no longer show the Slayer kills-to-win
+  descriptions as their names.
+
+A map the game cannot run, or that is missing, now goes back to the menu,
+and the log says why. Joining a game on such a map leaves it with a
+message. Before, all of these ended the game on the Xbox's damaged disc
+error.
+
+### Flashlight
+
+- The flashlight stays on, and still toggles, in a vehicle, as on Halo PC.
+  Custom Edition maps light their vehicles by it.
+- Every player's flashlight is carried over the network, so it no longer
+  goes wrong for a player who joined late or missed the press.
+
+Network version 20, as 0.3.21: players on either can play together.
+
 ## 0.3.24
 
 - The menus show again. 0.3.23's map checks treated every tag the menus
