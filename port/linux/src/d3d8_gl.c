@@ -338,7 +338,7 @@ struct vertex_shader_object
 	/* a shader lit for each pixel failed to compile or link: lit as the
 	vertex shader lights it from then on */
 	BOOL lighting_failed;
-#ifndef HALO_ANDROID
+#if !defined(HALO_ANDROID) && !defined(__APPLE__)
 	/* the vertex array its draws last used, and the streams they had
 	(setup_streams: the layout follows from the two) */
 	struct vertex_array_entry *vertex_array;
@@ -664,7 +664,9 @@ xgpu_gl_state_invalidate, after which every value is set again. Unknown
 values are all ones, which no real value matches (floats become NaN, which
 compares unequal to everything). */
 
-#ifdef HALO_ANDROID
+/* (each attribute pointed at on its own, glVertexAttribPointer: OpenGL ES,
+and macOS, whose OpenGL 4.1 has no vertex attribute binding of 4.3) */
+#if defined(HALO_ANDROID) || defined(__APPLE__)
 struct attribute_pointer
 {
 	GLuint buffer;
@@ -753,7 +755,7 @@ static struct
 	GLuint array_buffer;
 	GLuint element_array_buffer;
 	unsigned char attribute_enabled[XGPU_VERTEX_ATTRIBUTE_COUNT];
-#ifdef HALO_ANDROID
+#if defined(HALO_ANDROID) || defined(__APPLE__)
 	struct attribute_pointer attribute_pointers[XGPU_VERTEX_ATTRIBUTE_COUNT];
 #else
 	GLuint vertex_array;
@@ -849,7 +851,7 @@ static void state_element_array_buffer(GLuint buffer)
 	}
 }
 
-#ifdef HALO_ANDROID
+#if defined(HALO_ANDROID) || defined(__APPLE__)
 /* enables the attribute, reading size elements of type from buffer: each
 vertex is stride bytes on from the one before it, starting at
 buffer_offset, with the attribute relative_offset bytes into it */
@@ -1585,20 +1587,20 @@ static void gl_initialize(void)
 	glGenSamplers(D3DTSS_MAXSTAGES, device.samplers);
 	glGenQueries(VISIBILITY_TEST_SLOTS + 1, device.queries);
 #ifndef HALO_ANDROID
-	/* (OpenGL 4.4: without it, as on macOS, visibility tests wait for the GPU) */
-	if (glBufferStorage)
+	/* (OpenGL 4.4: without them, as on macOS, visibility tests wait for the GPU) */
+	if (glBufferStorage && glGetQueryBufferObjectuiv)
 	{
-	glGenBuffers(1, &device.visibility_results_buffer);
-	glBindBuffer(GL_QUERY_BUFFER, device.visibility_results_buffer);
-	glBufferStorage(GL_QUERY_BUFFER, VISIBILITY_TEST_SLOTS * sizeof(GLuint), NULL,
-		GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-	device.visibility_results = glMapBufferRange(GL_QUERY_BUFFER, 0, VISIBILITY_TEST_SLOTS * sizeof(GLuint),
-		GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-	/* (D3DDevice_EndVisibilityTest binds it for each test: left bound, a
-	query read with glGetQueryObjectuiv would write into the buffer rather
-	than to its pointer argument, and without the buffer mapped the game
-	would wait forever for a test's result) */
-	glBindBuffer(GL_QUERY_BUFFER, 0);
+		glGenBuffers(1, &device.visibility_results_buffer);
+		glBindBuffer(GL_QUERY_BUFFER, device.visibility_results_buffer);
+		glBufferStorage(GL_QUERY_BUFFER, VISIBILITY_TEST_SLOTS * sizeof(GLuint), NULL,
+			GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+		device.visibility_results = glMapBufferRange(GL_QUERY_BUFFER, 0, VISIBILITY_TEST_SLOTS * sizeof(GLuint),
+			GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+		/* (D3DDevice_EndVisibilityTest binds it for each test: left bound, a
+		query read with glGetQueryObjectuiv would write into the buffer rather
+		than to its pointer argument, and without the buffer mapped the game
+		would wait forever for a test's result) */
+		glBindBuffer(GL_QUERY_BUFFER, 0);
 	}
 	if (!device.visibility_results)
 		platform_log("cannot map the visibility test results; tests wait for the GPU");
@@ -4453,7 +4455,7 @@ static void setup_streams(unsigned long first, unsigned long count)
 	BOOL placed[16] = { FALSE };
 	BOOL enabled[XGPU_VERTEX_ATTRIBUTE_COUNT] = { FALSE };
 	unsigned long index, total = 0;
-#ifndef HALO_ANDROID
+#if !defined(HALO_ANDROID) && !defined(__APPLE__)
 	struct vertex_layout layout;
 	unsigned long streams_used = 0;
 
@@ -4508,7 +4510,7 @@ static void setup_streams(unsigned long first, unsigned long count)
 			stream_buffers[stream] = device.stream_buffer;
 			stats.streamed_bytes += bytes;
 		}
-#ifdef HALO_ANDROID
+#if defined(HALO_ANDROID) || defined(__APPLE__)
 		if (element->type == D3DVSDT_NORMPACKED3)
 		{
 			state_attribute_stream(element->reg, (GLuint)stream, stream_buffers[stream], 1, GL_UNSIGNED_INT, GL_FALSE,
@@ -4534,7 +4536,7 @@ static void setup_streams(unsigned long first, unsigned long count)
 #endif
 		enabled[element->reg] = TRUE;
 	}
-#ifndef HALO_ANDROID
+#if !defined(HALO_ANDROID) && !defined(__APPLE__)
 	/* (the layout follows from the declaration and the streams it has, so
 	the same two have the same vertex array: no need to look it up) */
 	if (!declaration->vertex_array || declaration->vertex_array_streams != streams_used)
@@ -4724,7 +4726,7 @@ static void immediate_end(void)
 		return;
 	trace_draw("immediate", type, count, device.immediate_vertices);
 	offset = stream_upload(device.immediate_vertices, count * stride);
-#ifdef HALO_ANDROID
+#if defined(HALO_ANDROID) || defined(__APPLE__)
 	for (index = 0; index < XGPU_VERTEX_ATTRIBUTE_COUNT; index++)
 	{
 		state_attribute_stream(index, 0, device.stream_buffer, 4, GL_FLOAT, GL_FALSE, FALSE, (GLsizei)stride,
