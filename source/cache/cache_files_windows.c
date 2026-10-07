@@ -633,6 +633,9 @@ boolean cache_files_precache_map_loaded(
 	return cached_map_files_find_map(tag_name_strip_path(map_name)) != NONE;
 }
 
+/* (the port's, port/linux/src/sdl_platform.c) */
+void platform_log(char const *format, ...);
+
 boolean cache_files_precache_map_begin(
 	const char *map_name,
 	boolean copy_map)
@@ -653,6 +656,23 @@ boolean cache_files_precache_map_begin(
 			void *buffer;
 			struct cached_map_file *map_file;
 
+			/* port: the cache file slots are found by the name in their
+			header (cached_map_files_find_map): a map file whose header names
+			another map would be copied again each time it was asked for, for
+			ever */
+			if (_stricmp(header.name, cache_map_name) != 0)
+			{
+				error(_error_silent, "map '%s' names itself '%s' in its header: refused", cache_map_name, header.name);
+				platform_log("map %s.map names itself '%s' in its header; a map's name must be its file's",
+					cache_map_name, header.name);
+				if (copy_map)
+				{
+					display_error_damaged_media();
+				}
+
+				return FALSE;
+			}
+
 			/* port: a map no cache file holds (of no type the cache files are
 			for, or too big for its type's) is not precached; the texture
 			cache's memory is taken only once one does */
@@ -660,10 +680,6 @@ boolean cache_files_precache_map_begin(
 			{
 				error(_error_silent, "no cache file can hold map '%s' (%08x bytes, type %d)",
 					cache_map_name, header.file_length, header.scenario_type);
-				if (copy_map)
-				{
-					display_error_damaged_media();
-				}
 
 				return FALSE;
 			}
@@ -693,12 +709,12 @@ boolean cache_files_precache_map_begin(
 		}
 		else
 		{
+			/* port: a map not there, or one no loader can run (a Custom
+			Edition cache its checks refused, which says why), is not loaded:
+			the game goes back to its menus. The Xbox showed its damaged disc
+			error here, which ends the game (main_loop_of_death) */
 			error(_error_silent, "couldn't find map '%s' on the DVD", cache_map_name);
 			error(_error_silent, "full path name '%s'", map_name);
-			if (copy_map)
-			{
-				display_error_damaged_media();
-			}
 
 			return FALSE;
 		}

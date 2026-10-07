@@ -223,6 +223,10 @@ enum
 	/* (alive) camouflaged, and doubly so */
 	_distributed_unit_camouflaged_bit = 0,
 	_distributed_unit_super_camouflaged_bit,
+	/* (alive) its flashlight is on, and the host sent it at all: older
+	builds leave both 0, which is not "off" */
+	_distributed_unit_light_sent_bit,
+	_distributed_unit_light_on_bit,
 };
 
 /* a unit state's parts on the wire: which of those that are not always
@@ -1366,6 +1370,9 @@ static void distributed_state_from_player(
 			TEST_FLAG(unit->unit.flags, _unit_active_camouflaged_bit));
 		SET_FLAG(state->unit_flags, _distributed_unit_super_camouflaged_bit,
 			TEST_FLAG(unit->unit.flags, _unit_super_camouflaged_bit));
+		SET_FLAG(state->unit_flags, _distributed_unit_light_sent_bit, TRUE);
+		SET_FLAG(state->unit_flags, _distributed_unit_light_on_bit,
+			TEST_FLAG(unit->unit.flags, _unit_integrated_light_on_bit));
 		camouflage = camouflage > 1.0f ? 1.0f : camouflage < 0.0f ? 0.0f : camouflage;
 		state->active_camouflage = (byte)(long)floor(camouflage * 255.0f + 0.5f);
 		/* (the host) a client's player where the client had them: at which of
@@ -2241,6 +2248,15 @@ static void distributed_handle_unit_state(
 		SET_FLAG(unit->unit.flags, _unit_super_camouflaged_bit,
 			TEST_FLAG(state->unit_flags, _distributed_unit_super_camouflaged_bit));
 		unit->unit.active_camouflage = (real)state->active_camouflage / 255.0f;
+		/* (the flashlight as the host has it, in a seat or not: only presses
+		toggle it here, so one missed, or made before this machine joined,
+		left it wrong for good. Not this machine's own player's, which its
+		press toggles here first) */
+		if (!local && TEST_FLAG(state->unit_flags, _distributed_unit_light_sent_bit))
+		{
+			SET_FLAG(unit->unit.flags, _unit_integrated_light_on_bit,
+				TEST_FLAG(state->unit_flags, _distributed_unit_light_on_bit));
+		}
 	}
 	if (TEST_FLAG(state->flags, _distributed_unit_placed_bit) &&
 		object_get(unit_index)->object.parent_object_index == NONE)
@@ -2832,8 +2848,8 @@ static void distributed_handle_actions(
 		action.control_flags = relayed.control_flags[0];
 		action.desired_facing.yaw = distributed_angle_unpack(relayed.yaw, FALSE);
 		action.desired_facing.pitch = distributed_angle_unpack(relayed.pitch, TRUE);
-		action.throttle.i = (real)relayed.throttle_i / 127.0f;
-		action.throttle.j = (real)relayed.throttle_j / 127.0f;
+		action.throttle.i = PIN((real)relayed.throttle_i / 127.0f, -1.0f, 1.0f);
+		action.throttle.j = PIN((real)relayed.throttle_j / 127.0f, -1.0f, 1.0f);
 		action.primary_trigger = (real)relayed.primary_trigger / 255.0f;
 		action.desired_weapon_index = relayed.desired_weapon_index;
 		action.desired_grenade_index = relayed.desired_grenade_index;
