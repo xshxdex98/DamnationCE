@@ -856,7 +856,7 @@ boolean cache_file_header_verify(
 	/* the native builds say what a Halo Custom Edition cache is instead of
 	calling it an old version of this build's caches, and still refuse it
 	(port/linux/game/custom_edition_cache.c) */
-	if (custom_edition_cache_refuse(header, header->build, scenario_name, fatal))
+	if (custom_edition_cache_refuse(header, header->build, scenario_name))
 	{
 		return FALSE;
 	}
