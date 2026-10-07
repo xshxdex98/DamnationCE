@@ -930,6 +930,8 @@ extern long timeout_for_endgame_sound;
 changes in the first, from this machine's own start, it only takes: the
 game types show what changes in the next) */
 static boolean game_engine_network_state_read = FALSE;
+/* port: the game ends to begin again at once (game_engine_restart) */
+static boolean game_engine_restart_requested = FALSE;
 
 /* ---------- public code */
 
@@ -3795,7 +3797,8 @@ static void game_engine_build_lighting(
 		if (global_variant.game_engine_index == game_engine_race)
 		{
 			struct scenario *scenario = global_scenario_get();
-			short flag_index;
+			/* port: a long counter, for a map's long count */
+			long flag_index;
 
 			for (flag_index = 0;
 				flag_index < scenario->netgame_flags.count;
@@ -4713,8 +4716,9 @@ void game_engine_update_non_deterministic(
 			if (game_engine_globals.postgame_progress > 1.0f)
 				game_engine_globals.postgame_progress = 1.0f;
 
-			if (test_any_gamepad_button(0) || test_any_gamepad_button(12))
+			if (game_engine_restart_requested || test_any_gamepad_button(0) || test_any_gamepad_button(12))
 			{
+				game_engine_restart_requested = FALSE;
 				if (global_network_game_server_get())
 				network_game_server_reset_to_pregame(
 					global_network_game_server_get());
@@ -4965,7 +4969,8 @@ long find_netgame_flags(
 {
 	real radius_squared = radius * radius;
 	long found_count = 0;
-	short flag_index;
+	/* port: a long counter, for a map's long count */
+	long flag_index;
 	struct scenario *scenario;
 
 	scenario = global_scenario_get();
@@ -5238,6 +5243,18 @@ static void game_engine_report_game(
 		count);
 }
 #endif
+
+/* port: a map script's sv_map_reset (hs.c): the host ends the game and,
+once its end is shown, begins it again on the same map and game type, as
+its scoreboard's button does (game_engine_restart_requested) */
+void game_engine_restart(
+	void)
+{
+	if (!game_engine || !global_network_game_server_get())
+		return;
+	game_engine_restart_requested = TRUE;
+	game_engine_end_game();
+}
 
 void game_engine_end_game(
 	void)
@@ -6963,6 +6980,7 @@ void game_engine_initialize_for_new_map(
 		game_engine_vehicle_home_count = NONE;
 		timeout_for_endgame_sound = 0;
 		game_engine_network_state_read = FALSE;
+		game_engine_restart_requested = FALSE;
 
 		if (game_engine->initialize_for_new_map &&
 			!game_engine->initialize_for_new_map())
@@ -7567,7 +7585,8 @@ static void netgame_flag_verify_no_team_duplicates(
 	char const *error_message)
 {
 	struct scenario *scenario = global_scenario_get();
-	short flag_index;
+	/* port: long counters, for a map's long count */
+	long flag_index;
 
 	for (flag_index = 0;
 		flag_index < scenario->netgame_flags.count;
@@ -7577,7 +7596,7 @@ static void netgame_flag_verify_no_team_duplicates(
 			&scenario->netgame_flags,
 			flag_index,
 			struct scenario_netgame_flag);
-		short duplicate_index;
+		long duplicate_index;
 
 		if (flag_type != flag->type)
 			continue;
@@ -7703,7 +7722,8 @@ static void netgame_flag_verify_team_range(
 	char const *error_message)
 {
 	struct scenario *scenario = global_scenario_get();
-	short flag_index;
+	/* port: a long counter, for a map's long count */
+	long flag_index;
 
 	for (flag_index = 0;
 		flag_index < scenario->netgame_flags.count;
@@ -7734,7 +7754,8 @@ static void netgame_verify_equipment(
 {
 	long matching_count = 0;
 	struct scenario *scenario = global_scenario_get();
-	short equipment_index;
+	/* port: a long counter, for a map's long count */
+	long equipment_index;
 
 	for (equipment_index = 0;
 		equipment_index < scenario->netgame_equipment.count;
@@ -8431,7 +8452,8 @@ static void game_engine_update_item_spawn(
 	void)
 {
 	struct scenario *scenario = global_scenario_get();
-	short equipment_index;
+	/* port: a long counter, for a map's long count */
+	long equipment_index;
 
 	/* a client of the distributed netcode has the host's items
 	(port/linux/game/network_distributed.c) */

@@ -208,6 +208,19 @@ void collision_features_from_polygon(
 {
 	match_assert("c:\\halo\\SOURCE\\physics\\collision_features.c", 241, point_count<=MAXIMUM_POINTS_PER_COLLISION_PRISM);
 
+	/* port: a polygon (from the map) with more points than a prism holds
+	keeps the first it holds, and one with too few to bound anything (a
+	surface whose ring of edges was cut short) makes no prism. The retail
+	surfaces have 3 to 8 */
+	if (point_count > MAXIMUM_POINTS_PER_COLLISION_PRISM)
+	{
+		point_count = MAXIMUM_POINTS_PER_COLLISION_PRISM;
+	}
+	if (point_count < NUMBER_OF_VERTICES_PER_TRIANGLE)
+	{
+		return;
+	}
+
 	if (features->count[_collision_feature_prism] < MAXIMUM_COLLISION_FEATURES_PER_TEST)
 	{
 		struct collision_prism *prism = &features->prisms[features->count[_collision_feature_prism]++];
@@ -263,7 +276,17 @@ void collision_features_from_vertex(
 	real_point3d const *feature_point;
 	long surface_index;
 
+	/* port: a vertex, edge or surface (from the map) that is not the bsp's
+	makes no feature (the retail ones all are) */
+	if (vertex_index < 0 || vertex_index >= bsp->vertices.count)
+	{
+		return;
+	}
 	vertex = TAG_BLOCK_GET_ELEMENT(&bsp->vertices, vertex_index, struct collision_vertex);
+	if (!collision_surface_edge_ring_continues(bsp, vertex->first_edge_index, 0))
+	{
+		return;
+	}
 	edge = TAG_BLOCK_GET_ELEMENT(&bsp->edges, vertex->first_edge_index, struct collision_edge);
 	/* port: use the first edge's other surface if that edge is open (see
 	collision_features_from_edge); a vertex with no surface is no feature */
@@ -272,7 +295,7 @@ void collision_features_from_vertex(
 
 		if (edge_surface_index < 0 || edge_surface_index >= bsp->surfaces.count)
 			edge_surface_index = edge->surface_indices[1];
-		if (edge_surface_index < 0 || edge_surface_index >= bsp->surfaces.count)
+		if (!collision_bsp_valid_surface_index(bsp, edge_surface_index))
 			return;
 		surface = TAG_BLOCK_GET_ELEMENT(&bsp->surfaces, edge_surface_index, struct collision_surface);
 		surface_index = object_index != NONE ? NONE : edge_surface_index;
@@ -328,12 +351,17 @@ void collision_features_from_edge(
 	long plane1_index;
 	long surface_index;
 
+	/* port: (as in collision_features_from_vertex) */
+	if (!collision_surface_edge_ring_continues(bsp, edge_index, 0))
+	{
+		return;
+	}
 	edge = TAG_BLOCK_GET_ELEMENT(&bsp->edges, edge_index, struct collision_edge);
 	/* port: an open edge (only one surface) has no crease to collide with,
 	though its surface still collides. A Custom Edition map's BSP can have
 	them; this asserted and read before the first surface. */
-	if (edge->surface_indices[0] < 0 || edge->surface_indices[0] >= bsp->surfaces.count ||
-		edge->surface_indices[1] < 0 || edge->surface_indices[1] >= bsp->surfaces.count)
+	if (!collision_bsp_valid_surface_index(bsp, edge->surface_indices[0]) ||
+		!collision_bsp_valid_surface_index(bsp, edge->surface_indices[1]))
 	{
 		return;
 	}

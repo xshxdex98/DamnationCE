@@ -200,6 +200,14 @@ void hs_runtime_update(
 	void);
 long hs_runtime_evaluate(
 	long expression_index);
+/* port: a call's one argument that a script may leave out (Halo PC's server
+commands, hs.c), as a whole number in *value: FALSE while it is evaluated,
+TRUE once there is an answer, *present saying whether the call had one */
+boolean hs_optional_argument_evaluate(
+	long thread_index,
+	boolean initialize,
+	long *value,
+	boolean *present);
 /* port: whether the running script waits on the call it evaluates, which
 is a sleep_until's condition (hs_runtime.c) */
 boolean hs_runtime_waiting_on_call(
@@ -254,6 +262,18 @@ short hs_find_global_by_name(
 short hs_global_get_type(
 	short global_index);
 char const *hs_global_get_name(
+	short global_index);
+/* port: the map's scripts and global initializers that call a function a
+map's scripts may not (hs_scenario_functions_check) */
+boolean hs_scenario_script_disabled(
+	short script_index);
+boolean hs_scenario_global_initializer_disabled(
+	short global_index);
+
+/* ---------- prototypes/HS_GLOBALS_EXTERNAL.C */
+
+/* port: the external globals a map's scripts may set */
+boolean hs_external_global_settable_by_maps(
 	short global_index);
 /* ---------- prototypes/HS_COMPILE.C */
 

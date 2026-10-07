@@ -1269,11 +1269,26 @@ static void cache_file_get_map_path(
 	const char *map_name,
 	char *path)
 {
-	sprintf(path, "%s%s.map", cache_files_map_directory(), map_name);
-	/* or the OpenSauce .yelo cache of that name, which the header check
-	names and refuses; every caller's path holds 256 characters
-	(port/linux/game/custom_edition_cache.c) */
-	opensauce_cache_path_find(path, 256);
+	/* port: no more than the callers' paths hold (256; the name can be a
+	host's, over the network). One that doesn't fit is no path (no file is
+	found), not a cut one (another file could be). */
+	enum
+	{
+		MAXIMUM_MAP_PATH_LENGTH = 256,
+	};
+	int length = snprintf(path, MAXIMUM_MAP_PATH_LENGTH, "%s%s.map", cache_files_map_directory(), map_name);
+
+	if (length < 0 || length >= MAXIMUM_MAP_PATH_LENGTH)
+	{
+		error(_error_silent, "map path for '%.64s' is too long", map_name);
+		path[0] = 0;
+	}
+	else
+	{
+		/* or the OpenSauce .yelo cache of that name, which the header
+		check names and refuses (port/linux/game/custom_edition_cache.c) */
+		opensauce_cache_path_find(path, MAXIMUM_MAP_PATH_LENGTH);
+	}
 
 	return;
 }

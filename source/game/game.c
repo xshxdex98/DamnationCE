@@ -181,6 +181,7 @@ struct game_options;
 #include "units/units.h"
 #include "units/vehicles.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
+#include "editor_play.h" /* port: port/linux/game/editor_play.c */
 #ifdef HALO_64BIT
 #include "rasterizer/common/rasterizer_common.h"
 #endif
@@ -354,8 +355,9 @@ void game_tick(
 	editor_update();
 	/* port: in network co-op only the host runs the scripts. A client running
 	them would place the map's actors and objects a second time and make
-	decisions that belong to the host. */
-	if (!(network_game_distributed_client() && network_coop_active()))
+	decisions that belong to the host. The level editor's live view runs none
+	while it edits, as Sapien runs none (editor_play.c). */
+	if (!(network_game_distributed_client() && network_coop_active()) && !editor_play_editing())
 		hs_update();
 	recorded_animations_update();
 	objects_update();
@@ -470,6 +472,22 @@ struct game_variant_options const *game_variant_options_get(
 	void)
 {
 	return &game_variant_options_global;
+}
+
+/* port: a Custom Edition map's script setting the game's time limit
+(minutes, 0: none) or friendly fire (hs.c's sv_timelimit and
+sv_friendly_fire): in multiplayer every machine runs the map's scripts, so
+each shows the same, and the host decides by its own */
+void game_variant_options_set_time_limit(
+	short minutes)
+{
+	game_variant_options_global.time_limit = minutes;
+}
+
+void game_variant_options_set_friendly_fire(
+	short friendly_fire)
+{
+	game_variant_options_global.friendly_fire = friendly_fire;
 }
 
 void game_set_game_engine_index(
