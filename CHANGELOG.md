@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.3.28
+
+### Custom Edition maps move to custom_maps
+
+OpenCE now ships Custom Edition support built on DamnationCE's, and this
+release takes its layout:
+
+- **Move your Custom Edition maps**, with Custom Edition's `bitmaps.map`,
+  `sounds.map` and `loc.map`, from `maps` into a `custom_maps` folder beside
+  it. `maps` holds the game's own maps only.
+- The map lists get CUSTOM SINGLEPLAYER (played alone or as network co-op)
+  and CUSTOM MULTIPLAYER. A map named like one of the game's levels
+  (`bloodgulch.map`, CMT's `a30.map`) is listed and played as itself.
+- Joining a game on a map you don't have tells you which map and where to
+  copy it, instead of the damaged disc error.
+
+### From OpenCE
+
+- Every Custom Edition map's tags and structure BSPs are checked before
+  they are used, as the game's own maps' are.
+- HUD meters' Halo PC minimum alpha is cleared, weapons' firing-on functions
+  are converted, and timberland's waterfall reads its own pixels.
+- Map scripts are checked harder; on a Custom Edition map a bad expression
+  drops only the scripts that hold it.
+
+Network version 22, OpenCE's: older DamnationCE versions can't join these
+games, or host them for this one.
+
 ## 0.3.27
 
 ### Custom Edition maps
