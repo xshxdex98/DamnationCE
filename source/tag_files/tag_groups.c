@@ -9,7 +9,6 @@ TAG_GROUPS.C
 #include "errors.h"
 #include "tag_files.h"
 #include "byte_swapping.h"
-#include "errors.h"
 #include "tag_groups.h"
 
 /* port: port/linux/game/custom_edition_cache.c and cache_files.c */
