@@ -37,13 +37,13 @@ boolean custom_edition_cache_stock_tag(
 	long tag_index);
 
 /* When `header` (CACHE_FILE_HEADER_BYTES bytes, with `build` its build
-string field) is a Custom Edition cache header, logs what it is, asserts when
-`fatal` as cache_file_header_verify does, and returns TRUE. */
+string field) is a Custom Edition cache header that reached the Xbox loader,
+logs why the file at `path` cannot run and returns TRUE: the map is refused,
+not the game stopped. */
 boolean custom_edition_cache_refuse(
 	void const *header,
 	char const *build,
-	char const *scenario_name,
-	boolean fatal);
+	char const *path);
 
 /* When the ".map" file `path` names does not exist but an OpenSauce ".yelo"
 file of the same name does, makes `path` (`path_size` characters) name that
