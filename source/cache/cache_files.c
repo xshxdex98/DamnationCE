@@ -136,7 +136,7 @@ symbols in this file:
 #include "scenario/scenario_definitions.h"
 #include "sound/sound_manager.h"
 #include "custom_edition_cache.h"
-#include "cache_file_formats.h" /* port: CUSTOM_EDITION_TAG_CACHE_BYTES_UPGRADED */
+#include "cache_file_formats.h" /* port: CUSTOM_EDITION_TAG_CACHE_BYTES */
 #include "tag_schema.h"
 
 /* ---------- constants */
@@ -380,7 +380,7 @@ boolean cache_file_tag_cache_contains(
 	if (custom_edition_cache_tags_loaded())
 	{
 		tag_cache = halo_custom_edition_tag_cache();
-		tag_cache_size = CUSTOM_EDITION_TAG_CACHE_BYTES_UPGRADED;
+		tag_cache_size = CUSTOM_EDITION_TAG_CACHE_BYTES;
 	}
 
 	return tag_cache && cache_file_region_contains(tag_cache, tag_cache_size, address, 1, size);
