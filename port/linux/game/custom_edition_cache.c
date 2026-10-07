@@ -82,6 +82,23 @@ static struct custom_edition_cache_globals custom_edition_cache_globals;
 
 /* ---------- private code */
 
+/* (port_config.c) */
+int config_boolean(char const *name);
+
+/* why Custom Edition maps cannot run at all, when a cache's own checks
+found nothing wrong: no tag cache to load them into */
+static char const *custom_edition_unavailable_reason(
+	void)
+{
+#ifdef HALO_64BIT
+	return "Custom Edition maps are not supported on the 64-bit builds yet";
+#else
+	return config_boolean("game.custom_edition") ?
+		"the Custom Edition tag cache could not be reserved at startup (the log's first lines say why)" :
+		"Custom Edition maps are turned off (game.custom_edition)";
+#endif
+}
+
 static int custom_edition_file_read(
 	void *context,
 	uint32_t offset,
@@ -430,8 +447,8 @@ boolean custom_edition_cache_refuse(
 		return FALSE;
 	}
 	/* (why the Custom Edition loader passed it by: what its checks found,
-	or Custom Edition maps turned off when they found nothing; `path` is a
-	file's or a scenario's, by the caller) */
+	or why it cannot run any when they found nothing; `path` is a file's or
+	a scenario's, by the caller) */
 	if (custom_edition_file_open(&file, path) ||
 		(custom_edition_map_path(path, map_path) && custom_edition_file_open(&file, map_path)))
 	{
@@ -444,7 +461,7 @@ boolean custom_edition_cache_refuse(
 		path,
 		has_opensauce_header ? " with an OpenSauce header" : "",
 		build,
-		status == _cache_file_status_ok ? "Custom Edition maps are turned off" : cache_file_status_describe(status));
+		status == _cache_file_status_ok ? custom_edition_unavailable_reason() : cache_file_status_describe(status));
 
 	return TRUE;
 }

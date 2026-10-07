@@ -106,11 +106,13 @@ optional files beside the map give it what the Xbox levels have:
   version" of this build's caches:
 
   ```
-  'd:\maps\ui.map' is a Halo Custom Edition cache (build 01.00.00.0609) this build cannot run: Custom Edition maps are turned off (docs/custom_edition_caches.md)
+  'd:\maps\ui.map' is a Halo Custom Edition cache (build 01.00.00.0609) this build cannot run: Custom Edition maps are turned off (game.custom_edition) (docs/custom_edition_caches.md)
   ```
 
   With the setting on, a cache the loader's checks refuse gets the same
-  line with the check it failed in place of the setting. Either way the map
+  line with the check it failed in place of the setting, or, when its checks
+  pass, that the Custom Edition tag cache could not be reserved at startup
+  (the 64-bit builds have none yet). Either way the map
   is not loaded and the game goes back to its menus (it used to stop on the
   Xbox's damaged disc error).
 
