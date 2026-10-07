@@ -11765,8 +11765,11 @@ static void hs_sv_player_name_text(
 	name[index] = 0;
 }
 
-/* the player a kick names: by name, or by the number sv_players gives them
-(from 1), as Halo PC's sv_kick and sv_ban take either */
+/* the player a kick names: by their whole name, or by the number sv_players
+gives them (from 1), as Halo PC's sv_kick and sv_ban take either; NULL for
+nobody. Not the host's kick command's beginning of a name: a map's script
+names players who may not be there (bigass_v3 kicks its test bots, "marco"
+and "polo", every tick), and a name it begins is someone else's */
 static char const *hs_sv_player_name(
 	char const *text,
 	char *name,
@@ -11779,30 +11782,32 @@ static char const *hs_sv_player_name(
 	char *end;
 
 	if (!text || !*text)
-		return text;
+		return NULL;
 	wanted = strtol(text, &end, 10);
-	if (*end)
-		return text;
+	if (*end || wanted < 1)
+		wanted = NONE;
 	data_iterator_new(&iterator, player_data);
 	while ((player = data_iterator_next(&iterator)) != NULL)
 	{
-		if (!player->quit_out_of_game && ++number == wanted)
-		{
-			hs_sv_player_name_text(player, name, name_size);
+		if (player->quit_out_of_game)
+			continue;
+		hs_sv_player_name_text(player, name, name_size);
+		if (++number == wanted || !csstrcasecmp(name, text))
 			return name;
-		}
 	}
-	return text;
+	return NULL;
 }
 
-/* (only the host kicks) */
+/* (only the host kicks, and nobody when the script names nobody: quietly,
+as a server's console told only itself) */
 static void hs_sv_kick(
 	char const *player)
 {
 	char name[32];
+	char const *kicked = hs_sv_player_name(player, name, sizeof(name));
 
-	if (global_network_game_server_get())
-		network_game_server_kick_player(hs_sv_player_name(player, name, sizeof(name)));
+	if (global_network_game_server_get() && kicked)
+		network_game_server_kick_player(kicked);
 }
 
 HS_EVALUATE_VOID_STRING(hs_sv_kick_evaluate, hs_sv_kick)
