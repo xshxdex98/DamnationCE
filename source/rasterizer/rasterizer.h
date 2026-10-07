@@ -33,8 +33,11 @@ enum
 	RASTERIZER_MAXIMUM_DEBUG_VERTICES = 393216,
 	RASTERIZER_MAXIMUM_TRANSPARENT_GEOMETRY_GROUPS = 384,
 	RASTERIZER_MAXIMUM_TRANSPARENT_GEOMETRY_GROUPS2 = 32,
-	RASTERIZER_MAXIMUM_DYNAMIC_TRIANGLES = 32768,
-	RASTERIZER_MAXIMUM_DYNAMIC_TRIANGLE_BUFFERS = 1024,
+	/* port: every visible structure surface goes here once a pass (32768,
+	1024): a big Custom Edition map's view spent the Xbox's before the
+	level was drawn ("too many dynamic triangles") */
+	RASTERIZER_MAXIMUM_DYNAMIC_TRIANGLES = 16 * 32768,
+	RASTERIZER_MAXIMUM_DYNAMIC_TRIANGLE_BUFFERS = 4096,
 	/* four per particle (build_sprites_begin), for the native builds' larger
 	particle pool (halo_port_capacity.h) */
 	RASTERIZER_MAXIMUM_DYNAMIC_UNLIT_VERTICES = 4 * HALO_PORT_MAXIMUM_PARTICLES,
