@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.26
+
+### Custom Edition HUDs
+
+- Weapon HUDs show their multiplayer elements in multiplayer games and
+  their solo ones in campaigns, as on Halo PC. coldsnap's ammo counters no
+  longer draw their solo counter over the multiplayer panel.
+- A HUD meter drawing from the same bitmap as other HUD art fills in its
+  own colors (bigass_v3's ammo rounds were dim, doubled ghosts).
+
+### Diagnostics
+
+- With frame statistics on, the slowest frame of each second says how much
+  of it went to drawing, to immediate draws and to visibility tests.
+
+Network version 21, as 0.3.25: players on either can play together.
+
 ## 0.3.25
 
 ### Custom Edition maps

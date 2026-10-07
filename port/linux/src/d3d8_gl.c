@@ -559,6 +559,19 @@ struct gl_device
 
 static struct gl_device device;
 
+/* the time and number of one kind of work in a frame */
+struct frame_cost
+{
+	unsigned long long nanoseconds;
+	unsigned long count;
+};
+
+/* the frame at hand's (frame_cost_begin, frame_cost_end) */
+static struct
+{
+	struct frame_cost immediate, visibility;
+} frame_costs;
+
 /* debug.gpu_stats prints these once a second */
 static struct
 {
@@ -571,8 +584,14 @@ static struct
 	of one frame: the averages hide a frame that stalls */
 	unsigned long texture_uploads, texture_upload_bytes;
 	unsigned long most_draws, slowest_frame;
-	/* (draws counted when this frame began) */
+	/* ... and how much of the slowest frame went to drawing it, from its
+	first draw to its present: the rest is the game's; and of that, to its
+	immediate draws and its visibility tests */
+	unsigned long slowest_frame_drawing;
+	struct frame_cost slowest_immediate, slowest_visibility;
+	/* (draws counted when this frame began, and when its first was) */
 	unsigned long frame_first_draw;
+	struct timespec frame_drawing_start;
 } stats;
 
 void xgpu_statistics_texture_upload(unsigned long bytes)
@@ -2033,6 +2052,27 @@ void WINAPI D3DDevice_InsertCallback(D3DCALLBACKTYPE type, D3DCALLBACK callback,
 		callback(context);
 }
 
+/* a clock reading to time some work by, while the statistics are on (else 0) */
+static unsigned long long frame_cost_begin(void)
+{
+	struct timespec now;
+
+	if (!debug_settings.statistics)
+		return 0;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	return (unsigned long long)now.tv_sec * 1000000000ULL + (unsigned long long)now.tv_nsec;
+}
+
+/* the work begun at `start` added to `cost` */
+static void frame_cost_end(struct frame_cost *cost, unsigned long long start)
+{
+	if (start)
+	{
+		cost->nanoseconds += frame_cost_begin() - start;
+		cost->count++;
+	}
+}
+
 /* ---------- visibility (occlusion) tests */
 
 void WINAPI D3DDevice_BeginVisibilityTest(void)
@@ -2058,12 +2098,12 @@ void WINAPI D3DDevice_BeginVisibilityTest(void)
 	glBeginQuery(VISIBILITY_QUERY, device.queries[0]);
 }
 
-HRESULT WINAPI D3DDevice_EndVisibilityTest(DWORD index)
+static void visibility_test_end(DWORD index)
 {
 	GLuint scratch;
 
 	if (!device.gl_ready || !device.visibility_test_active)
-		return S_OK;
+		return;
 	device.visibility_test_active = FALSE;
 	index %= VISIBILITY_TEST_SLOTS;
 	if (!index)
@@ -2073,7 +2113,7 @@ HRESULT WINAPI D3DDevice_EndVisibilityTest(DWORD index)
 	{
 		device.counter_of_slot[index] = device.counter_active;
 		device.query_pending[index] = TRUE;
-		return S_OK;
+		return;
 	}
 #endif
 	glEndQuery(VISIBILITY_QUERY);
@@ -2099,6 +2139,14 @@ HRESULT WINAPI D3DDevice_EndVisibilityTest(DWORD index)
 			(GLintptr)(index * sizeof(GLuint)));
 	}
 #endif
+}
+
+HRESULT WINAPI D3DDevice_EndVisibilityTest(DWORD index)
+{
+	unsigned long long start = frame_cost_begin();
+
+	visibility_test_end(index);
+	frame_cost_end(&frame_costs.visibility, start);
 	return S_OK;
 }
 
@@ -2112,7 +2160,7 @@ static GLuint visibility_unscaled(GLuint samples, DWORD index)
 }
 
 #endif
-HRESULT WINAPI D3DDevice_GetVisibilityTestResult(DWORD index, UINT *result, ULONGLONG *time_stamp)
+static void visibility_test_result(DWORD index, UINT *result, ULONGLONG *time_stamp)
 {
 	GLuint available = 0, samples = 0;
 
@@ -2125,7 +2173,7 @@ HRESULT WINAPI D3DDevice_GetVisibilityTestResult(DWORD index, UINT *result, ULON
 	{
 		if (result)
 			*result = 0;
-		return S_OK;
+		return;
 	}
 #ifdef HALO_ANDROID
 	if (xgpu_capabilities.atomic_counters)
@@ -2135,7 +2183,7 @@ HRESULT WINAPI D3DDevice_GetVisibilityTestResult(DWORD index, UINT *result, ULON
 			(unsigned int)(device.counter_of_slot[index] * sizeof(GLuint)));
 		if (result)
 			*result = samples;
-		return S_OK;
+		return;
 	}
 #endif
 #ifndef HALO_ANDROID
@@ -2145,7 +2193,7 @@ HRESULT WINAPI D3DDevice_GetVisibilityTestResult(DWORD index, UINT *result, ULON
 		the GPU is still behind, from the slot's earlier ones */
 		if (result)
 			*result = visibility_unscaled(device.visibility_results[index], index);
-		return S_OK;
+		return;
 	}
 #endif
 	/* the latest count known: from this test, or while the GPU is still
@@ -2172,6 +2220,14 @@ HRESULT WINAPI D3DDevice_GetVisibilityTestResult(DWORD index, UINT *result, ULON
 	}
 	if (result)
 		*result = device.visibility_known[index];
+}
+
+HRESULT WINAPI D3DDevice_GetVisibilityTestResult(DWORD index, UINT *result, ULONGLONG *time_stamp)
+{
+	unsigned long long start = frame_cost_begin();
+
+	visibility_test_result(index, result, time_stamp);
+	frame_cost_end(&frame_costs.visibility, start);
 	return S_OK;
 }
 
@@ -3489,6 +3545,8 @@ static struct program_entry *prepare_draw(BOOL immediate)
 		stats.immediate_draws++;
 	else
 		stats.draws++;
+	if (debug_settings.statistics && !stats.frame_drawing_start.tv_sec)
+		clock_gettime(CLOCK_MONOTONIC, &stats.frame_drawing_start);
 	draw_flush();
 	state_program(entry->program);
 #ifdef HALO_ANDROID
@@ -4596,7 +4654,7 @@ static void immediate_emit(void)
 	device.immediate_count++;
 }
 
-void WINAPI D3DDevice_End(void)
+static void immediate_end(void)
 {
 	unsigned long stride = XGPU_VERTEX_ATTRIBUTE_COUNT * 4 * sizeof(float);
 	unsigned long offset, index, count = device.immediate_count;
@@ -4645,6 +4703,14 @@ void WINAPI D3DDevice_End(void)
 		glDrawArrays(primitive_mode(type), 0, (GLsizei)count);
 	}
 	gl_check_errors("immediate draw");
+}
+
+void WINAPI D3DDevice_End(void)
+{
+	unsigned long long start = frame_cost_begin();
+
+	immediate_end();
+	frame_cost_end(&frame_costs.immediate, start);
 }
 
 static void set_attribute(INT reg, float a, float b, float c, float d)
@@ -4935,9 +5001,19 @@ void WINAPI D3DDevice_Present(CONST RECT *source_rectangle, CONST RECT *destinat
 				(now.tv_nsec - last_present.tv_nsec) / 1000000);
 
 			if (milliseconds > stats.slowest_frame)
+			{
 				stats.slowest_frame = milliseconds;
+				stats.slowest_frame_drawing = stats.frame_drawing_start.tv_sec ?
+					(unsigned long)((now.tv_sec - stats.frame_drawing_start.tv_sec) * 1000 +
+						(now.tv_nsec - stats.frame_drawing_start.tv_nsec) / 1000000) :
+					0;
+				stats.slowest_immediate = frame_costs.immediate;
+				stats.slowest_visibility = frame_costs.visibility;
+			}
 		}
 		last_present = now;
+		stats.frame_drawing_start.tv_sec = 0;
+		memset(&frame_costs, 0, sizeof(frame_costs));
 		if (stats.draws - stats.frame_first_draw > stats.most_draws)
 			stats.most_draws = stats.draws - stats.frame_first_draw;
 		stats.frame_first_draw = stats.draws;
@@ -4946,11 +5022,14 @@ void WINAPI D3DDevice_Present(CONST RECT *source_rectangle, CONST RECT *destinat
 	{
 		platform_log("frame %lu: %lu draws, %lu immediate, %lu clears, %lu target changes; skipped %lu no program, %lu no target, %lu link; "
 			"%lu KB mirrored, %lu KB streamed; in 60 frames, %lu textures uploaded (%lu KB), at most %lu draws "
-			"and %lu ms in a frame",
+			"and %lu ms in a frame (%lu of it drawing; %lu in %lu immediate draws, %lu in %lu visibility tests)",
 			device.frame, stats.draws / stats.presents, stats.immediate_draws / stats.presents, stats.clears / stats.presents,
 			stats.target_changes / stats.presents, stats.skipped_no_program, stats.skipped_no_target, stats.skipped_link,
 			stats.mirrored_bytes / stats.presents / 1024, stats.streamed_bytes / stats.presents / 1024,
-			stats.texture_uploads, stats.texture_upload_bytes / 1024, stats.most_draws, stats.slowest_frame);
+			stats.texture_uploads, stats.texture_upload_bytes / 1024, stats.most_draws, stats.slowest_frame,
+			stats.slowest_frame_drawing,
+			(unsigned long)(stats.slowest_immediate.nanoseconds / 1000000), stats.slowest_immediate.count,
+			(unsigned long)(stats.slowest_visibility.nanoseconds / 1000000), stats.slowest_visibility.count);
 		memset(&stats, 0, sizeof(stats));
 	}
 	platform_pump_events();

@@ -76,6 +76,7 @@ symbols in this file:
 #include "tag_files/tag_groups.h"
 #include "units/unit_definitions.h"
 #include "units/units.h"
+#include "custom_edition_cache.h" /* port: port/linux/game/custom_edition_cache.c */
 
 #include <math.h>
 #include <string.h>
@@ -965,6 +966,32 @@ finished:
 	return;
 }
 
+/* the map types a HUD element may be drawn on (its use_on_map_type: any,
+solo, multiplayer), none on the main menu. The Xbox's solo and multiplayer
+are one player on the screen and split screen. port: Halo PC's, which
+Custom Edition maps' HUDs were made for, are a campaign and a multiplayer
+game: coldsnap's master HUDs drew their solo counter over their multiplayer
+ones */
+static short hud_map_type_flags(
+	void)
+{
+	short scenario_type = global_scenario_get()->type;
+	short map_type_flags = scenario_type != _scenario_type_main_menu;
+
+	if (custom_edition_cache_tags_loaded())
+	{
+		SET_FLAG(map_type_flags, 1, scenario_type == _scenario_type_solo);
+		SET_FLAG(map_type_flags, 2, scenario_type == _scenario_type_multiplayer);
+	}
+	else
+	{
+		SET_FLAG(map_type_flags, 1, local_player_count() == 1);
+		SET_FLAG(map_type_flags, 2, local_player_count() > 1);
+	}
+
+	return map_type_flags;
+}
+
 static void crosshairs_draw(
 	struct player_datum *player,
 	long weapon_index,
@@ -985,10 +1012,8 @@ static void crosshairs_draw(
 		long unit_index = player->unit_index;
 		struct crosshair_hud_state *crosshair = get_crosshair_state(player->local_player_index);
 		struct weapon_hud_interface_definition *root_definition = weapon_hud_interface_definition_get(hud_index);
-		short map_type_flags = global_scenario_get()->type != _scenario_type_main_menu;
+		short map_type_flags = hud_map_type_flags();
 
-		SET_FLAG(map_type_flags, 1, local_player_count() == 1);
-		SET_FLAG(map_type_flags, 2, local_player_count() > 1);
 		if (unit_index != NONE)
 		{
 			struct unit_datum *unit = unit_get(unit_index);
@@ -1728,9 +1753,7 @@ static void render_weapon_hud(
 			number_values);
 	}
 
-	map_type_flags = global_scenario_get()->type != _scenario_type_main_menu;
-	SET_FLAG(map_type_flags, 1, local_player_count() == 1);
-	SET_FLAG(map_type_flags, 2, local_player_count() > 1);
+	map_type_flags = hud_map_type_flags();
 
 	for (element_index = 0;
 		element_index < definition->statics.count;
