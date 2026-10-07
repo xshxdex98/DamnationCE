@@ -22,7 +22,17 @@ int gl_functions_load(void)
 #define GL_OPTIONAL_FUNCTION(name) \
 	(!strcmp(#name, "glClipControl") || !strcmp(#name, "glCopyImageSubData") || \
 		!strcmp(#name, "glDebugMessageCallback") || !strcmp(#name, "glBufferStorage") || \
-		!strcmp(#name, "glMemoryBarrier"))
+		!strcmp(#name, "glMemoryBarrier") || !strcmp(#name, "glGetQueryBufferObjectuiv") || \
+		GL_UNCALLED_FUNCTION(name))
+/* OpenGL 4.3's vertex attribute binding: macOS points at each attribute on
+its own, elsewhere these are called unchecked */
+#ifdef __APPLE__
+#define GL_UNCALLED_FUNCTION(name) \
+	(!strcmp(#name, "glVertexAttribFormat") || !strcmp(#name, "glVertexAttribIFormat") || \
+		!strcmp(#name, "glVertexAttribBinding") || !strcmp(#name, "glBindVertexBuffer"))
+#else
+#define GL_UNCALLED_FUNCTION(name) FALSE
+#endif
 #define GL_LOAD_FUNCTION(name) \
 	halo_##name = (__typeof__(halo_##name))SDL_GL_GetProcAddress(#name); \
 	if (!halo_##name && !GL_OPTIONAL_FUNCTION(name)) \
