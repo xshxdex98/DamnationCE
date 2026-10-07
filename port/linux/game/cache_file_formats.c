@@ -1095,7 +1095,6 @@ static enum cache_file_status custom_edition_header_verify(
 	struct cache_file_identity *identity)
 {
 	enum cache_file_status status;
-	uint32_t maximum_file_length;
 
 	identity->has_opensauce_header =
 		read_u32(bytes + CACHE_HEADER_OPENSAUCE_OFFSET) == OPENSAUCE_HEADER_SIGNATURE;
@@ -1111,12 +1110,8 @@ static enum cache_file_status custom_edition_header_verify(
 	{
 		return _cache_file_status_compressed_cache;
 	}
-	maximum_file_length = identity->has_opensauce_header &&
-		flag_is_set(identity->opensauce.flags, _opensauce_cache_uses_memory_upgrades_bit) ?
-		CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES_UPGRADED :
-		CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES;
 	if (identity->file_length < CACHE_FILE_HEADER_BYTES ||
-		identity->file_length > maximum_file_length ||
+		identity->file_length > CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES ||
 		identity->file_length > identity->file_size)
 	{
 		return _cache_file_status_bad_file_length;

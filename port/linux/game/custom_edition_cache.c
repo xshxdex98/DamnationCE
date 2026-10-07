@@ -38,11 +38,9 @@ where its offset falls in their combined offset space.
 /* as the cache file loader's own map paths */
 #define MAP_PATH_SIZE 256
 
-/* where bitmaps.map and sounds.map start in the combined offset space; the
-largest map is 0x24000000 bytes long (cache_file_formats.h) */
-/* the combined offset space: the map, the Ogg Vorbis sounds decoded at load
-(custom_edition_sounds.c) after the largest map it takes, bitmaps.map,
-sounds.map */
+/* the combined offset space: the map (CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES
+at most), the Ogg Vorbis sounds decoded at load (custom_edition_sounds.c)
+after the largest map it takes, bitmaps.map, sounds.map */
 #define COMBINED_DECODED_OFFSET 0x30000000UL
 #define COMBINED_BITMAPS_OFFSET 0x40000000UL
 #define COMBINED_SOUNDS_OFFSET 0x60000000UL

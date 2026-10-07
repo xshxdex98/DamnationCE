@@ -160,8 +160,9 @@ tags to a file, as they would sit at `0x40440000`.
 Loading, step by step (`custom_edition_cache_load`):
 
 1. The header: signatures, version 609, terminated strings, file length
-   within the file and the size limit (`0x18000000`, or `0x24000000` with
-   OpenSauce memory upgrades), no compression, tag data within the file and
+   within the file and the size limit (`0x30000000`: Halo PC's was
+   `0x18000000`, and Invader builds larger maps, which Chimera runs), no
+   compression, tag data within the file and
    the tag cache (23 MB, or 1.5 times that with memory upgrades). An
    OpenSauce header at offset `0x70` is checked as OpenSauce checks it:
    header version 1 or 2, `project_yellow` and `project_yellow_globals` tag
