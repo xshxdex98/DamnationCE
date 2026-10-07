@@ -52,6 +52,7 @@ can't be joined, since the map would fail to load.
 #include "../src/p2p.h"
 #include "../src/ui_overlay.h"
 #include "halo_ui_pointer.h"
+#include "custom_edition_cache.h"
 #include "custom_edition_maps.h"
 #include "overlay_screens.h"
 
@@ -159,7 +160,7 @@ static void set_status(
 	browser_screen.status_time = system_milliseconds();
 }
 
-/* the last part of a map path such as levels\test\<name>\<name> */
+/* the last part of a map path (levels\test\<name>\<name>, custom_maps\<name>) */
 static char const *map_file_name(
 	char const *path)
 {
@@ -199,7 +200,8 @@ static struct known_map const *known_map(
 	csstrncpy(map->path, path, sizeof(map->path) - 1);
 	map->path[sizeof(map->path) - 1] = 0;
 	map->installed = TRUE;
-	if (overlay_xbox_map_name(base))
+	/* (a Custom Edition map is never the game's own of its name) */
+	if (!custom_edition_level_name(path) && overlay_xbox_map_name(base))
 	{
 		map->kind = MAP_XBOX;
 		csstrncpy(map->name, overlay_xbox_map_name(base), sizeof(map->name) - 1);
@@ -217,8 +219,13 @@ static struct known_map const *known_map(
 	map->kind = MAP_OTHER;
 	csstrncpy(map->name, base, sizeof(map->name) - 1);
 	map->name[sizeof(map->name) - 1] = 0;
-	snprintf(file, sizeof(file), "%s%s.map", cache_files_map_directory(), base);
-	map->installed = file_exists(file_reference_create_from_path(&reference, file, FALSE));
+	if (custom_edition_level_name(path))
+		map->installed = custom_edition_map_file_present(base);
+	else
+	{
+		snprintf(file, sizeof(file), "%s%s.map", cache_files_map_directory(), base);
+		map->installed = file_exists(file_reference_create_from_path(&reference, file, FALSE));
+	}
 	return map;
 }
 

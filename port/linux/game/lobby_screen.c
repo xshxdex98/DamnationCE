@@ -21,6 +21,7 @@ row or button that has the focus.
 #include "interface/ui_widget_instance.h"
 #include "networking/network_game_manager.h"
 
+#include "custom_edition_cache.h"
 #include "custom_edition_maps.h"
 #include "overlay_screens.h"
 #include "../src/p2p.h"
@@ -94,11 +95,15 @@ static struct widget_instance *lobby_list(
 	return child_named(top, "lobby_list");
 }
 
+/* a campaign level, or a Custom Edition map this machine lacks (with no game
+type it can only be a campaign one), as the menus' lobby has it
+(menu_functions.c) */
 static boolean game_cooperative(
 	struct network_game const *game)
 {
 	return !game->variant.game_engine_index &&
-		custom_edition_maps_campaign(custom_edition_maps_display_index(game->map.name));
+		(custom_edition_maps_level_campaign(game->map.name) ||
+			(custom_edition_level_name(game->map.name) && custom_edition_maps_display_index(game->map.name) == NONE));
 }
 
 /* one of the panel's lines: a label, and its value right-aligned */
