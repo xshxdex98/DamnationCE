@@ -606,8 +606,8 @@ static void texture_dump(GLenum target, const struct xgpu_texture_description *d
 
 Halo PC keeps what some textures hold in other channels than the game reads
 it from (enum custom_edition_channel_order): a model shader's multipurpose
-masks, and a HUD meter's shape and fill order. The experimental Custom
-Edition map loading says which texels hold which order as they arrive
+masks, and a HUD meter's shape and fill order. The Custom Edition map
+loading says which texels hold which order as they arrive
 (port/linux/game/custom_edition_bitmaps.c), and textures made of them are
 sampled with each channel taken from where Halo PC keeps it, which leaves
 them as compressed as they were. Addresses stay listed until other texels

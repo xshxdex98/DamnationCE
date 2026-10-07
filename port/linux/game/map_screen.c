@@ -303,7 +303,11 @@ static short campaign_levels(short category, struct map_entry *entries)
 		count = NUMBER_OF_SINGLE_PLAYER_LEVELS;
 	}
 	else
-		count = custom_edition_maps_custom_campaigns(displays, MAXIMUM_LEVELS);
+	{
+		count = (short)MIN(custom_edition_maps_count(TRUE), MAXIMUM_LEVELS);
+		for (index = 0; index < count; index++)
+			displays[index] = custom_edition_maps_display_index_of(TRUE, index);
+	}
 	for (index = 0; index < count && entries; index++)
 	{
 		entries[index].level = NONE;

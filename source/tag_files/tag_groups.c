@@ -10,6 +10,7 @@ TAG_GROUPS.C
 #include "tag_files.h"
 #include "byte_swapping.h"
 #include "tag_groups.h"
+#include "custom_edition_cache.h" /* port: port/linux/game/custom_edition_cache.c */
 
 /* port: port/linux/game/custom_edition_cache.c and cache_files.c */
 boolean custom_edition_cache_tags_loaded(void);
@@ -68,6 +69,9 @@ void *tag_empty_data(
 	return tag_empty_data_bytes;
 }
 
+/* port: (cache_files.c) */
+boolean tag_index_is_group(long tag_index, long group_tag);
+
 long verify_tag_reference(
 	const struct tag_reference *reference)
 {
@@ -106,8 +110,8 @@ void* tag_data_get_pointer(
 {
 	/* port: Halo PC reads a Custom Edition map's tags unchecked, and maps
 	made for it can hold an offset past a tag data's end, which never
-	stopped a game there (docs/custom_edition_caches.md): it gets the empty
-	data below without an assertion. Xbox maps keep theirs */
+	stopped a game there: it gets the empty data below without an
+	assertion. This build's maps keep theirs */
 	if (!custom_edition_cache_tags_loaded())
 	{
 		match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3073, size>=0);

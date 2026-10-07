@@ -9,11 +9,12 @@ each file is, whether it can be loaded, and why not
 
 A Custom Edition cache is loaded with the resource maps it needs, looked for
 in DIRECTORY (by default the cache's own directory): bitmaps.map, sounds.map
-and loc.map. A cache that loads is then converted for this build as far as its
-bytes alone go (custom_edition_cache_convert), and --dump-tags writes the
-converted tags, as they would sit at 0x40440000, to FILE. Every file gets a
-block of "key: value" lines; the exit status is 0 when every file was
-recognized and every Custom Edition cache loaded and converted.
+and loc.map. OpenSauce caches are refused. A cache that loads is then
+converted for this build as far as its bytes alone go
+(custom_edition_cache_convert), and --dump-tags writes the converted tags,
+as they would sit at 0x40440000, to FILE. Every file gets a block of
+"key: value" lines; the exit status is 0 when every file was recognized and
+every Custom Edition cache loaded and converted.
 */
 
 /* ---------- headers */
@@ -149,7 +150,17 @@ static void print_identity(
 	printf("file_length: 0x%" PRIx32 "\n", identity->file_length);
 	printf("tag_data: 0x%" PRIx32 "+0x%" PRIx32 "\n", identity->tag_data_offset, identity->tag_data_size);
 	printf("checksum: 0x%08" PRIx32 "\n", identity->checksum);
-	printf("opensauce_header: %s\n", identity->has_opensauce_header ? "yes" : "no");
+
+	return;
+}
+
+/* the path of the resource map of `type` a cache needs */
+static void resource_map_path(
+	char const *maps_directory,
+	enum resource_map_type type,
+	char *path)
+{
+	snprintf(path, PATH_BYTES, "%s%s.map", maps_directory, resource_map_type_describe(type));
 
 	return;
 }
@@ -163,7 +174,6 @@ static int report_custom_edition_cache(
 	{
 		"checksum mismatch",
 		"trailing data",
-		"OpenSauce tags",
 	};
 	struct stdio_source resource_sources[NUMBER_OF_RESOURCE_MAP_TYPES];
 	struct resource_map resource_map_storage[NUMBER_OF_RESOURCE_MAP_TYPES];
@@ -180,7 +190,7 @@ static int report_custom_edition_cache(
 	{
 		char path[PATH_BYTES];
 
-		snprintf(path, PATH_BYTES, "%s%s.map", maps_directory, resource_map_type_describe((enum resource_map_type)type));
+		resource_map_path(maps_directory, (enum resource_map_type)type, path);
 		if (!stdio_source_open(&resource_sources[type], path))
 		{
 			printf("resource_map.%s: %s (not found)\n", resource_map_type_describe((enum resource_map_type)type), path);

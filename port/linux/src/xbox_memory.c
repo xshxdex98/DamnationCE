@@ -34,10 +34,9 @@ virtual window at start-up and allocates page-granular blocks inside it:
 placed requests at exactly the address asked for, the rest top-down as the
 Xbox kernel does.
 
-The experimental Halo Custom Edition map loading needs the window Custom
-Edition tag data are linked to, 0x40440000, reserved the same way when the
-game.custom_edition setting is on (docs/custom_edition_caches.md).
-#endif
+Halo Custom Edition maps need the window their tag data is linked to,
+0x40440000, reserved the same way when the game.custom_edition setting is on
+(port/linux/game/custom_edition_cache.c).
 */
 
 #include "platform.h"
@@ -169,7 +168,7 @@ static void custom_edition_tag_cache_reserve(void)
 	{
 		if (result != MAP_FAILED)
 			munmap(result, CUSTOM_EDITION_TAG_CACHE_BYTES);
-		platform_log("cannot reserve the Custom Edition tag cache at %p (%s)",
+		platform_log("cannot reserve the Custom Edition tag cache at %p (%s): Custom Edition maps cannot run",
 			wanted, strerror(errno));
 	}
 #endif

@@ -2992,12 +2992,7 @@ static boolean multiplayer_level_list_initialize(
 	char map_name[256];
 	struct ui_widget_definition *definition = ui_widget_definition_get(widget->definition_tag_index);
 	short level_count = 13;
-	/* the Xbox levels, then the Custom Edition maps in the maps folder
-	(port/linux/game/custom_edition_maps.c) */
-	char **levels = custom_edition_maps_level_list(
-		event_handler_functions.multiplayer_levels,
-		level_count,
-		&level_count);
+	char **levels;
 
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1228,
 		definition->type == 2,
@@ -3005,6 +3000,11 @@ static boolean multiplayer_level_list_initialize(
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1229,
 		definition->child_count == 3,
 		"expected 3 list items for 'multiplayer level list' widget");
+	/* port: the Xbox levels, then the Custom Edition maps, looked for again
+	as the list opens (port/linux/game/custom_edition_maps.c) */
+	custom_edition_maps_look_again();
+	levels = custom_edition_maps_level_list(event_handler_functions.multiplayer_levels, level_count,
+		&level_count);
 	widget->parameters.list.list_items = levels;
 	widget->parameters.list.number_of_items = level_count;
 	if (saved_game_file_retrieve_last_used_multiplayer_map(map_name))
@@ -5667,6 +5667,12 @@ static boolean multiplayer_level_select(
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1298,
 		level_list->parameters.list.selected_index >= 0 && level_list->parameters.list.selected_index < level_list->parameters.list.number_of_items,
 		"invalid multiplayer level specified from 'multiplayer level list' list widget");
+	if (level_list->parameters.list.selected_index < 0 ||
+		level_list->parameters.list.selected_index >= level_list->parameters.list.number_of_items ||
+		!levels)
+	{
+		return FALSE;
+	}
 	map_name = levels[level_list->parameters.list.selected_index];
 	file = fopen("d:\\map_automation.txt", "r");
 	if (file)
@@ -5937,19 +5943,23 @@ short ui_widget_port_multiplayer_maps(
 	short *last_used)
 {
 	char map_name[256];
+	short level_count;
 	short level_index;
+	/* (the Xbox levels, then the Custom Edition maps:
+	port/linux/game/custom_edition_maps.c) */
+	char **levels = custom_edition_maps_level_list(event_handler_functions.multiplayer_levels, 13, &level_count);
 
-	*names = (char const *const *)event_handler_functions.multiplayer_levels;
+	*names = (char const *const *)levels;
 	*last_used = 0;
 	if (saved_game_file_retrieve_last_used_multiplayer_map(map_name))
 	{
-		for (level_index = 0; level_index < 13; level_index++)
+		for (level_index = 0; level_index < level_count; level_index++)
 		{
-			if (!_stricmp(map_name, event_handler_functions.multiplayer_levels[level_index]))
+			if (!_stricmp(map_name, levels[level_index]))
 				*last_used = level_index;
 		}
 	}
-	return 13;
+	return level_count;
 }
 
 /* the multiplayer levels: the Xbox's 13, then the Custom Edition maps in the
@@ -5970,9 +5980,13 @@ one; FALSE if this build cannot play it with others (said) */
 boolean ui_widget_port_multiplayer_map_choose(
 	short level_index)
 {
-	if (level_index < 0 || level_index >= 13)
+	char const *const *levels;
+	short last_used;
+	short level_count = ui_widget_port_multiplayer_maps(&levels, &last_used);
+
+	if (level_index < 0 || level_index >= level_count)
 		return FALSE;
-	return ui_widget_port_multiplayer_level_choose(event_handler_functions.multiplayer_levels[level_index]);
+	return ui_widget_port_multiplayer_level_choose(levels[level_index]);
 }
 
 /* the same, by the level's name (an Xbox level or a Custom Edition map) */
@@ -6036,7 +6050,9 @@ boolean ui_widget_port_cooperative_level_choose(
 	struct network_game_server *server = global_network_game_server_get();
 	struct game_variant variant;
 
-	if (!server || !map_name || !custom_edition_maps_campaign(custom_edition_maps_display_index(map_name)))
+	/* (a campaign level, or a Custom Edition campaign map's:
+	port/linux/game/custom_edition_maps.c) */
+	if (!server || !map_name || !custom_edition_maps_level_campaign(map_name))
 		return FALSE;
 	csmemset(&variant, 0, sizeof(variant));
 	ustrncpy(variant.human_readable_game_description, L"Co-op",

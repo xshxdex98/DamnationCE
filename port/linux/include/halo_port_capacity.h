@@ -21,8 +21,9 @@ The Xbox game state is 0x345000 bytes at 0x80061000 and ends where the tag
 cache begins (0x803A6000). Cache files are linked to that tag cache address,
 so the game state cannot grow in place. The native builds put a 16 MB game
 state above the tag cache (which ends at 0x819A6000), inside the Xbox memory
-window (0x80000000-0xA0000000, Android's to 0x88000000: port/linux/src/platform.h) and below everything
-the window hands out top-down (texture and sound caches, Direct3D resources).
+window (0x80000000-0xA0000000, Android's to 0x88000000:
+port/linux/src/platform.h) and below everything the window hands out
+top-down (texture and sound caches, Direct3D resources).
 
 The CPU part holds about 17.2 MB of pools at the sizes below (the Xbox pools
 fill 3,165,260 of its 0x305000 bytes); the GPU part holds only the decal

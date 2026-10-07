@@ -3,7 +3,10 @@ CACHE_FILE_FORMATS.H
 
 Recognition, validation and loading of the Halo 1 map files that this build
 did not ship with: Halo Custom Edition caches (version 609) and the Custom
-Edition resource maps bitmaps.map, sounds.map and loc.map. docs/custom_edition_caches.md
+Edition resource maps bitmaps.map, sounds.map and loc.map. A cache that
+needs OpenSauce (its header asks for memory upgrades, mod data files and the
+like) is refused; one that only carries OpenSauce's header and tags is run as
+stock Custom Edition runs it, without them. docs/custom_edition_caches.md
 defines what each milestone (recognize, load, run) means, which of them this
 module reaches, and the evidence behind every layout used here.
 
@@ -39,9 +42,10 @@ does at 0x803A6000: 0x40440000, above a 0x440000-byte game state at
 examined puts its structure BSPs at the top of that room. */
 #define CUSTOM_EDITION_TAG_CACHE_ADDRESS 0x40440000UL
 #define CUSTOM_EDITION_TAG_CACHE_BYTES 0x01700000UL
-/* the largest map: Halo PC's were 384 MiB, and Invader builds larger ones that Chimera runs. This build
-reads a map by its offsets, so the map need only fit before the sounds it
-decodes in the combined offset space (custom_edition_cache.c) */
+/* the largest map: Halo PC's were 384 MiB, and Invader builds larger ones
+that Chimera runs. This build reads a map by its offsets, so the map need
+only fit before the sounds it decodes in the combined offset space
+(custom_edition_cache.c) */
 #define CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES 0x30000000UL
 
 enum cache_file_format
@@ -78,9 +82,6 @@ enum custom_edition_warning
 	_custom_edition_warning_checksum_mismatch_bit,
 	/* bytes after the end the header declares that nothing refers to */
 	_custom_edition_warning_trailing_data_bit,
-	/* the map holds OpenSauce's project_yellow ('yelo') or
-	project_yellow_globals ('gelo') tags */
-	_custom_edition_warning_opensauce_tags_bit,
 
 	NUMBER_OF_CUSTOM_EDITION_WARNINGS
 };
@@ -102,10 +103,8 @@ enum cache_file_status
 	_cache_file_status_bad_file_length,
 	_cache_file_status_compressed_cache,
 	_cache_file_status_bad_tag_data_range,
-
-	/* built with OpenSauce's memory upgrades, mod data files or game state
-	upgrades, which only OpenSauce provides */
-	_cache_file_status_needs_opensauce,
+	/* OpenSauce's header, asking for what only OpenSauce has */
+	_cache_file_status_opensauce_cache,
 
 	/* the tag index */
 	_cache_file_status_bad_tag_index_signature,
@@ -176,9 +175,6 @@ struct cache_file_identity
 	uint32_t checksum;
 	char name[CACHE_FILE_STRING_BYTES];
 	char build[CACHE_FILE_STRING_BYTES];
-	/* the map was built with OpenSauce's tools, which leave a header of
-	their own in the cache header */
-	int has_opensauce_header;
 
 	/* resource maps */
 	enum resource_map_type resource_map_type;
@@ -317,6 +313,12 @@ struct custom_edition_conversion_report
 	/* HUD element placements with Halo PC's high resolution scale, whose
 	scale was halved */
 	int32_t hud_placements_rescaled;
+	/* HUD meters whose minimum alpha (Halo PC's, where the Xbox's meters
+	have an overlays block) was taken out */
+	int32_t hud_meter_alphas_cleared;
+	/* weapon functions of Halo PC's inputs this build has not, made the
+	nearest it has */
+	int32_t weapon_functions_converted;
 	/* 1 when the multiplayer hint that a key shows the score was made to
 	name the Xbox button */
 	int32_t score_hint_converted;
@@ -348,11 +350,10 @@ enum cache_file_status cache_file_identify(
 	struct cache_file_identity *identity);
 
 /* The format of a cache header already in memory (CACHE_FILE_HEADER_BYTES
-bytes), from its signatures and version alone, and whether it carries an
-OpenSauce header: for callers that hold a header but not its file. */
+bytes), from its signatures and version alone: for callers that hold a
+header but not its file. */
 enum cache_file_format cache_file_header_format(
-	void const *header,
-	int *has_opensauce_header);
+	void const *header);
 
 enum cache_file_status resource_map_open(
 	struct cache_file_source *source,
@@ -383,9 +384,9 @@ their bytes need to change: every shader's type as this build numbers them,
 transparent chicago extended shaders made transparent chicago shaders,
 bitmaps and sound permutations in the state of ones not yet drawn or played
 and naming their own tags, sounds this build cannot decode made unplayable,
-and animation overlays naming animations that do not exist made to name
-none; and what this build can of the Halo PC behaviours the map named
-`map_name` relies on. Returns the first problem: tags already converted stay
+animation overlays naming animations that do not exist made to name none;
+and what this build can of the Halo PC behaviours the map named `map_name`
+relies on. Returns the first problem: tags already converted stay
 converted. */
 enum cache_file_status custom_edition_cache_convert(
 	uint8_t *tag_cache,

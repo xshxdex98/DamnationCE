@@ -1,4 +1,5 @@
-"""Tests for loading Custom Edition caches (port/linux/game/cache_file_formats.c).
+"""Tests for loading Custom Edition caches, and refusing those that need
+OpenSauce (port/linux/game/cache_file_formats.c).
 
 The tests build complete but tiny Custom Edition caches and resource maps in
 memory, so no game data is needed or stored, and run the report tool
@@ -31,7 +32,6 @@ BASE = 0x40440000
 STALE_HANDLE = 0xE1AB0037
 TAG_CACHE_BYTES = 0x01700000
 HEADER_BYTES = 0x800
-NEEDS_OPENSAUCE = "the map needs OpenSauce: it uses its memory upgrades, mod data files or game state upgrades"
 NONE = 0xFFFFFFFF
 
 STRICT_FLAGS = ["-Wall", "-Wextra", "-Wpedantic", "-Werror"]
@@ -351,17 +351,6 @@ def add_animation_graph(blob, overlay_animation_index):
     return graph
 
 
-def add_script_nodes(blob, scenario, maximum, count):
-    """The scenario's script syntax data: a data array of `maximum` 20-byte
-    nodes, `count` of them in use."""
-    array = blob.reserve(0x38 + maximum * 20)
-    blob.put(array, b"script node\0")
-    blob.u16(array + 0x20, maximum)
-    blob.u16(array + 0x22, 20)
-    blob.u16(array + 0x2E, count)
-    blob.data(scenario + 0x474, 0x38 + maximum * 20, data_address=array)
-
-
 BSP_MATERIAL = {"vertex_count": 3, "lightmap_vertex_count": 3, "bitmap_index": 0, "vertex_type": 0,
                 "vertices_size": None, "vertices_offset": 0x3C0, "normal": (0.0, 0.0, 1.0)}
 BSP_MATERIAL_OFFSET = 0x2C0
@@ -406,7 +395,7 @@ class Map:
     def __init__(self, opensauce_flags=None, trailing=b"",
                  extra_tags=(), bsp_gap=None, bitmap_pixels_size=16, sound_samples_size=32,
                  font_style_reference=NONE, pitch_ranges=1, bsp_sizes=(0x1000,), sound_compression=1,
-                 model=None, bsp_material=None, shaders=(), animation_overlay=None, script_nodes=None,
+                 model=None, bsp_material=None, shaders=(), animation_overlay=None,
                  weapon_hud=None, hud_bitmap_flags=None, in_map_bitmap=None, strings_name="test\\strings",
                  strings=("hello", "world!"), name=b"test", tags_checksum=0):
         self.bsp_sizes = bsp_sizes
@@ -420,7 +409,6 @@ class Map:
         self.bsp_material = bsp_material
         self.shaders = shaders
         self.animation_overlay = animation_overlay
-        self.script_nodes = script_nodes
         self.weapon_hud = weapon_hud
         self.hud_bitmap_flags = hud_bitmap_flags
         # (width, height, type, format, flags) of the bitmap kept in the map
@@ -428,7 +416,8 @@ class Map:
         self.strings_name = strings_name
         self.strings = strings
         self.addresses = {}
-        # the flags of an OpenSauce header, None for none
+        # OpenSauce's header (its signature, version 1 and these flags) where a
+        # Custom Edition cache has padding, when not None
         self.opensauce_flags = opensauce_flags
         self.trailing = trailing
         self.extra_tags = extra_tags
@@ -571,8 +560,6 @@ class Map:
                 tag_data.u16(address_of["test\\in map bitmap"] + 6, self.hud_bitmap_flags)
                 hud_bitmap_index = [name for _, name, _ in tags].index("test\\in map bitmap")
             address_of["test\\weapon hud"] = add_weapon_hud(tag_data, self.weapon_hud, hud_bitmap_index)
-        if self.script_nodes is not None:
-            add_script_nodes(tag_data, scenario, *self.script_nodes)
         for tag_index, (group_name, name, external) in enumerate(tags):
             if name in address_of:
                 tag_data.u32(instances + tag_index * 0x20 + 0x14, address_of[name])
@@ -592,7 +579,7 @@ class Map:
         struct.pack_into("<h", header, 0x60, 1)
         struct.pack_into("<I", header, 0x7FC, code("foot"))
         if self.opensauce_flags is not None:
-            struct.pack_into("<I2xH", header, 0x70, code("yelo"), self.opensauce_flags)
+            struct.pack_into("<IhH", header, 0x70, code("yelo"), 1, self.opensauce_flags)
         checksum = zlib.crc32(bytes(data[bsp_offset:bsp_offset + sum(self.bsp_sizes)]))
         checksum = zlib.crc32(model_data, checksum)
         checksum = zlib.crc32(bytes(tag_data.bytes), checksum)
@@ -643,7 +630,6 @@ def test_minimal_custom_edition_cache_loads_with_every_resource(report_tool, tmp
     assert returncode == 0
     assert report["format"] == "Custom Edition cache"
     assert report["version"] == "609" and report["build"] == "01.00.00.0609" and report["name"] == "test"
-    assert report["opensauce_header"] == "no"
     assert report["load"] == "ok"
     assert report["tag_cache_bytes"] == hex(TAG_CACHE_BYTES)
     assert report["tags"] == "9" and report["scenario_tag"] == "0"
@@ -725,25 +711,6 @@ def test_resource_maps_are_recognized_by_type(report_tool, tmp_path):
     assert [b["resource_items"] for b in blocks] == ["2", "2", "3"]
 
 
-def test_opensauce_header_is_loaded_past(report_tool, tmp_path):
-    """OpenSauce's tools leave a header of their own; bigass_v3's sets no
-    flags."""
-    path = Map(opensauce_flags=0).write(tmp_path)
-    returncode, report = report_one(report_tool, path)
-    assert returncode == 0
-    assert report["opensauce_header"] == "yes"
-    assert report["load"] == "ok"
-
-
-@pytest.mark.parametrize("flags", [1, 2, 8])
-def test_caches_needing_opensauce_are_refused(report_tool, tmp_path, flags):
-    """memory upgrades, mod data files, game state upgrades"""
-    path = Map(opensauce_flags=flags).write(tmp_path)
-    returncode, report = report_one(report_tool, path)
-    assert returncode == 1
-    assert report["identify"] == NEEDS_OPENSAUCE
-
-
 def test_trailing_data_is_reported_not_rejected(report_tool, tmp_path):
     path = Map(trailing=b"\xAA" * 100).write(tmp_path)
     returncode, report = report_one(report_tool, path)
@@ -760,12 +727,31 @@ def test_checksum_mismatch_is_reported_not_rejected(report_tool, tmp_path):
     assert report["warnings"] == "checksum mismatch"
 
 
-def test_opensauce_tags_are_reported(report_tool, tmp_path):
+OPENSAUCE_REFUSED = ("an OpenSauce map that needs OpenSauce (its header asks for memory upgrades, mod data files or "
+                     "the like), which this build does not run")
+
+
+@pytest.mark.parametrize("flags", [1, 2, 4, 1 << 15])
+def test_caches_that_need_opensauce_are_refused(report_tool, tmp_path, flags):
+    """A cache whose OpenSauce header asks for anything of OpenSauce's
+    (memory upgrades, mod data files, any flag) is refused as it is
+    identified."""
+    path = Map(opensauce_flags=flags).write(tmp_path)
+    returncode, report = report_one(report_tool, path)
+    assert returncode == 1
+    assert report["identify"] == OPENSAUCE_REFUSED
+    assert "load" not in report
+
+
+def test_caches_that_only_carry_opensauce_data_load(report_tool, tmp_path):
+    """A cache with OpenSauce's header asking for nothing, and its
+    project_yellow and project_yellow_globals tags, runs as stock Custom
+    Edition runs it: neither is read (SPV3's backwards-compatible a50.map)."""
     path = Map(opensauce_flags=0, extra_tags=[("yelo", "test\\project yellow", False),
                                               ("gelo", "test\\project yellow globals", False)]).write(tmp_path)
     returncode, report = report_one(report_tool, path)
     assert returncode == 0
-    assert report["warnings"] == "OpenSauce tags"
+    assert report["identify"] == "ok" and report["load"] == "ok"
 
 
 def test_resource_maps_are_found_in_the_maps_directory_option(report_tool, tmp_path):
@@ -968,18 +954,6 @@ def test_sounds_this_build_cannot_decode_are_made_unplayable(report_tool, tmp_pa
     assert returncode == 0
     assert report["sounds_undecodable"] == "1"
     assert u32_at(tags, cache.addresses["test\\sound"] + 0x98) == 0
-
-
-def test_opensauce_script_nodes_are_refused(report_tool, tmp_path):
-    returncode, report, _ = converted(report_tool, Map(script_nodes=(28501, 600)), tmp_path)
-    assert returncode == 1
-    assert report["convert"] == NEEDS_OPENSAUCE
-    assert report["convert_problem_tag"] == "0"
-
-
-def test_stock_script_nodes_are_left_alone(report_tool, tmp_path):
-    _, report, _ = converted(report_tool, Map(script_nodes=(19001, 600)), tmp_path)
-    assert report["convert"] == "ok"
 
 
 def test_animation_overlays_naming_missing_animations_are_disabled(report_tool, tmp_path):
@@ -1374,7 +1348,7 @@ def test_seeded_corruption_never_crashes_the_loader(report_tool, tmp_path):
     """Sampled robustness, not proof: flip bytes in the header, tag index,
     tag data and resource maps of a valid cache and require a clean verdict
     (exit 0 or 1, checked by run_report) every time."""
-    cache = Map(opensauce_flags=0)
+    cache = Map()
     pristine = cache.build()
     resource_maps = cache.resource_maps()
     generator = random.Random(20260926)
@@ -1442,20 +1416,16 @@ def test_real_maps_resource_maps_are_valid(report_tool, real_maps):
     assert [b["resource_map"] for b in blocks] == ["ok", "ok", "ok"]
 
 
-def test_real_maps_every_other_cache_is_recognized_and_explained(report_tool, real_maps):
-    """Each cache that is not a stock one either loads, names what it lacks
-    or says it needs OpenSauce."""
-    paths = [path for path in sorted(real_maps.glob("*.map"))
-             if path.stem not in STOCK_CUSTOM_EDITION_MAPS and path.stem not in ("bitmaps", "sounds", "loc")]
+def test_real_maps_opensauce_caches_are_recognized(report_tool, real_maps):
+    """Each .yelo map present is either refused for needing OpenSauce or
+    identified as a Custom Edition cache (a .yelo that asks for nothing of
+    OpenSauce's; the game never looks for .yelo files)."""
+    paths = sorted(real_maps.glob("*.yelo"))
     if not paths:
         pytest.skip("no other caches present")
     _, blocks = run_report(report_tool, *paths)
     for block in blocks:
-        name = Path(block["file"]).name
-        assert block["identify"] in ("ok", NEEDS_OPENSAUCE), name
-        assert block["format"] == "Custom Edition cache", name
-        if block["identify"] == "ok":
-            assert block["milestone.run"].startswith("not observed by this tool"), name
+        assert block["identify"] in (OPENSAUCE_REFUSED, "ok"), block["file"]
 
 
 def test_real_maps_convert_as_recorded(report_tool, real_maps):

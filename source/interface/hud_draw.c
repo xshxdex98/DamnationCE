@@ -697,18 +697,28 @@ static void hud_draw_multitexture_overlay(
 				1.0f : 1.0f/overlay->map_scale[map_index].i;
 			real scale_y = overlay->map_scale[map_index].j == 0.0f ?
 				1.0f : 1.0f/overlay->map_scale[map_index].j;
-			/* port: a linear map is sampled in texels, so the 0 to 1 that
-			the element's (not interface) bitmap spans becomes the map's width
-			and height. The Xbox gave maps whose sides are not powers of two
-			(all of them linear) one over their size, which samples a single
-			texel. Halo PC's interface bitmaps are linear at any size, so
-			bigass_v3's dynamic DMR reticle drew as a square */
-			if (TEST_FLAG(parameters.map[map_index]->flags, _bitmap_linear_bit))
+			boolean non_power_of_two =
+				((parameters.map[map_index]->width-1)&parameters.map[map_index]->width) != 0 ||
+				((parameters.map[map_index]->height-1)&parameters.map[map_index]->height) != 0;
+
+			/* port: on a Halo Custom Edition map, a linear map is sampled in
+			texels, so the 0 to 1 that the element's (not interface) bitmap
+			spans becomes the map's width and height: Halo PC's interface
+			bitmaps are linear at any size, and bigass_v3's dynamic DMR reticle
+			drew as a square. This build's maps keep the Xbox's scale */
+			if (custom_edition_cache_tags_loaded() && TEST_FLAG(parameters.map[map_index]->flags, _bitmap_linear_bit))
 			{
 				parameters.map_texture_scale[map_index].i =
 					(real)parameters.map[map_index]->width;
 				parameters.map_texture_scale[map_index].j =
 					(real)parameters.map[map_index]->height;
+			}
+			else if (!custom_edition_cache_tags_loaded() && non_power_of_two)
+			{
+				parameters.map_texture_scale[map_index].i =
+					1.0f/(real)parameters.map[map_index]->width;
+				parameters.map_texture_scale[map_index].j =
+					1.0f/(real)parameters.map[map_index]->height;
 			}
 			else
 			{

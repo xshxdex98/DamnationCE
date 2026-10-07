@@ -254,6 +254,7 @@ const char *platform_custom_edition_root(void)
 
 		found = 1;
 		snprintf(root, sizeof(root), "%s", config_string("paths.custom_edition"));
+		trim_separators(root);
 		snprintf(maps, sizeof(maps), "%s/maps", root);
 		if (root[0] && posix_stat(maps, &information) != 0)
 		{
