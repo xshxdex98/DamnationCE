@@ -169,6 +169,9 @@ void *halo_custom_edition_tag_cache(void);
 (xbox_textures.c; also declared for the game there) */
 void halo_custom_edition_texels_channels(const void *texels, unsigned char channel_order);
 void halo_custom_edition_texels_forget(void);
+/* whether a HUD meter is being drawn, for the texels drawn in a meter's
+channel order only then (rasterizer_xbox_dynavobgeom.c) */
+void halo_hud_meter_drawing(int drawing);
 
 /* ---------- guest memory write tracking (memory_watch.c)
 

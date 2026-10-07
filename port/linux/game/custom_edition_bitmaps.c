@@ -612,20 +612,25 @@ boolean custom_edition_reordered_bitmaps_find(
 		weapon_hud_statics_note(tag_cache, loaded_bytes, weapon_hud);
 	}
 
-	/* which keep their channels as they are */
+	/* which keep their channels as they are, but for a meter's: the renderer
+	samples those in the meter's order while a meter draws them */
 	bitmap_index = 0;
 	while (bitmap_index < globals->reordered_bitmap_count)
 	{
 		struct reordered_bitmap *bitmap = &globals->reordered_bitmaps[bitmap_index];
 
+		if (bitmap->drawn_otherwise && bitmap->channel_order == _custom_edition_channels_hud_meter)
+		{
+			bitmap->channel_order = _custom_edition_channels_hud_meter_when_metered;
+			bitmap->drawn_otherwise = FALSE;
+		}
 		if (bitmap->drawn_otherwise)
 		{
 			error(
 				_error_silent,
-				"custom edition: bitmap %d of '%s' is drawn with Halo PC's %s channels and otherwise too, and keeps its channels as they are",
+				"custom edition: bitmap %d of '%s' is drawn with Halo PC's multipurpose map channels and otherwise too, and keeps its channels as they are",
 				bitmap->bitmap_index,
-				custom_edition_cache_tag_name(tag_cache, loaded_bytes, DATUM_INDEX_TO_ABSOLUTE_INDEX(bitmap->handle)),
-				bitmap->channel_order == _custom_edition_channels_multipurpose ? "multipurpose map" : "HUD meter");
+				custom_edition_cache_tag_name(tag_cache, loaded_bytes, DATUM_INDEX_TO_ABSOLUTE_INDEX(bitmap->handle)));
 			*bitmap = globals->reordered_bitmaps[--globals->reordered_bitmap_count];
 			kept_count++;
 		}
