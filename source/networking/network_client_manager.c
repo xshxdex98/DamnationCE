@@ -392,6 +392,11 @@ symbols in this file:
 #include "networking/network_server_manager.h"
 #include "text/unicode.h"
 
+#ifdef HALO_GAME_BROWSER
+/* server/src/dedicated.c's */
+boolean dedicated_server_active(void);
+#endif
+
 /* ---------- constants */
 
 enum
@@ -1498,9 +1503,8 @@ boolean network_game_client_add_player(
 #ifdef HALO_GAME_BROWSER
 	/* the dedicated server plays no one on its own machine (server/src/dedicated.c):
 	its pregame screen's players stay out */
-	{ boolean dedicated_server_active(void);
-	  if (dedicated_server_active())
-		return TRUE; }
+	if (dedicated_server_active())
+		return TRUE;
 #endif
 
 	/* port: the pregame screen asks each frame until the host's settings
@@ -1822,9 +1826,8 @@ boolean network_game_client_remove_player(
 #ifdef HALO_GAME_BROWSER
 			/* the dedicated server never had a player of its own
 			(server/src/dedicated.c): a player leaving is not its cue to go */
-			{ boolean dedicated_server_active(void);
-			  if (dedicated_server_active())
-				network_player_index = 0; }
+			if (dedicated_server_active())
+				network_player_index = 0;
 #endif
 			if (network_player_index == MAXIMUM_NUMBER_OF_PLAYERS)
 			{
@@ -3223,12 +3226,6 @@ boolean network_game_client_set_team(
 
 
 #ifdef HALO_GAME_BROWSER
-/* the game list's game whose invite this machine joined (the Online Games
-screen, port/linux/game/browser_screen.c): joined once its host's game is
-advertised through the tunnel. The host is told by its XNADDR's abEnet,
-the identifier its invite starts with (port/linux/src/xnet.c). 1: joining,
-0: not advertised yet, -1: it cannot be joined (another version: the
-player is told) */
 /* the host's identifier an invite starts with (its first 12 hex digits);
 FALSE if it is not one */
 static boolean network_game_client_invite_identifier(
@@ -3255,6 +3252,12 @@ static boolean network_game_client_invite_identifier(
 	return TRUE;
 }
 
+/* the game list's game whose invite this machine joined (the Online Games
+screen, port/linux/game/browser_screen.c): joined once its host's game is
+advertised through the tunnel. The host is told by its XNADDR's abEnet,
+the identifier its invite starts with (port/linux/src/xnet.c). 1: joining,
+0: not advertised yet, -1: it cannot be joined (another version: the
+player is told) */
 long network_game_client_join_invite_host(
 	char const *invite)
 {

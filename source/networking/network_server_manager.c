@@ -478,6 +478,8 @@ symbols in this file:
 /* port: the map picker forgets the game Online Games created
 (port/linux/game/map_screen.c) */
 void map_screen_server_disposed(void);
+/* server/src/dedicated.c's */
+boolean dedicated_server_active(void);
 #endif
 #include "interface/player_ui.h"
 #include "tag_files/tag_files.h"
@@ -3027,13 +3029,9 @@ boolean server_has_a_player_on_each_machine(
 			}
 
 #ifdef HALO_GAME_BROWSER
-			{
-				/* (a dedicated server's own machine has none: server/src/dedicated.c) */
-				boolean dedicated_server_active(void);
-
-				if (!has_a_player && dedicated_server_active())
-					continue;
-			}
+			/* (a dedicated server's own machine has none) */
+			if (!has_a_player && dedicated_server_active())
+				continue;
 #endif
 			if (!has_a_player)
 				return FALSE;
@@ -3081,12 +3079,8 @@ boolean network_game_server_host_alone(
 	long client_machine_index;
 
 #ifdef HALO_GAME_BROWSER
-	{
-		boolean dedicated_server_active(void);
-
-		if (dedicated_server_active())
-			return FALSE;
-	}
+	if (dedicated_server_active())
+		return FALSE;
 #endif
 	for (client_machine_index = 0;
 		client_machine_index < MAXIMUM_NETWORK_MACHINE_COUNT;
