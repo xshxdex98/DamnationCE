@@ -368,6 +368,52 @@ static boolean model_local_nodes_make(
 	return TRUE;
 }
 
+/* Gives each part of `model` that names a shader past the model's shaders
+the model's last one, rather than the map refused: bigass_v3's oak tree has
+geometries left from a third shader the tag no longer has, which no region
+permutation draws, beside the same ones drawn with its leaves (its last
+shader). Halo PC reads such a part's shader from past the model's
+shaders. A model with no shaders is refused. */
+static void custom_edition_model_part_shaders_bound(
+	struct model *model,
+	char const *name)
+{
+	long bound = 0;
+	long geometry_index;
+
+	if (model->shaders.count < 1)
+		return;
+	for (geometry_index = 0; geometry_index < model->geometries.count; geometry_index++)
+	{
+		struct model_geometry const *geometry = TAG_BLOCK_GET_ELEMENT(
+			&model->geometries,
+			geometry_index,
+			struct model_geometry);
+		long part_index;
+
+		for (part_index = 0; part_index < geometry->parts.count; part_index++)
+		{
+			struct custom_edition_model_part *part = TAG_BLOCK_GET_ELEMENT(
+				&geometry->parts,
+				part_index,
+				struct custom_edition_model_part);
+
+			if (part->shader_index < 0 || part->shader_index >= model->shaders.count)
+			{
+				part->shader_index = (short)(model->shaders.count - 1);
+				bound++;
+			}
+		}
+	}
+	if (bound)
+	{
+		error(_error_silent, "custom edition: %ld parts of the model '%s' name shaders it has not got, and are given its last",
+			bound, name);
+	}
+
+	return;
+}
+
 /* Whether this build can draw `model`: every part must pass
 custom_edition_model_part_verify, and a model of more nodes than the
 renderer skins at once must have local nodes (each part few enough). Adds
@@ -736,6 +782,7 @@ boolean custom_edition_models_convert(
 			error(_error_silent, "custom edition: the model '%s', of %ld nodes, is drawn a part's nodes at a time",
 				custom_edition_cache_tag_name(tag_cache, loaded_bytes, tag_index), model->nodes.count);
 		}
+		custom_edition_model_part_shaders_bound(model, custom_edition_cache_tag_name(tag_cache, loaded_bytes, tag_index));
 		if (!custom_edition_model_verify(
 			model,
 			custom_edition_cache_tag_name(tag_cache, loaded_bytes, tag_index),
