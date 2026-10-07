@@ -4,8 +4,7 @@ CUSTOM_EDITION_MAPS.C
 Lists Custom Edition maps for the menus (custom_edition_maps.h).
 
 Whenever the level list opens, the maps folder and then the Halo Custom
-Edition install's maps folder are scanned for CE caches (.map, and
-OpenSauce's .yelo). Multiplayer maps join the level list; campaign maps
+Edition install's maps folder are scanned for CE caches. Multiplayer maps join the level list; campaign maps
 (solo scenarios) are kept apart for co-op. The stock campaign levels get
 display indices here too, so the menus can show them the same way.
 
@@ -315,8 +314,7 @@ static void custom_edition_map_description_read(
 }
 
 /* Adds the file `name`.`extension` from `folder` if it is a CE map that
-isn't listed yet. A .map and a .yelo with the same name count once (the
-loader reads the .map). */
+isn't listed yet (from the folder before). */
 static void custom_edition_map_add(
 	char const *folder,
 	char const *name,
@@ -327,7 +325,7 @@ static void custom_edition_map_add(
 	boolean campaign;
 	short map_index;
 
-	if (csstrcasecmp(extension, "map") && csstrcasecmp(extension, "yelo"))
+	if (csstrcasecmp(extension, "map"))
 	{
 		return;
 	}

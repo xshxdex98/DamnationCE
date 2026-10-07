@@ -1,4 +1,4 @@
-# Halo Custom Edition and OpenSauce caches in the native builds
+# Halo Custom Edition caches in the native builds
 
 Experimental work on branch `experimental/custom-edition-yelo-loading`,
 begun on `bnunu/halo-ce-universal` `main` at `f2fa457f`, and merged since
@@ -6,13 +6,19 @@ with that `main` at `223fa93f` and with `cybersecurity/halo-ce-universal`
 `main` at `cd47170f`. It teaches the native builds (Windows, Linux,
 Android) to recognize, load and, with the `game.custom_edition` setting
 on, run Halo Custom Edition caches (`.map`, cache
-version 609), OpenSauce caches (`.yelo`, and `.map` files with an OpenSauce
-header), with the Custom Edition resource maps `bitmaps.map`, `sounds.map`
-and `loc.map`. The changes to the game sources are not under a condition,
+version 609, with or without the header OpenSauce's tools leave), with the
+Custom Edition resource maps `bitmaps.map`, `sounds.map` and `loc.map`. The changes to the game sources are not under a condition,
 as the rest of the port's are not: upstream has no byte-matching build and
 no `HALO_LINUX` conditions since `4adc3a87`. While it had them, all 621
 matching objects compiled to the same bytes as before (see
 [Verification](#verification)).
+
+**OpenSauce support was removed in 0.3.27.** `.yelo` files are no longer
+looked for or listed, and a map that needs OpenSauce itself (memory upgrades,
+mod data files, game state upgrades, or the upgraded script node array) is
+refused. A `.map` built with OpenSauce's tools that needs none of these
+(`bigass_v3.map`) loads as any other. The records below that name `.yelo`
+maps describe tests made before the removal.
 
 **Three maps have been seen running, with limits.** In the Windows debug
 build, the stock Custom Edition `bloodgulch.map`, the OpenSauce
@@ -34,7 +40,7 @@ usually do.
 
 | Milestone | What it requires | Status |
 | --- | --- | --- |
-| **1. Recognize** | Tell the format and variant from the header alone, check every header field against the file, and name what the map needs: its resource maps, an OpenSauce mod set, memory upgrades | **Done**, in the loader, the report tool and the game (which, by default, names the format and refuses the map) |
+| **1. Recognize** | Tell the format and variant from the header alone, check every header field against the file, and name what the map needs: its resource maps, or OpenSauce | **Done**, in the loader, the report tool and the game (which, by default, names the format and refuses the map) |
 | **2. Load** | Put the map's tag data where its pointers expect it (`0x40440000`), read the tags kept in resource maps and relocate their pointers, and check every tag instance, name and address, every structure BSP (file range, header, lightmap materials), every model part's geometry, every bitmap's pixels and every sound's samples (range in their file), and the header checksum | **Done** in the loader, the report tool (`cache_file_report`) and the game, with the limits under [Assumptions](#assumptions-not-verified) |
 | **3. Run** | The game starts the map, draws it, plays its sounds and runs its scripts | **Reached for `bloodgulch.map`, `beavercreek_halo3.yelo` and `hugeass.map`, as far as observed** (below); not established for any other map, and not for Ogg Vorbis sounds or OpenSauce's own features |
 
@@ -49,8 +55,7 @@ default the first time they run (upstream's settings file,
 before. The Android build's `config.toml` does not list the setting: that
 build was never built with this work (below). Put the map and the stock
 resource maps in the data root's `maps`
-folder (an OpenSauce map built with a mod set needs its
-`maps\data_files\<mod>-bitmaps.map` and so on instead), and start a
+folder, and start a
 multiplayer map without the menus from `init.txt` in the data root:
 
 ```
@@ -59,7 +64,7 @@ map_name levels\test\bloodgulch\bloodgulch
 ```
 
 `map_name` takes the scenario's tag path; only its last part names the file,
-`bloodgulch.map`, or `bloodgulch.yelo` when there is no `.map`. A
+`bloodgulch.map`. A
 multiplayer scenario needs a game variant, or no starting location
 qualifies and no player spawns (`match_game_type` in `game_engine.c`
 accepts none of a map's typed starting locations without a game engine).
@@ -71,11 +76,10 @@ controller's Back button.
 ### In the multiplayer menus
 
 With the setting on, the multiplayer map list offers every Custom Edition
-multiplayer map in the data root's `maps` folder (OpenSauce `.yelo` maps
-among them) after the thirteen Xbox levels, in the order of their names; the
+multiplayer map in the data root's `maps` folder after the thirteen Xbox levels, in the order of their names; the
 pregame lobby and the system link game list show them too
 (`port/linux/game/custom_edition_maps.c`). A map is listed under its file's
-name, `beavercreek_halo3.yelo` as "Beavercreek Halo3", as the level
+name, `hugeass.map` as "Hugeass", as the level
 `levels\test\<name>\<name>`. The game engine keeps a level name in 64
 characters, so a map whose file name is longer than 25 characters is left
 out, as is one named as an Xbox level, which that level already offers. Two
@@ -119,13 +123,10 @@ optional files beside the map give it what the Xbox levels have:
   The message is logged to `debug.txt` in every build
   (`port/linux/game/custom_edition_cache.c`, called from
   `cache_file_header_verify` in `source/cache/cache_files.c`).
-- **An OpenSauce `.yelo` file** is found when there is no `.map` of that name,
-  as OpenSauce looks for one (`cache_file_get_map_path` in
-  `source/cache/cache_files_windows.c`), and refused the same way.
 - **With the setting on**, the platform reserves the address window Custom
-  Edition tag data is linked to, `0x40440000`–`0x426C0000`
+  Edition tag data is linked to, `0x40440000`–`0x41B40000`
   (`port/linux/src/xbox_memory.c`, which reads the setting at start-up,
-  before anything else can map into the window; 36 MB of address space,
+  before anything else can map into the window; 23 MB of address space,
   backed as it is touched), and a Custom Edition map is loaded into it,
   converted as below, and run. It is read in place: it is never copied to
   the cache partition, and every read the game makes of it (structure BSPs,
@@ -153,14 +154,11 @@ be done with each file:
 ```sh
 clang --target=i686-pc-windows-msvc -fuse-ld=lld -Iport/linux/game \
     port/linux/game/cache_file_formats.c port/tools/cache_file_report.c -o cache_file_report.exe
-cache_file_report [--maps DIRECTORY] [--stock-data-files] [--dump-tags FILE] FILE...
+cache_file_report [--maps DIRECTORY] [--dump-tags FILE] FILE...
 ```
 
 Resource maps are looked for next to the cache (or in `--maps`):
-`bitmaps.map`, `sounds.map`, `loc.map`, or `data_files\<mod>-bitmaps.map` and
-so on for an OpenSauce cache built with a mod set. `--stock-data-files` loads
-a mod-set cache with the stock resource maps instead, for inspection only
-(OpenSauce itself refuses such a map). `--dump-tags` writes the converted
+`bitmaps.map`, `sounds.map` and `loc.map`. `--dump-tags` writes the converted
 tags to a file, as they would sit at `0x40440000`.
 
 Loading, step by step (`custom_edition_cache_load`):
@@ -170,12 +168,9 @@ Loading, step by step (`custom_edition_cache_load`):
    size limit (`0x30000000`: Halo PC's was `0x18000000`, and Invader builds
    larger maps, which Chimera runs), no compression, tag data within the
    file and
-   the tag cache (23 MB, or 1.5 times that with memory upgrades). An
-   OpenSauce header at offset `0x70` is checked as OpenSauce checks it:
-   header version 1 or 2, `project_yellow` and `project_yellow_globals` tag
-   versions 2, memory upgrade factor at most 1.5, no undefined flags, a mod
-   name when the mod-set flag is set, and its tag definitions within the file
-   and past its header (bigass_v3's header counts them in its file length).
+   the tag cache (23 MB). An OpenSauce header at offset `0x70` must not set
+   the memory upgrades, mod data files or game state upgrades flags, which
+   only OpenSauce provides.
 2. The tag data is read to the start of the tag cache, which stands for
    `0x40440000`.
 3. The tag index (`tags` signature), every tag instance (its handle must
@@ -229,8 +224,7 @@ changed:
 - **OpenSauce's script nodes.** OpenSauce's memory upgrades make room for
   28501 script syntax nodes instead of 19001, and OpenSauce patches the game
   to accept that. This build takes the scenario's nodes only at its own
-  number, so an upgraded array whose nodes in use fit in 19001 is made that
-  size; one that uses more is refused.
+  number, so a map with the upgraded array is refused.
 - **Animation overlays naming animations that do not exist** are made to
   name none, which the game skips. `beavercreek_halo3.yelo` has two; Custom
   Edition reads past the graph's animations there, and this build's debug
@@ -392,16 +386,15 @@ silences them.
 
 - Supported formats: a complete Custom Edition cache with every kind of
   resource-held tag; several pitch ranges; three structure BSPs; a model;
-  a structure BSP material with and without a lightmap; OpenSauce caches with
-  memory upgrades, appended tag definitions, OpenSauce tags, a mod set
-  present, absent, and substituted; resource maps of each type; the `--maps`
-  option.
+  a structure BSP material with and without a lightmap; a cache with an
+  OpenSauce header and OpenSauce tags, and ones that need OpenSauce refused;
+  resource maps of each type; the `--maps` option.
 - Conversion: every shader group's type; chicago extended shaders with and
   without four-stage maps; a shader with another group's type (given its
   group's);
   bitmaps and sound permutations naming their own tags; sound header fields
   taken from `sounds.map`; an Ogg Vorbis sound made unplayable; upgraded
-  script nodes reduced, stock ones kept, too many refused; animation overlays
+  script nodes refused, stock ones kept; animation overlays
   kept and disabled; HUD placements with the high resolution scale halved
   (in a weapon HUD's statics and crosshair items) and ones without it kept,
   and those drawing a bitmap with either of Halo PC's half scale flags
@@ -409,7 +402,7 @@ silences them.
   the score hint made to name BACK, and a placeholder left alone in another
   string list and in another string.
 - Malformed input: every check of the loader and the conversion, with at
-  least one case each (94 tests: header fields, OpenSauce fields, tag index, instances, names,
+  least one case each (header fields, tag index, instances, names,
   addresses, scenario, structure BSP block, range, header and materials,
   model parts, resource map headers and entries, resource layouts, pixel and
   sample ranges, font style references, tag cache overflow, shader types,
@@ -617,10 +610,7 @@ observed.
   (`0fe82574`), debug and release, with the Windows builds, and ran
   `tools/test_linux_port.py` on Linux: all passed. Only one release run
   was made (above).
-- **OpenSauce itself**: mod sets (none available; the file names are an
-  assumption, below), protected caches, OpenSauce compression parameters,
-  tag symbol or string id storage, and the runtime features `project_yellow`
-  tags drive.
+- **OpenSauce itself**: removed in 0.3.27; maps that need it are refused.
 
 ## Evidence
 
@@ -648,7 +638,7 @@ every layout used was then checked against the sample maps.
 | --- | --- |
 | Cache header layout, version 609, `head`/`foot` signatures | OpenSauce `blamlib/Halo1/cache/cache_files_structures.hpp` (`s_cache_header`) |
 | Tag index (0x28 bytes, instances at 0x28, model data as file offsets) and tag instance (0x20 bytes, resource-map flag at 0x18) | same file (`s_cache_tag_header`, `s_cache_tag_instance`) |
-| OpenSauce header at 0x70 and its fields, versions 1 and 2, validity rules | OpenSauce `YeloLib/Halo1/cache/cache_files_structures_yelo.hpp`, `cache_files_yelo.cpp` (`IsValid`) |
+| OpenSauce header at 0x70 and its flags | OpenSauce `YeloLib/Halo1/cache/cache_files_structures_yelo.hpp` |
 | Tag cache at `0x40440000`, 23 MB; memory upgrades ×1.5; file size limits | OpenSauce `cache_constants.hpp`, `saved_game_constants.hpp`, `blam_memory_upgrades.hpp` |
 | Resource map header and entries | OpenSauce `data_file_structures.hpp` |
 | Groups held by resource maps: bitmaps, sounds, fonts, unicode string lists, HUD message text | OpenSauce `blamlib/Halo1/cache/cache_files.cpp` (`cache_file_data_load`) |
@@ -663,7 +653,6 @@ every layout used was then checked against the sample maps.
 | Font (156 bytes) and unicode string list layouts | BlamLib `Blam/Halo1/Tags/Definitions/Misc.cs`, `Resources.cs` |
 | Bitmap tags in `bitmaps.map` by index, pixels by absolute offset | Reclaimer `Blam/Halo1/CacheFile.cs`, `BitmapTag.cs`, `BitmapsAddressTranslator.cs` |
 | The header checksum: CRC-32 of the structure BSPs (packed from 0x800), the model data and the tag data, not inverted | OpenSauce `cache_files_yelo.cpp` (`CalculateChecksumFromMemoryMap`), `memory_interface_base.cpp` (`CRC`); reproduces the stored checksum of 23 of the 24 sample caches |
-| OpenSauce looks for `<name>.map`, then `<name>.yelo` | OpenSauce `cache_files_yelo.cpp` (`c_map_file_finder`) |
 
 ### Observed (not stated by the sources; established on the sample maps)
 
@@ -696,11 +685,6 @@ every layout used was then checked against the sample maps.
 
 ### Assumptions (not verified)
 
-- **Mod set file names.** OpenSauce keeps mod sets under `maps\data_files\`
-  (`data_file_yelo.cpp`). The loader expects `data_files\<mod>-bitmaps.map`
-  and so on; but the examined source's `BuildName` never appends the mod
-  name, which looks like a defect in that snapshot. No mod set was available
-  to check either.
 - **Placement of resource-held tags.** They are placed after the tag data,
   aligned to 4 bytes, as OpenSauce's unimplemented loader outlines
   (`s_cache_file_data_load_state`); how Custom Edition itself places them is
