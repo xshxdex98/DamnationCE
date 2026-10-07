@@ -857,7 +857,7 @@ boolean cache_file_header_verify(
 	/* the native builds say what a Halo Custom Edition cache is instead of
 	calling it an old version of this build's caches, and still refuse it
 	(port/linux/game/custom_edition_cache.c) */
-	if (custom_edition_cache_refuse(header, header->build, scenario_name, fatal))
+	if (custom_edition_cache_refuse(header, header->build, scenario_name))
 	{
 		return FALSE;
 	}
@@ -879,15 +879,15 @@ boolean cache_file_header_verify(
 		return FALSE;
 	}
 
+	/* port: a cache of another version (an MCC map, say) that is to be
+	loaded is refused with its version named, not stopped on: the game goes
+	back to its menus (the map list's checks pass it by quietly) */
 	if (header->version != 5)
 	{
 		if (fatal)
 		{
-			match_vassert(
-				"c:\\halo\\SOURCE\\cache\\cache_files.c",
-				548,
-				FALSE,
-				csprintf(temporary, "the cache file '%s' is an old version", scenario_name));
+			error(_error_silent, "'%.96s' is a cache of version %ld, which this build cannot run (it runs Xbox caches, 5, and Custom Edition caches, 609)",
+				scenario_name, (long)header->version);
 		}
 
 		return FALSE;
