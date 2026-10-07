@@ -368,7 +368,16 @@ s_bitmap_group_sequence 0x40, s_bitmap_group_sprite 0x20, s_bitmap_data 0x30) */
 #define BITMAP_GROUP_BYTES 0x6C
 #define BITMAP_GROUP_BITMAPS_OFFSET 0x60
 #define BITMAP_DATA_BYTES 0x30
+#define BITMAP_DATA_WIDTH_OFFSET 0x04
+#define BITMAP_DATA_HEIGHT_OFFSET 0x06
+#define BITMAP_DATA_TYPE_OFFSET 0x0A
+#define BITMAP_DATA_FORMAT_OFFSET 0x0C
 #define BITMAP_DATA_FLAGS_OFFSET 0x0E
+#define BITMAP_TYPE_2D 0
+/* the first of the formats a linear bitmap cannot have: DXT1, 3 and 5, and P8 */
+#define BITMAP_FORMAT_DXT1 14
+#define BITMAP_DATA_POWER_OF_TWO_DIMENSIONS_BIT 0
+#define BITMAP_DATA_LINEAR_BIT 4
 #define BITMAP_DATA_PIXELS_OFFSET_OFFSET 0x18
 #define BITMAP_DATA_PIXELS_SIZE_OFFSET 0x1C
 /* the fields the game fills while it draws a bitmap (bitmap_group.h): the
@@ -1079,8 +1088,10 @@ static enum cache_file_status opensauce_header_verify(
 	{
 		return _cache_file_status_bad_opensauce_header;
 	}
+	/* (in the file, past its header: after the cache data, or counted in
+	its length, as bigass_v3's are; only OpenSauce's editing kit reads them) */
 	if (header->definitions_size &&
-		(header->definitions_offset < identity->file_length ||
+		(header->definitions_offset < CACHE_FILE_HEADER_BYTES ||
 		!range_fits(header->definitions_offset, header->definitions_size, identity->file_size) ||
 		!header->definitions_decompressed_size))
 	{
@@ -1109,6 +1120,12 @@ static enum cache_file_status custom_edition_header_verify(
 	if (identity->compressed_file_length)
 	{
 		return _cache_file_status_compressed_cache;
+	}
+	/* Invader leaves the file length 0 (blood_covenantv3), which Halo PC
+	never reads: the cache is the whole file */
+	if (!identity->file_length)
+	{
+		identity->file_length = identity->file_size;
 	}
 	if (identity->file_length < CACHE_FILE_HEADER_BYTES ||
 		identity->file_length > CUSTOM_EDITION_CACHE_FILE_MAXIMUM_BYTES ||
@@ -2313,7 +2330,7 @@ enum cache_file_status custom_edition_cache_load(
 	/* every tag instance, and the tags held by resource maps */
 	for (tag_index_value = 0; tag_index_value < tag_count; tag_index_value++)
 	{
-		uint8_t const *instance = tag_instances + (uint32_t)tag_index_value * TAG_INSTANCE_BYTES;
+		uint8_t *instance = tag_instances + (uint32_t)tag_index_value * TAG_INSTANCE_BYTES;
 		uint32_t group_tag = read_u32(instance + TAG_INSTANCE_GROUP_OFFSET);
 		uint32_t handle = read_u32(instance + TAG_INSTANCE_HANDLE_OFFSET);
 		uint32_t address = read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET);
@@ -2344,11 +2361,15 @@ enum cache_file_status custom_edition_cache_load(
 				return load_fail(&state, _cache_file_status_bad_tag_address, address);
 			}
 		}
-		else if (address ?
-			!tag_cache_offset(&state, address, 1, &offset) :
-			group_tag != STRUCTURE_BSP_GROUP_TAG)
+		else if (group_tag == STRUCTURE_BSP_GROUP_TAG)
 		{
-			/* structure BSPs alone have no address until they are loaded */
+			/* structure BSPs alone have no address until they are loaded;
+			Invader writes the one each loads at (cursed-damnation), which
+			is past the tags */
+			write_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET, 0);
+		}
+		else if (!address || !tag_cache_offset(&state, address, 1, &offset))
+		{
 			return load_fail(&state, _cache_file_status_bad_tag_address, address);
 		}
 	}
@@ -2474,7 +2495,8 @@ enum cache_file_status custom_edition_cache_load(
 
 	/* anything after the cache data and the OpenSauce definitions */
 	data_end = identity->file_length;
-	if (identity->has_opensauce_header && identity->opensauce.definitions_size)
+	if (identity->has_opensauce_header && identity->opensauce.definitions_size &&
+		identity->opensauce.definitions_offset + identity->opensauce.definitions_size > data_end)
 	{
 		data_end = identity->opensauce.definitions_offset + identity->opensauce.definitions_size;
 	}
@@ -2762,10 +2784,43 @@ static void transparent_chicago_extended_convert(
 	return;
 }
 
+static int power_of_two(
+	uint16_t value)
+{
+	return value && !(value & (value - 1));
+}
+
+/* Halo PC draws a 2D bitmap of any size; this build swizzles all but linear
+ones, which takes power-of-two sides. An uncompressed one that has not got
+them is drawn as linear (its first level: linear bitmaps have no others),
+as Halo PC's texture is: birdcage's needler plasma, 3840 by 64. Compressed
+and palettized ones cannot be linear, and are left as they were. */
+static void bitmap_npot_make_linear(
+	uint8_t *bitmap,
+	struct custom_edition_conversion_report *report)
+{
+	uint16_t flags = read_u16(bitmap + BITMAP_DATA_FLAGS_OFFSET);
+	uint16_t width = read_u16(bitmap + BITMAP_DATA_WIDTH_OFFSET);
+	uint16_t height = read_u16(bitmap + BITMAP_DATA_HEIGHT_OFFSET);
+
+	if (read_u16(bitmap + BITMAP_DATA_TYPE_OFFSET) != BITMAP_TYPE_2D ||
+		read_u16(bitmap + BITMAP_DATA_FORMAT_OFFSET) >= BITMAP_FORMAT_DXT1 || flag_is_set(flags, BITMAP_DATA_LINEAR_BIT) ||
+		!width || !height || (power_of_two(width) && power_of_two(height)))
+	{
+		return;
+	}
+	flags = (uint16_t)((flags | 1u << BITMAP_DATA_LINEAR_BIT) & ~(1u << BITMAP_DATA_POWER_OF_TWO_DIMENSIONS_BIT));
+	write_u16(bitmap + BITMAP_DATA_FLAGS_OFFSET, flags);
+	report->bitmaps_made_linear++;
+
+	return;
+}
+
 /* Gives every bitmap of the bitmap tag at `group_offset` (tag `handle`) the
 state the game expects of a bitmap it has not drawn yet: its tag is its own
 (bitmaps.map holds the handles of whatever map it was built with), and it
-has no texture cache block, hardware texture or pixels. */
+has no texture cache block, hardware texture or pixels. One of a size only
+Halo PC draws is made linear (bitmap_npot_make_linear). */
 static void bitmaps_prepare(
 	struct load_state const *state,
 	uint32_t group_offset,
@@ -2794,6 +2849,7 @@ static void bitmaps_prepare(
 		write_u32(bitmap + BITMAP_DATA_CACHE_BLOCK_INDEX_OFFSET, (uint32_t)NO_TAG_INDEX);
 		write_u32(bitmap + BITMAP_DATA_HARDWARE_FORMAT_OFFSET, 0);
 		write_u32(bitmap + BITMAP_DATA_BASE_ADDRESS_OFFSET, 0);
+		bitmap_npot_make_linear(bitmap, report);
 		report->bitmaps_prepared++;
 	}
 

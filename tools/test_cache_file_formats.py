@@ -407,7 +407,8 @@ class Map:
                  extra_tags=(), bsp_gap=None, bitmap_pixels_size=16, sound_samples_size=32,
                  font_style_reference=NONE, pitch_ranges=1, bsp_sizes=(0x1000,), sound_compression=1,
                  model=None, bsp_material=None, shaders=(), animation_overlay=None, script_nodes=None,
-                 weapon_hud=None, hud_bitmap_flags=None, strings_name="test\\strings", strings=("hello", "world!")):
+                 weapon_hud=None, hud_bitmap_flags=None, in_map_bitmap=None, strings_name="test\\strings",
+                 strings=("hello", "world!")):
         self.bsp_sizes = bsp_sizes
         self.sound_compression = sound_compression
         # opt-in tags and content, so the defaults above keep their counts
@@ -418,6 +419,8 @@ class Map:
         self.script_nodes = script_nodes
         self.weapon_hud = weapon_hud
         self.hud_bitmap_flags = hud_bitmap_flags
+        # (width, height, type, format, flags) of the bitmap kept in the map
+        self.in_map_bitmap = in_map_bitmap
         self.strings_name = strings_name
         self.strings = strings
         self.addresses = {}
@@ -541,6 +544,14 @@ class Map:
         tag_data.block(group + 0x60, 1, bitmap)
         tag_data.u32(bitmap + 0x18, pixels_offset)
         tag_data.u32(bitmap + 0x1C, len(in_map_pixels))
+        if self.in_map_bitmap is not None:
+            width, height, kind, bitmap_format, flags = self.in_map_bitmap
+            tag_data.u16(bitmap + 0x04, width)
+            tag_data.u16(bitmap + 0x06, height)
+            tag_data.u16(bitmap + 0x0A, kind)
+            tag_data.u16(bitmap + 0x0C, bitmap_format)
+            tag_data.u16(bitmap + 0x0E, flags)
+        address_of["in map bitmap data"] = bitmap
         address_of["test\\in map bitmap"] = group
         # the header the map keeps of a sound held by sounds.map
         sound = tag_data.reserve(0xA4)
@@ -698,6 +709,15 @@ def test_a_protected_scenario_is_given_the_scenario_group(report_tool, tmp_path)
     assert returncode == 0
     assert report["load"] == "ok"
     assert report["scenario_regrouped"] == "1"
+
+
+def test_a_structure_bsp_instance_with_its_load_address_loads(report_tool, tmp_path):
+    """Invader writes the address a structure BSP loads at in its tag
+    instance (cursed-damnation); it has none until it is loaded."""
+    cache = Map()
+    path = instance_case(1, 0x14, "<I", BASE + 0x1500000)(cache, cache.write(tmp_path))
+    returncode, report = report_one(report_tool, path)
+    assert returncode == 0 and report["load"] == "ok"
 
 
 def test_several_structure_bsps_share_the_top_of_the_tag_cache(report_tool, tmp_path):
@@ -951,6 +971,21 @@ def test_a_shader_with_another_groups_type_is_given_its_groups(report_tool, tmp_
     assert report["shaders_mistyped"] == "1"
     shader = cache.addresses["test\\shader 0"]
     assert u16_at(tags, shader + 0x24) == SHADER_TYPES["swat"][1]
+
+
+@pytest.mark.parametrize("bitmap, made_linear, flags", [
+    ((3840, 64, 0, 11, 0x81), 1, 0x90),  # birdcage's needler plasma: linear, no longer "power of two"
+    ((256, 64, 0, 11, 0x01), 0, 0x01),   # powers of two: swizzled as before
+    ((96, 96, 0, 14, 0x03), 0, 0x03),    # DXT1: linear ones cannot be compressed, so it stays
+    ((96, 96, 0, 17, 0x04), 0, 0x04),    # P8: nor palettized
+    ((96, 96, 2, 11, 0x00), 0, 0x00),    # a cube map: only 2D bitmaps can be linear
+    ((100, 50, 0, 11, 0x10), 0, 0x10),   # linear already
+], ids=["npot", "power of two", "dxt1", "p8", "cube map", "linear"])
+def test_bitmaps_of_sides_only_halo_pc_draws_are_made_linear(report_tool, tmp_path, bitmap, made_linear, flags):
+    cache = Map(in_map_bitmap=bitmap)
+    returncode, report, tags = converted(report_tool, cache, tmp_path)
+    assert returncode == 0 and report["bitmaps_made_linear"] == str(made_linear)
+    assert u16_at(tags, cache.addresses["in map bitmap data"] + 0x0E) == flags
 
 
 def test_bitmaps_name_their_own_tag(report_tool, tmp_path):
@@ -1224,8 +1259,6 @@ MALFORMED_CACHES = {
                           "the scenario's structure BSP block is not valid"),
     "bsp reference to a weapon": (tag_data_case("reference", 0x1C, "<I", (0xE174 + 8) << 16 | 8), "load",
                                   "the scenario's structure BSP block is not valid"),
-    "bsp tag already loaded": (instance_case(1, 0x14, "<I", BASE + 0x28), "load",
-                               "the scenario's structure BSP block is not valid"),
     "bsp beyond file": (tag_data_case("reference", 0x04, "<i", 0x7FFFFF00), "load",
                         "a structure BSP does not fit in the file or in the tag cache"),
     "bsp in header": (tag_data_case("reference", 0x00, "<i", 0x10), "load",
@@ -1291,13 +1324,29 @@ def test_malformed_opensauce_headers_are_rejected(report_tool, tmp_path, case):
     assert report["identify"] == message
 
 
-def test_opensauce_definitions_outside_the_file_are_rejected(report_tool, tmp_path):
+def test_opensauce_definitions_outside_the_file_or_in_its_header_are_rejected(report_tool, tmp_path):
     path = Map(opensauce={"flags": 1, "definitions_offset": 0x10}, definitions=b"x" * 64).write(tmp_path, "test.yelo")
     _, report = report_one(report_tool, path)
     assert report["identify"] == "the OpenSauce tag definitions lie outside the file"
     path = Map(opensauce={"flags": 1, "definitions_offset": 0x7FFFFFF0}, definitions=b"x" * 64).write(tmp_path, "test.yelo")
     _, report = report_one(report_tool, path)
     assert report["identify"] == "the OpenSauce tag definitions lie outside the file"
+
+
+def test_opensauce_definitions_counted_in_the_file_length_are_accepted(report_tool, tmp_path):
+    """bigass_v3's header counts its OpenSauce definitions in the cache's
+    length: the length is the whole file's."""
+    path = Map(opensauce={"flags": 1}, definitions=b"x" * 64).write(tmp_path, "test.yelo")
+    returncode, report = report_one(report_tool, patched(path, 0x08, "<I", path.stat().st_size))
+    assert returncode == 0 and report["identify"] == "ok" and report["load"] == "ok"
+
+
+def test_a_file_length_of_zero_is_the_whole_file(report_tool, tmp_path):
+    """Invader leaves the header's file length 0 (blood_covenantv3)."""
+    path = Map().write(tmp_path, "test.map")
+    returncode, report = report_one(report_tool, patched(path, 0x08, "<I", 0))
+    assert returncode == 0 and report["identify"] == "ok" and report["load"] == "ok"
+    assert report["file_length"] == hex(path.stat().st_size)
 
 
 def test_unterminated_opensauce_strings_are_rejected(report_tool, tmp_path):
