@@ -571,8 +571,12 @@ static struct
 	of one frame: the averages hide a frame that stalls */
 	unsigned long texture_uploads, texture_upload_bytes;
 	unsigned long most_draws, slowest_frame;
-	/* (draws counted when this frame began) */
+	/* ... and how much of the slowest frame went to drawing it, from its
+	first draw to its present: the rest is the game's */
+	unsigned long slowest_frame_drawing;
+	/* (draws counted when this frame began, and when its first was) */
 	unsigned long frame_first_draw;
+	struct timespec frame_drawing_start;
 } stats;
 
 void xgpu_statistics_texture_upload(unsigned long bytes)
@@ -3489,6 +3493,8 @@ static struct program_entry *prepare_draw(BOOL immediate)
 		stats.immediate_draws++;
 	else
 		stats.draws++;
+	if (debug_settings.statistics && !stats.frame_drawing_start.tv_sec)
+		clock_gettime(CLOCK_MONOTONIC, &stats.frame_drawing_start);
 	draw_flush();
 	state_program(entry->program);
 #ifdef HALO_ANDROID
@@ -4935,9 +4941,16 @@ void WINAPI D3DDevice_Present(CONST RECT *source_rectangle, CONST RECT *destinat
 				(now.tv_nsec - last_present.tv_nsec) / 1000000);
 
 			if (milliseconds > stats.slowest_frame)
+			{
 				stats.slowest_frame = milliseconds;
+				stats.slowest_frame_drawing = stats.frame_drawing_start.tv_sec ?
+					(unsigned long)((now.tv_sec - stats.frame_drawing_start.tv_sec) * 1000 +
+						(now.tv_nsec - stats.frame_drawing_start.tv_nsec) / 1000000) :
+					0;
+			}
 		}
 		last_present = now;
+		stats.frame_drawing_start.tv_sec = 0;
 		if (stats.draws - stats.frame_first_draw > stats.most_draws)
 			stats.most_draws = stats.draws - stats.frame_first_draw;
 		stats.frame_first_draw = stats.draws;
@@ -4946,11 +4959,12 @@ void WINAPI D3DDevice_Present(CONST RECT *source_rectangle, CONST RECT *destinat
 	{
 		platform_log("frame %lu: %lu draws, %lu immediate, %lu clears, %lu target changes; skipped %lu no program, %lu no target, %lu link; "
 			"%lu KB mirrored, %lu KB streamed; in 60 frames, %lu textures uploaded (%lu KB), at most %lu draws "
-			"and %lu ms in a frame",
+			"and %lu ms in a frame (%lu of it drawing)",
 			device.frame, stats.draws / stats.presents, stats.immediate_draws / stats.presents, stats.clears / stats.presents,
 			stats.target_changes / stats.presents, stats.skipped_no_program, stats.skipped_no_target, stats.skipped_link,
 			stats.mirrored_bytes / stats.presents / 1024, stats.streamed_bytes / stats.presents / 1024,
-			stats.texture_uploads, stats.texture_upload_bytes / 1024, stats.most_draws, stats.slowest_frame);
+			stats.texture_uploads, stats.texture_upload_bytes / 1024, stats.most_draws, stats.slowest_frame,
+			stats.slowest_frame_drawing);
 		memset(&stats, 0, sizeof(stats));
 	}
 	platform_pump_events();
