@@ -101,6 +101,7 @@ cache_files_structures.hpp, s_cache_tag_header and s_cache_tag_instance) */
 #define TAG_INDEX_BYTES 0x28
 #define TAG_INDEX_INSTANCES_OFFSET 0x00
 #define TAG_INDEX_SCENARIO_OFFSET 0x04
+#define TAG_INDEX_CHECKSUM_OFFSET 0x08
 #define TAG_INDEX_COUNT_OFFSET 0x0C
 #define TAG_INDEX_VERTEX_DATA_OFFSET_OFFSET 0x14
 #define TAG_INDEX_INDEX_DATA_OFFSET_OFFSET 0x1C
@@ -233,6 +234,10 @@ extra flags. */
 #define TRANSPARENT_CHICAGO_EXTENDED_GROUP_TAG 'scex'
 #define TRANSPARENT_CHICAGO_BYTES 0x6C
 #define TRANSPARENT_CHICAGO_EXTENDED_BYTES 0x78
+/* a model shader's flags follow the base, detail after reflection first */
+#define SHADER_MODEL_GROUP_TAG 'soso'
+#define SHADER_MODEL_FLAGS_OFFSET 0x28
+#define SHADER_MODEL_DETAIL_AFTER_REFLECTION_BIT 0
 #define TRANSPARENT_CHICAGO_EXTRA_LAYERS_OFFSET 0x48
 #define TRANSPARENT_CHICAGO_MAPS_OFFSET 0x54
 #define TRANSPARENT_CHICAGO_EXTRA_FLAGS_OFFSET 0x60
@@ -319,6 +324,17 @@ starting with its placement */
 #define HUD_GLOBALS_GROUP_TAG 'hudg'
 #define HUD_GLOBALS_BYTES 0x450
 #define HUD_GLOBALS_MESSAGING_PLACEMENT_OFFSET 0x24
+/* the HUD digits, named by the first of the globals' interface bitmaps
+(Chimera's jason_jones_hacks.cpp): their bitmap, then their metrics in
+bytes (character width, screen width, x and y offset, decimal point and
+colon width) */
+#define GLOBALS_GROUP_TAG 'matg'
+#define GLOBALS_INTERFACE_BITMAPS_OFFSET 0x140
+#define INTERFACE_BITMAPS_HUD_DIGITS_OFFSET 0xB0
+#define HUD_NUMBER_GROUP_TAG 'hud#'
+#define HUD_NUMBER_BYTES 0x64
+#define HUD_NUMBER_METRICS_OFFSET 0x10
+#define HUD_NUMBER_METRIC_COUNT 6
 
 /* the multiplayer messages: string 100 is the hint that the BACK button
 shows the score, which this build copies verbatim
@@ -3489,9 +3505,138 @@ static void multiplayer_pause_list_convert(
 	return;
 }
 
+/* ---------- Halo PC behaviours */
+
+#define BEHAVIOUR(name) (1U << _custom_edition_behaviour_##name)
+
+static struct custom_edition_behaviour_map
+{
+	char const *map_name;
+	uint32_t tags_checksum;
+	uint32_t behaviours;
+} const custom_edition_behaviour_maps[] =
+{
+#include "custom_edition_behaviours.inc"
+};
+
+#undef BEHAVIOUR
+
+static char const *const custom_edition_behaviour_names[NUMBER_OF_CUSTOM_EDITION_BEHAVIOURS] =
+{
+	"gearbox_chicago_multiply",
+	"gearbox_meters",
+	"gearbox_multitexture_blend_modes",
+	"alternate_bump_attenuation",
+	"gearbox_bump_attenuation",
+	"invert_detail_after_reflection",
+	"embedded_lua",
+	"hud_number_scale",
+	"disable_bitmap_hud_scale_flags",
+	"old_widescreen_fix",
+	"gearbox_shader_environment_types",
+	"block_multitexture_overlays",
+};
+
+/* the behaviours the map named `map_name` relies on, found as Chimera finds
+them: by its name in lower case and its tag data checksum */
+static uint32_t custom_edition_behaviours_find(
+	char const *map_name,
+	uint32_t tags_checksum)
+{
+	char name[CACHE_FILE_STRING_BYTES];
+	size_t index;
+
+	for (index = 0; index + 1 < sizeof(name) && map_name[index]; index++)
+	{
+		char character = map_name[index];
+
+		name[index] = (char)(character >= 'A' && character <= 'Z' ? character - 'A' + 'a' : character);
+	}
+	name[index] = 0;
+	for (index = 0; index < sizeof(custom_edition_behaviour_maps) / sizeof(custom_edition_behaviour_maps[0]); index++)
+	{
+		struct custom_edition_behaviour_map const *map = &custom_edition_behaviour_maps[index];
+
+		if (map->tags_checksum == tags_checksum && !strcmp(map->map_name, name))
+			return map->behaviours;
+	}
+
+	return 0;
+}
+
+/* disable_bitmap_hud_scale_flags: every bitmap's Halo PC HUD scale flags
+cleared, before the HUD placements are converted by them */
+static void bitmap_hud_scale_flags_clear(
+	struct load_state const *state)
+{
+	uint32_t const scale_flags = 1U << BITMAP_HALF_HUD_SCALE_BIT | 1U << BITMAP_FORCE_HUD_HIGH_RESOLUTION_SCALE_BIT;
+	int32_t tag_index = NO_TAG_INDEX;
+	uint8_t *bitmap;
+
+	while ((bitmap = custom_edition_cache_tag_next(
+		state->tag_cache, state->used_bytes, BITMAP_GROUP_TAG, BITMAP_GROUP_BYTES, &tag_index)) != NULL)
+	{
+		write_u16(bitmap + BITMAP_GROUP_FLAGS_OFFSET,
+			(uint16_t)(read_u16(bitmap + BITMAP_GROUP_FLAGS_OFFSET) & ~scale_flags));
+	}
+
+	return;
+}
+
+/* hud_number_scale: the HUD digits' metrics halved, rounding up, and their
+bitmap given Halo PC's half HUD scale, so every number's digits are drawn
+at half size (adapted from Chimera, by SnowyMouse) */
+static void hud_digits_halve(
+	struct load_state const *state)
+{
+	int32_t tag_index = NO_TAG_INDEX;
+	uint8_t *globals = custom_edition_cache_tag_next(state->tag_cache, state->used_bytes, GLOBALS_GROUP_TAG,
+		GLOBALS_INTERFACE_BITMAPS_OFFSET + TAG_BLOCK_BYTES, &tag_index);
+	uint8_t *interface_bitmaps = globals ?
+		custom_edition_cache_block_element(state->tag_cache, state->used_bytes,
+			globals + GLOBALS_INTERFACE_BITMAPS_OFFSET, 0, INTERFACE_BITMAPS_HUD_DIGITS_OFFSET + TAG_REFERENCE_BYTES) :
+		NULL;
+	uint8_t *digits = interface_bitmaps ?
+		custom_edition_cache_tag_get(state->tag_cache, state->used_bytes,
+			read_u32(interface_bitmaps + INTERFACE_BITMAPS_HUD_DIGITS_OFFSET + TAG_REFERENCE_INDEX_OFFSET),
+			HUD_NUMBER_GROUP_TAG, HUD_NUMBER_BYTES) :
+		NULL;
+	uint8_t *bitmap;
+	int metric;
+
+	if (!digits)
+	{
+		return;
+	}
+	for (metric = 0; metric < HUD_NUMBER_METRIC_COUNT; metric++)
+	{
+		int value = (int8_t)digits[HUD_NUMBER_METRICS_OFFSET + metric];
+
+		digits[HUD_NUMBER_METRICS_OFFSET + metric] = (uint8_t)(value >= 0 ? (value + 1) / 2 : value / 2);
+	}
+	bitmap = custom_edition_cache_tag_get(state->tag_cache, state->used_bytes,
+		read_u32(digits + TAG_REFERENCE_INDEX_OFFSET), BITMAP_GROUP_TAG, BITMAP_GROUP_BYTES);
+	if (bitmap)
+	{
+		write_u16(bitmap + BITMAP_GROUP_FLAGS_OFFSET,
+			(uint16_t)(read_u16(bitmap + BITMAP_GROUP_FLAGS_OFFSET) | 1U << BITMAP_HALF_HUD_SCALE_BIT));
+	}
+
+	return;
+}
+
+char const *custom_edition_behaviour_name(
+	short behaviour)
+{
+	return behaviour >= 0 && behaviour < NUMBER_OF_CUSTOM_EDITION_BEHAVIOURS ?
+		custom_edition_behaviour_names[behaviour] :
+		"unknown";
+}
+
 enum cache_file_status custom_edition_cache_convert(
 	uint8_t *tag_cache,
 	uint32_t loaded_bytes,
+	char const *map_name,
 	struct custom_edition_conversion_report *report)
 {
 	struct load_state state;
@@ -3507,12 +3652,29 @@ enum cache_file_status custom_edition_cache_convert(
 	{
 		return _cache_file_status_bad_tag_instances_range;
 	}
+	report->behaviours = custom_edition_behaviours_find(map_name, read_u32(tag_cache + TAG_INDEX_CHECKSUM_OFFSET));
+	if (flag_is_set(report->behaviours, _custom_edition_behaviour_disable_bitmap_hud_scale_flags))
+	{
+		bitmap_hud_scale_flags_clear(&state);
+	}
+	if (flag_is_set(report->behaviours, _custom_edition_behaviour_hud_number_scale))
+	{
+		hud_digits_halve(&state);
+	}
 	for (tag_index = 0; tag_index < tag_count; tag_index++)
 	{
 		uint8_t const *instance = instances + (uint32_t)tag_index * TAG_INSTANCE_BYTES;
 		uint32_t group_tag = read_u32(instance + TAG_INSTANCE_GROUP_OFFSET);
 		struct shader_group_type const *shader_type = shader_group_type_get(group_tag);
 		uint32_t offset;
+
+		if (group_tag == SHADER_MODEL_GROUP_TAG &&
+			flag_is_set(report->behaviours, _custom_edition_behaviour_invert_detail_after_reflection) &&
+			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), SHADER_MODEL_FLAGS_OFFSET + 2, &offset))
+		{
+			write_u16(tag_cache + offset + SHADER_MODEL_FLAGS_OFFSET,
+				(uint16_t)(read_u16(tag_cache + offset + SHADER_MODEL_FLAGS_OFFSET) ^ 1U << SHADER_MODEL_DETAIL_AFTER_REFLECTION_BIT));
+		}
 
 		if (group_tag == BITMAP_GROUP_TAG &&
 			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), BITMAP_GROUP_BYTES, &offset))
