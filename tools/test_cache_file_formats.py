@@ -1075,15 +1075,17 @@ def f32_at(tags, address):
 
 def test_hud_elements_with_the_high_resolution_scale_are_halved(report_tool, tmp_path):
     """Halo PC draws them from bitmaps at twice the Xbox's size; this build
-    ignores the flag, so the scale takes it in and the flag goes."""
+    ignores the flag, so the scale takes it in and the flag goes. Halo PC
+    reads it only on statics, meters and numbers: a crosshair's item keeps
+    its scale and flag."""
     cache = Map(weapon_hud=[((1.0, 0.5), 4 | 1), ((1.0, 1.0), 1), ((2.0, 2.0), 4)])
     returncode, report, tags = converted(report_tool, cache, tmp_path)
-    assert returncode == 0 and report["hud_placements_rescaled"] == "2"
+    assert returncode == 0 and report["hud_placements_rescaled"] == "1"
     hud = cache.addresses["test\\weapon hud"]
     statics = u32_at(tags, hud + 0x64)
     items = u32_at(tags, u32_at(tags, hud + 0x88) + 0x38)
     assert (f32_at(tags, statics + 0x28), f32_at(tags, statics + 0x2C), u16_at(tags, statics + 0x30)) == (0.5, 0.25, 1)
-    assert (f32_at(tags, items + 4), f32_at(tags, items + 8), u16_at(tags, items + 0x0C)) == (1.0, 1.0, 0)
+    assert (f32_at(tags, items + 4), f32_at(tags, items + 8), u16_at(tags, items + 0x0C)) == (2.0, 2.0, 4)
 
 
 def test_hud_elements_without_the_high_resolution_scale_keep_theirs(report_tool, tmp_path):
