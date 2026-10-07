@@ -54,7 +54,7 @@ the top of `lobby_screen.c`.
 
 | File | What it does |
 |---|---|
-| `cache_file_formats.c/.h` | Reads Custom Edition and OpenSauce cache files. See `docs/custom_edition_caches.md`. |
+| `cache_file_formats.c/.h` | Reads Custom Edition cache files. See `docs/custom_edition_caches.md`. |
 | `custom_edition_cache.c/.h` | Loads a CE cache into this build's tag layout. |
 | `custom_edition_bitmaps.c`, `_geometry.c`, `_objects.c`, `_scripts.c`, `_sounds.c` | Converts each kind of CE data. |
 | `custom_edition_maps.c/.h` | Lists CE maps (multiplayer and campaign) for the menus, with names and pictures. |

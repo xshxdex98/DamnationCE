@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.27
+
+### Custom Edition maps
+
+- OpenSauce support is gone: `.yelo` maps are no longer found or listed, and
+  a map that needs OpenSauce itself (memory upgrades, mod data files, game
+  state upgrades, its larger script limit) is refused by name instead of
+  loading broken. Maps built with OpenSauce's tools that use none of those,
+  such as bigass_v3, load as before.
+
+Network version 21, as 0.3.25 and 0.3.26: players on any of them can play
+together.
+
 ## 0.3.26
 
 ### Custom Edition HUDs

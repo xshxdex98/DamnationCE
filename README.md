@@ -35,7 +35,7 @@ support and synced AI on top.
 - The menu scene keeps running behind every screen
 
 **Halo Custom Edition maps** (`docs/custom_edition_caches.md`)
-- Custom Edition and OpenSauce (`.yelo`) multiplayer maps load and run
+- Custom Edition multiplayer maps load and run
 - Their Ogg Vorbis sounds play (announcer, dialogue, music)
 - Their scripts run; OpenSauce-only effect calls do nothing instead of
   refusing the map
