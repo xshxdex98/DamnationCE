@@ -22,12 +22,9 @@ with the host ABI.
 #include <sys/ioctl.h>
 #ifdef __APPLE__
 #include <crt_externs.h>
-#include <stdlib.h>
 #else
 #include <sys/random.h>
-#include <sys/random.h>
 #endif
-#include <spawn.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -37,6 +34,12 @@ with the host ABI.
 #include <unistd.h>
 
 #include "posix.h"
+
+/* older macOS has no MSG_NOSIGNAL; its sockets are SO_NOSIGPIPE instead
+(posix_socket) */
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
 
 /* Winsock error codes (winsockx.h) */
 #define WSAEINTR 10004
@@ -711,12 +714,6 @@ posix_ulong posix_resolve_ipv4(const char *host)
 	return address;
 }
 
-/* macOS has no MSG_NOSIGNAL; its sockets are SO_NOSIGPIPE instead
-(posix_socket_create) */
-#ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL 0
-#endif
-
 /* ---------- the process and the desktop */
 
 int posix_command_line_argument(int index, char *buffer, posix_ulong size)
@@ -1012,12 +1009,7 @@ int posix_discord_write(int handle, const void *buffer, int length)
 {
 	for (;;)
 	{
-#ifdef MSG_NOSIGNAL
 		ssize_t written = send(handle, buffer, (size_t)length, MSG_NOSIGNAL | MSG_DONTWAIT);
-#else
-		/* (SO_NOSIGPIPE on the socket) */
-		ssize_t written = send(handle, buffer, (size_t)length, MSG_DONTWAIT);
-#endif
 
 		if (written >= 0)
 			return (int)written;
