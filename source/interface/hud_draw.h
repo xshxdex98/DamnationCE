@@ -85,12 +85,6 @@ struct multitexture_overlay_hud_element_effector_definition
 	long unusedBC[8];
 };
 
-struct weapon_hud_overlay_definition
-{
-	struct tag_reference bitmap;
-	struct tag_block items;
-};
-
 struct weapon_hud_overlay_item
 {
 	struct hud_placement_definition placement;
@@ -124,7 +118,6 @@ struct meter_hud_element_definition;
 struct number_hud_element_definition;
 struct tag_block;
 struct static_hud_element_definition;
-struct weapon_hud_overlay_definition;
 
 /* ---------- prototypes/HUD_DRAW.C */
 

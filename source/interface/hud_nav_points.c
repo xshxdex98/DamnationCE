@@ -65,20 +65,6 @@ enum hud_waypoint_arrow_flags
 
 /* ---------- structures */
 
-struct hud_waypoint_arrow
-{
-	char name[0x20];
-	long unused0[2];
-	unsigned long color;
-	real opacity;
-	real fade;
-	short sequence_indices[3];
-	short pad;
-	long unused1[4];
-	unsigned long flags;
-	long unused2[6];
-};
-
 struct hud_nav_point_datum
 {
 	short nav_index;

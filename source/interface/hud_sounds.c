@@ -13,17 +13,7 @@ HUD_SOUNDS.C
 #include "sound/game_sound.h"
 #include "sound/sound_manager.h"
 #include "tag_files/tag_groups.h"
-
-/* ---------- structures */
-
-struct hud_sound_definition
-{
-	struct tag_reference sound;
-	unsigned long state_flags;
-	real scale;
-	/* Reserved by the tag format; the original block accessor proves the 0x38-byte element size. */
-	byte reserved[32];
-};
+#include "interface/hud_definitions.h"
 
 /* ---------- public code */
 

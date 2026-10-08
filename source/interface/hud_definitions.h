@@ -210,6 +210,50 @@ typedef char hud_placement_definition_size_assert[
 typedef char hud_color_definition_size_assert[
 	sizeof(struct hud_color_definition) == 0x20 ? 1 : -1];
 
+struct static_hud_element_definition
+{
+	struct hud_placement_definition placement;
+	struct tag_reference interface_bitmap;
+	struct hud_color_definition colors;
+	short sequence_index;
+	short pad;
+	struct tag_block multitexture_overlays;
+	long unused0[1];
+};
+
+typedef char static_hud_element_definition_size_assert[
+	sizeof(struct static_hud_element_definition) == 0x68 ? 1 : -1];
+
+struct meter_hud_element_definition
+{
+	struct hud_placement_definition placement;
+	struct tag_reference meter_bitmap;
+	unsigned long min_color;
+	unsigned long max_color;
+	unsigned long flash_color;
+	unsigned long empty_color;
+	byte meter_flags;
+	byte minimum_value;
+	short sequence_index;
+	byte alpha_multiplier;
+	byte alpha_bias;
+	short value_scale;
+	real opacity;
+	real fade;
+	unsigned long disabled_color;
+	struct tag_block multitexture_overlays;
+	long unused0[1];
+};
+
+typedef char meter_hud_element_definition_size_assert[
+	sizeof(struct meter_hud_element_definition) == 0x68 ? 1 : -1];
+
+struct weapon_hud_overlay_definition
+{
+	struct tag_reference bitmap;
+	struct tag_block items;
+};
+
 struct number_hud_element_definition
 {
 	struct hud_placement_definition placement;
@@ -234,6 +278,61 @@ struct hud_message_text_definition
 
 typedef char hud_message_text_definition_size_assert[
 	sizeof(struct hud_message_text_definition) == 0x80 ? 1 : -1];
+
+struct grenade_count_panel_definition
+{
+	struct static_hud_element_definition background;
+	struct number_hud_element_definition numbers;
+	short flash_cutoff;
+	short pad;
+};
+
+typedef char grenade_count_panel_definition_size_assert[
+	sizeof(struct grenade_count_panel_definition) == 0xC0 ? 1 : -1];
+
+struct grenade_hud_interface_definition
+{
+	struct hud_absolute_placement_definition absolute_placement;
+	struct static_hud_element_definition background;
+	struct grenade_count_panel_definition grenade_count_panel;
+	struct weapon_hud_overlay_definition overlays;
+	struct tag_block warning_sounds;
+	long unused0[17];
+	struct tag_reference messaging_icon_bitmap;
+	long unused1[12];
+};
+
+typedef char grenade_hud_interface_definition_size_assert[
+	sizeof(struct grenade_hud_interface_definition) == 0x1F8 ? 1 : -1];
+
+struct hud_sound_definition
+{
+	struct tag_reference sound;
+	unsigned long state_flags;
+	real scale;
+	/* Reserved by the tag format; the original block accessor proves the 0x38-byte element size. */
+	byte reserved[32];
+};
+
+typedef char hud_sound_definition_size_assert[
+	sizeof(struct hud_sound_definition) == 0x38 ? 1 : -1];
+
+struct hud_waypoint_arrow
+{
+	char name[0x20];
+	long unused0[2];
+	unsigned long color;
+	real opacity;
+	real fade;
+	short sequence_indices[3];
+	short pad;
+	long unused1[4];
+	unsigned long flags;
+	long unused2[6];
+};
+
+typedef char hud_waypoint_arrow_size_assert[
+	sizeof(struct hud_waypoint_arrow) == 0x68 ? 1 : -1];
 
 /* ---------- globals */
 
