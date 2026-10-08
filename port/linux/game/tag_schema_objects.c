@@ -33,7 +33,6 @@ itmc).
 #include "units/units.h"
 #include "ai/ai.h"
 #include "units/vehicles.h"
-#include "camera/bored_camera.h"
 #include "units/bipeds.h"
 #include "ai/actors.h"
 #include "physics/physics_variables.h"
@@ -91,8 +90,6 @@ enum
 };
 
 /* ---------- structures */
-
-typedef char verify_unit_camera_track_size[sizeof(struct unit_camera_track) == 0x1C ? 1 : -1];
 
 typedef char verify_unit_initial_weapon_size[sizeof(struct unit_initial_weapon) == 0x24 ? 1 : -1];
 

@@ -33,7 +33,7 @@ fonts and strings (font, str#, ustr); matg and mply.
 #include "physics/breakable_surfaces.h"
 #include "interface/ui_widget.h"
 #include "effects/effects.h"
-#include "camera/following_camera.h"
+#include "camera/camera_track_definitions.h"
 #include "interface/hud_draw.h"
 #include "interface/hud_messaging.h"
 #include "interface/virtual_keyboard.h"
@@ -177,9 +177,6 @@ enum
 };
 
 typedef char verify_effect_particles_definition_size[sizeof(struct effect_particles_definition) == 0xE8 ? 1 : -1];
-
-typedef char verify_camera_track_control_point_size[sizeof(struct camera_track_control_point) == 0x3C ? 1 : -1];
-typedef char verify_camera_track_definition_size[sizeof(struct camera_track_definition) == 0x30 ? 1 : -1];
 
 /* hud_draw.c's */
 struct number_hud_element_definition

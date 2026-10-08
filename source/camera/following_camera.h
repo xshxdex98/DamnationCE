@@ -10,23 +10,8 @@ FOLLOWING_CAMERA.H
 
 #include "cseries/cseries.h"
 #include "math/real_math.h"
-#include "tag_files/tag_groups.h"
 
 /* ---------- structures */
-
-struct camera_track_definition
-{
-	unsigned long flags;
-	struct tag_block control_points;
-	long unused[8];
-};
-
-struct camera_track_control_point
-{
-	real_vector3d position;
-	real_quaternion orientation;
-	long unused[8];
-};
 
 struct following_camera
 {
@@ -43,8 +28,8 @@ struct following_camera
 	real distance_scale;
 };
 
-struct following_camera_control;
-struct following_camera_result;
+struct camera_control;
+struct observer_command;
 
 /* ---------- prototypes/FOLLOWING_CAMERA.C */
 
@@ -52,8 +37,8 @@ void following_camera_new(
 	struct following_camera *camera);
 void following_camera_update(
 	struct following_camera *camera,
-	struct following_camera_control const *controls,
-	struct following_camera_result *result);
+	struct camera_control const *controls,
+	struct observer_command *result);
 void following_camera_deterministic(
 	long unit_index,
 	real_point3d *position,

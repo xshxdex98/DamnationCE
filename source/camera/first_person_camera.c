@@ -5,8 +5,8 @@ FIRST_PERSON_CAMERA.C
 /* ---------- headers */
 
 #include "first_person_camera.h"
+#include "director.h"
 #include "observer.h"
-#include "static_camera.h"
 
 #include "game/players.h"
 #include "objects/objects.h"
@@ -15,28 +15,12 @@ FIRST_PERSON_CAMERA.C
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
 
-/* ---------- structures */
-
-struct first_person_camera_action
-{
-	short local_player_index;
-};
-
-struct first_person_camera_result
-{
-	struct camera_command command;
-	byte reserved4C[3];
-	boolean field_4F;
-	byte reserved50[0x10];
-	real transition_time;
-};
-
 /* ---------- prototypes */
 
 static void first_person_camera_for_unit_and_vector(
 	long unit_index,
 	real_vector3d const *forward,
-	struct camera_command *result);
+	struct observer_command *result);
 
 /* ---------- public code */
 
@@ -97,7 +81,7 @@ void first_person_camera_deterministic(
 
 void first_person_camera_fake(
 	long unit_index,
-	struct camera_command *result)
+	struct observer_command *result)
 {
 	struct unit_datum *unit;
 
@@ -108,23 +92,23 @@ void first_person_camera_fake(
 
 void first_person_camera_update(
 	struct first_person_camera *camera,
-	struct first_person_camera_action const *action,
-	struct first_person_camera_result *result)
+	struct camera_control const *controls,
+	struct observer_command *result)
 {
 	long unit_index;
 	real_vector3d facing_direction;
 
-	unit_index = player_control_get_unit_index(action->local_player_index);
+	unit_index = player_control_get_unit_index(controls->local_player_index);
 	match_assert("c:\\halo\\SOURCE\\camera\\first_person_camera.c", 157, camera);
 	match_assert("c:\\halo\\SOURCE\\camera\\first_person_camera.c", 158, result);
-	player_control_get_facing_direction(action->local_player_index, &facing_direction);
-	first_person_camera_for_unit_and_vector(unit_index, &facing_direction, &result->command);
-	result->command.field_of_view = player_control_get_field_of_view(action->local_player_index);
-	if (camera->field_of_view != result->command.field_of_view)
+	player_control_get_facing_direction(controls->local_player_index, &facing_direction);
+	first_person_camera_for_unit_and_vector(unit_index, &facing_direction, result);
+	result->field_of_view = player_control_get_field_of_view(controls->local_player_index);
+	if (camera->field_of_view != result->field_of_view)
 	{
-		result->transition_time = 0.18f;
-		result->field_4F = TRUE;
-		camera->field_of_view = result->command.field_of_view;
+		result->parameter_timers[_observer_command_parameter_field_of_view] = 0.18f;
+		result->parameter_flags[_observer_command_parameter_field_of_view] = FLAG(_observer_time_valid_bit);
+		camera->field_of_view = result->field_of_view;
 	}
 
 	return;
@@ -135,12 +119,12 @@ void first_person_camera_update(
 static void first_person_camera_for_unit_and_vector(
 	long unit_index,
 	real_vector3d const *forward,
-	struct camera_command *result)
+	struct observer_command *result)
 {
 	result->timer = 0.f;
 	result->flags = 0;
-	result->offset = *global_zero_vector3d;
-	result->depth = 0.f;
+	result->focus_offset = *global_zero_vector3d;
+	result->focus_distance = 0.f;
 	result->forward = *forward;
 	result->field_of_view = DEGREES_TO_RADIANS(70.f);
 	observer_up_from_forward(&result->forward, &result->up);
@@ -154,8 +138,8 @@ static void first_person_camera_for_unit_and_vector(
 		struct unit_datum *unit;
 
 		unit = unit_get(unit_index);
-		unit_get_camera_position(unit_index, &result->position);
-		object_get_velocities(unit_index, &result->velocity, NULL);
+		unit_get_camera_position(unit_index, &result->focus_position);
+		object_get_velocities(unit_index, &result->focus_velocity, NULL);
 		if (unit->object.parent_object_index != NONE)
 		{
 			struct unit_datum *vehicle;
@@ -182,7 +166,7 @@ static void first_person_camera_for_unit_and_vector(
 						&marker,
 						1))
 					{
-						result->position = marker.matrix.position;
+						result->focus_position = marker.matrix.position;
 						result->forward = marker.matrix.forward;
 						result->up = marker.matrix.up;
 					}
@@ -204,46 +188,10 @@ static void first_person_camera_for_unit_and_vector(
 			}
 		}
 
-		result->flags = FLAG(0);
+		result->flags = FLAG(_observer_command_valid_bit);
 	}
 
-	match_vassert(
-		"c:\\halo\\SOURCE\\camera\\first_person_camera.c",
-		133,
-		!(result->flags & FLAG(0)) ||
-		(valid_real_vector3d_axes2(&result->forward, &result->up) &&
-			valid_real(result->position.x) && result->position.x>=-5000.f && result->position.x<=5000.f &&
-			valid_real(result->position.y) && result->position.y>=-5000.f && result->position.y<=5000.f &&
-			valid_real(result->position.z) && result->position.z>=-5000.f && result->position.z<=5000.f &&
-			valid_real(result->offset.i) && result->offset.i>=-5000.f && result->offset.i<=5000.f &&
-			valid_real(result->offset.j) && result->offset.j>=-5000.f && result->offset.j<=5000.f &&
-			valid_real(result->offset.k) && result->offset.k>=-5000.f && result->offset.k<=5000.f &&
-			valid_real_vector3d(&result->velocity) &&
-			valid_real(result->depth) && result->depth>=0.f && result->depth<=5000.f &&
-			valid_real(result->field_of_view) && result->field_of_view>=0.001f && result->field_of_view<=_pi / 2.f &&
-			valid_real(result->timer) && result->timer>=0.f && result->timer<=3600.f),
-		csprintf(
-			temporary,
-			"Invalid camera command.\nF: (%f, %f, %f) U: (%f, %f, %f)\nP: (%f, %f, %f) O: (%f, %f, %f)\nD: %f V: (%f, %f, %f), FOV: %f, T: %f, FL: %ld",
-			result->forward.i,
-			result->forward.j,
-			result->forward.k,
-			result->up.i,
-			result->up.j,
-			result->up.k,
-			result->position.x,
-			result->position.y,
-			result->position.z,
-			result->offset.i,
-			result->offset.j,
-			result->offset.k,
-			result->depth,
-			result->velocity.i,
-			result->velocity.j,
-			result->velocity.k,
-			result->field_of_view,
-			result->timer,
-			result->flags));
+	match_assert_valid_observer_command("c:\\halo\\SOURCE\\camera\\first_person_camera.c", 133, result);
 
 	return;
 }

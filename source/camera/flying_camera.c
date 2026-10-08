@@ -5,8 +5,9 @@ FLYING_CAMERA.C
 /* ---------- headers */
 
 #include "flying_camera.h"
+#include "director.h"
 #include "observer.h"
-#include "static_camera.h"
+
 #include "rasterizer/rasterizer_console_vars.h"
 
 /* ---------- public code */
@@ -36,8 +37,8 @@ void flying_camera_new_from_point_and_vector(
 
 void flying_camera_update(
 	struct flying_camera *camera,
-	struct flying_camera_action const *controls,
-	struct camera_command *result)
+	struct camera_control const *controls,
+	struct observer_command *result)
 {
 	match_assert("c:\\halo\\SOURCE\\camera\\flying_camera.c", 41, camera);
 	match_assert("c:\\halo\\SOURCE\\camera\\flying_camera.c", 42, controls);
@@ -79,58 +80,22 @@ void flying_camera_update(
 
 		set_real_vector3d(
 			&translation,
-			cosine_yaw*controls->translation.i - sine_yaw*controls->translation.j,
-			cosine_yaw*controls->translation.j + sine_yaw*controls->translation.i,
-			controls->translation.k);
+			cosine_yaw*controls->position_delta.i - sine_yaw*controls->position_delta.j,
+			cosine_yaw*controls->position_delta.j + sine_yaw*controls->position_delta.i,
+			controls->position_delta.k);
 		position.x = camera->position.x + translation.i;
 		position.y = camera->position.y + translation.j;
 		position.z = camera->position.z + translation.k;
 		camera->position = position;
 	}
 
-	result->position = camera->position;
-	result->offset = *global_zero_vector3d;
-	result->depth = 0.f;
+	result->focus_position = camera->position;
+	result->focus_offset = *global_zero_vector3d;
+	result->focus_distance = 0.f;
 	result->field_of_view = camera->field_of_view;
 	result->flags = FLAG(_observer_command_valid_bit);
 
-	match_vassert(
-		"c:\\halo\\SOURCE\\camera\\flying_camera.c",
-		149,
-		!TEST_FLAG(result->flags, _observer_command_valid_bit) ||
-		(valid_real_vector3d_axes2(&result->forward, &result->up) &&
-			valid_real(result->position.x) && result->position.x>=-5000.f && result->position.x<=5000.f &&
-			valid_real(result->position.y) && result->position.y>=-5000.f && result->position.y<=5000.f &&
-			valid_real(result->position.z) && result->position.z>=-5000.f && result->position.z<=5000.f &&
-			valid_real(result->offset.i) && result->offset.i>=-5000.f && result->offset.i<=5000.f &&
-			valid_real(result->offset.j) && result->offset.j>=-5000.f && result->offset.j<=5000.f &&
-			valid_real(result->offset.k) && result->offset.k>=-5000.f && result->offset.k<=5000.f &&
-			valid_real_vector3d(&result->velocity) &&
-			valid_real(result->depth) && result->depth>=0.f && result->depth<=5000.f &&
-			valid_real(result->field_of_view) && result->field_of_view>=0.001f && result->field_of_view<=_pi / 2.f &&
-			valid_real(result->timer) && result->timer>=0.f && result->timer<=3600.f),
-		csprintf(
-			temporary,
-			"Invalid camera command.\nF: (%f, %f, %f) U: (%f, %f, %f)\nP: (%f, %f, %f) O: (%f, %f, %f)\nD: %f V: (%f, %f, %f), FOV: %f, T: %f, FL: %ld",
-			result->forward.i,
-			result->forward.j,
-			result->forward.k,
-			result->up.i,
-			result->up.j,
-			result->up.k,
-			result->position.x,
-			result->position.y,
-			result->position.z,
-			result->offset.i,
-			result->offset.j,
-			result->offset.k,
-			result->depth,
-			result->velocity.i,
-			result->velocity.j,
-			result->velocity.k,
-			result->field_of_view,
-			result->timer,
-			result->flags));
+	match_assert_valid_observer_command("c:\\halo\\SOURCE\\camera\\flying_camera.c", 149, result);
 
 	return;
 }

@@ -10,15 +10,8 @@ BORED_CAMERA.H
 
 #include "cseries/cseries.h"
 #include "math/real_math.h"
-#include "tag_files/tag_groups.h"
 
 /* ---------- structures */
-
-struct unit_camera_track
-{
-	struct tag_reference track;
-	long unused[3];
-};
 
 struct bored_camera
 {
@@ -27,8 +20,8 @@ struct bored_camera
 	long boredom_count;
 };
 
-struct camera_action;
-struct camera_command;
+struct camera_control;
+struct observer_command;
 
 /* ---------- prototypes/BORED_CAMERA.C */
 
@@ -36,8 +29,8 @@ void bored_camera_new(
 	struct bored_camera *camera);
 void bored_camera_update(
 	struct bored_camera *camera,
-	struct camera_action const *action,
-	struct camera_command *result);
+	struct camera_control const *controls,
+	struct observer_command *result);
 
 boolean is_bored(
 	void);
