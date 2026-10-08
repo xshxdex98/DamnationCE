@@ -55,7 +55,7 @@ void SetRenderStateSmart(
 extern void *global_d3d_device;
 extern struct pixel_shader_definition pixel_shader;
 
-static boolean bss_00465e27 = {0};
+static boolean motion_sensor_blips_ready = {0};
 
 /* ---------- public code */
 
@@ -78,12 +78,12 @@ void _rasterizer_hud_motion_sensor_blip_begin(
 		27,
 		global_d3d_device);
 
-	bss_00465e27 = FALSE;
+	motion_sensor_blips_ready = FALSE;
 	if (rasterizer_debug_options.draw_hud_motion_sensor &&
 		_texture_cache_bitmap_get_hardware_format(blip_bitmap, FALSE, TRUE) &&
 		_texture_cache_bitmap_get_hardware_format(large_blip_bitmap, FALSE, TRUE))
 	{
-		bss_00465e27 = TRUE;
+		motion_sensor_blips_ready = TRUE;
 		rasterizer_set_target(4, FALSE, FALSE, TRUE, FALSE);
 		rasterizer_set_texture_bitmap_data(0, blip_bitmap);
 
@@ -217,7 +217,7 @@ void _rasterizer_hud_motion_sensor_blip_draw(
 	rasterizer_set_texture_bitmap_data(
 		0,
 		large_blip ? large_blip_bitmap : blip_bitmap);
-	if (rasterizer_debug_options.draw_hud_motion_sensor && bss_00465e27)
+	if (rasterizer_debug_options.draw_hud_motion_sensor && motion_sensor_blips_ready)
 	{
 		radius = size * 0.0625f;
 		scaled_position.x = position->x * -0.03125f;
@@ -289,7 +289,7 @@ void _rasterizer_hud_motion_sensor_blip_end(
 
 	if (rasterizer_debug_options.draw_hud_motion_sensor)
 	{
-		if (bss_00465e27 &&
+		if (motion_sensor_blips_ready &&
 			_texture_cache_bitmap_get_hardware_format(sweep_bitmap, FALSE, TRUE) &&
 			_texture_cache_bitmap_get_hardware_format(sweep_mask_bitmap, FALSE, TRUE))
 		{
@@ -557,7 +557,7 @@ void _rasterizer_hud_motion_sensor_blip_end(
 		}
 	}
 
-	if (rasterizer_debug_options.draw_hud_motion_sensor && bss_00465e27)
+	if (rasterizer_debug_options.draw_hud_motion_sensor && motion_sensor_blips_ready)
 	{
 		rasterizer_set_target(
 			global_window_parameters.rasterizer_target,

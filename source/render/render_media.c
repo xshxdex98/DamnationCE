@@ -38,7 +38,7 @@ typedef char frame_level_of_detail_size_assert[
 
 /* ---------- globals */
 
-static struct render_media_globals bss_004c004c = {0};
+static struct render_media_globals render_media_globals = {0};
 
 const real media_wave_amplitude = 0.05f;
 
@@ -73,8 +73,8 @@ struct frame_level_of_detail render_target_frame_level_of_detail =
 void render_media_initialize_for_new_map(
 	void)
 {
-	bss_004c004c.initialized = TRUE;
-	bss_004c004c.render_target_index = 0;
+	render_media_globals.initialized = TRUE;
+	render_media_globals.render_target_index = 0;
 
 	return;
 }
@@ -82,7 +82,7 @@ void render_media_initialize_for_new_map(
 void render_media_dispose_from_old_map(
 	void)
 {
-	bss_004c004c.initialized = FALSE;
+	render_media_globals.initialized = FALSE;
 
 	return;
 }

@@ -45,8 +45,7 @@ typedef char verify_overhead_map_bitmap_offset[offsetof(struct overhead_map_glob
 
 static real const overhead_map_constants[3] = { 0.5f, 84.0f, 80.0f };
 
-static struct overhead_map_globals bss_00453cd0;
-#define overhead_map_globals bss_00453cd0
+static struct overhead_map_globals overhead_map_globals;
 
 /* ---------- public code */
 

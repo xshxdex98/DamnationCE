@@ -168,9 +168,8 @@ static void detail_object_data_error(
 
 /* ---------- globals */
 
-static D3DVertexBuffer *bss_0045e904 = NULL;
+static D3DVertexBuffer *local_d3d_vertex_buffer = NULL;
 
-#define local_d3d_vertex_buffer bss_0045e904
 
 /* ---------- private code */
 

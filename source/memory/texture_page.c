@@ -45,7 +45,7 @@ void qsort_2byte(
 
 /* ---------- globals */
 
-static struct texture_page *bss_00456628 = NULL;
+static struct texture_page *texture_page_being_sorted = NULL;
 
 /* ---------- public code */
 
@@ -283,8 +283,8 @@ static boolean qsort_texture_indexes(
 	struct texture_page_texture *texture_b;
 	long height_difference;
 
-	texture_page_a = texture_page_verify_and_return(bss_00456628);
-	texture_page_b = texture_page_verify_and_return(bss_00456628);
+	texture_page_a = texture_page_verify_and_return(texture_page_being_sorted);
+	texture_page_b = texture_page_verify_and_return(texture_page_being_sorted);
 	texture_a = datum_get(texture_page_b->textures, texture_index_a);
 	texture_b = datum_get(texture_page_a->textures, texture_index_b);
 	height_difference = (long)texture_b->height - (long)texture_a->height;
@@ -325,7 +325,7 @@ static boolean texture_page_resort(
 		}
 	}
 
-	bss_00456628 = texture_page;
+	texture_page_being_sorted = texture_page;
 	qsort_2byte(texture_indices, texture_count, qsort_texture_indexes);
 	spacing = texture_count>1 ? texture_page->spacing : 0;
 	spacing_mask = spacing ? ceiling_power2((word)spacing)-1 : 0;

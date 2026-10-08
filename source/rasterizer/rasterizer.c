@@ -35,7 +35,6 @@ enum
 
 /* ---------- macros */
 
-#define rasterizer_model_obscurer_object_index bss_004662ec
 #define rasterizer_debug_model_vertices_enabled rasterizer_debug_options.debug_model_vertices_enabled
 
 /* ---------- structures */
@@ -382,7 +381,7 @@ struct rasterizer_debug_options rasterizer_debug_options =
 #if !defined(HALO_ANDROID) && !defined(__APPLE__) /* Mach-O section names differ; the default is .bss anyway */
 #pragma bss_seg(".bss")
 #endif
-static long bss_004662ec;
+static long rasterizer_model_obscurer_object_index;
 real_argb_color *global_rasterizer_model_ambient_reflection_tint;
 #if !defined(HALO_ANDROID) && !defined(__APPLE__)
 #pragma bss_seg()

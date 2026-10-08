@@ -252,7 +252,7 @@ struct weapons_globals
 	struct profile_section update_profile;
 };
 
-static struct weapons_globals data_00307140 =
+static struct weapons_globals weapons_globals =
 {
 	{"~primary-blur", "~secondary-blur"},
 	{"weapon_update", NONE, TRUE}
@@ -2768,7 +2768,7 @@ boolean weapon_update(
 	short magazine_index;
 	short trigger_index;
 
-	profile_enter(data_00307140.update_profile);
+	profile_enter(weapons_globals.update_profile);
 
 	if (weapon->weapon.tracked_object_index!=NONE && !object_try_and_get_and_verify_type(weapon->weapon.tracked_object_index, _object_mask_all))
 	{
@@ -3180,7 +3180,7 @@ boolean weapon_update(
 				!TEST_FLAG(trigger->flags, _weapon_trigger_blurred_bit) &&
 				trigger->rate_of_fire>trigger_definition->blurred_rate_of_fire)
 			{
-				object_permute_region(weapon_get_effect_object_index(weapon_index), data_00307140.blurred_permutation_names[trigger_index], NONE, TRUE);
+				object_permute_region(weapon_get_effect_object_index(weapon_index), weapons_globals.blurred_permutation_names[trigger_index], NONE, TRUE);
 				SET_FLAG(trigger->flags, _weapon_trigger_blurred_bit, TRUE);
 			}
 		}
@@ -3194,7 +3194,7 @@ boolean weapon_update(
 
 			if (TEST_FLAG(trigger->flags, _weapon_trigger_blurred_bit) && trigger->rate_of_fire<trigger_definition->blurred_rate_of_fire)
 			{
-				object_permute_region(weapon_get_effect_object_index(weapon_index), data_00307140.blurred_permutation_names[trigger_index], NONE, FALSE);
+				object_permute_region(weapon_get_effect_object_index(weapon_index), weapons_globals.blurred_permutation_names[trigger_index], NONE, FALSE);
 				SET_FLAG(trigger->flags, _weapon_trigger_blurred_bit, FALSE);
 			}
 		}
@@ -3217,7 +3217,7 @@ boolean weapon_update(
 		}
 	}
 
-	profile_exit(data_00307140.update_profile);
+	profile_exit(weapons_globals.update_profile);
 
 	return TRUE;
 }

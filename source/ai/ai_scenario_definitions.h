@@ -303,8 +303,7 @@ struct squad_definition
 	struct tag_block unused_block;
 };
 
-/* element of encounter_definition.firing_positions; 0x18 from the call site,
-group_index at 0xc and the tag index at 0x14 from code_00041220 */
+/* an element of encounter_definition.firing_positions */
 struct firing_position_definition
 {
 	real_point3d position;

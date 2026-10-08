@@ -13,20 +13,6 @@ RASTERIZER_XBOX_HARDWARE_GEOMETRY.C
 
 /* ---------- public code */
 
-void __stdcall code_00158450(
-	void *resource,
-	void *data)
-{
-	return;
-}
-
-void __stdcall code_00158460(
-	void *resource,
-	void *data)
-{
-	return;
-}
-
 boolean rasterizer_vertex_buffer_new(
 	struct vertex_buffer *vertex_buffer,
 	long vertex_type,

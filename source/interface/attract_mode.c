@@ -29,9 +29,9 @@ enum
 /* ---------- globals */
 
 static unsigned long attract_mode_countdown_timer;
-static char bss_00453ae8[128];
+static char attract_mode_movie_path[128];
 
-static short data_002e4c84 = NONE;
+static short attract_mode_video_index = NONE;
 
 /* ---------- public code */
 
@@ -142,26 +142,26 @@ const char *attract_mode_get_localized_movie_path(
 		switch (movie)
 		{
 		case _bink_intro_movie:
-			_snprintf(bss_00453ae8, NUMBEROF(bss_00453ae8), "d:\\bink\\intro%s.bik", language_suffixes[language]);
+			_snprintf(attract_mode_movie_path, NUMBEROF(attract_mode_movie_path), "d:\\bink\\intro%s.bik", language_suffixes[language]);
 			break;
 		case _bink_outro_movie:
-			_snprintf(bss_00453ae8, NUMBEROF(bss_00453ae8), "d:\\bink\\credits%s.bik", language_suffixes[language]);
+			_snprintf(attract_mode_movie_path, NUMBEROF(attract_mode_movie_path), "d:\\bink\\credits%s.bik", language_suffixes[language]);
 			break;
 		case _bink_attract1_movie:
-			_snprintf(bss_00453ae8, NUMBEROF(bss_00453ae8), "d:\\bink\\attract1%s.bik", language_suffixes[language]);
+			_snprintf(attract_mode_movie_path, NUMBEROF(attract_mode_movie_path), "d:\\bink\\attract1%s.bik", language_suffixes[language]);
 			break;
 		case _bink_attract2_movie:
-			_snprintf(bss_00453ae8, NUMBEROF(bss_00453ae8), "d:\\bink\\attract2%s.bik", language_suffixes[language]);
+			_snprintf(attract_mode_movie_path, NUMBEROF(attract_mode_movie_path), "d:\\bink\\attract2%s.bik", language_suffixes[language]);
 			break;
 		case _bink_attract3_movie:
-			_snprintf(bss_00453ae8, NUMBEROF(bss_00453ae8), "d:\\bink\\attract3%s.bik", language_suffixes[language]);
+			_snprintf(attract_mode_movie_path, NUMBEROF(attract_mode_movie_path), "d:\\bink\\attract3%s.bik", language_suffixes[language]);
 			break;
 		default:
 			match_assert("c:\\halo\\SOURCE\\interface\\attract_mode.c", 198, !"unreachable");
 			break;
 		}
 
-		if (file_exists(file_reference_create_from_path(&movie_file, bss_00453ae8, FALSE)))
+		if (file_exists(file_reference_create_from_path(&movie_file, attract_mode_movie_path, FALSE)))
 		{
 			break;
 		}
@@ -179,13 +179,13 @@ const char *attract_mode_get_localized_movie_path(
 		if (language==NUMBER_OF_SUPPORTED_LANGUAGES)
 		{
 			error(_error_silent, "unable to locate any movie for movie #%d (checked for all possible language variations)", movie);
-			bss_00453ae8[0] = '\0';
+			attract_mode_movie_path[0] = '\0';
 
 			break;
 		}
 	}
 
-	return bss_00453ae8;
+	return attract_mode_movie_path;
 }
 
 void attract_mode_start(
@@ -198,9 +198,9 @@ void attract_mode_start(
 		video_index = seed_random_range(get_global_local_random_seed_address(), 0, NUMBER_OF_ATTRACT_MODE_MOVIES);
 		video_index = PIN(video_index, 0, _bink_attract3_movie);
 
-		if (video_index!=data_002e4c84)
+		if (video_index!=attract_mode_video_index)
 		{
-			data_002e4c84 = video_index;
+			attract_mode_video_index = video_index;
 			break;
 		}
 	}

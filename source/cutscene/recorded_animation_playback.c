@@ -150,7 +150,7 @@ static void apply_vector_short_difference(
 
 /* ---------- globals */
 
-static struct recorded_animation_playback_data data_002dcf20 =
+static struct recorded_animation_playback_data recorded_animation_codes =
 {
 	{
 		NULL,
@@ -181,7 +181,7 @@ static struct recorded_animation_playback_data data_002dcf20 =
 	{
 		"animation_state_event_data",
 		sizeof(byte),
-		data_002dcf20.animation_state_codes,
+		recorded_animation_codes.animation_state_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -189,7 +189,7 @@ static struct recorded_animation_playback_data data_002dcf20 =
 	{
 		"aiming_speed_event_data",
 		sizeof(byte),
-		data_002dcf20.aiming_speed_codes,
+		recorded_animation_codes.aiming_speed_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -197,7 +197,7 @@ static struct recorded_animation_playback_data data_002dcf20 =
 	{
 		"control_flags_event_data",
 		sizeof(short),
-		data_002dcf20.control_flags_codes,
+		recorded_animation_codes.control_flags_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -205,7 +205,7 @@ static struct recorded_animation_playback_data data_002dcf20 =
 	{
 		"weapon_index_event_data",
 		sizeof(short),
-		data_002dcf20.weapon_index_codes,
+		recorded_animation_codes.weapon_index_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -213,7 +213,7 @@ static struct recorded_animation_playback_data data_002dcf20 =
 	{
 		"throttle_event_data",
 		sizeof(real_vector2d),
-		data_002dcf20.throttle_codes,
+		recorded_animation_codes.throttle_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -221,7 +221,7 @@ static struct recorded_animation_playback_data data_002dcf20 =
 	{
 		"vector_char_difference_data",
 		sizeof(struct vector_char_difference_data),
-		data_002dcf20.vector_char_difference_codes,
+		recorded_animation_codes.vector_char_difference_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -229,13 +229,13 @@ static struct recorded_animation_playback_data data_002dcf20 =
 	{
 		"vector_short_difference_data",
 		sizeof(struct vector_short_difference_data),
-		data_002dcf20.vector_short_difference_codes,
+		recorded_animation_codes.vector_short_difference_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
 };
 
-#define apply_funcs data_002dcf20.apply_funcs
+#define apply_funcs recorded_animation_codes.apply_funcs
 
 /* port: the bytes each event's data takes after its header (what its apply
 proc reads), so an event is applied only when its data is in the stream */
