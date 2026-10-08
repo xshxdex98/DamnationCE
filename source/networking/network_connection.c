@@ -59,8 +59,6 @@ enum network_connection_traffic_event
 	_network_connection_traffic_event_stream_message_received,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct network_connection

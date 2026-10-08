@@ -37,10 +37,4 @@ struct wind_definition
 typedef char wind_definition_size_assert[
 	sizeof(struct wind_definition) == 0x40 ? 1 : -1];
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __WIND_DEFINITIONS_H

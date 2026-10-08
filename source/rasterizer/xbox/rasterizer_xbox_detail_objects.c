@@ -873,4 +873,3 @@ void rasterizer_detail_objects_dispose(
 	return;
 }
 
-/* ---------- private code */

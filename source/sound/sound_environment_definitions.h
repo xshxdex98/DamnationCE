@@ -23,7 +23,6 @@ enum
 #define sound_environment_definition_get(index) \
 	((struct sound_environment_definition *)tag_get(SOUND_ENVIRONMENT_TAG, (index)))
 
-
 /* ---------- structures */
 
 struct sound_environment_definition
@@ -49,12 +48,8 @@ struct sound_environment_definition
 typedef char verify_sound_environment_definition_size[
 	sizeof(struct sound_environment_definition) == 0x48 ? 1 : -1];
 
-/* ---------- prototypes/EXAMPLE.C */
-
 /* ---------- globals */
 
 extern struct sound_environment_definition const default_sound_environment;
-
-/* ---------- public code */
 
 #endif // __SOUND_ENVIRONMENT_DEFINITIONS_H

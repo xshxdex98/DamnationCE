@@ -43,8 +43,6 @@ enum
 	NUMBER_OF_CONTROL_VECTORS,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct direction_playback_controller

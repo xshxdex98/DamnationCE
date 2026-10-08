@@ -74,8 +74,6 @@ enum
 	NUMBER_OF_RENDER_DEBUG_CACHE_TYPES
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct render_debug_cache_entry

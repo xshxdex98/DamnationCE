@@ -21,8 +21,6 @@ enum
 	MAXIMUM_BSP2D_TRAVERSAL_DEPTH = 128,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bsp2d_node
@@ -35,10 +33,6 @@ struct bsp2d
 {
 	struct tag_block nodes;
 };
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
 
 /* ---------- public code */
 

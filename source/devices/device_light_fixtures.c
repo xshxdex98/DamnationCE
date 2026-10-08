@@ -11,16 +11,6 @@ DEVICE_LIGHT_FIXTURES.C
 #include "scenario/scenario_definitions.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void light_fixtures_initialize(
@@ -87,4 +77,3 @@ boolean light_fixture_update(
 	return TRUE;
 }
 
-/* ---------- private code */

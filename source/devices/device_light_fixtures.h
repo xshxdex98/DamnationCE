@@ -73,8 +73,4 @@ void light_fixture_delete(
 boolean light_fixture_update(
 	long object_index);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __DEVICE_LIGHT_FIXTURES_H

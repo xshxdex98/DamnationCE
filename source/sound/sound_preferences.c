@@ -6,14 +6,6 @@ SOUND_PREFERENCES.C
 
 #include "sound_preferences.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static struct sound_preferences default_sound_preferences =
@@ -37,4 +29,3 @@ void write_sound_preferences(void)
 {
 }
 
-/* ---------- private code */

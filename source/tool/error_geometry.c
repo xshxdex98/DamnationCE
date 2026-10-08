@@ -19,8 +19,6 @@ ERROR_GEOMETRY.C
 
 #define ERROR_GEOMETRY_POINT_RADIUS 0.01f
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct error_geometry_globals

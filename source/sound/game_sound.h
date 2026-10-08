@@ -10,10 +10,6 @@ GAME_SOUND.H
 
 #include "objects/objects.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct sound_source;
@@ -102,9 +98,5 @@ boolean track_object_impulse_sound(
 	long object_index,
 	void const *attachment_data,
 	struct sound_source *source);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __GAME_SOUND_H

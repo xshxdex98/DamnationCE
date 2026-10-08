@@ -37,8 +37,6 @@ enum
 	_shader_effect_uses_nonlinear_tint_bit = 1,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct build_sprite_vertex

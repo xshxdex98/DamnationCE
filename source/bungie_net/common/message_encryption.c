@@ -18,8 +18,6 @@ enum
 	TEA_BLOCK_SIZE = 8,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 union message_header_value
@@ -32,10 +30,6 @@ union message_header_value
 		word message_size : 12;
 	} fields;
 };
-
-/* ---------- prototypes */
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -229,4 +223,3 @@ void message_decrypt(
 	return;
 }
 
-/* ---------- private code */

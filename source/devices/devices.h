@@ -190,6 +190,4 @@ extern struct data_array *device_groups_data;
 
 extern boolean debug_objects_devices;
 
-/* ---------- public code */
-
 #endif // __DEVICES_H

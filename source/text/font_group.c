@@ -7,16 +7,6 @@ FONT_GROUP.C
 #include "cseries.h"
 #include "font_group.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 struct font_character *font_get_character_by_ascii_code(
@@ -53,4 +43,3 @@ struct font_character *font_get_character_by_ascii_code(
 	return character;
 }
 
-/* ---------- private code */

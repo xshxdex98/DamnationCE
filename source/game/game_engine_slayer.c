@@ -35,7 +35,6 @@ enum
 
 /* ---------- macros */
 
-
 #define GET_MULTIPLAYER_GAME_TEXT(index) \
 	(((string_list_index = tag_loaded( \
 		UNICODE_STRING_LIST_TAG, \

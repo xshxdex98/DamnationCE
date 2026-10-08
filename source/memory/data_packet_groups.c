@@ -10,10 +10,6 @@ DATA_PACKET_GROUPS.C
 
 #include "cseries/cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct packet_header
@@ -26,8 +22,6 @@ struct packet_header_byte_swap_data
 	byte_swap_code codes[4];
 	struct byte_swap_definition definition;
 };
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -247,4 +241,3 @@ boolean data_packet_group_decode_packet(
 	return error==NULL;
 }
 
-/* ---------- private code */

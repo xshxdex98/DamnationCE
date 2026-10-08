@@ -25,7 +25,6 @@ struct shader_environment_specular_properties
 	long unused44[4];
 };
 
-
 struct shader_model_properties
 {
 	word flags;
@@ -66,7 +65,6 @@ struct shader_model_properties
 	struct tag_reference reflection_cube_map;
 };
 
-
 struct point_light_geometry_parameters
 {
 	real radius;
@@ -81,7 +79,6 @@ struct point_light_geometry_parameters
 	real runtime_sine_cutoff_angle;
 	long unused[2];
 };
-
 
 struct bitmap_data;
 struct rasterizer_model_begin_parameters;

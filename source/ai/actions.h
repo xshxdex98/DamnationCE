@@ -89,8 +89,6 @@ enum action_class
 
 #define ACTOR_MAXIMUM_AVOIDANCE_RAYS 9
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct action_specification
@@ -373,7 +371,6 @@ struct obey_individual_complex_control
 	real_point3d grenade_target;
 };
 
-
 struct obey_state_data
 {
 	short command_list_index;
@@ -572,8 +569,6 @@ void action_alert_flush_position_indices(
 	long actor_index);
 void action_alert_flush_structure_indices(
 	long actor_index);
-
-/* ---------- prototypes/ACTION_CHARGE.C */
 
 /* ---------- prototypes/ACTION_OBEY.C */
 
@@ -822,9 +817,5 @@ void action_avoid_control(
 
 void action_sleep_control(
 	long actor_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __ACTIONS_H

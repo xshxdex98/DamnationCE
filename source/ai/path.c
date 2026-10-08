@@ -21,8 +21,6 @@ PATH.C
 
 #define PATH_COST_ESTIMATE_GRANULARITY 0.1f
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct path_edge
@@ -104,8 +102,6 @@ static short build_path_edges_for_surface(
 	struct path_edge *edges);
 static boolean path_state_traverse(
 	struct path_state *state);
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -1698,4 +1694,3 @@ boolean path_state_find(
 	return result;
 }
 
-/* ---------- private code */

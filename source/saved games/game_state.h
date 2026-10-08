@@ -6,10 +6,6 @@ GAME_STATE.H
 #define __GAME_STATE_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct game_state_header
@@ -144,7 +140,5 @@ void game_state_create_persistent_storage(
 /* ---------- globals */
 
 extern boolean recover_saved_games_hack;
-
-/* ---------- public code */
 
 #endif // __GAME_STATE_H

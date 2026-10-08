@@ -14,14 +14,4 @@ enum
 	LIGHT_DEFINITION_VERSION = 3,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __LIGHT_DEFINITIONS_H

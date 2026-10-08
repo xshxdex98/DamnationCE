@@ -178,8 +178,6 @@ enum
 	NUMBER_OF_GAMEPAD_STICKS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct key_stroke
@@ -225,9 +223,5 @@ void input_update(void);
 void input_frame_begin(void);
 void input_frame_end(void);
 boolean input_initialize(void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __INPUT_H

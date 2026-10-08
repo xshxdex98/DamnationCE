@@ -6,7 +6,6 @@ MODEL_DEFINITIONS.H
 #define __MODEL_DEFINITIONS_H
 #pragma once
 
-
 /* ---------- headers */
 
 #include "math/real_math.h"
@@ -114,11 +113,5 @@ struct model
 	struct tag_block geometries;
 	struct tag_block shaders;
 };
-
-/* ---------- prototypes/MODEL_DEFINITIONS.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __MODEL_DEFINITIONS_H

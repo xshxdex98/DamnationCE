@@ -12,10 +12,6 @@ GLOW.H
 #include "tag_files/tag_groups.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct glow_definition
@@ -94,9 +90,5 @@ void glow_submit(
 	long glow_index,
 	struct render_lighting const *lighting,
 	struct render_animation const *animation);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __GLOW_H

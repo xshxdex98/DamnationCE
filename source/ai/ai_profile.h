@@ -48,8 +48,6 @@ enum
 	_ai_meter_firing_point,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct ai_meter
@@ -102,7 +100,5 @@ short ai_profile_change_render_spray(
 /* ---------- globals */
 
 extern struct ai_profile_globals ai_profile;
-
-/* ---------- public code */
 
 #endif // __AI_PROFILE_H

@@ -8,12 +8,6 @@ ACTOR_TYPE_MOUNTED_WEAPON.C
 #include "actors.h"
 #include "actor_types.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void mounted_weapon_decide_action(long actor_index);
@@ -35,8 +29,6 @@ struct actor_type_definition actor_type_mounted_weapon =
 	NULL,
 	NULL
 };
-
-/* ---------- public code */
 
 /* ---------- private code */
 

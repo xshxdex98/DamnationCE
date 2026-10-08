@@ -81,8 +81,6 @@ enum
 	NUMBER_OF_ERROR_CODES
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct ui_widget_game_data_input_reference
@@ -299,7 +297,5 @@ void process_ui_widgets(
 /* ---------- globals */
 
 extern short dashboard_abort_error;
-
-/* ---------- public code */
 
 #endif // __UI_WIDGET_H

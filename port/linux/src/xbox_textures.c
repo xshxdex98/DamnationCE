@@ -834,7 +834,6 @@ static void upload(GLuint texture, GLenum target, const struct xgpu_texture_desc
 	texture_dump(target, description);
 }
 
-
 /* ---------- cache */
 
 struct texture_entry

@@ -56,10 +56,6 @@ enum
 	MAXIMUM_COLLISION_USER_STACK_DEPTH = 32,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/COLLISION_USAGE.C */
 
 void collision_log_initialize(
@@ -88,7 +84,5 @@ void collision_log_end_period(
 
 extern short global_current_collision_user_depth;
 extern short global_current_collision_users[MAXIMUM_COLLISION_USER_STACK_DEPTH];
-
-/* ---------- public code */
 
 #endif // __COLLISION_USAGE_H

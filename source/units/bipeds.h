@@ -184,8 +184,4 @@ void biped_preprocess_node_orientations(
 	long biped_index,
 	struct real_orientation *node_orientations);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __BIPEDS_H

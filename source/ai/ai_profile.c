@@ -37,8 +37,6 @@ enum
 	NUMBER_OF_AI_RENDER_SPRAYS,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 /* the actor iterator (its functions are in encounters.h) */

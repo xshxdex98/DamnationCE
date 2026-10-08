@@ -2368,4 +2368,3 @@ static boolean decal_collision_edge_vertices_valid(
 	return FALSE;
 }
 
-/* ---------- end of file */

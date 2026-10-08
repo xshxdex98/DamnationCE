@@ -6,10 +6,6 @@ OBJECT_LIGHTS.H
 #define __OBJECT_LIGHTS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct render_lighting;
@@ -57,9 +53,5 @@ void lights_reconnect_to_structure_bsp(
 void lights_prepare_for_object_dynamic(
 	long object_index,
 	struct render_lighting *lighting);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __OBJECT_LIGHTS_H

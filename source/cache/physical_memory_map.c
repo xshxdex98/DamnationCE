@@ -21,8 +21,6 @@ PHYSICAL_MEMORY_MAP.C
 /* port: and their larger sound cache (halo_port_capacity.h) */
 #define SOUND_CACHE_SIZE HALO_PORT_SOUND_CACHE_SIZE
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct physical_memory_map_globals
@@ -32,8 +30,6 @@ struct physical_memory_map_globals
 	void *texture_cache_base_address;
 	void *sound_cache_base_address;
 };
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -139,4 +135,3 @@ void *physical_memory_get_sound_cache_base_address(
 	return physical_memory_map_globals.sound_cache_base_address;
 }
 
-/* ---------- private code */

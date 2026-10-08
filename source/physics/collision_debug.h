@@ -11,12 +11,6 @@ COLLISION_DEBUG.H
 #include "cseries.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/COLLISION_DEBUG.C */
 
 void collision_debug_render(
@@ -30,7 +24,5 @@ extern real_vector3d collision_debug_vector;
 extern real collision_debug_length;
 extern real collision_debug_width;
 extern real collision_debug_height;
-
-/* ---------- public code */
 
 #endif // __COLLISION_DEBUG_H

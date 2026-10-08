@@ -8,14 +8,6 @@ AI_SCENARIO_DEFINITIONS.C
 #include "ai_scenario_definitions.h"
 #include "scenario/scenario_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 char const *global_ai_default_state_names[12] =
@@ -167,4 +159,3 @@ short choose_random_array_element(
 	return result;
 }
 
-/* ---------- private code */

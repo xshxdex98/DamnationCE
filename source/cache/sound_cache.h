@@ -10,10 +10,6 @@ SOUND_CACHE.H
 
 #include "cseries/cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct sound_permutation;
@@ -50,9 +46,5 @@ boolean _sound_cache_sound_request(
 	boolean reference);
 void sound_cache_debug_render(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __SOUND_CACHE_H

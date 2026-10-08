@@ -10,10 +10,6 @@ AI_SCRIPT.H
 
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct platoon_datum;
@@ -314,9 +310,5 @@ void ai_scripting_command_list_advance_by_unit(
 	long unit_index);
 short ai_scripting_command_list_status(
 	long ai_reference);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __AI_SCRIPT_H

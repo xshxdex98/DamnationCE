@@ -7,14 +7,6 @@ INTEGER_MATH.C
 #include "cseries.h"
 #include "integer_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static point2d integer_origin2d = {{ 0, 0 }};
@@ -418,4 +410,3 @@ rectangle2d *scale_rectangle2d(
 	return destination;
 }
 
-/* ---------- private code */

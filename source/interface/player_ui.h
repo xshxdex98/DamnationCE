@@ -10,10 +10,6 @@ PLAYER_UI.H
 
 #include "cseries/cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct player_profile;
@@ -112,9 +108,5 @@ boolean player_ui_prompt_user_to_rename_edit_profile(
 	void);
 void player0_look_invert_pitch(
 	boolean invert);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __PLAYER_UI_H

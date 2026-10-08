@@ -22,8 +22,6 @@ enum
 
 #include "tag_files/tag_groups.h"
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct hs_script
@@ -83,11 +81,5 @@ struct hs_syntax_node
 		short short_value;
 	};
 };
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __HS_SCENARIO_DEFINITIONS_H

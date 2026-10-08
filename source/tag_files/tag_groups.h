@@ -150,8 +150,4 @@ long tag_loaded(long group_tag, const char *name);
 
 void *tag_get(long group_tag, long tag_index);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __TAG_GROUPS_H

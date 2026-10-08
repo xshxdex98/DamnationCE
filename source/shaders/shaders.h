@@ -11,10 +11,6 @@ SHADERS.H
 #include "math/real_math.h"
 #include "shaders/shader_texture_animation.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct render_animation
@@ -78,9 +74,5 @@ void numeric_countdown_timer_restart(
 	void);
 void numeric_countdown_timer_update(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __SHADERS_H

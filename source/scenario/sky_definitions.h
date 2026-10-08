@@ -45,10 +45,4 @@ typedef char sky_indoor_fog_offset_assert[
 typedef char sky_indoor_fog_screen_offset_assert[
 	offsetof(struct sky, indoor_fog_screen) == 0x98 ? 1 : -1];
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __SKY_DEFINITIONS_H

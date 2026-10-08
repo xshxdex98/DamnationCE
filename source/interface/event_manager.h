@@ -8,10 +8,6 @@ EVENT_MANAGER.H
 
 #include "math/integer_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct event_record
@@ -59,9 +55,5 @@ mouse pointer, ui_widget.c) */
 void event_manager_post_button(
 	short controller_index,
 	short button_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __EVENT_MANAGER_H

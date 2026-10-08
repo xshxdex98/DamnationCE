@@ -15,8 +15,6 @@ enum
 	NUMBER_OF_ADJUST_RECTANGLE_MODES,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 union point2d
@@ -39,7 +37,6 @@ union byte_rectangle3d
 	struct { byte x0, x1, y0, y1, z0, z1; };
 };
 typedef union byte_rectangle3d byte_rectangle3d;
-
 
 typedef unsigned long pixel32;
 
@@ -69,14 +66,11 @@ unsigned char bit_vector_and(short count, const unsigned long *v0, const unsigne
 void bit_vector_or(short count, const unsigned long *v0, const unsigned long *v1, unsigned long *result);
 void bit_vector_not(short count, const unsigned long *vector, unsigned long *result);
 
-
 /* ---------- globals */
 
 extern short direction_delta_x[9];
 extern short direction_delta_y[9];
 extern short reversed_directions[9];
 extern point2d *global_integer_origin2d;
-
-/* ---------- public code */
 
 #endif // __INTEGER_MATH_H

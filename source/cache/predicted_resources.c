@@ -14,18 +14,10 @@ PREDICTED_RESOURCES.C
 #include "sound/sound_definitions.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void predicted_resources_sound_precache(long sound_definition_index);
 static boolean predicted_resource_valid(struct predicted_resource const *predicted_resource);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

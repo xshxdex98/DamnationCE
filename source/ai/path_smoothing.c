@@ -22,10 +22,6 @@ enum
 	_path_test_pill_endpoint_near_wall_ok_bit = 0,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static boolean path_smoothing_edge_valid(
@@ -38,8 +34,6 @@ static boolean path_smoothing_edge_valid(
 were reported (once each) */
 static boolean warned_about_pathfinding_surface_index;
 static boolean warned_about_collision_edge;
-
-/* ---------- public code */
 
 /* ---------- private code */
 

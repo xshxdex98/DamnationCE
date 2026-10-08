@@ -12,10 +12,6 @@ FOLLOWING_CAMERA.H
 #include "math/real_math.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct camera_track_definition
@@ -62,9 +58,5 @@ void following_camera_deterministic(
 	long unit_index,
 	real_point3d *position,
 	real_vector3d *forward);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __FOLLOWING_CAMERA_H

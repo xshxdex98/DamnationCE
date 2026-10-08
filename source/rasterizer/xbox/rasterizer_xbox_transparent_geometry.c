@@ -233,8 +233,6 @@ enum
 	TRANSPARENT_GEOMETRY_VERTEX_SHADER_METER = 22
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 /* the transparent shader fields read here (as the shader preprocessors

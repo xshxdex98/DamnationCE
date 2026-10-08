@@ -83,8 +83,6 @@ enum
 	PLAYLIST_PROFILE_CHECKSUM_DATA_SIZE = 104
 };
 
-
-
 /* ---------- macros */
 
 /* an enumerated saved game file is identified by a packed profile index:

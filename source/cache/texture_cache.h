@@ -6,10 +6,6 @@ TEXTURE_CACHE.H
 #define __TEXTURE_CACHE_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_data;
@@ -42,9 +38,5 @@ void *texture_cache_steal_memory(
 	long size);
 void texture_cache_debug_render(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __TEXTURE_CACHE_H

@@ -23,8 +23,6 @@ enum
 	TERMINAL_TAB_STOP_COUNT = 3,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct terminal_gets_state
@@ -67,7 +65,5 @@ extern boolean terminal_command_running;
 /* ---------- globals */
 
 extern boolean terminal_render_enable;
-
-/* ---------- public code */
 
 #endif // __TERMINAL_H

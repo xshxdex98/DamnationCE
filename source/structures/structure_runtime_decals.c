@@ -15,10 +15,6 @@ STRUCTURE_RUNTIME_DECALS.C
 #include "structures.h"
 #include "structure_bsp_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct structure_decals_globals

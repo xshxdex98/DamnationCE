@@ -13,8 +13,6 @@ enum
 	MAXIMUM_TEXTURES_PER_PAGE = 0x7FFF
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct data_array;
@@ -84,9 +82,5 @@ boolean texture_page_resize(
 	struct texture_page *texture_page,
 	short width,
 	short height);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __TEXTURE_PAGE_H

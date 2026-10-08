@@ -15,10 +15,6 @@ FIRST_PERSON_CAMERA.C
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct first_person_camera_action
@@ -41,8 +37,6 @@ static void first_person_camera_for_unit_and_vector(
 	long unit_index,
 	real_vector3d const *forward,
 	struct camera_command *result);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

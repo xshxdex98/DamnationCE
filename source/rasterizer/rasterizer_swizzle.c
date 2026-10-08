@@ -19,10 +19,6 @@ enum
 	NUMBER_OF_SWIZZLE_TABLE_ENTRIES = 64,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void compute_swizzle_masks(

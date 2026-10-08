@@ -34,8 +34,6 @@ enum
 	NUMBER_OF_NETWORK_GAME_SERVER_COUNTDOWN_EVENTS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct message_client_game_update;
@@ -164,8 +162,4 @@ boolean network_game_server_lobby_is_open(
 boolean network_game_server_client_machine_may_slow_countdown(
 	struct network_game_server *server,
 	struct network_game_server_client_machine *machine);
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __NETWORK_SERVER_MANAGER_INTERNAL_H

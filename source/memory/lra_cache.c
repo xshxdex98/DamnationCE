@@ -8,12 +8,6 @@ LRA_CACHE.C
 
 #include "memory/lra_cache.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void lra_default_update_proc(
@@ -41,8 +35,6 @@ static void verify_lra_cache(
 static long lra_block_offset(
 	struct lra_cache *cache,
 	struct lra_block *block);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

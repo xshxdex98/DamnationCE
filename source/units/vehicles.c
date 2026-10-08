@@ -117,8 +117,6 @@ struct scenario_vehicle
 
 /* ---------- prototypes */
 
-
-
 extern boolean debug_objects_vehicle_powered_mass_points;
 extern real global_gravity;
 
@@ -1114,7 +1112,6 @@ static void create_ghost_effect(
 	return;
 }
 
-
 static void create_pelican_effect(
 	long vehicle_index)
 {
@@ -1252,7 +1249,6 @@ void vehicle_preprocess_node_orientations(
 		overlay_animation_apply_continuous(overlay, value*(overlay->frame_count-1),
 			node_orientations);
 	}
-
 
 	if (animation->animations.count>3
 		&& (overlay = unit_animation_get_fitting(graph,
@@ -2262,7 +2258,6 @@ static boolean vehicle_mass_points_fit(
 
 	return fit;
 }
-
 
 boolean vehicle_update(
 	long vehicle_index)

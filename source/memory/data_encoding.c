@@ -8,16 +8,6 @@ DATA_ENCODING.C
 #include "memory/byte_swapping.h"
 #include "memory/data_encoding.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void data_encode_new(
@@ -500,4 +490,3 @@ char *data_decode_string(
 	return NULL;
 }
 
-/* ---------- private code */

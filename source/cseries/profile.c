@@ -1288,7 +1288,6 @@ void profile_frame_end(
 	return;
 }
 
-
 /* ---------- private code */
 
 static void profile_timesection_begin(

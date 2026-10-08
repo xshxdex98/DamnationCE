@@ -7,16 +7,6 @@ TRIANGLE_STRIPS.C
 #include "cseries.h"
 #include "triangle_strips.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void triangle_strip_iterator_new(
@@ -81,4 +71,3 @@ boolean triangle_strip_iterator_get_triangle(
 	return result;
 }
 
-/* ---------- private code */

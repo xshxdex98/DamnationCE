@@ -9,14 +9,6 @@ OBJECT_DELETED_PROCS.C
 #include "objects.h"
 #include "game/players.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 object_deleted_proc object_deleted_procs[3] =
@@ -42,4 +34,3 @@ void object_deleted_procs_call(
 	while (--deleted_proc_count);
 }
 
-/* ---------- private code */

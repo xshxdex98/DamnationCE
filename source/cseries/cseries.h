@@ -87,7 +87,6 @@ enum
 	NUMBER_OF_POINTS_PER_RECTANGLE = 4,
 };
 
-
 #define NONE -1
 
 /* ---------- macros */

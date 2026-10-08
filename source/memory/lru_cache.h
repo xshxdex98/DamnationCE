@@ -6,10 +6,6 @@ LRU_CACHE.H
 #define __LRU_CACHE_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct lru_cache;
@@ -48,9 +44,5 @@ void lru_unlock(
 void lru_touch(
 	struct lru_cache *cache,
 	void *block);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __LRU_CACHE_H

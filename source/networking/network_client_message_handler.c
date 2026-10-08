@@ -47,8 +47,6 @@ enum network_game_packet_class
 	_network_game_packet_class_postgame = 6,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct network_game_client;
@@ -195,8 +193,6 @@ static boolean network_game_client_handle_message_server_graceful_game_exit_post
 	word *message,
 	short message_size,
 	struct transport_address *source_address);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

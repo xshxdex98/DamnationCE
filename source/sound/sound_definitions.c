@@ -9,14 +9,6 @@ SOUND_DEFINITIONS.C
 #include "sound_classes.h"
 #include "sound_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 unsigned long const sound_sample_rate_samples_per_second[2] =
@@ -318,4 +310,3 @@ short sound_definition_next_permutation(
 	return selected_permutation_index;
 }
 
-/* ---------- private code */

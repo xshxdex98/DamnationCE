@@ -308,7 +308,6 @@ static void unit_ready_desired_weapon(
 
 static void unit_throw_grenade_move_to_hand(long unit_index);
 
-
 static boolean unit_animation_weapon_ik(
 	struct unit_animation *animation);
 static boolean unit_animation_vehicle_ik(
@@ -813,7 +812,6 @@ real unit_get_zoom_magnification(
 
 	return magnification;
 }
-
 
 boolean unit_controllable(
 	long unit_index)
@@ -5167,7 +5165,6 @@ boolean unit_update(
 			}
 		}
 
-
 		match_assert_valid_real_normal3d("c:\\halo\\SOURCE\\units\\units.c", 1076, &unit->unit.looking_vector);
 
 		unit_verify_vectors(unit_index, "unit-update-postvector");
@@ -5263,7 +5260,6 @@ boolean unit_update(
 			weapon_owner_update(unit_get_current_weapon_index(unit_index), flags, primary_trigger);
 		}
 	}
-
 
 	match_assert_valid_real_vector3d_axes2("c:\\halo\\SOURCE\\units\\units.c", 1155, &unit->object.forward, &unit->object.up);
 	match_assert_valid_real_normal3d("c:\\halo\\SOURCE\\units\\units.c", 1156, &unit->unit.aiming_vector);
@@ -5405,7 +5401,6 @@ boolean unit_update(
 		SET_FLAG(unit->unit.flags, _unit_desired_integrated_light_on_bit, FALSE);
 	}
 
-
 	if (TEST_FLAG(unit->unit.flags, _unit_desired_integrated_light_off_bit))
 	{
 		if (TEST_FLAG(unit->unit.flags, _unit_integrated_light_on_bit))
@@ -5505,8 +5500,6 @@ boolean unit_update(
 		}
 	}
 
-
-
 	if (unit_integrated_night_vision_is_active(unit_index))
 	{
 		if (TEST_FLAG(unit->unit.flags, _unit_integrated_night_vision_on_bit))
@@ -5538,7 +5531,6 @@ boolean unit_update(
 
 	return TRUE;
 }
-
 
 void unit_unzoom(
 	long unit_index)

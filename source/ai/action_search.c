@@ -19,14 +19,6 @@ ACTION_SEARCH.C
 #include "units/units.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- public code */
 
 boolean action_search_setup_target(
@@ -463,4 +455,3 @@ boolean action_search_perform(
 	return state_data->search_done;
 }
 
-/* ---------- private code */

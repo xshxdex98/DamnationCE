@@ -36,8 +36,6 @@ enum
 	_structure_material_fog_plane_bit,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct structure_render_globals

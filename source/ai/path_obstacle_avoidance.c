@@ -22,10 +22,6 @@ PATH_OBSTACLE_AVOIDANCE.C
 
 #include <stddef.h>
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct structure_bsp;
@@ -124,9 +120,6 @@ static struct obstacles debug_obstacles;
 boolean debug_obstacle_path_on_failure= FALSE;
 
 boolean debug_obstacle_path= FALSE;
-
-
-/* ---------- public code */
 
 /* ---------- private code */
 

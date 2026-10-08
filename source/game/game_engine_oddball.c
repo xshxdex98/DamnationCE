@@ -94,8 +94,6 @@ enum multiplayer_game_text
 	_multiplayer_game_text_enemy_has_the_ball_score = 0xA6,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct oddball_globals
@@ -113,8 +111,6 @@ struct oddball_globals
 
 typedef char verify_scenario_netgame_flag_size[
 	sizeof(struct scenario_netgame_flag) == 0x94 ? 1 : -1];
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 

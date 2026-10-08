@@ -6,10 +6,6 @@ MEMORY_POOL.H
 #define __MEMORY_POOL_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct memory_pool_block
@@ -65,9 +61,5 @@ long memory_pool_get_used_size(
 	struct memory_pool *pool);
 long memory_pool_get_contiguous_free_size(
 	struct memory_pool *pool);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __MEMORY_POOL_H

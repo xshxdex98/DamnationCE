@@ -18,8 +18,6 @@ enum cache_copy_status
 	NUMBER_OF_CACHE_COPY_STATES,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct cache_copy_read_request;
@@ -50,9 +48,5 @@ void cache_copy_initialize(
 struct cache_copy_read_request *acquire_read_request(
 	struct simple_decompressor_definition *self,
 	short read_sequence_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __CACHE_FILES_DECOMPRESS_WINDOWS_H

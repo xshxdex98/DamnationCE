@@ -11,10 +11,6 @@ RENDER_CAMERAS.H
 #include "math/real_math.h"
 #include "math/integer_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct render_screen_flash
@@ -102,9 +98,5 @@ void render_camera_hack_frustum_z(
 void render_camera_debug_frustum(
 	struct render_camera const *camera,
 	struct render_frustum const *frustum);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __RENDER_CAMERAS_H

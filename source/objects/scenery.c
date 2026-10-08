@@ -16,12 +16,6 @@ SCENERY.C
 #include "tag_files/tag_files.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void scenery_animation_start_private(
@@ -29,8 +23,6 @@ static void scenery_animation_start_private(
 	long animation_graph_index,
 	char const *animation_name,
 	short frame_index);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

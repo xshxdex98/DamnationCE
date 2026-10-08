@@ -6,7 +6,6 @@ MODEL_ANIMATION_DEFINITIONS.H
 #define __MODEL_ANIMATION_DEFINITIONS_H
 #pragma once
 
-
 /* ---------- headers */
 
 #include "math/real_math.h"
@@ -53,14 +52,12 @@ enum
 	NUMBER_OF_ANIMATION_TYPES,
 };
 
-
 enum
 {
 	_object_overlay_mode_frame = 0,
 	_object_overlay_mode_scale,
 	NUMBER_OF_OBJECT_OVERLAY_MODES,
 };
-
 
 /* ---------- macros */
 
@@ -346,7 +343,6 @@ void quaternion_decompress_6byte_renormalized(
 	void const *compressed,
 	real_quaternion *quaternion);
 
-
 /* ---------- globals */
 
 extern struct animation_list weapon_type_animation_list;
@@ -360,7 +356,5 @@ extern struct animation_list device_animation_list;
 extern char *damage_type_strings[4];
 extern char *damage_direction_strings[4];
 extern char *damage_part_strings[11];
-
-/* ---------- public code */
 
 #endif // __MODEL_ANIMATION_DEFINITIONS_H

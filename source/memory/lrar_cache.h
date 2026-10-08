@@ -6,10 +6,6 @@ LRAR_CACHE.H
 #define __LRAR_CACHE_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct lrar_cache;
@@ -45,9 +41,5 @@ unsigned long lrar_block_address(
 void lrar_deallocate(
 	struct lrar_cache *cache,
 	short block_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __LRAR_CACHE_H

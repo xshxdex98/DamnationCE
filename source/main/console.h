@@ -6,12 +6,6 @@ CONSOLE.H
 #define __CONSOLE_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/CONSOLE.C */
 
 void console_initialize(void);
@@ -28,7 +22,5 @@ boolean console_update(void);
 /* ---------- globals */
 
 extern boolean console_dump_to_file;
-
-/* ---------- public code */
 
 #endif // __CONSOLE_H

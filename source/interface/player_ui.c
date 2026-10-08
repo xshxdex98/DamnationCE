@@ -32,8 +32,6 @@ enum
 	_variant_is_system_default_bit = 0
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct player_ui_local_player

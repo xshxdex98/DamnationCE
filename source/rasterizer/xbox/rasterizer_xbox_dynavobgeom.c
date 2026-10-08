@@ -128,9 +128,6 @@ typedef char rasterizer_dynamic_geometry_camera_offset_assert[
 static void submit_screen_vertex(
 	struct dynamic_screen_vertex const *vertex);
 
-/* ---------- globals */
-
-
 /* ---------- public code */
 
 void _rasterizer_hud_begin(

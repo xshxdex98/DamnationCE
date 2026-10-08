@@ -47,8 +47,6 @@ enum hud_damage_indicator_direction
 	NUMBER_OF_HUD_DAMAGE_INDICATOR_DIRECTIONS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct unit_hud_state

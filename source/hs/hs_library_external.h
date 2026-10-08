@@ -6,12 +6,6 @@ HS_LIBRARY_EXTERNAL.H
 #define __HS_LIBRARY_EXTERNAL_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/EXAMPLE.C */
 
 boolean hs_not(
@@ -89,9 +83,5 @@ void hs_object_set_facing(
 void hs_teleport_players_not_in_trigger_volume(
 	short trigger_volume_index,
 	short cutscene_flag_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __HS_LIBRARY_EXTERNAL_H

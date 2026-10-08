@@ -7,10 +7,6 @@ RENDER_MEDIA.C
 #include "cseries.h"
 #include "real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct render_media_globals
@@ -39,8 +35,6 @@ struct frame_level_of_detail
 
 typedef char frame_level_of_detail_size_assert[
 	sizeof(struct frame_level_of_detail) == 84 ? 1 : -1];
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -105,4 +99,3 @@ void render_media(
 	return;
 }
 
-/* ---------- private code */

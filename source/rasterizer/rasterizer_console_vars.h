@@ -12,10 +12,6 @@ Rasterizer debug options (the rasterizer_* script and console globals).
 
 #include "cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct rasterizer_debug_options
@@ -105,13 +101,9 @@ struct rasterizer_debug_options
 	byte pad8A[2]; /* 0x8A */
 };
 
-/* ---------- prototypes/EXAMPLE.C */
-
 /* ---------- globals */
 
 extern struct rasterizer_debug_options rasterizer_debug_options;
 extern boolean debug_render_freeze;
-
-/* ---------- public code */
 
 #endif // __RASTERIZER_CONSOLE_VARS_H

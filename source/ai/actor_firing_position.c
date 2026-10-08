@@ -2,7 +2,6 @@
 ACTOR_FIRING_POSITION.C
 */
 
-
 /* ---------- headers */
 
 #include "cseries.h"
@@ -75,9 +74,6 @@ enum
 	_firing_position_evaluation_vehicle_heading = 24,
 	_firing_position_evaluation_flying_path = 25,
 };
-
-
-/* ---------- macros */
 
 /* ---------- structures */
 
@@ -1193,7 +1189,6 @@ static void pre_evaluator_global(
 
 	return;
 }
-
 
 static void pre_evaluator_pursuit(
 	long actor_index,

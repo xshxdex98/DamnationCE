@@ -16,10 +16,6 @@ RASTERIZER_XBOX_PLASMA_ENERGY.C
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "rasterizer/rasterizer_console_vars.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct plasma_runtime_parameters
@@ -307,4 +303,3 @@ void rasterizer_plasma_energy_draw(
 	return;
 }
 
-/* ---------- private code */

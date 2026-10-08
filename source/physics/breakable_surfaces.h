@@ -31,9 +31,6 @@ enum
 	NUMBER_OF_BREAKABLE_SURFACE_PARTICLE_EFFECT_FLAGS,
 };
 
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct breakable_surface_datum
@@ -100,9 +97,5 @@ void breakable_surface_damage(
 	long seed_surface_index);
 void breakable_surface_damage_area_of_effect(
 	const struct damage_data *damage_data);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __BREAKABLE_SURFACES_H

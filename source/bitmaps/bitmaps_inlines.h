@@ -16,8 +16,6 @@ file has inline function assertions.
 #include "math/real_math.h"
 #include "effects/particles.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define match_assert_valid_real_rgb_color(file, line, rgb) \
@@ -32,12 +30,6 @@ file has inline function assertions.
 			(*rgb).red, \
 			(*rgb).green, \
 			(*rgb).blue))
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
 
 /* ---------- public code */
 

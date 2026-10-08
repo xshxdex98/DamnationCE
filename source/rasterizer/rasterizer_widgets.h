@@ -12,10 +12,6 @@ RASTERIZER_WIDGETS.H
 
 #define RASTERIZER_WIDGET_SIGNATURES_OWNED
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef void (*rasterizer_widget_render_proc)(
@@ -99,9 +95,5 @@ long _rasterizer_widget_get_occlusion_test_result(
 	long index);
 void _rasterizer_widget_end(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __RASTERIZER_WIDGETS_H

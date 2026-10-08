@@ -12,10 +12,6 @@ MODELS.H
 #include "math/real_math.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct model_shader_reference
@@ -122,9 +118,5 @@ void render_model(
 	unsigned long flags);
 boolean model_data_report_once(
 	void const *data);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __MODELS_H

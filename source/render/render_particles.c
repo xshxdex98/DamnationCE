@@ -31,8 +31,6 @@ enum
 	MAXIMUM_RENDERED_PARTICLE_GROUPS = 512,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct rendered_particle_datum
@@ -46,8 +44,6 @@ struct rendered_particle_datum
 
 typedef char rendered_particle_size_assert[
 	sizeof(struct rendered_particle_datum) == 8 ? 1 : -1];
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -388,4 +384,3 @@ void render_particles(
 	return;
 }
 
-/* ---------- private code */

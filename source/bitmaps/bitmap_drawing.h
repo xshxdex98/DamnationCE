@@ -12,10 +12,6 @@ BITMAP_DRAWING.H
 #include "math/integer_math.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_data;
@@ -54,9 +50,5 @@ void bitmap_frame_rectangle(
 	pixel32 color,
 	real_rectangle2d const *bounds,
 	rectangle2d const *clip_rectangle);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __BITMAP_DRAWING_H

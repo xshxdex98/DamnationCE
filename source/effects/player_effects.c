@@ -78,8 +78,6 @@ enum
 	_damage_draw_indicators_down_bit = 8
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct continuous_player_effect_datum
@@ -1267,4 +1265,3 @@ void player_effect_start(
 	return;
 }
 
-/* ---------- private code */

@@ -6,7 +6,6 @@ BSP3D.H
 #define __BSP3D_H
 #pragma once
 
-
 /* ---------- headers */
 
 #include "tag_files/tag_groups.h"
@@ -22,8 +21,6 @@ enum
 	bsps are at most 66 deep. A cycle of nodes would never end */
 	MAXIMUM_BSP3D_TRAVERSAL_DEPTH = 128,
 };
-
-/* ---------- macros */
 
 /* ---------- structures */
 
@@ -45,8 +42,6 @@ typedef char bsp3d_node_size_check[
 /* ---------- prototypes/BSP3D.C */
 
 long bsp3d_test_point(struct bsp3d const *bsp, long node_index, union real_point3d const *point);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

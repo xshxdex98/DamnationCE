@@ -12,10 +12,6 @@ file has inline function assertions.
 
 #include "cseries/cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct IDirectSound;
@@ -45,7 +41,5 @@ struct IDirectSound *dsound_get(
 /* ---------- globals */
 
 extern struct sound_platform_definition platform_sound_dsound;
-
-/* ---------- public code */
 
 #endif // __SOUND_DSOUND_H

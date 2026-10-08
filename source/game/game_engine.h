@@ -120,8 +120,6 @@ enum get_score_type
 	_get_score_team,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct game_globals;
@@ -758,7 +756,6 @@ void game_show_score_extended(
 	long score,
 	long team_index);
 long game_engine_remap_weapon(long weapon_definition_index);
-
 
 boolean game_engine_allow_integrated_lights(
 	long object_index);

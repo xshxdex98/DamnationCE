@@ -1323,4 +1323,3 @@ void hud_draw_screen(
 	return;
 }
 
-/* ---------- private code */

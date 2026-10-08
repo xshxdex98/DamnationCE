@@ -6,10 +6,6 @@ AI_GLOBALS.H
 #define __AI_GLOBALS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct ai_spatial_effect
@@ -70,12 +66,8 @@ struct ai_globals
 	long mounted_weapon_unit_indices[8];
 };
 
-/* ---------- prototypes/EXAMPLE.C */
-
 /* ---------- globals */
 
 extern struct ai_globals *ai_globals;
-
-/* ---------- public code */
 
 #endif // __AI_GLOBALS_H

@@ -6,16 +6,4 @@ LIGHTNING_DEFINITIONS.H
 #define __LIGHTNING_DEFINITIONS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __LIGHTNING_DEFINITIONS_H

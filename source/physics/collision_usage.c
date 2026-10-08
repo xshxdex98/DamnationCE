@@ -21,8 +21,6 @@ enum
 	NUMBER_OF_COLLISION_TIME_PERIODS = 3
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct collision_log
@@ -51,8 +49,6 @@ struct collision_overall_usage
 	struct collision_log total_all_periods;
 	struct collision_log usage_by_period[NUMBER_OF_COLLISION_TIME_PERIODS];
 };
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -544,4 +540,3 @@ void collision_log_display(
 	return;
 }
 
-/* ---------- private code */

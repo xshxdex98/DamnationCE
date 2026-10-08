@@ -48,9 +48,6 @@ enum
 	MAXIMUM_MULTIPLAYER_GAME_TEAMS,
 };
 
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct game_options
@@ -122,7 +119,6 @@ struct game_statistics
 	short custom_data_size;
 	union multiplayer_statistics multiplayer_statistics;
 };
-
 
 /* ---------- prototypes/GAME_STATISTICS.C */
 
@@ -210,9 +206,5 @@ void game_time_update(real time_delta_sec);
 /* ---------- prototypes/MAIN.C */
 
 short game_connection(void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __GAME_H

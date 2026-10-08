@@ -17,8 +17,6 @@ enum
 	NUMBER_OF_TEXT_JUSTIFICATIONS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_data;
@@ -111,9 +109,5 @@ void bitmap_draw_string(
 	rectangle2d const *bounds,
 	rectangle2d const *clip,
 	char const *string);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __DRAW_STRING_H

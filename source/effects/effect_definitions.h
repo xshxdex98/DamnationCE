@@ -20,8 +20,6 @@ enum
 	MAXIMUM_EFFECT_EVENTS = 32,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct effect_definition
@@ -82,11 +80,5 @@ typedef char effect_part_definition_reference_offset_assert[
 	offsetof(struct effect_part_definition, reference) == 0x18 ? 1 : -1];
 typedef char effect_part_definition_velocity_offset_assert[
 	offsetof(struct effect_part_definition, velocity_lower_bound) == 0x40 ? 1 : -1];
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __EFFECT_DEFINITIONS_H

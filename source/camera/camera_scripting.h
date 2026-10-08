@@ -10,12 +10,6 @@ CAMERA_SCRIPTING.H
 
 #include "cseries/cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/CAMERA_SCRIPTING.C */
 
 struct camera_control;
@@ -59,9 +53,5 @@ void scripted_camera_update(
 	struct dead_camera *camera,
 	struct camera_control const *controls,
 	struct scripted_camera_command *result);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __CAMERA_SCRIPTING_H

@@ -59,8 +59,6 @@ enum
 	ACTIVE_CAMOUFLAGE_SCREEN_HEIGHT = 240
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct shader_model_definition
@@ -114,10 +112,7 @@ typedef char verify_transparent_geometry_group_animation_offset[
 	offsetof(struct transparent_geometry_group, animation) == 0x6C ? 1 : -1];
 
 #endif
-/* ---------- prototypes */
-
 /* ---------- globals */
-
 
 static boolean local_active_camouflage_visibility_flag = FALSE;
 static boolean local_active_camouflage_debug_cached_flag = FALSE;
@@ -776,4 +771,3 @@ void rasterizer_active_camouflage_draw(
 	return;
 }
 
-/* ---------- private code */

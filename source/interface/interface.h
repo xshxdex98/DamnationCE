@@ -29,8 +29,6 @@ enum
 	NUMBER_OF_INTERFACE_TAGS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_data;
@@ -89,9 +87,5 @@ void interface_draw_bitmap_modulated_p32(
 	short shader_type);
 void profile_graph_toggle(
 	char const *graph_name);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __INTERFACE_H

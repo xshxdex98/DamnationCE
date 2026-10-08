@@ -14,8 +14,6 @@ enum
 	_predicted_resource_sound
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct predicted_resource
@@ -28,9 +26,5 @@ struct predicted_resource
 /* ---------- prototypes/PREDICTED_RESOURCES.C */
 
 void predicted_resources_precache(struct tag_block *predicted_resources);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __PREDICTED_RESOURCES_H

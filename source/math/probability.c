@@ -6,16 +6,6 @@ PROBABILITY.C
 
 #include "cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 long factorial(short value)
@@ -167,4 +157,3 @@ boolean combine(
 	return FALSE;
 }
 
-/* ---------- private code */

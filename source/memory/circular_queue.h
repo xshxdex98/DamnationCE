@@ -6,10 +6,6 @@ CIRCULAR_QUEUE.H
 #define __CIRCULAR_QUEUE_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct circular_queue
@@ -44,9 +40,5 @@ boolean circular_queue_dequeue_data(
 	void *data,
 	long data_size,
 	boolean advance);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __CIRCULAR_QUEUE_H

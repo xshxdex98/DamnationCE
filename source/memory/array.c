@@ -8,14 +8,6 @@ ARRAY.C
 #include "cseries/profile.h"
 #include "array.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static struct profile_section data_00308bc0[3] =
@@ -417,5 +409,3 @@ void static_array_delete_element(
 	return;
 }
 
-
-/* ---------- private code */

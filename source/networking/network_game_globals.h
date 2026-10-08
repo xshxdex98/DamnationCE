@@ -35,8 +35,6 @@ enum
 	NUMBER_OF_NETWORK_GAME_CLIENT_STATES
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct network_game;
@@ -102,9 +100,5 @@ boolean create_global_network_game_server(
 decides nothing the host does */
 boolean network_game_distributed_client(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __NETWORK_GAME_GLOBALS_H

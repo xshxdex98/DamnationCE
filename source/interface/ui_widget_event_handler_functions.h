@@ -6,10 +6,6 @@ UI_WIDGET_EVENT_HANDLER_FUNCTIONS.H
 #define __UI_WIDGET_EVENT_HANDLER_FUNCTIONS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct event_record;
@@ -25,9 +21,5 @@ boolean ui_widget_event_handler_function_invoke(
 
 void reset_last_player1_profile_index(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __UI_WIDGET_EVENT_HANDLER_FUNCTIONS_H

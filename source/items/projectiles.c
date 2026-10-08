@@ -97,8 +97,6 @@ enum
 	MAXIMUM_COMBINING_PROJECTILES = 6,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef char projectile_runtime_arming_time_delta_offset_assert[

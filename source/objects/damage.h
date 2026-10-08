@@ -59,8 +59,6 @@ enum
 	NUMBER_OF_DAMAGE_DATA_FLAGS,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct damage_region
@@ -152,8 +150,6 @@ void object_cause_damage(
 	short region_index,
 	short material_index,
 	real_vector3d const *object_normal);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

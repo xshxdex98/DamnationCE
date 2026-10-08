@@ -2,7 +2,6 @@
 RASTERIZER_TEXT.C
 */
 
-
 /* ---------- headers */
 
 #include "cseries/cseries.h"
@@ -48,8 +47,6 @@ enum
 	HIRES_TEXT_ATLAS_BITMAP_SIZE = 256,
 	MAXIMUM_HIRES_TEXT_FONTS = 8,
 };
-
-/* ---------- macros */
 
 /* ---------- structures */
 
@@ -166,7 +163,6 @@ static void rasterizer_draw_hires_character_with_dropshadow(
 	short dy);
 
 /* ---------- globals */
-
 
 static struct hardware_character_cache hardware_character_cache;
 static struct bitmap_data *hires_text_atlas = NULL;

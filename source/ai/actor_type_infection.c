@@ -35,8 +35,6 @@ enum
 	_swarm_movement_obey,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct unit_control_data
@@ -121,8 +119,6 @@ struct actor_type_definition actor_type_infection =
 	infection_swarm_control,
 	infection_swarm_aim_jump
 };
-
-/* ---------- public code */
 
 /* ---------- private code */
 

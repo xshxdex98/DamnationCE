@@ -7,10 +7,6 @@ CRC.C
 #include "cseries.h"
 #include "memory/crc.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 #pragma pack(push, 1)
@@ -20,8 +16,6 @@ struct crc_globals
 	boolean initialized;
 };
 #pragma pack(pop)
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -106,4 +100,3 @@ void crc_checksum_buffer(
 	return;
 }
 
-/* ---------- private code */

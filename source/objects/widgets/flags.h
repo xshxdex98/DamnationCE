@@ -12,10 +12,6 @@ FLAGS.H
 #include "tag_files/tag_groups.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct flag_definition
@@ -70,7 +66,5 @@ void flag_render(
 /* ---------- globals */
 
 extern struct data_array *flag_data;
-
-/* ---------- public code */
 
 #endif // __FLAGS_H

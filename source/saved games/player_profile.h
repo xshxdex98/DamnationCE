@@ -46,8 +46,6 @@ enum
 	NUMBER_OF_JOYSTICK_PRESETS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct player_profile_controller_settings
@@ -119,9 +117,5 @@ real_argb_color player_profile_get_argb_color(
 	long color_index);
 void player_profile_save_last_level_played(
 	short local_player_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __PLAYER_PROFILE_H

@@ -9,8 +9,6 @@ GARBAGE.H
 #include "items/items.h"
 #include "objects/object_types.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define garbage_get(index) ((struct garbage_datum *)object_get_and_verify_type((index), _object_mask_garbage))
@@ -30,9 +28,5 @@ struct garbage_datum
 
 boolean garbage_update(long garbage_index);
 boolean garbage_new(long garbage_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __GARBAGE_H

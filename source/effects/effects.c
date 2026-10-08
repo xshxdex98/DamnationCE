@@ -1210,7 +1210,6 @@ real real_local_random(
 
 /* ---------- private code */
 
-
 static void effect_marker_list_get_marker(
 	struct object_marker *marker,
 	struct effect_marker_list const *marker_list,

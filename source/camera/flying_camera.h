@@ -11,10 +11,6 @@ FLYING_CAMERA.H
 #include "cseries/cseries.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct flying_camera
@@ -49,9 +45,5 @@ void flying_camera_update(
 	struct flying_camera *camera,
 	struct flying_camera_action const *controls,
 	struct camera_command *result);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __FLYING_CAMERA_H

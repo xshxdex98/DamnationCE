@@ -110,8 +110,6 @@ enum
 	_d3d_texture_state_mip_filter = 15,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_data;

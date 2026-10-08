@@ -96,8 +96,6 @@ enum
 	_bitmap_bevel_center_bit,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_line_state
@@ -1163,4 +1161,3 @@ void bitmap_frame_rectangle(
 	return;
 }
 
-/* ---------- private code */

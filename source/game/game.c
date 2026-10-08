@@ -80,8 +80,6 @@ boolean network_game_distributed_client(void);
 /* port: a client drives the host's actors' units as the host sent them (port/linux/game/network_actors.c) */
 void network_actors_drive(void);
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 struct game_runtime_globals_prefix
@@ -109,8 +107,6 @@ typedef char verify_game_runtime_globals_players_are_double_speed_offset[
 typedef char verify_game_runtime_globals_difficulty_offset[
 	offsetof(struct game_runtime_globals_prefix, options) +
 		offsetof(struct game_options, difficulty) == 0xE ? 1 : -1];
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -894,4 +890,3 @@ void game_set_game_variant_from_name(
 	return;
 }
 
-/* ---------- private code */

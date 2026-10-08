@@ -24,8 +24,6 @@ STRUCTURE_DETAIL_OBJECTS.C
 #pragma intrinsic(memset)
 #pragma intrinsic(abs)
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define structure_detail_object_data_get(block, index) \

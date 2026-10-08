@@ -39,8 +39,6 @@ SCENARIO.C
 #include "units/units.h"
 #include "scenario/scenario.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 /* other compilers do not lay the globals out as MSVC did */
@@ -96,7 +94,6 @@ static struct memory_status scenario_memory_status =
 	(unsigned long)-1,
 	0,
 };
-
 
 struct structure_bsp *global_structure_bsp;
 struct scenario *global_scenario;
@@ -1357,4 +1354,3 @@ void scenario_get_atmospheric_fog(
 	return;
 }
 
-/* ---------- private code */

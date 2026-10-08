@@ -38,10 +38,6 @@ enum
 	_action_charge_prop_closing_speed_slow = 1,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static real action_charge_find_target_range(
@@ -53,8 +49,6 @@ static boolean action_charge_valid_melee_destination(
 	long actor_index,
 	short goal,
 	real_point3d *melee_target_point);
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -242,7 +236,6 @@ boolean action_charge_is_leaping(
 
 	return result;
 }
-
 
 boolean action_charge_perform(
 	long actor_index)
@@ -993,4 +986,3 @@ boolean action_charge_setup(
 	return result;
 }
 
-/* ---------- private code */

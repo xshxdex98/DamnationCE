@@ -173,8 +173,6 @@ typedef char render_animation_size[
 	sizeof(struct render_animation) == 0x8 ? 1 : -1];
 
 #endif
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 long numeric_countdown_timer_milliseconds = 0;
@@ -758,4 +756,3 @@ void numeric_countdown_timer_update(
 	return;
 }
 
-/* ---------- private code */

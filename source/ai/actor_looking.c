@@ -24,7 +24,6 @@ ACTOR_LOOKING.C
 #include "game/game.h"
 #endif
 
-
 /* ---------- constants */
 
 enum
@@ -48,9 +47,6 @@ enum
 /* ---------- macros */
 
 #define ACTOR_LOOKING_DEBUG_PRINTING_ENABLED() (ai_debug.print_secondary_looking)
-
-
-
 
 /* ---------- structures */
 
@@ -170,7 +166,6 @@ real const global_secondary_look_times[NUMBER_OF_SECONDARY_LOOK_TYPES] =
 	1.5f,
 	1000.0f,
 };
-
 
 /* ---------- code */
 

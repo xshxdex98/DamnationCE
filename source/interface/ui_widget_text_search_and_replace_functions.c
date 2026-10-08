@@ -7,10 +7,6 @@ UI_WIDGET_TEXT_SEARCH_AND_REPLACE_FUNCTIONS.C
 #include "cseries.h"
 #include "ui_widget_text_search_and_replace_functions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 /* Fields shared by every widget instance and evidenced by ui_widget.c. */

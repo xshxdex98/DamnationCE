@@ -7,10 +7,6 @@ OBJECT_SHADOWS.C
 #include "cseries.h"
 #include "objects/objects.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct object_shadow
@@ -20,10 +16,6 @@ struct object_shadow
 	short count;
 	short unknown1;
 };
-
-/* ---------- prototypes */
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -77,4 +69,3 @@ boolean object_build_shadow(
 	return result;
 }
 
-/* ---------- private code */

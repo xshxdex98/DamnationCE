@@ -10,10 +10,6 @@ MAIN.H
 
 #include "math/integer_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct observer_result;
@@ -218,7 +214,5 @@ extern boolean debug_frame_rate;
 extern boolean display_framerate;
 extern boolean display_vblank_deltas;
 extern boolean display_precache_progress;
-
-/* ---------- public code */
 
 #endif // __MAIN_H

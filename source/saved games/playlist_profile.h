@@ -10,10 +10,6 @@ PLAYLIST_PROFILE.H
 
 #include "cseries/cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct game_variant;
@@ -57,9 +53,5 @@ void playlist_profiles_enumerate_available_to_local_player_index(
 	short local_player_index,
 	word *number_of_profiles,
 	long *playlist_profile_indices);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __PLAYLIST_PROFILE_H

@@ -11,12 +11,6 @@ ACTOR_TYPE_CARRIER.C
 #include "actors.h"
 #include "actions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void carrier_decide_action(
@@ -39,8 +33,6 @@ struct actor_type_definition actor_type_carrier =
 	NULL,
 	NULL
 };
-
-/* ---------- public code */
 
 /* ---------- private code */
 

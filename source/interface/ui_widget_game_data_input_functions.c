@@ -612,7 +612,6 @@ static void server_list_menu_update(
 	struct network_game_client *client = global_network_game_client_get();
 	long displayed_server_count = 0;
 
-
 	csmemset(
 		displayed_servers,
 		0,

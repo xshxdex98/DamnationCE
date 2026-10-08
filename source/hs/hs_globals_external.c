@@ -16,18 +16,12 @@ HS_GLOBALS_EXTERNAL.C
 #include "rasterizer/rasterizer.h"
 #include "rasterizer/rasterizer_console_vars.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 #ifndef HALO_64BIT /* (host-only: native pointers) */
 typedef char verify_hs_external_global_definition_size[
 	sizeof(struct hs_external_global_definition) == 0xC ? 1 : -1];
 #endif
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -2086,4 +2080,3 @@ boolean hs_external_global_settable_by_maps(
 		hs_external_global_settable_in_maps[global_index];
 }
 
-/* ---------- private code */

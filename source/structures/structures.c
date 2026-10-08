@@ -144,8 +144,6 @@ typedef char verify_structure_cluster_magic_numbers_offset[
 typedef char verify_structure_runtime_globals_size[
 	sizeof(struct structure_runtime_globals) == 0x808 ? 1 : -1];
 
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static struct structure_runtime_globals structure_globals;
@@ -1022,4 +1020,3 @@ void structure_get_planar_fog(
 	return;
 }
 
-/* ---------- private code */

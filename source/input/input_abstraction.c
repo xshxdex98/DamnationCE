@@ -58,8 +58,6 @@ enum
 #define LEFT_STICK_DIAGONAL_SNAP_ANGLE ((double)STICK_DIAGONAL_ANGLE - RIGHT_STICK_DIAGONAL_SNAP_ANGLE)
 #define STICK_DIAGONAL_BLEND_SCALE (1.0 / LEFT_STICK_DIAGONAL_SNAP_ANGLE)
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct game_input_state

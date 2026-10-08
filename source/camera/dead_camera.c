@@ -12,10 +12,6 @@ DEAD_CAMERA.C
 #include "memory/data.h"
 #include "objects/objects.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct camera_control

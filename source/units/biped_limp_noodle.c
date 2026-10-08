@@ -27,10 +27,6 @@ enum
 	NUMBER_OF_NODE_BLOCK_FLAGS,
 };
 
-/* ---------- macros */
-
-
-
 /* ---------- structures */
 
 struct animation_graph_node

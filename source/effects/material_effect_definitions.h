@@ -87,10 +87,4 @@ struct material_definition
 	struct tag_reference melee_hit_sound;
 };
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __MATERIAL_EFFECT_DEFINITIONS_H

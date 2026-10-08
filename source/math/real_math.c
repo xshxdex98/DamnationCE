@@ -8,12 +8,6 @@ REAL_MATH.C
 #include "real_math.h"
 #include "periodic_functions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static __inline real magnitude_squared3d_right_associated(
@@ -1224,7 +1218,6 @@ boolean pill_intersects_rectangle2d(
 	return result;
 }
 
-
 boolean sphere_intersects_rectangle3d(
 	real_point3d const *center,
 	real radius,
@@ -1443,7 +1436,6 @@ boolean pill_intersects_triangle3d(
 	return plane_distance * plane_distance <=
 		magnitude_squared3d(&n) * width * width;
 }
-
 
 boolean vector_intersects_rectangle2d(
 	real_point2d const *point,
@@ -1768,7 +1760,6 @@ closest_distance:
 intersection:
 	return TRUE;
 }
-
 
 #define VECTOR_INTERSECTS_LINE2D(point, vector, line_point, line_endpoint, t_in, t_out) \
 	do \
@@ -2670,7 +2661,6 @@ real vector_to_line_distance_squared3d(
 	return magnitude_squared3d(&closest_offset);
 }
 
-
 boolean sphere_test_vector3d(
 	real_point3d const *center,
 	real radius,
@@ -2977,7 +2967,6 @@ void angular_accelerate_to_position(
 	return;
 }
 
-
 boolean accelerate_to_velocity3d(
 	real_vector3d *velocity,
 	real_vector3d const *target_velocity,
@@ -3198,4 +3187,3 @@ boolean valid_real_sine_cosine(
 	return valid_realcmp(sine * sine + cosine * cosine, 1.0f);
 }
 
-/* ---------- private code */

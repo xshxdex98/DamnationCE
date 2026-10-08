@@ -202,6 +202,4 @@ void particle_system_orphan(
 extern struct data_array *particle_systems;
 extern struct data_array *system_particles;
 
-/* ---------- public code */
-
 #endif // __PARTICLE_SYSTEMS_H

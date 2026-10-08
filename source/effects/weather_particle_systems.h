@@ -13,10 +13,6 @@ WEATHER_PARTICLE_SYSTEMS.H
 #include "math/real_math.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct structure_weather_polyhedron
@@ -52,8 +48,6 @@ void weather_particle_system_new(
 	real scale);
 void weather_particle_systems_render(
 	void);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

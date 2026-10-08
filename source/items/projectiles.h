@@ -8,8 +8,6 @@ PROJECTILES.H
 
 #include "items/items.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define projectile_get(index) \
@@ -122,9 +120,5 @@ boolean projectile_aim_ballistic(
 void projectile_accelerate(
 	long projectile_index,
 	union real_vector3d const *acceleration);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __PROJECTILES_H

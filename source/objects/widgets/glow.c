@@ -908,7 +908,6 @@ static void get_particle_world_position(
 	return;
 }
 
-
 /* port: a particle's time moved back into its glow's length (total, more
 than 0): one length at a time, as the game did, unless it is past by more
 than a length (a length too short to change the time would never get

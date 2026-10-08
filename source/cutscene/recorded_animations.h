@@ -6,12 +6,6 @@ RECORDED_ANIMATIONS.H
 #define __RECORDED_ANIMATIONS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/RECORDED_ANIMATIONS.C */
 
 void recorded_animations_initialize(
@@ -45,8 +39,6 @@ boolean recorded_animation_play_and_hover(
 	short animation_index);
 void render_debug_recording(
 	void);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

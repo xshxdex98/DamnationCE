@@ -32,10 +32,6 @@ enum
 	NUMBER_OF_LANGUAGE_CODES,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/INTERNATIONAL_STRINGS.C */
 
 void set_language_code(short language_code);
@@ -44,9 +40,5 @@ word get_previous_character(byte *string, short *index);
 void align_to_character(unsigned char *string, short *index);
 boolean double_byte_character(byte *string);
 boolean character_in_pattern(word character, char *pattern);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __INTERNATIONAL_STRINGS_H

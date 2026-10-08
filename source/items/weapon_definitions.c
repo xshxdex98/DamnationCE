@@ -11,16 +11,6 @@ WEAPON_DEFINITIONS.C
 #include "game/game_globals.h"
 #include "objects/damage_effect_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 real weapon_definition_get_damage_potential(long weapon_definition_index, real *rate_of_fire)
@@ -54,4 +44,3 @@ real weapon_definition_get_damage_potential(long weapon_definition_index, real *
 	return damage_potential;
 }
 
-/* ---------- private code */

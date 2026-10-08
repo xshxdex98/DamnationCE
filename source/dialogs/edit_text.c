@@ -10,17 +10,9 @@ EDIT_TEXT.C
 #include "input/input.h"
 #include "text/international_strings.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void edit_text_fix_selection(struct edit_text *edit);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

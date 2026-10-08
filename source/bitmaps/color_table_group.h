@@ -40,10 +40,4 @@ struct color_table_definition
 typedef char verify_color_table_color_size[
 	sizeof(struct color_table_color) == 0x30 ? 1 : -1];
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __COLOR_TABLE_GROUP_H

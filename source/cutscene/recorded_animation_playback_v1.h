@@ -10,12 +10,6 @@ RECORDED_ANIMATION_PLAYBACK_V1.H
 
 #include "units/unit_control_data.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/RECORDED_ANIMATION_PLAYBACK_V1.C */
 
 /* port: the stream's end bounds every read; initializing is FALSE when the
@@ -34,9 +28,5 @@ boolean recorded_animation_apply_event_stream_v1(
 	byte const *event_stream_end);
 
 void byte_swap_recording_stream_v1(void *stream, long stream_size, byte unit_control_data_version);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __RECORDED_ANIMATION_PLAYBACK_V1_H

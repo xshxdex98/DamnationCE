@@ -163,10 +163,4 @@ struct object_definition
 	struct _object_definition object;
 };
 
-/* ---------- prototypes/OBJECT_DEFINITIONS.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __OBJECT_DEFINITIONS_H

@@ -13354,4 +13354,3 @@ static boolean hs_compile_and_evaluate_command(
 	return success;
 }
 
-/* ---------- private code */

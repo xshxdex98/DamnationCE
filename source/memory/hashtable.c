@@ -7,8 +7,6 @@ HASHTABLE.C
 #include "cseries/cseries.h"
 #include "memory/hashtable.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define hashtable_valid(table) \
@@ -19,8 +17,6 @@ HASHTABLE.C
 	(table)->load_factor<=1 && \
 	((table)->capacity_bits==NONE || \
 	(1<<(table)->capacity_bits)==(table)->elements.count))
-
-/* ---------- structures */
 
 /* ---------- prototypes */
 

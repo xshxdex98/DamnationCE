@@ -9,18 +9,10 @@ PRIME_NUMBERS.C
 #include "bungie_net/common/prime_numbers.h"
 #include "bungie_net/common/random_numbers.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 static unsigned long *primegen(
 	unsigned long maximum,
 	unsigned long *num_primes);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

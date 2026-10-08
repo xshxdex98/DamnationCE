@@ -6,10 +6,6 @@ THREAD.H
 #define __THREAD_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct thread_reference;
@@ -35,9 +31,5 @@ void release_mutex(
 	struct mutex_reference *mutex_reference);
 void dispose_mutex(
 	struct mutex_reference *mutex_reference);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __THREAD_H

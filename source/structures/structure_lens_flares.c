@@ -91,8 +91,6 @@ static long compare_temp_markers(
 	struct temporary_lens_flare_marker const *a,
 	struct temporary_lens_flare_marker const *b);
 
-/* ---------- globals */
-
 /* ---------- public code */
 
 void structure_lens_flares_place(

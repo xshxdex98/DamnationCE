@@ -11,10 +11,6 @@ NETWORK_GAME_MANAGER.H
 #include "game/game_engine.h"
 #include "game/players.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct network_game;
@@ -125,9 +121,5 @@ boolean network_game_remove_machine(
 	struct network_machine *machine);
 boolean network_game_create_game_objects(
 	struct network_game *game);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __NETWORK_GAME_MANAGER_H

@@ -10,9 +10,7 @@ LRUV_CACHE.H
 
 #include "cseries/cseries.h"
 
-/* ---------- constants */
 
-/* ---------- macros */
 
 /* ---------- structures */
 
@@ -141,8 +139,6 @@ void lruv_debug_to_file(
 void lruv_flush(
 	struct lruv_cache *cache);
 
-/* ---------- globals */
 
-/* ---------- public code */
 
 #endif // __LRUV_CACHE_H

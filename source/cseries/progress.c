@@ -8,16 +8,6 @@ PROGRESS.C
 #include "cseries_windows.h"
 #include "progress.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void progress_new(
@@ -61,4 +51,3 @@ void progress_update(
 	}
 }
 
-/* ---------- private code */

@@ -6,14 +6,6 @@ SOUND_ENVIRONMENT_DEFINITIONS.C
 
 #include "sound_environment_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 struct sound_environment_definition const default_sound_environment=
@@ -36,6 +28,3 @@ struct sound_environment_definition const default_sound_environment=
 	{ 0 },
 };
 
-/* ---------- public code */
-
-/* ---------- private code */

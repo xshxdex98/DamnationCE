@@ -9,12 +9,6 @@ RANDOM_NUMBERS.C
 
 #include <time.h>
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- globals */
 
 static boolean random_numbers_initialized = FALSE;
@@ -54,4 +48,3 @@ randomrange64(
 	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\random_numbers.c", 59, result->qword <= max->qword);
 }
 
-/* ---------- private code */

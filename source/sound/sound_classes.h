@@ -29,8 +29,6 @@ enum sound_class
 	_sound_class_scripted_dialog_force_unspatialized = 47,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct sound_class_definition
@@ -85,9 +83,5 @@ void sound_classes_update(
 void debug_sound_classes_set_wet(
 	char const *name,
 	real wet);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __SOUND_CLASSES_H

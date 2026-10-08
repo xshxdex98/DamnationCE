@@ -11,14 +11,6 @@ GAME_GLOBALS.C
 #include "game/game_allegiance.h"
 #include "scenario/scenario.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 char const *global_material_type_strings[NUMBER_OF_MATERIAL_TYPES] =

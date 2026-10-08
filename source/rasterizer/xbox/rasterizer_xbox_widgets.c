@@ -34,8 +34,6 @@ enum widget_flags
 	_widget_zbuffer_write_enable_bit
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_data;

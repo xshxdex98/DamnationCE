@@ -10,16 +10,6 @@ DATA_COMPRESS.C
 #include "memory/byte_swapping.h"
 #include "memory/zlib/zlib.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 boolean data_compress(
@@ -91,4 +81,3 @@ boolean data_decompress(
 	return result;
 }
 
-/* ---------- private code */

@@ -26,14 +26,10 @@ ACTION_UNCOVER.C
 
 #define ACTION_UNCOVER_DEBUG_PRINTING_ENABLED() (ai_debug.print_uncovering)
 
-/* ---------- constants */
-
 /* ---------- structures */
 
 typedef char action_uncover_ai_debug_printing_offset_must_be_0xA4[
 	offsetof(struct ai_debug_state, print_uncovering) == 0xA4 ? 1 : -1];
-
-/* ---------- prototypes */
 
 /* ---------- public code */
 

@@ -22,8 +22,6 @@ enum
 	_collision_surface_breakable_bit
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bsp2d_reference
@@ -204,9 +202,5 @@ void render_debug_collision_surface(
 	real_matrix4x3 const *matrix,
 	real_argb_color const *color);
 void render_debug_collision_bsp(struct collision_bsp *bsp, const real_matrix4x3 *matrix);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __COLLISION_BSP_H

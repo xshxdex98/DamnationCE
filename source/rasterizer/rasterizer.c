@@ -1778,4 +1778,3 @@ void rasterizer_debug_model_vertices(
 	return;
 }
 
-/* ---------- private code */

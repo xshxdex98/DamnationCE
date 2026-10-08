@@ -63,14 +63,6 @@ enum network_game_message_type
 	NUMBER_OF_NETWORK_GAME_MESSAGE_TYPES,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void initialize_network_game_packets(

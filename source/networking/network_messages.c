@@ -13,8 +13,6 @@ NETWORK_MESSAGES.C
 /* cseries_windows.c's */
 unsigned long system_milliseconds(void);
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define DATA_PACKET_FIELD(type, count) { type, count, 0, 0, 0 }
@@ -150,8 +148,6 @@ DEFINE_NETWORK_GAME_MESSAGE(message_client_switch_to_pregame, 0x04);
 DEFINE_NETWORK_GAME_MESSAGE(message_client_graceful_game_exit_postgame, 0x04);
 
 #undef DEFINE_NETWORK_GAME_MESSAGE
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -706,4 +702,3 @@ boolean decode_network_game_message(
 	return result;
 }
 
-/* ---------- private code */

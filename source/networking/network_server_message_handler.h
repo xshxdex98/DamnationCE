@@ -10,10 +10,6 @@ NETWORK_SERVER_MESSAGE_HANDLER.H
 
 #include "cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct network_machine;
@@ -55,9 +51,5 @@ boolean network_game_server_handle_datagram(
 	word *message,
 	short datagram_size,
 	struct transport_address *source_address);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __NETWORK_SERVER_MESSAGE_HANDLER_H

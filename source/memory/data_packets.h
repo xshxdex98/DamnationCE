@@ -6,10 +6,6 @@ DATA_PACKETS.H
 #define __DATA_PACKETS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct data_packet_definition;
@@ -34,9 +30,5 @@ boolean data_packet_decode(
 	void *decoded_packet,
 	short *packet_version,
 	short *decoded_packet_size);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __DATA_PACKETS_H

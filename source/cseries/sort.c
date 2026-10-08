@@ -15,10 +15,6 @@ enum
 	QSORT_CUTOFF = 8
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void shortsort_2byte(
@@ -29,8 +25,6 @@ static void shortsort_4byte(
 	long *hi,
 	long *lo,
 	boolean (*compare)(long, long));
-
-/* ---------- globals */
 
 /* ---------- public code */
 

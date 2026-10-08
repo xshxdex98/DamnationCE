@@ -10,12 +10,6 @@ RECORDED_ANIMATION_PLAYBACK.H
 
 #include "units/unit_control_data.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/RECORDED_ANIMATION_PLAYBACK.C */
 
 void byte_swap_recording_stream(void *stream, long stream_size, byte unit_control_data_version);
@@ -34,9 +28,5 @@ boolean recorded_animation_apply_event_stream(
 	long *relative_ticks,
 	byte **event_stream,
 	byte const *event_stream_end);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __RECORDED_ANIMATION_PLAYBACK_H

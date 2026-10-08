@@ -24,8 +24,6 @@ HS_LIBRARY_EXTERNAL.C
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
 #include "coop_scripts.h" /* port: port/linux/game/coop_scripts.c */
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define hs_sound_definition_get(index) \
@@ -1009,4 +1007,3 @@ void hs_teleport_players_not_in_trigger_volume(
 	return;
 }
 
-/* ---------- private code */

@@ -12,10 +12,6 @@ FIRST_PERSON_WEAPONS.H
 #include "math/real_math.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct animation_graph_first_person_weapon_animations
@@ -86,9 +82,5 @@ void first_person_weapon_message_from_weapon(
 struct real_matrix4x3 *first_person_weapon_get_node_matrix(
 	short local_player_index,
 	short node_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __FIRST_PERSON_WEAPONS_H

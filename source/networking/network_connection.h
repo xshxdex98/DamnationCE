@@ -21,8 +21,6 @@ enum
 	_connection_create_serverside_client_bit,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct network_connection;
@@ -92,7 +90,5 @@ void network_server_allow_client_connections(
 /* ---------- globals */
 
 extern boolean global_connection_dont_timeout;
-
-/* ---------- public code */
 
 #endif // __NETWORK_CONNECTION_H

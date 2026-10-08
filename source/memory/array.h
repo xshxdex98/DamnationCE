@@ -8,10 +8,6 @@ ARRAY.H
 
 #include "cseries/cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct dynamic_array
@@ -66,9 +62,5 @@ void static_array_delete_element(
 	void *elements,
 	short element_size,
 	short index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __ARRAY_H

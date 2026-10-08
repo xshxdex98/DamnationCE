@@ -9,12 +9,6 @@ SOUND_IMPORT.C
 
 #include "tag_files/files.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 struct sound_file_info;
@@ -28,8 +22,6 @@ boolean sound_file_is_wave(struct file_reference const *file);
 boolean sound_file_wave_info_get(struct file_reference const *file, struct sound_file_info *info);
 boolean sound_file_wave_raw_data_get(struct file_reference const *file, long *size, void *data);
 void sound_file_wave_format(struct sound_file_info const *info, long *size, void *data);
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -75,4 +67,3 @@ boolean sound_raw_sample_data_get(
 	return result;
 }
 
-/* ---------- private code */

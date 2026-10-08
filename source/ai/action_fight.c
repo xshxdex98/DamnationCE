@@ -17,10 +17,6 @@ ACTION_FIGHT.C
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct fight_vehicle_definition
@@ -28,10 +24,6 @@ struct fight_vehicle_definition
 	byte unresolved[0x3A8];
 	real minimum_firing_position_time;
 };
-
-/* ---------- prototypes */
-
-/* ---------- globals */
 
 /* ---------- public code */
 

@@ -21,10 +21,6 @@ enum
 	NUMBER_OF_BINK_PLAYBACK_FLAGS,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/BINK_PLAYBACK.C */
 
 boolean bink_playback_active(void);
@@ -36,9 +32,5 @@ void bink_playback_dispose(void);
 void bink_playback_render(void);
 void bink_playback_start(const char *full_pathname, unsigned long flags);
 void bink_playback_update(void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __BINK_PLAYBACK_H

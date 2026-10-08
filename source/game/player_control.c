@@ -234,7 +234,6 @@ short unit_get_local_player_index(
 	return NONE;
 }
 
-
 void player_control_initialize(
 	void)
 {

@@ -6,14 +6,6 @@ HS_LIBRARY_INTERNAL.H
 #define __HS_LIBRARY_INTERNAL_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
 /* ---------- prototypes/HS_RUNTIME.C */
 
 void hs_evaluate_begin(
@@ -116,9 +108,5 @@ boolean hs_parse_object_cast_up(
 boolean hs_parse_debug_string(
 	short function_index,
 	long expression_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __HS_LIBRARY_INTERNAL_H

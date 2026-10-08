@@ -12,8 +12,6 @@ WIDGETS.H
 #include "math/real_math.h"
 #include "memory/data.h"
 
-/* ---------- constants */
-
 /* ---------- structures */
 
 struct render_animation;
@@ -63,7 +61,5 @@ void widgets_update(
 /* ---------- globals */
 
 extern struct data_array *widget_data;
-
-/* ---------- public code */
 
 #endif // __WIDGETS_H

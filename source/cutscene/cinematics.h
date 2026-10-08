@@ -12,10 +12,6 @@ CINEMATICS.H
 #include "tag_files/tag_groups.h"
 #include "tag_files/tag_files.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct scenario_cutscene_title
@@ -101,7 +97,5 @@ void cinematic_set_title(
 /* ---------- globals */
 
 extern struct cinematic_global_data *cinematic_globals;
-
-/* ---------- public code */
 
 #endif // __CINEMATICS_H

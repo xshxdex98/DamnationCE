@@ -108,8 +108,4 @@ void vehicle_accelerate(
 void vehicle_render_debug(
 	long object_index);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __VEHICLES_H

@@ -41,7 +41,6 @@ enum player_action_result
 	NUMBER_OF_PLAYER_ACTION_RESULTS,
 };
 
-
 /* ---------- macros */
 
 #define player_get(index)			((struct player_datum*)datum_get(player_data, index))
@@ -467,7 +466,5 @@ extern struct players_globals *players_globals;
 
 extern real player_look_yaw_rate[MAXIMUM_NUMBER_OF_LOCAL_PLAYERS];
 extern real player_look_pitch_rate[MAXIMUM_NUMBER_OF_LOCAL_PLAYERS];
-
-/* ---------- public code */
 
 #endif // __PLAYERS_H

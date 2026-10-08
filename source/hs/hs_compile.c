@@ -412,7 +412,6 @@ static boolean hs_get_parameter_indices(
 }
 /* ---------- public code */
 
-
 void hs_compile_initialize(
 	boolean compiling_scenario)
 {
@@ -3310,7 +3309,6 @@ boolean hs_parse_object_cast_up(
 
 	return result;
 }
-
 
 boolean hs_parse_debug_string(
 	short function_index,

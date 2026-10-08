@@ -30,8 +30,6 @@ boolean object_bounds_cache_out_of_reach(long object_index, real_point3d const *
 
 #undef REAL_MATH_EXTERNAL_POINT_FROM_LINE3D
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define COLLISION_POINT_FROM_LINE3D(point, vector, distance, result) \

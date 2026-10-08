@@ -101,8 +101,6 @@ typedef char actor_stimulus_prop_enemy_offset_assert[
 typedef char actor_stimulus_prop_dead_offset_assert[
 	offsetof(struct prop_datum, dead) == 0x127 ? 1 : -1];
 
-/* ---------- globals */
-
 /* ---------- public code */
 
 void actor_stimulus_clear(
@@ -1076,4 +1074,3 @@ void actor_stimulus_prop_fleeing(
 	return;
 }
 
-/* ---------- private code */

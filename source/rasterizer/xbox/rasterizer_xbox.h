@@ -9,10 +9,6 @@ RASTERIZER_XBOX.H
 #include "cseries.h"
 #include "math/integer_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_data;
@@ -50,7 +46,6 @@ void rasterizer_error(
 	long error_result,
 	char const *format,
 	...);
-
 
 /* ---------- prototypes/RASTERIZER_XBOX_PROFILE.C */
 
@@ -163,7 +158,5 @@ boolean shader_transparent_generic_create(
 
 extern D3DDevice *global_d3d_device;
 extern struct pixel_shader_definition pixel_shader;
-
-/* ---------- public code */
 
 #endif // __RASTERIZER_XBOX_H

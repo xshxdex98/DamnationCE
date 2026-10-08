@@ -29,10 +29,6 @@ DIRECTOR.C
 /* network_game_globals.c's */
 boolean network_game_distributed_client(void);
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct camera_control
@@ -987,4 +983,3 @@ short director_camera_deterministic(
 	return following;
 }
 
-/* ---------- private code */

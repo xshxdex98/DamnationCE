@@ -6,7 +6,6 @@ COLLISION_BSP_DEFINITIONS.H
 #define __COLLISION_BSP_DEFINITIONS_H
 #pragma once
 
-
 /* ---------- headers */
 
 #include "bsp2d.h"
@@ -25,8 +24,6 @@ enum
 	MAXIMUM_VERTICES_PER_COLLISION_SURFACE = 8,
 	MAXIMUM_EDGES_PER_COLLISION_SURFACE = 8,
 };
-
-/* ---------- macros */
 
 /* ---------- structures */
 
@@ -93,12 +90,8 @@ struct collision_node
 	struct tag_block bsps;
 };
 
-/* ---------- prototypes/COLLISION_BSP_DEFINITIONS.C */
-
 /* ---------- globals */
 
 extern struct tag_field global_collision_bsp_fields[9];
-
-/* ---------- public code */
 
 #endif // __COLLISION_BSP_DEFINITIONS_H

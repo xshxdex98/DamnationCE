@@ -18,10 +18,6 @@ enum
 	CHANNEL_BITS = 8,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void bitmap_quantitize_read_row(

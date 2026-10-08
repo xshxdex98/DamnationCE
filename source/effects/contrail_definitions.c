@@ -7,14 +7,6 @@ CONTRAIL_DEFINITIONS.C
 #include "cseries.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 struct tag_reference_definition global_contrail_reference =
@@ -24,6 +16,3 @@ struct tag_reference_definition global_contrail_reference =
 	NULL,
 };
 
-/* ---------- public code */
-
-/* ---------- private code */

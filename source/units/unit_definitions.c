@@ -7,16 +7,6 @@ UNIT_DEFINITIONS.C
 #include "cseries.h"
 #include "unit_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 long unit_definition_get_active_hud_index(
@@ -56,4 +46,3 @@ long unit_definition_get_seat_active_hud_index(
 		struct unit_hud_reference)->hud);
 }
 
-/* ---------- private code */

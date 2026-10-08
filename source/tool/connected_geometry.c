@@ -16,8 +16,6 @@ enum
 
 #define CONNECTED_GEOMETRY_POINT_EPSILON 0.001f
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct intermediate_geometry_triangle
@@ -86,8 +84,6 @@ typedef char intermediate_geometry_vertices_offset_assert[
 	offsetof(struct intermediate_geometry, vertices) == 0x140 ? 1 : -1];
 
 #endif
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static boolean warned_about_duplicate_triangles = FALSE;

@@ -15,18 +15,10 @@ ACTION_CONVERSE.C
 #include "scenario/scenario_definitions.h"
 #include "units/units.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef char scenario_conversation_definition_size_assert[
 	sizeof(struct ai_conversation) == 0x74 ? 1 : -1];
-
-/* ---------- prototypes */
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -244,4 +236,3 @@ void action_converse_end(
 	return;
 }
 
-/* ---------- private code */

@@ -6,16 +6,4 @@ PARTICLE_DEFINITIONS.H
 #define __PARTICLE_DEFINITIONS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __PARTICLE_DEFINITIONS_H

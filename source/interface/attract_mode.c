@@ -26,8 +26,6 @@ enum
 	MUSIC_FADE_TIME = 1500
 };
 
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static unsigned long attract_mode_countdown_timer;

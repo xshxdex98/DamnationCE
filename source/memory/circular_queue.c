@@ -15,16 +15,10 @@ enum
 	CIRCULAR_QUEUE_SIGNATURE = 'circ',
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void circular_queue_verify(
 	struct circular_queue *queue);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

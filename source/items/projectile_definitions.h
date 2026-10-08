@@ -108,12 +108,8 @@ struct projectile_definition
 	struct _projectile_definition projectile;
 };
 
-/* ---------- prototypes/EXAMPLE.C */
-
 /* ---------- globals */
 
 extern struct projectile_material_response_definition default_projectile_material_response;
-
-/* ---------- public code */
 
 #endif // __PROJECTILE_DEFINITIONS_H

@@ -11,12 +11,6 @@ PROGRESS_BAR.H
 #include "cseries/cseries.h"
 #include "real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/PROGRESS_BAR.C */
 
 void progress_bar_initialize(
@@ -37,9 +31,5 @@ void progress_bar_display(
 	real progress);
 boolean progress_bar_is_stuff_ready(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __PROGRESS_BAR_H

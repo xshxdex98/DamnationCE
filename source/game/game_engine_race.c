@@ -81,9 +81,6 @@ enum multiplayer_game_text
 	_multiplayer_game_text_name_lap_n_of_total,
 };
 
-/* ---------- macros */
-
-
 /* ---------- structures */
 
 typedef char verify_scenario_netgame_flag_size[

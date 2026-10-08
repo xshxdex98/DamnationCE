@@ -7,14 +7,6 @@ STRUCTURE_BSP_DEFINITIONS.C
 #include "cseries.h"
 #include "structure_bsp_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 /* port: the pvs of a cluster (from the map) that is not one of the bsp's,
@@ -267,5 +259,3 @@ byte structure_bsp_get_cluster_encoded_sound_distance(
 	return result;
 }
 
-
-/* ---------- private code */

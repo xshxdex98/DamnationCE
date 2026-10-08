@@ -71,7 +71,6 @@ enum
 	NUMBER_OF_ACTOR_VARIANT_DEFINITION_FLAGS,
 };
 
-
 /* ---------- macros */
 
 #define actor_definition_get(index) ((struct actor_definition *)tag_get(ACTOR_DEFINITION_TAG, index))
@@ -413,12 +412,5 @@ struct actor_variant_definition
 	unsigned long unused2[3];
 	struct tag_block change_colors;
 };
-
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __ACTOR_DEFINITIONS_H

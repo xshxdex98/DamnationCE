@@ -7,16 +7,10 @@ RASTERIZER_XBOX_VERTEX_SHADERS.C
 #include "cseries.h"
 #include "rasterizer_xbox_vertex_shaders.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define VERTEX_SHADER_ENTRY(offset, instruction_bytes) \
 	{ 0, (unsigned char const *)vertex_shader_code + (offset), 0xFFFFFFFF, (instruction_bytes) }
-
-/* ---------- structures */
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -97,6 +91,3 @@ struct vertex_shader_entry vertex_shader_table[NUMBER_OF_VERTEX_SHADERS] =
 	VERTEX_SHADER_ENTRY(0x8510, 0x234),
 };
 
-/* ---------- public code */
-
-/* ---------- private code */

@@ -10,10 +10,6 @@ WEAPON_HUD_INTERFACE_DEFINITION.H
 
 #include "interface/hud_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct weapon_flash_state_definition
@@ -44,11 +40,5 @@ struct weapon_hud_interface_definition
 	struct icon_hud_element_definition messaging_icon;
 	long unused2[12];
 };
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __WEAPON_HUD_INTERFACE_DEFINITION_H

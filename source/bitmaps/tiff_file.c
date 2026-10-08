@@ -21,12 +21,6 @@ TIFF_FILE.C
 /* The modern fork drops libtiff: the platform layer writes screenshots
 (HALO_SCREENSHOT_DIR), and importing TIFFs is the tools' business. */
 #else
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static char error_message_buffer[512] = {0};
@@ -440,4 +434,3 @@ tiff_import(
 #endif
 }
 
-/* ---------- private code */

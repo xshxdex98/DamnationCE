@@ -77,8 +77,6 @@ enum
 	NUMBER_OF_HUD_ICON_FLAGS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct hud_state_message_element
@@ -201,9 +199,5 @@ long hud_get_font_index(
 	void);
 union real_argb_color *hud_get_text_color(
 	union real_argb_color *result);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __HUD_MESSAGING_H

@@ -6,10 +6,6 @@ COLLISION_MODELS.H
 #define __COLLISION_MODELS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct collision_model_instance
@@ -26,8 +22,6 @@ struct collision_model_instance
 /* ---------- prototypes/COLLISION_MODELS.C */
 
 boolean collision_model_instance_new(struct collision_model_instance *instance, long object_index);
-
-
 
 boolean collision_model_test_sphere(
 	struct collision_model_instance const *instance,
@@ -61,9 +55,5 @@ boolean collision_model_get_features_in_sphere(
 		struct collision_feature_list *features);
 
 void render_debug_collision_model(struct collision_model_instance const *instance);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __COLLISION_MODELS_H

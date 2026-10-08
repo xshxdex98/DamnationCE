@@ -47,10 +47,6 @@ enum
 	GAME_STATE_SIZE = GAME_STATE_CPU_SIZE+GAME_STATE_GPU_SIZE
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void dummy(
@@ -494,7 +490,6 @@ void *game_state_gpu_malloc(
 
 	return pointer;
 }
-
 
 /* ---------- port: the image of a saved game
 
@@ -960,4 +955,3 @@ void game_state_initialize(
 	return;
 }
 
-/* ---------- private code */

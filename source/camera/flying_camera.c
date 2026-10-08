@@ -9,16 +9,6 @@ FLYING_CAMERA.C
 #include "static_camera.h"
 #include "rasterizer/rasterizer_console_vars.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void flying_camera_new(
@@ -145,4 +135,3 @@ void flying_camera_update(
 	return;
 }
 
-/* ---------- private code */

@@ -6,16 +6,4 @@ BITMAP_MACROS.H
 #define __BITMAP_MACROS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __BITMAP_MACROS_H

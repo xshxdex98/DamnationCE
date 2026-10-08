@@ -53,8 +53,6 @@ enum actor_race
 	_race_all = 0x7F,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 union real_vector3d;
@@ -113,9 +111,5 @@ void actor_type_swarm_aim_jump(
 	long unit_index,
 	float jump_magnitude,
 	union real_vector3d *jump_velocity);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __ACTOR_TYPES_H

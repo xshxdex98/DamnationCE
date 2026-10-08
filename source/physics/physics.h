@@ -11,10 +11,6 @@ PHYSICS.H
 #include "math/real_math.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct powered_mass_point_definition
@@ -82,7 +78,6 @@ void physics_update(
 
 void render_debug_physics(struct physics_instance *instance);
 
-
 /* ---------- globals */
 
 extern real global_gravity;
@@ -90,7 +85,5 @@ extern real global_water_density;
 extern real global_air_density;
 extern real global_physics_collision_depth;
 extern real_plane3d depths_of_hell;
-
-/* ---------- public code */
 
 #endif // __PHYSICS_H

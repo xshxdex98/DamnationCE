@@ -15,10 +15,6 @@ RASTERIZER_XBOX_HARDWARE_BITMAPS.C
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox.h"
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void rasterizer_bitmap_2d_changed(

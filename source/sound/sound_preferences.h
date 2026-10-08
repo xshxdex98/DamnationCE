@@ -6,10 +6,6 @@ SOUND_PREFERENCES.H
 #define __SOUND_PREFERENCES_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct sound_preferences
@@ -30,7 +26,5 @@ void write_sound_preferences(
 /* ---------- globals */
 
 extern short sound_channel_type_flags[4];
-
-/* ---------- public code */
 
 #endif // __SOUND_PREFERENCES_H

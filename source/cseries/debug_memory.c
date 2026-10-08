@@ -23,8 +23,6 @@ enum
 	MAXIMUM_FILES_WITH_POINTERS = 512
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct debug_memory_globals

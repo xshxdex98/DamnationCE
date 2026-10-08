@@ -43,10 +43,4 @@ typedef char fog_definition_background_sound_offset_assert[
 typedef char fog_definition_sound_environment_offset_assert[
 	offsetof(struct fog_definition, sound_environment) == 0x104 ? 1 : -1];
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __FOG_DEFINITIONS_H

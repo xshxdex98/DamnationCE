@@ -109,10 +109,4 @@ typedef char verify_contrail_definition_size[
 typedef char verify_contrail_definition_states_offset[
 	offsetof(struct contrail_definition, states) == 0x138 ? 1 : -1];
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __CONTRAIL_DEFINITIONS_H

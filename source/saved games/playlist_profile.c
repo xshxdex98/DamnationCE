@@ -38,8 +38,6 @@ enum
 	_game_variant_is_system_default_bit = 0
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 #ifdef HALO_64BIT

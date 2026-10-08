@@ -14,10 +14,6 @@ HUD_SOUNDS.C
 #include "sound/sound_manager.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct hud_sound_definition
@@ -28,10 +24,6 @@ struct hud_sound_definition
 	/* Reserved by the tag format; the original block accessor proves the 0x38-byte element size. */
 	byte reserved[32];
 };
-
-/* ---------- prototypes */
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -130,4 +122,3 @@ void hud_play_sound(
 	return;
 }
 
-/* ---------- private code */

@@ -77,8 +77,6 @@ enum
 	_collision_test_for_vehicles_flags = 0xC0A0,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct collision_result
@@ -171,8 +169,6 @@ short collision_move_sphere(
 	real_vector3d *clipped_velocity,
 	short maximum_collision_count,
 	struct collision_plane *collisions);
-/* ---------- globals */
-
 /* ---------- public code */
 
 #ifdef COLLISIONS_EXTERNAL_COLLISION_TEST_LINE
@@ -196,6 +192,5 @@ __inline boolean collision_test_line(
 	return collision_test_vector(flags, point0, &vector, ignore_object_index, collision);
 }
 #endif
-
 
 #endif // __COLLISIONS_H

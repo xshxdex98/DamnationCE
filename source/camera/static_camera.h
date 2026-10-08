@@ -11,10 +11,6 @@ STATIC_CAMERA.H
 #include "cseries/cseries.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct static_camera
@@ -57,9 +53,5 @@ void static_camera_update(
 	struct static_camera *camera,
 	void const *action,
 	struct camera_command *result);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __STATIC_CAMERA_H

@@ -14,8 +14,6 @@ LIGHTNING.H
 #include "tag_files/tag_groups.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define lightning_get(lightning_index) \
@@ -102,7 +100,5 @@ void lightning_submit(
 
 void lightning_render(
 	void);
-
-/* ---------- public code */
 
 #endif // __LIGHTNING_H

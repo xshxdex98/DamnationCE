@@ -38,12 +38,6 @@ enum
 	COLLISION_DEBUG_SPRAY_COUNT = COLLISION_DEBUG_SPRAY_COLUMNS * COLLISION_DEBUG_SPRAY_ROWS,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 extern boolean collision_debug;
@@ -525,4 +519,3 @@ void collision_debug_render(
 	return;
 }
 
-/* ---------- private code */

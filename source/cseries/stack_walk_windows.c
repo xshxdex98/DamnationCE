@@ -25,8 +25,6 @@ enum
 	DEBUG_SYMBOL_STRING_STORAGE_ALLOCATION_SIZE = 0x4000
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct debug_symbol_table

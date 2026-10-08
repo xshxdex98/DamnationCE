@@ -23,8 +23,6 @@ enum
 	MAXIMUM_NUMBER_OF_PREVIOUS_COMMANDS = 8,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct console_globals
@@ -146,7 +144,6 @@ void console_warning(
 
 	va_start(arglist, format);
 
-
 	/* port: no longer than the buffer (cut to 255 below, as it was) */
 	vsnprintf(buffer, NUMBEROF(buffer), format, arglist);
 	buffer[255] = '\0';
@@ -180,7 +177,6 @@ static boolean console_process_command(
 		NUMBEROF(console_globals.previous_commands[newest_previous_command_index]) - 1);
 	console_globals.previous_commands[newest_previous_command_index][
 		NUMBEROF(console_globals.previous_commands[newest_previous_command_index]) - 1] = 0;
-
 
 	console_globals.previous_command_count = MIN(console_globals.previous_command_count + 1, MAXIMUM_NUMBER_OF_PREVIOUS_COMMANDS);
 	console_globals.selected_previous_command_index = NONE;

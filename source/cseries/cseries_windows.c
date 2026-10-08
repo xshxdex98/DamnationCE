@@ -10,14 +10,6 @@ CSERIES_WINDOWS.C
 
 #include <time.h>
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void display_debug_string(
@@ -256,4 +248,3 @@ long generic_exception_filter(
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
-/* ---------- private code */

@@ -55,8 +55,6 @@ enum
 	_string_time,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef char verify_model_vertex_uncompressed_size[
@@ -731,7 +729,6 @@ static void king_engine_update(
 
 	return;
 }
-
 
 /* ---------- private code */
 

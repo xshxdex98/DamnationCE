@@ -10,12 +10,6 @@ ACTOR_TYPE_SENTINEL.C
 #include "actors.h"
 #include "actions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void sentinel_decide_action(
@@ -38,8 +32,6 @@ struct actor_type_definition actor_type_sentinel =
 	NULL,
 	NULL
 };
-
-/* ---------- public code */
 
 /* ---------- private code */
 

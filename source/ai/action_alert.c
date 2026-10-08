@@ -32,10 +32,6 @@ enum move_position_order
 	NUMBER_OF_MOVE_POSITION_ORDERS,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static short action_alert_next_position(
@@ -43,8 +39,6 @@ static short action_alert_next_position(
 	short move_position_order,
 	short current_position_index,
 	boolean *direction_increasing);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

@@ -186,8 +186,4 @@ struct unit_definition
 long unit_definition_get_active_hud_index(struct unit_definition const *definition, boolean multiplayer);
 long unit_definition_get_seat_active_hud_index(struct unit_definition const *definition, short seat_index, boolean multiplayer);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __UNIT_DEFINITIONS_H

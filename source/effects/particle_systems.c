@@ -31,8 +31,6 @@ enum
 	SYSTEM_PARTICLE_DATUM_SIZE = 0x80,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef void (*particle_system_update_proc)(

@@ -14,8 +14,6 @@ enum
 	NUMBER_OF_STUB_GAME_ENGINE_CALLBACKS = 32,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef void (*stub_game_engine_callback)(void);
@@ -155,4 +153,3 @@ static void stub_engine_player_killed_player(void)
 {
 }
 
-/* ---------- private code */

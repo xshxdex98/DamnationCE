@@ -32,8 +32,6 @@ enum
 	PARTICLE_TAG = 'part'
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct new_particle_data
@@ -184,7 +182,5 @@ void particles_update(
 /* ---------- globals */
 
 extern struct data_array *particle_data;
-
-/* ---------- public code */
 
 #endif // __PARTICLES_H

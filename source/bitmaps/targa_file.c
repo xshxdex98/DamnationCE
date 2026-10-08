@@ -10,8 +10,6 @@ TARGA_FILE.C
 #include "bitmaps/bitmaps.h"
 #include "tag_files/files.h"
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 #pragma pack(push, 1)
@@ -31,10 +29,6 @@ struct targa_header
 	byte image_descriptor;
 };
 #pragma pack(pop)
-
-/* ---------- prototypes */
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -89,4 +83,3 @@ targa_export(struct file_reference *file, struct bitmap_data *bitmap)
 	return error_message;
 }
 
-/* ---------- private code */

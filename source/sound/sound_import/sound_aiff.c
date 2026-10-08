@@ -21,8 +21,6 @@ enum
 	AIFF_SOUND_DATA_HEADER_SIZE= 8
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct aiff_container_chunk
@@ -47,10 +45,7 @@ struct aiff_common_chunk
 	byte compression_type[4];
 };
 
-/* ---------- prototypes */
-
 /* ---------- globals */
-
 
 static byte_swap_code aiff_container_chunk_bs_codes[6] =
 {
@@ -231,4 +226,3 @@ void sound_file_aiff_format(
 	return;
 }
 
-/* ---------- private code */

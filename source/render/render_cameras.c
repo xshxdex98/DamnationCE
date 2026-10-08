@@ -69,10 +69,6 @@ enum
 	MAXIMUM_RENDER_CAMERA_WARNING_CONDITIONS = 64,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- globals */
 
 static real previous_projection_coefficients[4]= {0};

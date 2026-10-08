@@ -70,8 +70,6 @@ enum
 #define contrail_point_get(index) \
 	((struct contrail_point_datum *)datum_get(contrail_point_data, (index)))
 
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void contrail_next_frame(
@@ -88,8 +86,6 @@ static void contrail_update_points(
 	real dt);
 static void contrail_verify(
 	long contrail_index);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

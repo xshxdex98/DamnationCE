@@ -31,10 +31,6 @@ enum
 	_action_flee_idle_look_type = 4,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void action_flee_find_flee_position(
@@ -46,8 +42,6 @@ static boolean action_flee_current_position_exposed(
 	struct flee_state_data *state_data);
 static boolean action_flee_at_flee_position(
 	long actor_index);
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -711,4 +705,3 @@ boolean action_flee_perform(
 	return state_data->unable_to_flee || state_data->done_fleeing;
 }
 
-/* ---------- private code */

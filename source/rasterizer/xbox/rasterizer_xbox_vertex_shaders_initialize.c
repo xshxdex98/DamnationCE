@@ -11,12 +11,6 @@ RASTERIZER_XBOX_VERTEX_SHADERS_INITIALIZE.C
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void rasterizer_error(
@@ -198,4 +192,3 @@ void rasterizer_vertex_shaders_dispose(
 	return;
 }
 
-/* ---------- private code */

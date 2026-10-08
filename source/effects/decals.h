@@ -31,8 +31,6 @@ enum
 	NUMBER_OF_DECAL_LAYERS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct collision_result;

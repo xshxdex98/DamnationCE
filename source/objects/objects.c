@@ -56,9 +56,6 @@ OBJECTS.C
 /* port: object_bounds_cache.c's */
 void object_bounds_cache_update(long object_index, real_point3d const *center, real radius);
 
-/* ---------- constants */
-
-
 /* ---------- macros */
 
 #define MAXIMUM_DUMPS 1024
@@ -75,7 +72,6 @@ after GARBAGE_ACTIVE_RETRY_TICKS. Running short of memory or objects still
 collects at once. */
 #define GARBAGE_VISIBLE_DISTANCE 30.0f
 #define GARBAGE_ACTIVE_RETRY_TICKS TICKS_PER_SECOND
-
 
 // This is dangerous, bungie returns the same value regardless of whether the index is valid
 /* port: an index is 1-4 for the incoming functions and 5-8 for the outgoing
@@ -1547,7 +1543,6 @@ boolean object_get_function_value(
 	boolean result;
 	struct object_datum *object = object_get(object_index);
 
-
 	if (function_index==NONE)
 	{
 		*value_reference = 1.f;
@@ -2615,7 +2610,6 @@ void object_compute_node_matrices(
 			node_orientations[0].translation.z*= object->object.scale;
 		}
 
-
 		if (object_definition->object.animation_graph.index!=NONE)
 		{
 			object_type_preprocess_node_orientations(object_index, node_orientations);
@@ -2746,7 +2740,6 @@ void object_compute_node_matrices(
 								"%s as parent node of %s",
 								tag_get_name(object_get(object->object.parent_object_index)->definition_index),
 								tag_get_name(object->definition_index)));
-
 
 						matrix4x3_multiply(object_node_matrix, &object_translation_matrix, &object_nodes[node_stack_index]);
 						matrix4x3_multiply(&object_nodes[node_stack_index], &object_rotation_matrix, &object_nodes[node_stack_index]);
@@ -3195,7 +3188,6 @@ void object_render_debug(
 							global_real_argb_blue);
 					}
 
-
 					if (collision_model->pathfinding_box.x0<collision_model->pathfinding_box.x1 &&
 						collision_model->pathfinding_box.y0<collision_model->pathfinding_box.y1 &&
 						collision_model->pathfinding_box.z0<collision_model->pathfinding_box.z1)
@@ -3221,7 +3213,6 @@ void object_render_debug(
 								}
 							}
 						}
-
 
 						for (i = 0; i < NUMBER_OF_VERTICES_PER_LINE; i++)
 						{
@@ -3691,7 +3682,6 @@ long object_new(
 	return object_index;
 }
 
-
 void object_attach_to_node(
 	long parent_object_index,
 	long child_object_index,
@@ -4001,7 +3991,6 @@ long object_new_by_name(
 	long placement_tag_block_element_size;
 	struct scenario *scenario = global_scenario_get();
 
-
 	struct scenario_object_name* name = TAG_BLOCK_GET_ELEMENT(
 		&scenario->object_names,
 		name_index,
@@ -4199,7 +4188,6 @@ void objects_garbage_collection(
 					break;
 				}
 
-
 				object_index = garbage_object_indices[--garbage_object_count];
 				header = object_header_get(object_index);
 				garbage_collect = TRUE;
@@ -4226,7 +4214,6 @@ void objects_garbage_collection(
 							"WARNING: garbage collecting a living unit (%s)",
 							ai_debug_describe_actor(NONE, object_index, TRUE, temporary, NUMBEROF(temporary)));
 					}
-
 
 					if (TEST_FLAG(header->flags, _object_header_active_bit))
 					{
@@ -4428,7 +4415,6 @@ void objects_garbage_collection(
 
 	return;
 }
-
 
 void objects_update(
 	void)
@@ -4768,7 +4754,6 @@ static void object_add_to_dump(
 	struct object_datum *parent;
 	struct object_header_datum *header = object_header_get(object_index);
 	struct object_datum *object = object_get(object_index);
-
 
 	if (header->data_size>dump->maximum_size)
 	{

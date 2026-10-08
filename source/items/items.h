@@ -85,8 +85,4 @@ void item_accelerate(
 	real_vector3d const *acceleration,
 	boolean detonates_explosives);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __ITEMS_H

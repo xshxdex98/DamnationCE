@@ -51,8 +51,6 @@ typedef char verify_hud_global_single_player_font_offset[
 typedef char verify_hud_global_default_title_bounds_offset[
 	offsetof(struct hud_globals_definition, defaults.default_title_bounds) == 0x2DC ? 1 : -1];
 
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 struct cinematic_global_data *cinematic_globals = NULL;

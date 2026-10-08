@@ -11,16 +11,6 @@ MULTIPLAYER_SCENARIO_DESCRIPTION.C
 
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 struct multiplayer_scenario_description_item *multiplayer_scenario_description_get_list(
@@ -83,4 +73,3 @@ boolean map_name_from_multiplayer_scenario_description_item(
 	return TRUE;
 }
 
-/* ---------- private code */

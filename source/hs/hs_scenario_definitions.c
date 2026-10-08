@@ -10,12 +10,6 @@ HS_SCENARIO_DEFINITIONS.C
 #include "memory/byte_swapping.h"
 #include "memory/data.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void hs_syntax_data_byte_swap(

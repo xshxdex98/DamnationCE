@@ -10,10 +10,6 @@ INPUT_ABSTRACTION.H
 
 #include "cseries/cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct game_input_preferences
@@ -60,9 +56,5 @@ boolean input_abstraction_port_action_only(
 	short controller_index);
 real input_abstraction_port_primary_trigger(
 	short controller_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __INPUT_ABSTRACTION_H

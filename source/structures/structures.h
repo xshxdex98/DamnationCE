@@ -47,8 +47,6 @@ enum
 	MAXIMUM_DECALS_PER_STRUCTURE = 6144,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct structure_surface_reference
@@ -146,8 +144,6 @@ void structure_decals_update(
 	unsigned long *old_combined_pvs,
 	unsigned long *new_combined_pvs,
 	short cluster_count);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

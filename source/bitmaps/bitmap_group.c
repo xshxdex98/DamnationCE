@@ -12,8 +12,6 @@ BITMAP_GROUP.C
 #include "cseries/errors.h"
 #include "tag_files/tag_files.h"
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 /* ---------- tag system declarations (they belong in tag_files/tag_groups.h)
@@ -56,8 +54,6 @@ struct tag_group
 
 typedef char tag_group_size_assert[sizeof(struct tag_group) == 0x60 ? 1 : -1];
 #endif
-
-/* ---------- END OWNER HEADER PREREQUISITE */
 
 /* ---------- prototypes */
 

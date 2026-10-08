@@ -8,16 +8,4 @@ file has inline function assertions.
 #define __HS_LIBRARY_INTERNAL_RUNTIME_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/HS_RUNTIME.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __HS_LIBRARY_INTERNAL_RUNTIME_H

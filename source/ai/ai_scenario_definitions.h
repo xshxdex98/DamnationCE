@@ -247,8 +247,6 @@ enum
 	NUMBER_OF_AI_ATOM_DIE_MODIFIERS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 /* scenario AI animation, script and recording references */
@@ -442,8 +440,6 @@ struct ai_conversation
 	struct tag_block lines;
 	struct tag_block unused;
 };
-
-/* ---------- prototypes/AI_SCENARIO_DEFINITIONS.C */
 
 /* ---------- globals */
 

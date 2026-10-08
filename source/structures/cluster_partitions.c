@@ -15,12 +15,6 @@ CLUSTER_PARTITIONS.C
 #include "structure_bsp_definitions.h"
 #include "structures/structures.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void reference_list_remove(

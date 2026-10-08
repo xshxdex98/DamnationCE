@@ -45,8 +45,6 @@ enum
 	_action_obey_combat_status_clear_los = 5,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef void (*action_obey_individual_iterator_proc)(
@@ -182,8 +180,6 @@ static void action_obey_individual_update(
 	struct obey_individual_simple_control *simple_control,
 	struct obey_individual_complex_control *complex_control,
 	void *user_data);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

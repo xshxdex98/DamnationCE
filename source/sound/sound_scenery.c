@@ -9,16 +9,6 @@ SOUND_SCENERY.C
 #include "objects.h"
 #include "sound/sound_scenery.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 boolean sound_scenery_new(
@@ -38,4 +28,3 @@ void sound_scenery_delete(
 	return;
 }
 
-/* ---------- private code */

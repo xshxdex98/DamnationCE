@@ -90,10 +90,6 @@ typedef char network_game_players_offset_assert[
 typedef char network_game_size_assert[
 	sizeof(struct network_game) == HALO_PORT_NETWORK_GAME_SIZE ? 1 : -1];
 
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 boolean network_game_add_machine(
@@ -737,4 +733,3 @@ boolean network_game_create_game_objects(
 	return game->local_data.game_objects_loaded;
 }
 
-/* ---------- private code */

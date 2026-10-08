@@ -17,8 +17,6 @@ enum
 	NUMBER_OF_DEBUG_KEY_MODIFIERS,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct debug_key
@@ -36,9 +34,5 @@ struct debug_key
 void debug_keys_initialize(void);
 void debug_keys_dispose(void);
 void debug_keys_update(void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __DEBUG_KEYS_H

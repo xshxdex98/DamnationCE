@@ -228,8 +228,4 @@ void vertex_type_from_shader_tag(unsigned long group_tag, short *vertex_type, sh
 byte *structure_bsp_get_cluster_encoded_sound_data(struct structure_bsp *structure_bsp, short row_index, short column_index);
 byte structure_bsp_get_cluster_encoded_sound_distance(struct structure_bsp *structure_bsp, short from_cluster_index, short to_cluster_index);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __STRUCTURE_BSP_DEFINITIONS_H

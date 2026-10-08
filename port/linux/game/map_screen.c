@@ -503,7 +503,6 @@ static short item_at(short x, short y)
 	}
 }
 
-
 /* draws newline-separated text downward from y (modifies text) */
 static void render_lines(char *text, float x, float y, float size, unsigned int color)
 {

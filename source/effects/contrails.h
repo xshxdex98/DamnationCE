@@ -13,10 +13,6 @@ CONTRAILS.H
 #include "memory/data.h"
 #include "objects/objects.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct contrail_datum
@@ -101,7 +97,5 @@ void contrails_update(
 
 extern struct data_array *contrail_data;
 extern struct data_array *contrail_point_data;
-
-/* ---------- public code */
 
 #endif // __CONTRAILS_H

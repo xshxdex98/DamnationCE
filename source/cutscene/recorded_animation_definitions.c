@@ -11,12 +11,6 @@ RECORDED_ANIMATION_DEFINITIONS.C
 #include "math/real_math.h"
 #include "scenario/scenario_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void byte_swap_recording(

@@ -29,10 +29,6 @@ enum
 	LAST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt5,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 long bitmap_mipmap_get_pixel_count(

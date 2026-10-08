@@ -39,8 +39,6 @@ enum
 	_playback_v1_facing_aiming_looking_angles_set,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct animation_playback_controller;

@@ -84,8 +84,6 @@ MAIN.C
 #endif
 #endif
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 /*
@@ -3235,4 +3233,3 @@ void main_loop(
 	return;
 }
 
-/* ---------- private code */
