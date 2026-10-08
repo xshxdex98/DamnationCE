@@ -336,7 +336,7 @@ union firing_position_evaluation_data
 	} cover;
 };
 
-/* January query/scoring context; the last six debug counters are absent in HCEA. */
+/* a firing position query's context and scores */
 struct firing_position_evaluation_context
 {
 	unsigned long allowed_position_mask;

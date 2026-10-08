@@ -2050,11 +2050,8 @@ static void ai_scripting_migrate_internal(
 
 				if (!same_encounter)
 				{
-					/* BUG (original): January tests the reference type of the already-masked encounter
-					 * index (test edi,0xC0000000), so the source flag is also cleared for platoon and squad
-					 * migrations (the later HCEA build clears it unconditionally). A corrected build would
-					 * presumably test the type of source_ai_reference instead.
-					 */
+					/* (as the original: the masked encounter index's type is tested, so the
+					 * source flag is cleared for platoon and squad migrations too) */
 					if (((unsigned long)source_encounter_index >> 30) == _ai_reference_type_encounter)
 					{
 						source_encounter->is_prevehicle_encounter = FALSE;

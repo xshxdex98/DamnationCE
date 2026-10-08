@@ -36,10 +36,7 @@ enum
 	NUMBER_OF_IDLE_LOOK_TYPES,
 };
 
-/* TU-local copy: no shared header owns the actor mode domain yet; partial or
- * complete copies also exist in actors.c, actor_moving.c, actor_perception.c,
- * actor_stimulus.c, actor_type_flood.c, ai_communication.c, ai_script.c,
- * encounters.c and actions.c. */
+/* actor modes (no header declares them yet; several AI files keep a copy) */
 enum
 {
 	_actor_mode_braindead = 0,
@@ -49,8 +46,7 @@ enum
 	NUMBER_OF_ACTOR_MODES,
 };
 
-/* TU-local copy: no shared header owns the actor combat status domain yet; a
- * complete copy also exists in action_obey.c (partial ones in action_charge.c). */
+/* actor combat status (no header declares it yet; action_obey.c keeps a copy) */
 enum
 {
 	_actor_combat_status_none = 0,
@@ -830,14 +826,6 @@ static boolean actor_look_find_random_vector(
 	return result;
 }
 
-/* INFERRED: the __inline specifier is not attested in surviving source. Its
- * sibling valid_real_normal3d is __inline in real_math.h, and four January
- * objects reference this function, the shape of a shared inline whose single
- * folded copy the splitter gave to this object. The call still stays out of
- * line. Admitted by owner ruling (2026-09-20); on its own it is byte-inert in
- * actor_look_update, and it changes this definition's COMDAT selection from
- * no-duplicates to select-any, which csplit does not record for any function
- * (it writes no-duplicates for all 8,223), so ownership is unchanged. */
 __inline boolean valid_real_normal2d(
 	real_vector2d const *normal)
 {
@@ -1769,9 +1757,6 @@ update_facing:
 	match_assert_valid_real_normal3d("c:\\halo\\SOURCE\\ai\\actor_looking.c", 1737, &actor->output.aiming_vector);
 	match_assert_valid_real_normal3d("c:\\halo\\SOURCE\\ai\\actor_looking.c", 1738, &actor->output.looking_vector);
 
-	/* Two separate tests rather than one disjunction: HCEX's line table puts
-	 * them on separate source lines, 1740 and 1745. Admitted by owner ruling
-	 * (2026-09-20). */
 	if (aiming_at_target)
 	{
 		actor->output.aiming_speed = _unit_aiming_speed_alert;

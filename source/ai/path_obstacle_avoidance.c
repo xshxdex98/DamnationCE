@@ -116,12 +116,8 @@ static boolean path_find(
 
 /* ---------- globals */
 
-/* the failing search copied out by path_avoid_obstacles for
- * render_debug_obstacle_path to replay.
- * the names debug_path and debug_obstacles are descriptive, not recovered: no
- * first-party record names these two file statics (the feature is debug-only and
- * compiled out of every build whose symbols record statics). their storage, types
- * and January offsets (+0, +0x1538 of 0x00319D08) are January-proven. */
+/* the failing search path_avoid_obstacles copies out for
+ * render_debug_obstacle_path to replay */
 static struct obstacle_path debug_path;
 static struct obstacles debug_obstacles;
 

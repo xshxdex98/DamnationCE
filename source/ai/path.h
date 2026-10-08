@@ -486,9 +486,7 @@ __inline struct obstacle_disc const *obstacles_get_disc(
 
 #endif // __PATH_H
 
-/* Opt-in PATH.C declarations used by ActionFlee.  Keeping this block after
- * the legacy include guard preserves the C2 declaration schedule of the
- * shared path header for unrelated translation units. */
+/* path.c's routines that action_flee.c uses, declared for it alone */
 #ifdef PATH_EXTERNAL_FLEE_ROUTINES
 void path_input_set_target_object(
 	struct path_input *input,

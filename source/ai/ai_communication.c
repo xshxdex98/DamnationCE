@@ -222,9 +222,8 @@ struct dialogue_event_status
 	long disable_until_time;
 };
 
-/* Function-local in the original; its construction code establishes this
- * 0x38-byte layout.  January's assertion strings name the selected record
- * `selected_possibility` and its reply field `preselected_reply_actor_index`. */
+/* a communication possibility (selected_possibility and its
+ * preselected_reply_actor_index) */
 struct ai_communication_possibility
 {
 	real weight;
@@ -2308,21 +2307,6 @@ real ai_communication_get_player_rating(
 	struct player_datum *player;
 	real_point3d position;
 	real_point3d player_position;
-	/* INFERRED FROM JANUARY'S BYTES - not attested in any surviving source.
-	 * Naming the two endpoints before the vector is taken is what fixes the
-	 * order in which the compiler squares the vector's components: an
-	 * address-of expression and a pointer value are different operand forms
-	 * to this compiler.  Measured on this function with everything else held
-	 * constant, squaring order of the components:
-	 *
-	 *     &player_position, &position          k j i   (the untouched source)
-	 *     player_head_position, &position      k j i
-	 *     &player_position, head_position      k j i
-	 *     player_head_position, head_position  k i j   <- this spelling
-	 *     any of the above plus &vector bound  k j i
-	 *
-	 * January squares them k, i, j.  Section size, relocation count,
-	 * instruction count and frame size are identical in all five. */
 	real_point3d const *head_position = &position;
 	real_point3d const *player_head_position = &player_position;
 	real_vector3d vector;
@@ -5643,10 +5627,8 @@ void ai_communication_event(
 					}
 				}
 
-				/* BUG (original): January reads this slot's stored delay before it
-				 * is written below (still zero from the clear), so a positive
-				 * minimum tolerance re-enables every disabled slot; comparing
-				 * `delay` was probably intended. */
+				/* (as the original: the slot's stored delay is compared before it is
+				 * written, so a positive minimum tolerance re-enables every disabled slot) */
 				if (disabled &&
 					communication_timer_tolerances[priority][distance_group][4] > 0.0f &&
 					speech_delay[team_index][priority][distance_group] <

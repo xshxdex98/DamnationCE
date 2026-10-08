@@ -718,10 +718,10 @@ boolean structure_test_pill2d(
 /* ---------- private code */
 
 /* port: a surface's pathfinding flags, for a surface index from the map.
-NONE reads the byte before the array, as January does (the BUG notes
-above); any other index past the pathfinding surfaces has none (0: not
-walkable). The retail bsps have as many pathfinding surfaces as surfaces,
-and every edge's surfaces are theirs */
+NONE reads the byte before the array, as the original does; any other
+index past the pathfinding surfaces has none (0: not walkable). The retail
+bsps have as many pathfinding surfaces as surfaces, and every edge's
+surfaces are theirs */
 static byte path_pathfinding_surface(
 	struct structure_bsp const *structure,
 	long surface_index)

@@ -62,10 +62,8 @@ struct vehicle_possibility
 	long vehicle_index;
 };
 
-/* actor fire-target types and combat-status levels (actors.h does not yet
-   declare these; actors.c and actor_combat.c carry the none/prop fire-target
-   values, and actors.c, actor_perception.c and ai_script.c carry the
-   combat-status levels TU-locally; HCEX PDB enumerator names) */
+/* actor fire-target types and combat-status levels (no header declares
+   them yet; other files keep their own copies) */
 enum
 {
 	_actor_fire_target_none = 0,
@@ -87,9 +85,7 @@ enum
 	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS = 8,
 };
 
-/* unit animation impulses (units.h does not declare these; units.c declares
-   only NUMBER_OF_UNIT_ANIMATION_IMPULSES locally; HCEX PDB enumerator names;
-   values match the impulses January's command_begin stores) */
+/* unit animation impulses (no header declares them yet) */
 enum
 {
 	_unit_animation_impulse_berserk = 0,

@@ -76,7 +76,7 @@ enum
 	_actor_animation_evade_right,
 };
 
-/* TU-local copy: no shared owner header declares it; actor_moving.c holds the other copy. */
+/* (actor_moving.c keeps the other copy: no header declares it yet) */
 enum actor_evade_direction
 {
 	_actor_evade_left = 0,
@@ -104,8 +104,8 @@ enum
 typedef char scenario_conversation_action_definition_size_assert[
 	sizeof(struct ai_conversation) == 0x74 ? 1 : -1];
 
-/* The January iterator is exactly three datum indices; callers consume the
- * current actor index after encounter_actor_iterator_next advances it. */
+/* walks an encounter's actors; callers read the current actor after
+ * encounter_actor_iterator_next advances */
 struct encounter_actor_iterator
 {
 	long encounter_index;
@@ -120,9 +120,8 @@ struct actor_dive_animation
 	real score_bias;
 };
 
-/* The shared vehicle tag layout is still opaque past the common unit
- * definition.  Actions reads the two January-authenticated AI-driving
- * values at 0x390/0x394 only, so keep that ownership local to this TU. */
+/* the AI driving values of a vehicle definition, which
+ * vehicle_definitions.h leaves opaque */
 struct vehicle_definition
 {
 	byte __unknown0[0x390];
@@ -1326,8 +1325,7 @@ static boolean actor_pursuit_consider_nearby_actor(
 	struct actor_datum *friend_actor;
 	boolean result;
 
-	/* The January build intentionally performs this lookup only for its datum
-	 * validation side effect; the returned actor is not otherwise needed. */
+	/* (only checks the datum) */
 	actor_get(actor_index);
 	friend_actor = actor_try_and_get(friend_actor_index);
 	result = FALSE;
@@ -3940,9 +3938,7 @@ static boolean actor_action_find_escape_from_danger(
 		}
 	}
 
-	/* Original January bug: the diagnostic names all four outputs, but the
-	 * condition forgets to validate escape_is_ledge_reference.  Preserve that
-	 * behavior; a corrected build would test the fourth pointer too. */
+	/* (as the original: escape_is_ledge_reference isn't checked) */
 	if (!(escape_direction_reference && escape_distance_reference &&
 		alignment_vector_reference))
 	{

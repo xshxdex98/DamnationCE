@@ -58,9 +58,8 @@ enum
 	MAXIMUM_COLLATERAL_DAMAGE_ACTORS = 32,
 };
 
-/* actor_definition.flags2 has no owner enumeration in actor_definitions.h yet;
- * actor_firing_position.c, actor_moving.c, actor_stimulus.c and encounters.c
- * carry partial TU-local copies of the same bit names. */
+/* actor_definition.flags2 (no header declares it yet; other files keep
+ * partial copies) */
 enum
 {
 	_actor_definition_flags2_avoid_all_enemy_attack_vectors_bit = 0,
@@ -403,8 +402,6 @@ static void actor_combat_find_nearby_target(
 	real_vector3d direction;
 	struct collision_result collision;
 
-	/* Keep January's inlined real-math schedule without materializing the
-	 * header helpers as actor_combat-owned COMDATs. */
 	above.x = global_up3d->i*1.5f + target_point->x;
 	above.y = global_up3d->j*1.5f + target_point->y;
 	above.z = global_up3d->k*1.5f + target_point->z;

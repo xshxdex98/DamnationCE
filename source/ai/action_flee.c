@@ -40,7 +40,6 @@ enum
 
 enum
 {
-	/* Later-build symbols authenticate these meanings; January uses this TU's 3/6/7 layout. */
 	_action_flee_primary_priority_facing = 3,
 	_action_flee_primary_priority_locked_facing = 6,
 	_action_flee_primary_priority_locked_aiming = 7,

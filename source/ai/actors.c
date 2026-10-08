@@ -88,23 +88,21 @@ enum
 	_vehicle_ai_driver_hovering_bit,
 };
 
-/* projectile_datum.flags; projectiles.c currently owns the otherwise private
- * enum, so actors keeps the shared January bit spelling local for now. */
+/* projectile_datum.flags (projectiles.c keeps the enum to itself) */
 enum
 {
 	_projectile_will_super_explode_bit = 7,
 };
 
-/* January names these limits in its assert and error strings; the shared
-header spells them MAXIMUM_SWARMS and MAXIMUM_UNIT_INDICES_PER_SWARM. */
+/* (the shared header calls these MAXIMUM_SWARMS and
+ * MAXIMUM_UNIT_INDICES_PER_SWARM) */
 enum
 {
 	MAXIMUM_NUMBER_OF_ACTIVE_SWARMS = MAXIMUM_SWARMS,
 	MAXIMUM_NUMBER_OF_UNITS_PER_SWARM = MAXIMUM_UNIT_INDICES_PER_SWARM,
 };
 
-/* decision loop bounds; the history length and iteration cap come from the
- * January error path (five remembered actions, ten passes) */
+/* decision loop bounds: five remembered actions, ten passes */
 enum
 {
 	MAXIMUM_DECISION_LOOP_ITERATIONS = 10,
@@ -239,10 +237,8 @@ typedef char actor_datum_meta_encounter_index_offset_assert[
 typedef char actor_datum_meta_first_prop_index_offset_assert[
 	offsetof(struct actor_datum, meta.first_prop_index) == 0x50 ? 1 : -1];
 
-/* The shared vehicle tag layout is still opaque past the common unit
- * definition (vehicle_definitions.h only forward-declares it).  Actors reads
- * the January-authenticated AI destination radius at 0x384 only, so keep that
- * ownership local to this TU. */
+/* the AI destination radius of a vehicle definition, which
+ * vehicle_definitions.h leaves opaque */
 struct vehicle_definition
 {
 	struct unit_definition unit;
@@ -265,7 +261,6 @@ typedef char ai_globals_service_data_grenades_enabled_offset_assert[
 
 /* ---------- prototypes */
 
-/* January keeps this function private to ACTORS.C. */
 static void actor_input_update(
 	long actor_index);
 
@@ -2598,7 +2593,8 @@ short actors_spawn_from_unit(
 		if (source_actor_index != NONE)
 		{
 			struct actor_datum *source_actor = actor_get(source_unit->unit.actor_index);
-			/* BUG: January reads actor_index even when source_actor_index selected swarm_actor_index. */
+			/* (as the original: actor_index is read even when the swarm actor was
+			 * the source) */
 			encounter_index = source_actor->meta.encounter_index;
 			squad_index = source_actor->meta.squad_index;
 		}

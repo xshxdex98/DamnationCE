@@ -24,11 +24,8 @@ enum
 
 /* ---------- macros */
 
-/*
- * January cachebeta layout evidence.  The inherited HCEX prop and actor
- * control layouts differ at these fields; keep the accessors local until the
- * shared structures are corrected independently.
- */
+/* fields this file reads by offset: the shared prop and actor control
+ * structures don't place them yet */
 #define action_guard_prop_is_dead(prop) (*(boolean *)((byte *)(prop) + 0x60))
 #define action_guard_actor_is_moving(actor) (*(boolean *)((byte *)(actor) + 0x484))
 #define action_guard_cower_retreat_timer(actor) (*(short *)((byte *)(actor) + 0x3A8))

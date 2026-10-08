@@ -41,8 +41,7 @@ enum
 
 /* ---------- structures */
 
-/* The iterator's public API is in encounters.h. This concrete layout
- * agrees with its ACTORS.C owner and the January 28-byte caller frame. */
+/* the actor iterator (its functions are in encounters.h) */
 struct actor_iterator
 {
 	struct data_iterator encounter_iterator;
@@ -198,9 +197,7 @@ void ai_profile_update(
 			meter->history_sum -= meter->history[meter->history_next_index];
 		}
 		meter->history[meter->history_next_index] = meter->current_value;
-		/* BUG (original): January and October subtract the evicted sample but
-		 * never add the new sample to history_sum. A corrected build should add
-		 * current_value here before computing the average. */
+		meter->history_sum += meter->current_value;
 		meter->history_next_index++;
 		meter->history_count = MAX(meter->history_count, meter->history_next_index);
 		meter->history_next_index %= AI_METER_HISTORY_TICKS;
@@ -386,8 +383,7 @@ static void ai_profile_render_actors(
 {
 	short tab_stops[] = {150, 300};
 
-	/* Preserve January's missing tab marker and final unit-count separator. */
-	sprintf(profilestring, "actors %d/%d/%d|units %d/%d%d",
+	sprintf(profilestring, "actors %d/%d/%d|tunits %d/%d/%d",
 		ai_profile.meters[_ai_meter_actors_active].current_value,
 		ai_profile.meters[_ai_meter_actors_updated].current_value,
 		ai_profile.meters[_ai_meter_actors].current_value,

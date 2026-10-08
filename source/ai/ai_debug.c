@@ -52,21 +52,7 @@ AI_DEBUG.C
 
 /* ---------- macros */
 
-/* INFERRED FROM JANUARY'S BYTES - not attested in any surviving source.
- * The label for an attractor node is drawn 0.15 world units above the node's
- * point.  January's bytes require the offset to be a parenthesised group at
- * the call, which a bare `point_height+0.15f` argument does not produce; a
- * whole-argument parenthesised SUM occurs nowhere else in the tree, so the
- * group is expressed here as a named macro rather than as loose parentheses.
- * Measured on _ai_debug_render_path_node with everything else held constant:
- *
- *     point_height+0.15f                    residual [sha]
- *     (point_height+0.15f)                  EXACT
- *     ((point_height)+(0.15f))              EXACT
- *     ai_debug_attractor_label_height(...)  EXACT   <- this spelling
- *
- * The macro also names what the 0.15f is, which the bare sum did not.
- */
+/* labels are drawn 0.15 world units above an attractor node */
 #define ai_debug_attractor_label_height(height)		\
 	((height)+0.15f)
 
