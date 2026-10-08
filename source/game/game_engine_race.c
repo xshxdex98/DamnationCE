@@ -120,7 +120,7 @@ struct race_globals
 	byte padCD[3];
 };
 
-/* January's layout; the port's per-player arrays are larger */
+/* (the port's per-player arrays are larger than the Xbox's) */
 
 /* ---------- prototypes */
 
@@ -340,8 +340,8 @@ void race_flags_make_unique(
 				{
 					if (!TEST_FLAG(used_flags, free_index))
 					{
-						/* BUG (original): the flag that was already in use is
-						   marked again rather than the newly assigned index. */
+						/* (as the original: the flag already in use is marked again, not the
+						   newly assigned one) */
 						SET_FLAG(used_flags, flag->team_index, TRUE);
 						break;
 					}
@@ -1066,7 +1066,7 @@ static long race_engine_get_score(
 	}
 	else
 	{
-		/* port: lap_bit_vector is kept per player; January read it by team
+		/* port: lap_bit_vector is kept per player; the original read it by team
 		index, which picks another player's flags */
 		long laps = player->statistics.multiplayer_statistics.race_statistics.laps;
 		long flags_touched = count_bits_32(

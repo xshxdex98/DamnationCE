@@ -1,7 +1,7 @@
 /*
 UI_WIDGET_DEFINITIONS.H
 
-January-derived UI widget tag-definition prefix.
+The start of the UI widget tag definition.
 */
 
 #ifndef __UI_WIDGET_DEFINITIONS_H

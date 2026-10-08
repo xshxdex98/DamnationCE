@@ -1,13 +1,8 @@
 /*
 UI_WIDGET_INSTANCE.H
 
-The widget instance, shared by every unit that touches one.
-
-The decompiled units each described widget instances locally, with byte
-padding standing in for what they didn't use, sized for January's 32-bit
-pointers. On a 64-bit host those copies disagreed about where the sibling
-and child links live, so there is one definition. Fields the units named
-differently share a union.
+The widget instance, shared by every file that touches one. Fields that
+files named differently share a union.
 */
 
 #ifndef __UI_WIDGET_INSTANCE_H

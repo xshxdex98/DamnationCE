@@ -72,8 +72,6 @@ static long terminal_new_line(void);
 
 boolean terminal_render_enable = TRUE;
 
-/* name from the 2003 PC demo PDB and the HCEX PDB (terminal file static const short[3]); January's 6 bytes
- * are identical to the demo's and it has no public for it (static) */
 static const short terminal_tab_stops[] = {160, 320, 470};
 
 static struct terminal_globals terminal_globals = {0};

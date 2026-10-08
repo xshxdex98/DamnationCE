@@ -84,11 +84,11 @@ enum
 	NUMBER_OF_PLACE_STRINGS = 16,
 };
 
-/* scenario_starting_equipment.flags (HCEX names) */
+/* scenario_starting_equipment.flags */
 enum
 {
 	_netgame_starting_equipment_flag_no_grenades_bit = 0,
-	_netgame_starting_equipment_flag_plasma_greandes_bit, /* (sic) HCEX spelling */
+	_netgame_starting_equipment_flag_plasma_greandes_bit, /* (sic) */
 };
 
 /* game_engine_globals.flags and universal_variant.flags bits used only by this file
@@ -8040,7 +8040,7 @@ static void handle_custom_starting_equipment(
 			boolean first_weapon = TRUE;
 			long item_collection_index;
 
-			/* January visits the first five of the six item collections */
+			/* (the first five of the six item collections) */
 			for (item_collection_index = 0;
 				item_collection_index < 5;
 				item_collection_index++)

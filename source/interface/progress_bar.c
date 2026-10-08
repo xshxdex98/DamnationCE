@@ -6,14 +6,6 @@ PROGRESS_BAR.C
 
 #include "interface/progress_bar.h"
 #include "cache/cache_files.h"
-/* The January object retains out-of-line copies of the D3D and D3DX inline
- * wrappers.  The stock XDK definitions of D3DINLINE (static __forceinline) and
- * D3DXINLINE (_inline) reproduce every one of them, including
- * IDirect3DDevice8_SetRenderState's 0x220-byte body.  Do not replace them with
- * handwritten Microsoft dispatchers or override the XDK's inline policy:
- * taking an address or weakening the inline specifier changes their emitted
- * ABI and code shape.
- */
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
@@ -1921,9 +1913,7 @@ static void progress_bar_render(
 	return;
 }
 
-/* January retains this private step with an empty body (name from the 2001-09-25
- * Xbox linker maps, where it sits between the loading and mask textures).
- */
+/* (does nothing) */
 static void progress_bar_create_noise_texture(
 	void)
 {

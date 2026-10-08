@@ -890,10 +890,6 @@ static boolean should_track_object(
 	return result;
 }
 
-/* January's only caller (render_motion_sensor) pushes a zero dword for the
- * second parameter and this body never reads it; its original name and
- * type are not recoverable (a long 0 and a real 0.0f emit identical bytes).
- * The parameter name is provisional and describes that evidence. */
 static void blip_begin(
 	real_point2d const *reference,
 	long unused,

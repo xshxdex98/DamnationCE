@@ -38,10 +38,8 @@ enum
 	_hud_use_high_resolution_scale_bit = 2,
 };
 
-/* hud number and meter definitions (no shared header declares these yet;
-   number_hud_element_definition, hud_number_definition and
-   rasterizer_meter_parameters have identical TU-local copies in hud_messaging.c,
-   hud_nav_points.c, hud_weapon.c and rasterizer_xbox_dynavobgeom.c) */
+/* hud number and meter definitions (no header declares them yet; other
+   hud files keep copies) */
 enum
 {
 	hud_number_group_tag = 'hud#',

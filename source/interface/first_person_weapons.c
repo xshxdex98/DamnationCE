@@ -104,7 +104,6 @@ enum animation_update_result
 
 struct shader;
 
-/* Kept TU-private because moving this recovered layout into a shared header perturbs VC7 output. */
 struct animation_state_continuous
 {
 	short index;
@@ -112,7 +111,7 @@ struct animation_state_continuous
 	real frame_index;
 };
 
-/* Recovered animation-graph block layouts used only by this translation unit. */
+/* the animation graph blocks this file reads */
 struct animation_graph_sound_reference
 {
 	struct tag_reference sound;
@@ -131,7 +130,7 @@ struct animation_graph_first_person_weapon_animations
 typedef char verify_animation_graph_first_person_weapon_animations_size[
 	sizeof(struct animation_graph_first_person_weapon_animations) == 0x1C ? 1 : -1];
 
-/* Only the leading name is consumed here; the remaining bytes preserve the January layout. */
+/* (only the name is read) */
 struct animation_graph_node
 {
 	char name[TAG_STRING_LENGTH+1];
@@ -1803,12 +1802,8 @@ static void first_person_weapon_update(
 						struct animation_graph_first_person_weapon_animations);
 
 			first_person_weapon->moving_animation.frame_index= 0;
-			/* no NULL test (January, and the later first-party build at /Od 0x61fcea): a non-NONE
-			 * weapon_index is only committed by first_person_weapon_switch_weapons inside
-			 * `if (animation_graph->first_person_weapon_animations.count)` for this same graph. The
-			 * new-map reset leaves weapon_index 0 but unit_index NONE, and first_person_weapon_new_unit
-			 * runs switch_weapons (which stores NONE first) as soon as it sets unit_index, so the NULL
-			 * arm above cannot reach this read. */
+			/* (a weapon_index is only set when the graph has first person weapon
+			 * animations, so the graph isn't NULL here) */
 			first_person_weapon->moving_animation.index=
 				VALID_INDEX(
 					_first_person_weapon_animation_moving,
@@ -1832,8 +1827,7 @@ static void first_person_weapon_update(
 							struct animation_graph_first_person_weapon_animations);
 
 				first_person_weapon->overcharged_jitter_animation.frame_index= 0.0f;
-				/* no NULL test: the same switch_weapons invariant as the moving animation above
-				 * (January and /Od 0x61fd96). */
+				/* (not NULL, as for the moving animation above) */
 				first_person_weapon->overcharged_jitter_animation.index=
 					VALID_INDEX(
 						_first_person_weapon_animation_overcharged_jitter,

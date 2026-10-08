@@ -748,8 +748,7 @@ static void render_debug_profile_stall_tick(
 	real_point3d point0;
 	real_point3d point1;
 
-	/* January's stall labels are preserved numerically: the original enum names
-	 * are not recoverable from the available profile producer or symbols. */
+	/* (the stalls have no names: they are shown by number) */
 	switch (stall_type)
 	{
 		case 1:
@@ -927,8 +926,6 @@ static void render_debug_profile(
 				real last_values[MAXIMUM_PROFILE_VALUES];
 				point2d current_screen_points[MAXIMUM_PROFILE_VALUES];
 				point2d last_screen_points[MAXIMUM_PROFILE_VALUES];
-				/* The /Od RTC descriptors attest both January locals. Their values
-				 * are retained and copied, although no later graph path reads them. */
 				real_point3d current_world_points[MAXIMUM_PROFILE_VALUES];
 				real_point3d last_world_points[MAXIMUM_PROFILE_VALUES];
 				boolean first_frame = TRUE;

@@ -343,8 +343,8 @@ enum
 
 #define SIGN(n) ((n) >= 0 ? 1 : -1)
 
-/* The public definition header intentionally exposes only the shared prefix;
-this TU owns the complete January layout used below. */
+/* the widget definition as this file reads it (the shared header has only
+its start) */
 #define ui_widget_definition_get(tag_index) \
 	((struct ui_widget_definition *)tag_get(UI_WIDGET_DEFINITION_TAG, (tag_index)))
 
@@ -904,8 +904,6 @@ static struct ui_widget_bss_prefix ui_widget_globals_storage;
 real_argb_color ui_plasma_effect_color;
 short local_player_index_for_draw_string_and_hack_in_icons;
 
-/* January defines this and never references it, as we do not */
-real const _one_over_255 = 1.0f / 255.0f;
 real const SECONDS_PER_MILLISECOND = 0.001f;
 
 static struct stack_memory_pool_medium __medium_widget_memory_pool =
@@ -1029,7 +1027,6 @@ static char button_mappings[_icon_custom_1 - _icon_action] =
 static real global_ui_white_red = 0.8f;
 static real global_ui_white_green = 0.8f;
 static real global_ui_white_blue = 0.8f;
-
 
 /* ---------- public code */
 
@@ -2575,11 +2572,9 @@ static boolean widget_instance_can_receive_events(
 		return FALSE;
 	if (widget->parent)
 	{
-		/* NOTE January carries the parent's definition over from one ancestor to
-		the next: the flags it tests belong to the ancestor BELOW the one whose
-		type it tests, from the second iteration onward.  Reproduced, not
-		repaired - the June 2011 rebuild of this function decompiles to the same
-		carried-over definition pointer */
+		/* (as the original: the definition carries over from one ancestor to the
+		next, so from the second iteration on the flags tested are the
+		ancestor's below the one whose type is tested) */
 		struct ui_widget_definition *definition =
 			ui_widget_definition_get(widget->parent->definition_tag_index);
 		struct widget_instance *parent;
@@ -6278,7 +6273,6 @@ void render_ui_widgets(
 
 /* ---------- private code */
 
-
 static long spinner_string_list_extra_count(
 	long string_list_index)
 {
@@ -6398,10 +6392,6 @@ static __inline void spinner_list_update(
 
 	return;
 }
-
-/* the definition is passed by January's only call site but is not read; the
-spinner list and the column list keep separate updaters rather than sharing one
-parameterised helper */
 
 static void column_list_update(
 	struct widget_instance *widget,

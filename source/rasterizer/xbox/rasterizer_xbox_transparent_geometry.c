@@ -2236,8 +2236,8 @@ void rasterizer_transparent_geometry_group_draw(
 							long result;
 
 							/* port: the next layer each time: the original never advanced
-														layer_index, so the loop never ended on a chicago shader with
-														a layer (retail's have none) */
+							layer_index, so the loop never ended on a chicago shader with
+							a layer (retail's have none) */
 							for (layer_index = 0;
 								layer_index < shader_transparent_chicago->chicago.extra_layers.count;
 								layer_index++)

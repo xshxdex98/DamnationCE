@@ -54,7 +54,7 @@ struct slayer_globals
 	long individual_score[HALO_PORT_MAXIMUM_NETWORK_PLAYERS];
 };
 
-/* January's layout; the port's arrays are larger */
+/* (the port's arrays are larger than the Xbox's) */
 
 /* ---------- prototypes */
 

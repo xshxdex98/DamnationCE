@@ -55,7 +55,7 @@ struct king_globals
 	long hill_timer;
 };
 
-/* January's layout; the port's per-player arrays are larger */
+/* (the port's per-player arrays are larger than the Xbox's) */
 
 /* ---------- prototypes/GAME_ENGINE_KING.C */
 
