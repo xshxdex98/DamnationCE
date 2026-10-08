@@ -74,14 +74,6 @@ enum actor_default_state
 	number_of_actor_default_states,
 };
 
-/* actor_state_data.mode (actors.c keeps this enum file-local too) */
-enum
-{
-	_actor_mode_braindead = 0,
-	_actor_mode_alert = 2,
-	_actor_mode_combat,
-};
-
 enum
 {
 	_actor_combat_status_none = 0,

@@ -34,12 +34,6 @@ ACTOR_PERCEPTION.C
 
 /* ---------- constants */
 
-enum
-{
-	_actor_mode_asleep = 1,
-	_actor_mode_combat = 3,
-};
-
 /* actor knowledge (no header declares it yet) */
 enum
 {

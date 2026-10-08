@@ -68,13 +68,6 @@ enum
 	_actor_definition_flags2_pathfinding_ignores_danger_bit = 4,
 };
 
-enum
-{
-	_actor_mode_asleep = 1,
-	_actor_mode_alert,
-	_actor_mode_combat,
-};
-
 /* ---------- macros */
 
 #define _full_circle (2.f*_pi)

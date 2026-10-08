@@ -99,13 +99,6 @@ enum group_pursuit_restriction
 	NUMBER_OF_GROUP_PURSUIT_RESTRICTIONS,
 };
 
-// actor_state_data.mode/combat_status (no header declares them yet)
-enum
-{
-	_actor_mode_alert = 2,
-	_actor_mode_combat = 3,
-};
-
 enum
 {
 	_actor_combat_status_investigate = 2,

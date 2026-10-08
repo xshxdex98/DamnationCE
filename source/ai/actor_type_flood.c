@@ -17,11 +17,6 @@ ACTOR_TYPE_FLOOD.C
 
 enum
 {
-	_actor_mode_combat = 3,
-};
-
-enum
-{
 	_actor_combat_status_clear_los = 5,
 };
 

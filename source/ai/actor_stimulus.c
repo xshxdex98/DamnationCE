@@ -30,12 +30,6 @@ ACTOR_STIMULUS.C
 
 enum
 {
-	_actor_mode_asleep = 1,
-	_actor_mode_combat = 3,
-};
-
-enum
-{
 	_actor_combat_status_investigate = 2,
 	_actor_combat_status_definite = 3,
 	_actor_combat_status_certain = 4,

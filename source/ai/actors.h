@@ -18,6 +18,16 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* actor modes (actor_state_data.mode) */
+enum
+{
+	_actor_mode_braindead,
+	_actor_mode_asleep,
+	_actor_mode_alert,
+	_actor_mode_combat,
+	NUMBER_OF_ACTOR_MODES
+};
+
 enum
 {
 	NUMBER_OF_DISCARDED_FIRING_POSITIONS_PER_ACTOR = 4,

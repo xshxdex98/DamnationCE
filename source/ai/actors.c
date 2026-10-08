@@ -47,9 +47,6 @@ ACTORS.C
 
 enum
 {
-	_actor_mode_braindead = 0,
-	_actor_mode_alert = 2,
-	_actor_mode_combat,
 	_actor_fire_target_none = 0,
 	_actor_fire_target_prop,
 };

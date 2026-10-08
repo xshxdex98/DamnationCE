@@ -36,16 +36,6 @@ enum
 	NUMBER_OF_IDLE_LOOK_TYPES,
 };
 
-/* actor modes (no header declares them yet; several AI files keep a copy) */
-enum
-{
-	_actor_mode_braindead = 0,
-	_actor_mode_asleep,
-	_actor_mode_alert,
-	_actor_mode_combat,
-	NUMBER_OF_ACTOR_MODES,
-};
-
 /* actor combat status (no header declares it yet; action_obey.c keeps a copy) */
 enum
 {
