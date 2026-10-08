@@ -114,11 +114,6 @@ enum
 
 enum
 {
-
-};
-
-enum
-{
 	_network_game_server_state_pregame,
 	_network_game_server_state_ingame,
 	_network_game_server_state_postgame,

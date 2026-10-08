@@ -47,11 +47,6 @@ enum
 	hud_number_group_tag = 'hud#',
 };
 
-enum hud_number_show_flags
-{
-
-};
-
 enum hud_number
 {
 	_hud_number_decimal_index = 10,

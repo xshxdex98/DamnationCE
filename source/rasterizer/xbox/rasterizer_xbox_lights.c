@@ -19,13 +19,6 @@ RASTERIZER_XBOX_LIGHTS.C
 #include "rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 
-/* ---------- constants */
-
-enum
-{
-
-};
-
 enum
 {
 	SUN_GLOW_CONVOLVE_PASS_COUNT = 4,
