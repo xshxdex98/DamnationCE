@@ -100,23 +100,6 @@ struct potentially_releasable_storage
 	struct potentially_releasable_entity entities[MAXIMUM_POTENTIALLY_RELEASABLE_ENTITIES];
 };
 
-struct actor_iterator
-{
-	struct data_iterator encounter_iterator;
-	boolean iterated_encounterless_list;
-	boolean active_only;
-	byte pad[2];
-	long index;
-	long next_index;
-};
-
-struct encounter_actor_iterator
-{
-	long encounter_index;
-	long index;
-	long next_index;
-};
-
 struct line_of_fire_pill
 {
 	boolean hit;
@@ -156,19 +139,11 @@ typedef char ai_unit_actor_index_offset_assert[
 typedef char ai_actor_last_vehicle_exit_forced_offset_assert[
 	offsetof(struct actor_datum, emotions.last_vehicle_exit_forced) == 0x38C ? 1 : -1];
 #ifndef HALO_64BIT
-typedef char ai_actor_iterator_size_assert[
-	sizeof(struct actor_iterator) == 0x1C ? 1 : -1];
-typedef char ai_actor_iterator_index_offset_assert[
-	offsetof(struct actor_iterator, index) == 0x14 ? 1 : -1];
 typedef char ai_encounter_iterator_size_assert[
 	sizeof(struct encounter_iterator) == 0x18 ? 1 : -1];
 typedef char ai_encounter_iterator_index_offset_assert[
 	offsetof(struct encounter_iterator, index) == 0x10 ? 1 : -1];
 #endif
-typedef char ai_encounter_actor_iterator_size_assert[
-	sizeof(struct encounter_actor_iterator) == 0xC ? 1 : -1];
-typedef char ai_encounter_actor_iterator_index_offset_assert[
-	offsetof(struct encounter_actor_iterator, index) == 0x4 ? 1 : -1];
 typedef char ai_line_of_fire_pill_size_assert[
 	sizeof(struct line_of_fire_pill) == 0x28 ? 1 : -1];
 typedef char ai_line_of_fire_pill_width_offset_assert[

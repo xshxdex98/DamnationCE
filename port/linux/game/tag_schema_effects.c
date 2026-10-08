@@ -39,6 +39,7 @@ fonts and strings (font, str#, ustr); matg and mply.
 #include "interface/virtual_keyboard.h"
 
 #include <string.h>
+#include "interface/hud_definitions.h"
 
 /* ---------- constants */
 
@@ -178,19 +179,6 @@ enum
 
 typedef char verify_effect_particles_definition_size[sizeof(struct effect_particles_definition) == 0xE8 ? 1 : -1];
 
-/* hud_draw.c's */
-struct number_hud_element_definition
-{
-	struct hud_placement_definition placement;
-	struct hud_color_definition colors;
-	char digits;
-	byte number_flags;
-	char fractional_digits;
-	byte pad;
-	long unused[3];
-};
-
-typedef char verify_number_hud_element_definition_size[sizeof(struct number_hud_element_definition) == 0x54 ? 1 : -1];
 typedef char verify_hud_number_definition_size[sizeof(struct hud_number_definition) == 0x64 ? 1 : -1];
 typedef char verify_weapon_hud_overlay_item_size[sizeof(struct weapon_hud_overlay_item) == 0x88 ? 1 : -1];
 typedef char verify_multitexture_overlay_hud_element_effector_definition_size[
@@ -322,32 +310,9 @@ struct hud_waypoint_arrow
 	long unused2[6];
 };
 
-struct hud_message_text_definition
-{
-	struct tag_data text_data;
-	struct tag_block elements;
-	struct tag_block messages;
-	long unused2C[21];
-};
-
 typedef char verify_hud_sound_definition_size[sizeof(struct hud_sound_definition) == 0x38 ? 1 : -1];
 typedef char verify_hud_waypoint_arrow_size[sizeof(struct hud_waypoint_arrow) == 0x68 ? 1 : -1];
 typedef char verify_hud_state_message_definition_size[sizeof(struct hud_state_message_definition) == 0x40 ? 1 : -1];
-typedef char verify_hud_message_text_definition_size[sizeof(struct hud_message_text_definition) == 0x80 ? 1 : -1];
-
-/* draw_string.c's (and rasterizer_text.c's) */
-struct font_character
-{
-	word character;
-	short character_width;
-	short bitmap_width;
-	short bitmap_height;
-	short bitmap_origin_x;
-	short bitmap_origin_y;
-	short hardware_character_index;
-	word pad;
-	long pixels_offset;
-};
 
 /* (a character table's entry) */
 struct font_character_index
@@ -355,7 +320,6 @@ struct font_character_index
 	short index;
 };
 
-typedef char verify_font_character_size[sizeof(struct font_character) == FONT_CHARACTER_SIZE ? 1 : -1];
 typedef char verify_font_header_size[sizeof(struct font_header) == 0x9C ? 1 : -1];
 
 struct ui_widget_definition
@@ -436,27 +400,6 @@ struct tag_reference_element
 	struct tag_reference reference;
 };
 
-/* physics.c's (and damage.c's, bipeds.c's) */
-struct game_globals_falling_damage
-{
-	long unused0[2];
-	real falling_distance_lower_bound;
-	real falling_distance_upper_bound;
-	struct tag_reference falling_damage;
-	long terminal_velocity_unused[2];
-	real maximum_distance;
-	struct tag_reference maximum_distance_damage;
-	struct tag_reference vehicle_hit_environment_damage_effect;
-	struct tag_reference vehicle_killed_unit_damage_effect;
-	struct tag_reference vehicle_collision_damage;
-	struct tag_reference flaming_death_damage;
-	long unused7c[4];
-	real runtime_maximum_falling_velocity;
-	real runtime_minimum_damage_velocity;
-	real runtime_maximum_damage_velocity;
-};
-
-typedef char verify_game_globals_falling_damage_size[sizeof(struct game_globals_falling_damage) == 0x98 ? 1 : -1];
 typedef char verify_breakable_surface_particle_effect_size[sizeof(struct breakable_surface_particle_effect) == 0x80 ? 1 : -1];
 typedef char verify_material_definition_size[sizeof(struct material_definition) == 0x374 ? 1 : -1];
 typedef char verify_game_globals_size[sizeof(struct game_globals) == 0x1AC ? 1 : -1];

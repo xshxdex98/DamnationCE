@@ -127,19 +127,6 @@ enum
 
 /* ---------- structures */
 
-struct number_hud_element_definition
-{
-	struct hud_placement_definition placement;
-	struct hud_color_definition colors;
-	char digits;
-	byte number_flags;
-	char fractional_digits;
-	byte pad;
-	long unused[3];
-};
-
-typedef char number_hud_element_definition_size_assert[
-	sizeof(struct number_hud_element_definition) == 0x54 ? 1 : -1];
 typedef char hud_number_definition_size_assert[
 	sizeof(struct hud_number_definition) == 0x64 ? 1 : -1];
 typedef char rasterizer_meter_parameters_size_assert[

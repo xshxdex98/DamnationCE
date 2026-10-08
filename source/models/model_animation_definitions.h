@@ -220,6 +220,22 @@ struct animation_list
 	struct animation_list_entry *animations;
 };
 
+struct animation_graph_node
+{
+	char name[TAG_STRING_LENGTH+1];
+	short next_sibling_node_index;
+	short first_child_node_index;
+	short parent_node_index;
+	word pad;
+	unsigned long flags;
+	real_vector3d base_vector;
+	real range;
+	long pad1;
+};
+
+typedef char animation_graph_node_size_assert[
+	sizeof(struct animation_graph_node) == 0x40 ? 1 : -1];
+
 /* ---------- prototypes/MODEL_ANIMATION_DEFINITIONS.C */
 
 byte *animation_get_frame_data(struct animation const *animation, short frame_index);

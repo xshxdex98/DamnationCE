@@ -237,16 +237,6 @@ struct ai_communication_possibility
 typedef char ai_communication_possibility_size_assert[
 	sizeof(struct ai_communication_possibility) == 0x38 ? 1 : -1];
 
-struct actor_iterator
-{
-	struct data_iterator encounter_iterator;
-	boolean iterated_encounterless_list;
-	boolean active_only;
-	byte pad[2];
-	long index;
-	long next_index;
-};
-
 typedef char ai_conversation_datum_view_size_assert[
 	sizeof(struct conversation_datum) == 0x64 ? 1 : -1];
 typedef char ai_conversation_datum_view_line_index_offset_assert[
@@ -297,13 +287,6 @@ typedef char ai_communication_actor_idle_combat_offset_assert[
 	offsetof(struct actor_datum, control.idle_vocalization_combat) == 0x6CC ? 1 : -1];
 typedef char ai_communication_actor_idle_timer_offset_assert[
 	offsetof(struct actor_datum, control.idle_vocalization_timer) == 0x6CE ? 1 : -1];
-#ifndef HALO_64BIT
-typedef char ai_communication_actor_iterator_size_assert[
-	sizeof(struct actor_iterator) == 0x1C ? 1 : -1];
-typedef char ai_communication_actor_iterator_index_offset_assert[
-	offsetof(struct actor_iterator, index) == 0x14 ? 1 : -1];
-
-#endif
 /* ---------- prototypes */
 
 static boolean reply_filter_close(

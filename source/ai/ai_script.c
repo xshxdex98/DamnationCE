@@ -55,23 +55,6 @@ enum
 typedef char ai_script_squad_iterator_size_assert[
 	sizeof(struct ai_script_squad_iterator) == 0x14 ? 1 : -1];
 
-struct actor_iterator
-{
-	struct data_iterator encounter_iterator;
-	boolean iterated_encounterless_list;
-	boolean active_only;
-	byte pad[2];
-	long index;
-	long next_index;
-};
-
-struct encounter_actor_iterator
-{
-	long encounter_index;
-	long index;
-	long next_index;
-};
-
 struct ai_script_vehicle_candidate
 {
 	long actor_index;
@@ -80,10 +63,6 @@ struct ai_script_vehicle_candidate
 	byte pad[3];
 };
 
-#ifndef HALO_64BIT
-typedef char ai_script_actor_iterator_size_assert[
-	sizeof(struct actor_iterator) == 0x1C ? 1 : -1];
-#endif
 typedef char ai_script_actor_reference_iterator_size_assert[
 	sizeof(struct ai_script_actor_reference_iterator) == 0x18 ? 1 : -1];
 typedef char ai_script_actor_reference_iterator_actor_index_offset_assert[

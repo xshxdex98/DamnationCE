@@ -89,12 +89,6 @@ struct hs_tokenizer
 typedef char verify_hs_syntax_node_size[
 	sizeof(struct hs_syntax_node) == 0x14 ? 1 : -1];
 
-struct hud_message_text_definition
-{
-	byte reserved000[0x20];
-	struct tag_block messages;
-};
-
 typedef boolean (*hs_primitive_parser)(
 	long expression_index);
 

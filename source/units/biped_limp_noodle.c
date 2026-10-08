@@ -27,21 +27,6 @@ enum
 	NUMBER_OF_NODE_BLOCK_FLAGS,
 };
 
-/* ---------- structures */
-
-struct animation_graph_node
-{
-	char name[TAG_STRING_LENGTH + 1];
-	short next_sibling_node_index;
-	short first_child_node_index;
-	short parent_node_index;
-	word pad;
-	unsigned long flags;
-	real_vector3d base_vector;
-	real range;
-	long pad1;
-};
-
 /* ---------- prototypes */
 
 static boolean biped_limp_noodle_valid_joint_rotation(

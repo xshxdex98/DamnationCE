@@ -46,8 +46,6 @@ struct encounter_iterator
 };
 
 struct actor_datum;
-struct actor_iterator;
-struct encounter_actor_iterator;
 struct encounter_iterator;
 
 struct encounter_datum
@@ -132,6 +130,26 @@ struct platoon_datum
 	short current_swarm_count;
 	real current_strength_fraction;
 };
+
+struct actor_iterator
+{
+	struct data_iterator encounter_iterator;
+	boolean iterated_encounterless_list;
+	boolean active_only;
+	byte pad[2];
+	long index;
+	long next_index;
+};
+
+struct encounter_actor_iterator
+{
+	long encounter_index;
+	long index;
+	long next_index;
+};
+
+typedef char encounter_actor_iterator_size_assert[
+	sizeof(struct encounter_actor_iterator) == 0xC ? 1 : -1];
 
 /* ---------- prototypes/ENCOUNTERS.C */
 

@@ -83,30 +83,6 @@ enum
 #include "physics/collision_bsp.h"
 #include "physics/physics.h"
 
-/* the game globals' falling damage block (no header declares it yet;
- * damage.c and bipeds.c keep copies) */
-struct game_globals_falling_damage
-{
-	long unused0[2];
-	real falling_distance_lower_bound;
-	real falling_distance_upper_bound;
-	struct tag_reference falling_damage;
-	long terminal_velocity_unused[2];
-	real maximum_distance;
-	struct tag_reference maximum_distance_damage;
-	struct tag_reference vehicle_hit_environment_damage_effect;
-	struct tag_reference vehicle_killed_unit_damage_effect;
-	struct tag_reference vehicle_collision_damage;
-	struct tag_reference flaming_death_damage;
-	long unused7c[4];
-	real runtime_maximum_falling_velocity;
-	real runtime_minimum_damage_velocity;
-	real runtime_maximum_damage_velocity;
-};
-
-typedef char game_globals_falling_damage_size_assert[
-	sizeof(struct game_globals_falling_damage) == 0x98 ? 1 : -1];
-
 typedef char powered_mass_point_definition_size_assert[
 	sizeof(struct powered_mass_point_definition) == 0x80 ? 1 : -1];
 typedef char powered_mass_point_datum_size_assert[

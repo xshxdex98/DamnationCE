@@ -100,16 +100,6 @@ typedef char verify_animation_graph_sound_reference_size[
 typedef char verify_animation_graph_first_person_weapon_animations_size[
 	sizeof(struct animation_graph_first_person_weapon_animations) == 0x1C ? 1 : -1];
 
-/* (only the name is read) */
-struct animation_graph_node
-{
-	char name[TAG_STRING_LENGTH+1];
-	byte reserved0020[0x20];
-};
-
-typedef char verify_animation_graph_node_size[
-	sizeof(struct animation_graph_node) == 0x40 ? 1 : -1];
-
 #ifndef HALO_64BIT
 typedef char verify_render_model_effect_size[
 	sizeof(struct render_model_effect) == 0x28 ? 1 : -1];

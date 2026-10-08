@@ -153,17 +153,6 @@ struct weapon_hud_globals
 	long script_flags;
 };
 
-struct number_hud_element_definition
-{
-	struct hud_placement_definition placement;
-	struct hud_color_definition colors;
-	char digits;
-	byte number_flags;
-	char fractional_digits;
-	byte pad;
-	long unused[3];
-};
-
 struct grenade_count_panel_definition
 {
 	struct static_hud_element_definition background;
@@ -266,8 +255,6 @@ typedef char weapon_hud_globals_size_assert[
 	sizeof(struct weapon_hud_globals) == 0x1E4 ? 1 : -1];
 typedef char weapon_interface_state_size_assert[
 	sizeof(struct weapon_interface_state) == 0x20 ? 1 : -1];
-typedef char number_hud_element_definition_size_assert[
-	sizeof(struct number_hud_element_definition) == 0x54 ? 1 : -1];
 typedef char grenade_hud_interface_definition_size_assert[
 	sizeof(struct grenade_hud_interface_definition) == 0x1F8 ? 1 : -1];
 typedef char weapon_hud_interface_definition_size_assert[

@@ -29,4 +29,7 @@ struct unit_control_data
 	real_vector3d looking_vector;
 };
 
+typedef char unit_control_data_size_assert[
+	sizeof(struct unit_control_data) == 0x40 ? 1 : -1];
+
 #endif // __UNIT_CONTROL_DATA_H

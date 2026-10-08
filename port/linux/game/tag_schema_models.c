@@ -113,19 +113,6 @@ typedef char verify_model_size[sizeof(struct model) == 0xE8 ? 1 : -1];
 
 /* model_animations.c's */
 
-struct animation_graph_node
-{
-	char name[TAG_STRING_LENGTH+1];
-	short next_sibling_node_index;
-	short first_child_node_index;
-	short parent_node_index;
-	word pad;
-	unsigned long flags;
-	real_vector3d base_vector;
-	real range;
-	long pad1;
-};
-
 struct compressed_animation_header
 {
 	long rotation_keyframe_frame_indices_offset;
@@ -142,7 +129,6 @@ struct compressed_animation_header
 	unsigned long rotation_node_headers[1];
 };
 
-typedef char verify_animation_graph_node_size[sizeof(struct animation_graph_node) == 0x40 ? 1 : -1];
 typedef char verify_animation_graph_sound_reference_size[
 	sizeof(struct animation_graph_sound_reference) == 0x14 ? 1 : -1];
 typedef char verify_compressed_animation_header_size[

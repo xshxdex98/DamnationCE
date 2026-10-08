@@ -39,17 +39,6 @@ enum
 
 /* ---------- structures */
 
-/* the actor iterator (its functions are in encounters.h) */
-struct actor_iterator
-{
-	struct data_iterator encounter_iterator;
-	boolean iterated_encounterless_list;
-	boolean active_only;
-	byte pad[2];
-	long index;
-	long next_index;
-};
-
 typedef short (*ai_meter_sample_proc)(
 	void);
 

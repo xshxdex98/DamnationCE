@@ -210,6 +210,31 @@ typedef char hud_placement_definition_size_assert[
 typedef char hud_color_definition_size_assert[
 	sizeof(struct hud_color_definition) == 0x20 ? 1 : -1];
 
+struct number_hud_element_definition
+{
+	struct hud_placement_definition placement;
+	struct hud_color_definition colors;
+	char digits;
+	byte number_flags;
+	char fractional_digits;
+	byte pad;
+	long unused[3];
+};
+
+typedef char number_hud_element_definition_size_assert[
+	sizeof(struct number_hud_element_definition) == 0x54 ? 1 : -1];
+
+struct hud_message_text_definition
+{
+	struct tag_data text_data;
+	struct tag_block elements;
+	struct tag_block messages;
+	long unused2C[21];
+};
+
+typedef char hud_message_text_definition_size_assert[
+	sizeof(struct hud_message_text_definition) == 0x80 ? 1 : -1];
+
 /* ---------- globals */
 
 extern char const *global_hud_anchor_names[NUMBER_OF_HUD_ANCHORS];

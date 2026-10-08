@@ -25,8 +25,6 @@ enum
 
 /* ---------- structures */
 
-struct font_character;
-
 struct font_character_table
 {
 	struct tag_block character_indices;
@@ -45,6 +43,22 @@ struct font_header
 	struct tag_block characters;
 	struct tag_data pixels;
 };
+
+struct font_character
+{
+	word character;
+	short character_width;
+	short bitmap_width;
+	short bitmap_height;
+	short bitmap_origin_x;
+	short bitmap_origin_y;
+	short hardware_character_index;
+	word pad;
+	long pixels_offset;
+};
+
+typedef char font_character_size_assert[
+	sizeof(struct font_character) == FONT_CHARACTER_SIZE ? 1 : -1];
 
 /* ---------- public code */
 
