@@ -799,6 +799,14 @@ char const *cache_files_multiplayer_region(
 	return cache_files_build_region(cache_file_globals.header.build);
 }
 
+/* port: the loaded map's name, from its header (cache_file_header_verify
+checked that it ends within its field) */
+char const *cache_file_loaded_map_name(
+	void)
+{
+	return cache_file_globals.header.name;
+}
+
 /* whether the named map plays multiplayer with the others: FALSE for a map
 whose header is of a build not listed above, and for one that is not there
 or that no loader can run (precaching it ended the game on the damaged disc
