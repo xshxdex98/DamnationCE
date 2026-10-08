@@ -8,25 +8,6 @@ RASTERIZER_XBOX_TEXT.C
 #include "bitmaps/bitmap_color_conversion.h"
 #include "cseries/errors.h"
 #include "real_math.h"
-/* The January object retains out-of-line copies of the D3D inline wrappers.
- * The stock XDK definition of D3DINLINE (static __forceinline) reproduces all
- * nine wrappers, including IDirect3DDevice8_SetRenderState's 0x220-byte body.
- * Do not replace them with handwritten Microsoft dispatchers or override the
- * XDK's inline policy: taking an address or weakening __forceinline changes
- * their emitted ABI and code shape.
- * Keep this note's line count stable: debug records encode the source lines
- * of these functions and are part of the whole-object regression evidence.
- *
- * code_00162ea0 = D3DDevice_SetRenderState
- * code_00163050 = D3DDevice_SetTextureStageState
- * code_001630a0 = IDirect3DDevice8_SetRenderState
- * code_001632c0 = IDirect3DDevice8_SetTextureStageState
- * code_00163320 = IDirect3DDevice8_SetVertexShaderConstant
- * code_00163340 = IDirect3DDevice8_SetVertexData2f
- * code_00163360 = IDirect3DDevice8_SetVertexDataColor
- * code_00163370 = IDirect3DDevice8_Begin
- * code_00163380 = IDirect3DDevice8_End
- */
 #include "rasterizer/rasterizer.h"
 #include "rasterizer/rasterizer_console_vars.h"
 #include <xtl.h>
@@ -246,9 +227,7 @@ map_loop:
 			map_stage = map_index;
 			map_array_index = map_stage;
 			bitmap = parameters->map[map_array_index];
-			/* Texture maps are contiguous; the original exits at the first gap.
-			 * Keep the increment on the populated path to preserve that control
-			 * flow and VC7's direct signed-index loop shape. */
+			/* texture maps are contiguous: the first missing one ends the list */
 			if (bitmap)
 			{
 				rasterizer_set_texture_bitmap_data(map_index, bitmap);

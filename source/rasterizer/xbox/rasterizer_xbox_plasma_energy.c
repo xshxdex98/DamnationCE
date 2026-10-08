@@ -12,9 +12,6 @@ RASTERIZER_XBOX_PLASMA_ENERGY.C
 #include "shaders/shader_definitions.h"
 #include <stddef.h>
 
-/* The January translation unit retains the XDK's out-of-line D3D wrappers.
- * Keep the stock D3DINLINE definition: the real calls below make VC7 emit
- * the target's complete wrapper bodies. */
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "rasterizer/rasterizer_console_vars.h"
@@ -139,8 +136,7 @@ extern struct pixel_shader_definition pixel_shader;
 
 /* ---------- public code */
 
-/* January uses three-axis texture wrapping and additive plasma blending.
- * The initialization order below also preserves VC7's original x87 schedule. */
+/* three-axis texture wrapping and additive blending */
 void rasterizer_plasma_energy_draw(
 	struct rasterizer_transparent_geometry_group_plasma const *group)
 {
@@ -236,8 +232,6 @@ void rasterizer_plasma_energy_draw(
 			plasma->secondary_noise_map_animation_period!=0.0f);
 
 		if (offset < 0.0005f)
-			/* Preserve January's immediate integer zero store without adding a
-			 * third __real@00000000 relocation. */
 			*(long *)&offset = 0;
 		primary_time = global_frame_parameters.game_time_sec / plasma->primary_noise_map_animation_period;
 		vertex_constants[0][1] = 0.0f;

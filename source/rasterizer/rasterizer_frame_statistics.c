@@ -95,9 +95,7 @@ static boolean eat_my_shorts(
 
 static struct rasterizer_frame_statistics_private_globals_definition rasterizer_frame_statistics_private_globals = {0};
 
-/* the FPS sample count and the profile-log accumulators are separate file-scope statics, not
-   members of the private record: get_fps reloads fps_sample_count from memory after the
-   sample-shift loop, which VC7 only does when the loop's array stores cannot alias it */
+/* the FPS sample count and the profile log's accumulators */
 static short fps_sample_count = 0;
 static short profile_accumulation_index = 0;
 static real profile_accumulated_time = 0.0f;
@@ -651,8 +649,7 @@ void rasterizer_frame_statistics_draw(
 			{
 				{ "memory pool", 0x18000, 0 },
 				{ "dynamic vertices (unlit)", 0x30000, 0 },
-				/* BUG (original): January stores 0x48 here; a plausible corrected
-				 * allocation would be 0x48000, but the target value is preserved. */
+				/* (as the original: 0x48, probably meant 0x48000) */
 				{ "dynamic vertices (lit*)", 0x48, 0x4b000 },
 				{ "dynamic vertices (screen)", 0x50000, 0 },
 				{ "dynamic vertices (model)", 0x10000, 0 },

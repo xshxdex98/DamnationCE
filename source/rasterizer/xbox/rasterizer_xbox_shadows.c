@@ -16,9 +16,6 @@ RASTERIZER_XBOX_SHADOWS.C
 #include "shaders/shader_definitions.h"
 #include "shaders/shaders.h"
 
-/* January retains the stock XDK D3DINLINE out-of-line wrappers emitted by
- * the real device calls below. Keep the stock inline definitions and do not
- * replace these wrappers with handwritten bodies. */
 #include "rasterizer/rasterizer.h"
 #include "rasterizer/rasterizer_console_vars.h"
 #include "rasterizer/rasterizer_model_types.h"

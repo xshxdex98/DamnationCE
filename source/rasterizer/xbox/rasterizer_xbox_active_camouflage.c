@@ -26,9 +26,8 @@ RASTERIZER_XBOX_ACTIVE_CAMOUFLAGE.C
 
 /* ---------- constants */
 
-/* no shared header publishes the geometry-flag, shader-type, model-flag or model-effect
-enumerations yet; compatible TU-local copies live in rasterizer_xbox_models.c,
-rasterizer_xbox_transparent_geometry.c, rasterizer_transparent_geometry.c and models.c */
+/* geometry flags, shader types, model flags and model effects (no header
+declares them yet; other rasterizer files keep copies) */
 
 enum
 {
@@ -86,7 +85,6 @@ enum
 	_active_camouflage_tint_edge_density_bit = 0
 };
 
-/* descriptive names: January's vertex shader name table has not been recovered */
 enum
 {
 	_rasterizer_vertex_shader_active_camouflage_model = 13,
@@ -109,11 +107,8 @@ enum
 
 /* ---------- structures */
 
-/* no shared header declares these yet; compatible TU-local copies also live in
-rasterizer_xbox_models.c, rasterizer_xbox_transparent_geometry.c,
-rasterizer_xbox_environment.c, rasterizer_xbox_environment_fog.c,
-rasterizer_xbox_dynavobgeom.c, rasterizer_xbox_water.c, rasterizer_xbox_widgets.c,
-rasterizer_xbox_shadows.c, rasterizer_transparent_geometry.c, models.c and shaders.c */
+/* shader model properties (no header declares them yet; other rasterizer
+files keep copies) */
 
 struct shader_model_properties
 {

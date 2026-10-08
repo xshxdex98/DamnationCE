@@ -11,27 +11,6 @@ RASTERIZER_XBOX_DRAW_PRIMITIVES.C
 #include "rasterizer_console_vars.h"
 #include "rasterizer_geometry.h"
 #include "rasterizer_xbox_draw_primitives.h"
-/* The January object retains out-of-line copies of the D3D inline wrappers.
- * The stock XDK definition of D3DINLINE (static __forceinline) reproduces all
- * of them; do not replace them with handwritten Microsoft dispatchers, take
- * their address or weaken __forceinline, as any of those changes the emitted
- * ABI and code shape.
- *
- * Six of them originally carried the split's address names, because their
- * bodies come in identical pairs and so cannot be told apart by bytes alone.
- * Their recovered names follow COMDAT emission order, anchored on the three
- * neighbouring wrappers that can be identified uniquely:
- *
- * code_0014e180 = D3DVertexBuffer_Unlock
- * code_0014e190 = IDirect3DVertexBuffer8_Release
- *                 (IDirect3DVertexBuffer8_Lock, named)
- * code_0014e1c0 = IDirect3DVertexBuffer8_Unlock
- *                 (D3DIndexBuffer_Lock, named)
- * code_0014e1e0 = D3DIndexBuffer_Unlock
- * code_0014e1f0 = IDirect3DIndexBuffer8_Release
- *                 (IDirect3DIndexBuffer8_Lock, named)
- * code_0014e220 = IDirect3DIndexBuffer8_Unlock
- */
 #include <xtl.h>
 #include "rasterizer_xbox.h"
 

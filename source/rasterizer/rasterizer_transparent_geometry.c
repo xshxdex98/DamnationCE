@@ -31,8 +31,6 @@ enum
 
 /* ---------- structures */
 
-/* January's assert strings name this type and its sorted_index field, and pin
-the stride: the group array is walked with a 0xA0 element size. */
 #ifndef HALO_64BIT
 struct transparent_geometry_group
 {

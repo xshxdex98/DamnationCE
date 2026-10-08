@@ -276,8 +276,7 @@ struct rasterizer_window_begin_parameters
 	struct render_screen_effect screen_effect;
 };
 
-/* January's 0x170-byte linker-common record. Only counters already used by
- * reconstructed writers are named here; unreviewed interiors stay reserved. */
+/* frame statistics counters (the unnamed bytes are unused) */
 struct rasterizer_frame_statistics_globals
 {
 	real frames_per_second;

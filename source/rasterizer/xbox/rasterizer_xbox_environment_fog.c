@@ -24,7 +24,6 @@ RASTERIZER_XBOX_ENVIRONMENT_FOG.C
 #include "shaders/shaders.h"
 #include <stddef.h>
 
-/* January retains the XDK's ordinary out-of-line D3D wrapper COMDATs. */
 #include <xtl.h>
 
 #include "rasterizer_xbox.h"
@@ -909,7 +908,7 @@ void _rasterizer_environment_fog_screen_begin(
 						layer_state->v = real_local_random();
 						layer_state->u = real_local_random();
 					}
-					/* January copies the first matrix-sized camera bytes here verbatim. */
+					/* (the first matrix-sized bytes of the camera) */
 					csmemcpy(
 						&previous_camera_matrix[
 							window_index],

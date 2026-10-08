@@ -7,7 +7,6 @@ RASTERIZER_XBOX_VERTEX_SHADERS_INITIALIZE.C
 #include "cseries.h"
 #include "cseries/errors.h"
 #include "rasterizer_xbox_vertex_shaders.h"
-/* The January object retains exact out-of-line copies of the two D3D wrappers. */
 #define D3DINLINE static
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox.h"
@@ -42,8 +41,6 @@ static unsigned long const vertex_shader_declarations[] =
 
 /* ---------- public code */
 
-/* Exact: the declaration table, the SDK wrappers and this initializer match January (an
-earlier note here recorded a table-address load-schedule difference that no longer exists). */
 boolean rasterizer_vertex_shaders_initialize(
 	void)
 {

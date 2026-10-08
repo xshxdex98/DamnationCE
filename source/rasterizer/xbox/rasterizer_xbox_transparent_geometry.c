@@ -31,8 +31,6 @@ RASTERIZER_XBOX_TRANSPARENT_GEOMETRY.C
 #include "math/periodic_functions.h"
 #include "tag_files/tag_groups.h"
 
-/* January retains the stock XDK D3DINLINE out-of-line wrappers emitted by
- * the real device calls below. Keep the stock definitions intact. */
 #include <xtl.h>
 #include "interface/progress_bar_internal.h"
 #include "rasterizer/xbox/rasterizer_xbox.h"
@@ -268,10 +266,8 @@ enum
 
 /* ---------- structures */
 
-/* the transparent shader tag layouts January reads here; the same file-local
- * form SHADER_TRANSPARENT_GENERIC_PREPROCESSOR.C and
- * SHADER_TRANSPARENT_CHICAGO_PREPROCESSOR.C use, extended with the fields this
- * file touches */
+/* the transparent shader fields read here (as the shader preprocessors
+ * declare them, with this file's extra fields) */
 
 struct shader_transparent_generic_map
 {
@@ -2239,9 +2235,9 @@ void rasterizer_transparent_geometry_group_draw(
 							short map_index;
 							long result;
 
-							/* port: the next layer each time: January never advanced
-							layer_index, so the loop never ended on a chicago shader with
-							a layer (retail's have none) */
+							/* port: the next layer each time: the original never advanced
+														layer_index, so the loop never ended on a chicago shader with
+														a layer (retail's have none) */
 							for (layer_index = 0;
 								layer_index < shader_transparent_chicago->chicago.extra_layers.count;
 								layer_index++)

@@ -13,10 +13,6 @@ RASTERIZER_XBOX_DECALS.C
 #include "memory/lruv_cache.h"
 #include "rasterizer/rasterizer.h"
 #include "rasterizer/rasterizer_console_vars.h"
-/* The XDK's stock D3DINLINE (static __forceinline) definitions supply both the
- * inline expansions used below and the out-of-line wrapper bodies January
- * retains in this object. Do not redefine D3DINLINE, take a wrapper's address
- * or hand-write a wrapper body: any of those changes the emitted ABI. */
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
@@ -124,8 +120,7 @@ struct decal_datum
 typedef char verify_decal_datum_size[
 	sizeof(struct decal_datum) == 0x38 ? 1 : -1];
 
-/* Only the fields the rasterizer touches are recovered; the complete decal
-   tag definition is not yet authenticated. */
+/* the decal shader fields the rasterizer reads */
 struct decal_shader_definition
 {
 	byte reserved0000[4];

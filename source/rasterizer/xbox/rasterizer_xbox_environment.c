@@ -997,7 +997,7 @@ void _rasterizer_environment_lightmap_begin(
 			else
 			{
 #ifdef HALO_64BIT
-				/* the Xbox address, as January seeded with the pointer */
+				/* (seeded with the bitmap's Xbox address) */
 				unsigned int seed = xbox_address(lightmap_bitmap);
 #else
 				unsigned long seed = (unsigned long)lightmap_bitmap;

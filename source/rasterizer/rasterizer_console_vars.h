@@ -2,18 +2,6 @@
 RASTERIZER_CONSOLE_VARS.H
 
 Rasterizer debug options (the rasterizer_* script and console globals).
-
-Header ownership is INFERRED: every HCEX (2011) compiland that corresponds to a
-January user of these globals lists rasterizer_console_vars.h, and no
-first-party build lists a rasterizer_debug_options.h.
-Type and member names are LATER-BUILD-ATTESTED: the Halo PC demo PDB (2003) and
-the HCEX PDB (2011) agree on every member name; the type name follows the demo
-(HCEX spells it rasterizer_debug_options_struct).
-Offsets, widths and types are January's: January's script-global table registers
-zbias as a long integer (the later PDBs say float); January has pad3_scale at
-0x6C and f at 0x70, where the later builds insert three shorts; the transparent
-pixel counter bytes at 0x88 exist only in January. Bytes no PDB names keep
-descriptive names.
 */
 
 #ifndef __RASTERIZER_CONSOLE_VARS_H
