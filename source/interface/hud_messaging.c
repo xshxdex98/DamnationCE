@@ -129,14 +129,6 @@ struct hud_messaging_datum_definition
 	boolean custom_message;
 };
 
-struct hud_message_text_definition
-{
-	struct tag_data text_data;
-	struct tag_block elements;
-	struct tag_block messages;
-	long unused2C[21];
-};
-
 struct hud_timer_data_definition
 {
 	long reference_time;
@@ -165,17 +157,6 @@ struct hud_messaging_globals_definition
 	struct hud_state_message_definition *help_message;
 	struct hud_objective_runtime_definition objective;
 	struct hud_timer_data_definition timer;
-};
-
-struct number_hud_element_definition
-{
-	struct hud_placement_definition placement;
-	struct hud_color_definition colors;
-	char digits;
-	byte number_flags;
-	char fractional_digits;
-	byte pad;
-	long unused[3];
 };
 
 typedef char hud_timer_data_size_assert[
@@ -240,8 +221,6 @@ typedef char hud_absolute_placement_size_assert[
 	sizeof(struct hud_absolute_placement_definition) == 0x24 ? 1 : -1];
 typedef char hud_placement_size_assert[
 	sizeof(struct hud_placement_definition) == 0x24 ? 1 : -1];
-typedef char number_hud_element_size_assert[
-	sizeof(struct number_hud_element_definition) == 0x54 ? 1 : -1];
 typedef char hud_number_size_assert[
 	sizeof(struct hud_number_definition) == 0x64 ? 1 : -1];
 typedef char hud_globals_timer_definition_offset_assert[

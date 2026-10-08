@@ -64,20 +64,6 @@ struct vehicle_definition
 	struct tag_reference effect;
 };
 
-struct game_globals_falling_damage
-{
-	byte unused0[0x2c];
-	struct tag_reference maximum_distance_damage;
-	struct tag_reference vehicle_hit_environment_damage_effect;
-	struct tag_reference vehicle_killed_unit_damage_effect;
-	struct tag_reference vehicle_collision_damage;
-	struct tag_reference flaming_death_damage;
-	long unused7c[4];
-	real runtime_maximum_falling_velocity;
-	real runtime_minimum_damage_velocity;
-	real runtime_maximum_damage_velocity;
-};
-
 #include "vehicle_datum.h"
 
 struct physics_mass_point_definition

@@ -77,23 +77,6 @@ struct ai_debug_speech_list
 	boolean all;
 };
 
-struct encounter_actor_iterator
-{
-	long encounter_index;
-	long actor_index;
-	long next_actor_index;
-};
-
-struct actor_iterator
-{
-	struct data_iterator encounter_iterator;
-	boolean encounterless_actors_done;
-	boolean active_only;
-	word pad;
-	long actor_index;
-	long next_actor_index;
-};
-
 typedef char ai_debug_enterable_vehicle_size_assert[
 	sizeof(struct ai_vehicle_enterable) == 0x28 ? 1 : -1];
 typedef char ai_debug_globals_spatial_effect_offset_assert[
@@ -102,11 +85,6 @@ typedef char ai_debug_globals_enterable_vehicle_offset_assert[
 	offsetof(struct ai_globals, enterable_vehicles) == 0x3B8 ? 1 : -1];
 typedef char ai_debug_globals_size_assert[
 	sizeof(struct ai_globals) == 0x8DC ? 1 : -1];
-#ifndef HALO_64BIT
-typedef char ai_debug_actor_iterator_size_assert[
-	sizeof(struct actor_iterator) == 0x1C ? 1 : -1];
-
-#endif
 
 /* ---------- prototypes */
 
@@ -4822,7 +4800,7 @@ void ai_debug_change_selected_actor(
 		{
 			while (encounter_actor_iterator_next(&iterator))
 			{
-				if (iterator.actor_index==ai_debug.selected_actor_index)
+				if (iterator.index==ai_debug.selected_actor_index)
 					break;
 
 				actor_number++;
@@ -4842,11 +4820,11 @@ void ai_debug_change_selected_actor(
 
 		if (actor)
 		{
-			ai_debug_describe_actor(iterator.actor_index, NONE, TRUE, temporary, 256);
+			ai_debug_describe_actor(iterator.index, NONE, TRUE, temporary, 256);
 
 			console_printf(FALSE, "actor %d/%d: %s", actor_number+1, encounter->current_count, temporary);
 
-			ai_debug_select_actor(ai_debug.selected_squad_index, iterator.actor_index);
+			ai_debug_select_actor(ai_debug.selected_squad_index, iterator.index);
 		}
 		else
 		{
@@ -5638,8 +5616,8 @@ static void ai_debug_render_all_actors(
 	while (actor_iterator_next(&iterator))
 	{
 		ai_debug_render_actor(
-			iterator.actor_index,
-			iterator.actor_index==ai_debug.selected_actor_index,
+			iterator.index,
+			iterator.index==ai_debug.selected_actor_index,
 			NULL);
 	}
 
@@ -5668,11 +5646,11 @@ static void ai_debug_render_encounter(
 
 		while (encounter_actor_iterator_next(&iterator))
 		{
-			boolean selected = (ai_debug.selected_actor_index==iterator.actor_index);
+			boolean selected = (ai_debug.selected_actor_index==iterator.index);
 
 			if (selected || ai_debug.selected_actor_index==NONE || ai_debug.render_all_actors)
 			{
-				ai_debug_render_actor(iterator.actor_index, selected, &history_start_time);
+				ai_debug_render_actor(iterator.index, selected, &history_start_time);
 			}
 		}
 	}

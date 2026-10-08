@@ -42,28 +42,22 @@ void physical_memory_allocate(
 {
 	physical_memory_map_globals.game_state_base_address = XPhysicalAlloc(GAME_STATE_SIZE, GAME_STATE_BASE_ADDRESS & 0x7FFFFFFF, 0, PAGE_READWRITE);
 #ifdef HALO_64BIT
-#line 46 "c:\\halo\\SOURCE\\cache\\physical_memory_map.c"
 	match_assert(__FILE__, __LINE__, XBOX_ADDRESS(physical_memory_map_globals.game_state_base_address)==GAME_STATE_BASE_ADDRESS);
 #else
-#line 46 "c:\\halo\\SOURCE\\cache\\physical_memory_map.c"
 	match_assert(__FILE__, __LINE__, (unsigned long)physical_memory_map_globals.game_state_base_address==GAME_STATE_BASE_ADDRESS);
 #endif
 
 	physical_memory_map_globals.tag_cache_base_address = XPhysicalAlloc(TAG_CACHE_SIZE, TAG_CACHE_BASE_ADDRESS & 0x7FFFFFFF, 0, PAGE_READWRITE);
 #ifdef HALO_64BIT
-#line 50 "c:\\halo\\SOURCE\\cache\\physical_memory_map.c"
 	match_assert(__FILE__, __LINE__, XBOX_ADDRESS(physical_memory_map_globals.tag_cache_base_address)==TAG_CACHE_BASE_ADDRESS);
 #else
-#line 50 "c:\\halo\\SOURCE\\cache\\physical_memory_map.c"
 	match_assert(__FILE__, __LINE__, (unsigned long)physical_memory_map_globals.tag_cache_base_address==TAG_CACHE_BASE_ADDRESS);
 #endif
 
 	physical_memory_map_globals.texture_cache_base_address = XPhysicalAlloc(TEXTURE_CACHE_SIZE, -1, 0, PAGE_READWRITE | PAGE_WRITECOMBINE);
-#line 55 "c:\\halo\\SOURCE\\cache\\physical_memory_map.c"
 	match_assert(__FILE__, __LINE__, physical_memory_map_globals.texture_cache_base_address);
 
 	physical_memory_map_globals.sound_cache_base_address = XPhysicalAlloc(SOUND_CACHE_SIZE, -1, 0, PAGE_READWRITE);
-#line 58 "c:\\halo\\SOURCE\\cache\\physical_memory_map.c"
 	match_assert(__FILE__, __LINE__, physical_memory_map_globals.sound_cache_base_address);
 
 	return;
@@ -80,7 +74,6 @@ void physical_memory_verify(
 		address += 0x1000)
 	{
 		page_status = XQueryMemoryProtect(address);
-#line 77 "c:\\halo\\SOURCE\\cache\\physical_memory_map.c"
 		match_assert(__FILE__, __LINE__, page_status == PAGE_READWRITE);
 	}
 
@@ -89,7 +82,6 @@ void physical_memory_verify(
 		address += 0x1000)
 	{
 		page_status = XQueryMemoryProtect(address);
-#line 86 "c:\\halo\\SOURCE\\cache\\physical_memory_map.c"
 		match_assert(__FILE__, __LINE__, page_status == PAGE_READWRITE);
 	}
 

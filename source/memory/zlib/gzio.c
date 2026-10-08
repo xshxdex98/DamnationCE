@@ -13,7 +13,6 @@
 
 extern int * __cdecl _errno(void);
 
-#line 13 "c:\\halo\\SOURCE\\memory\\zlib\\gzio.c"
 
 struct internal_state {int dummy;}; /* for buggy compilers */
 

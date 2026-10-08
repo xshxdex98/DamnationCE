@@ -18,6 +18,7 @@ RASTERIZER_XBOX_DETAIL_OBJECTS.C
 
 #include "rasterizer/xbox/rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
+#include "structures/detail_object_definitions.h"
 
 /* ---------- constants */
 
@@ -37,45 +38,11 @@ enum
 
 /* ---------- structures */
 
-struct detail_object
-{
-	byte position[3];
-	byte data;
-	word color;
-};
-
 struct detail_object_vertex
 {
 	byte position[3];
 	byte color[3];
 	word sprite;
-};
-
-struct detail_object_type_definition
-{
-	char name[32];
-	byte sequence_index;
-	byte flags;
-	byte first_sprite_index;
-	byte sprite_count;
-	real color_override_factor;
-	long unused28[2];
-	real near_fade_distance;
-	real far_fade_distance;
-	real size_min;
-	real size_max;
-	byte reserved40[0x20];
-};
-
-struct detail_object_collection_definition
-{
-	short collection_type;
-	word pad02;
-	real global_z_offset;
-	long unused08[11];
-	struct tag_reference map;
-	struct tag_block type_definitions;
-	long unused50[12];
 };
 
 struct detail_object_bitmap_group_sprite
@@ -94,19 +61,6 @@ struct detail_object_bitmap_group_sequence
 	short bitmap_count;
 	long unknown024[4];
 	struct tag_block sprites;
-};
-
-struct scenario_detail_object_collection_palette_entry
-{
-	struct tag_reference collection;
-	byte reserved10[0x20];
-};
-
-struct structure_detail_object_data
-{
-	byte reserved00[0xC];
-	struct tag_block detail_objects;
-	byte reserved18[0x28];
 };
 
 struct detail_object_cell_data
@@ -136,22 +90,12 @@ struct detail_object_view_data
 
 typedef char detail_objects_pixel_shader_size_assert[
 	sizeof(struct pixel_shader_definition) == 0xF0 ? 1 : -1];
-typedef char detail_object_size_assert[
-	sizeof(struct detail_object) == 0x6 ? 1 : -1];
 typedef char detail_object_vertex_size_assert[
 	sizeof(struct detail_object_vertex) == 0x8 ? 1 : -1];
-typedef char detail_object_type_definition_size_assert[
-	sizeof(struct detail_object_type_definition) == 0x60 ? 1 : -1];
-typedef char detail_object_collection_definition_size_assert[
-	sizeof(struct detail_object_collection_definition) == 0x80 ? 1 : -1];
 typedef char detail_object_bitmap_group_sprite_size_assert[
 	sizeof(struct detail_object_bitmap_group_sprite) == 0x20 ? 1 : -1];
 typedef char detail_object_bitmap_group_sequence_size_assert[
 	sizeof(struct detail_object_bitmap_group_sequence) == 0x40 ? 1 : -1];
-typedef char detail_object_palette_entry_size_assert[
-	sizeof(struct scenario_detail_object_collection_palette_entry) == 0x30 ? 1 : -1];
-typedef char structure_detail_object_data_size_assert[
-	sizeof(struct structure_detail_object_data) == 0x40 ? 1 : -1];
 #ifndef HALO_64BIT
 typedef char detail_object_cell_data_size_assert[
 	sizeof(struct detail_object_cell_data) == 0x18 ? 1 : -1];
@@ -169,7 +113,6 @@ static void detail_object_data_error(
 /* ---------- globals */
 
 static D3DVertexBuffer *local_d3d_vertex_buffer = NULL;
-
 
 /* ---------- private code */
 

@@ -108,7 +108,6 @@ static boolean surface_is_walkable(
 			&bsp->surfaces,
 			surface_index,
 			struct collision_surface);
-#line 482 "c:\\halo\\SOURCE\\ai\\path_smoothing.c"
 		match_assert(__FILE__, __LINE__, TEST_FLAG(collision_surface->flags, _collision_surface_breakable_bit));
 		breakable_surface_index = collision_surface->breakable_surface_index;
 		walkable = BIT_VECTOR_TEST_FLAG(
@@ -340,7 +339,6 @@ static boolean find_turning_point(
 	breakable_surface_flags = breakable_surface_flags_get();
 	starting_vertex_index = NONE;
 	loop_reference_vertex_index = NONE;
-#line 511 "c:\\halo\\SOURCE\\ai\\path_smoothing.c"
 	match_assert("c:\\halo\\SOURCE\\ai\\path_smoothing.c", 0x1ff, clockwise==TRUE || clockwise==FALSE);
 
 	edge_index = first_edge_index;
@@ -472,7 +470,6 @@ static boolean find_turning_point(
 			if (edge_index == chain_start_edge_index)
 				return FALSE;
 
-#line 631 "c:\\halo\\SOURCE\\ai\\path_smoothing.c"
 			match_assert("c:\\halo\\SOURCE\\ai\\path_smoothing.c", 0x277, collision_edge->vertex_indices[0]==next_vertex_index || collision_edge->vertex_indices[1]==next_vertex_index);
 		}
 
@@ -482,7 +479,6 @@ static boolean find_turning_point(
 	return FALSE;
 }
 
-#line 27 "c:\\halo\\SOURCE\\ai\\path_smoothing.c"
 void path_smooth(
 	struct path_state *state,
 	short raw_step_count,
@@ -512,7 +508,6 @@ void path_smooth(
 	real_point2d avoidance_point;
 	real_point2d known_point;
 
-#line 33 "c:\\halo\\SOURCE\\ai\\path_smoothing.c"
 	assert(raw_step_count > 0);
 	assert(raw_steps);
 	assert(smoothed_step_count);

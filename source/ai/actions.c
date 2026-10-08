@@ -68,15 +68,6 @@ enum
 typedef char scenario_conversation_action_definition_size_assert[
 	sizeof(struct ai_conversation) == 0x74 ? 1 : -1];
 
-/* walks an encounter's actors; callers read the current actor after
- * encounter_actor_iterator_next advances */
-struct encounter_actor_iterator
-{
-	long encounter_index;
-	long actor_index;
-	long next_actor_index;
-};
-
 struct actor_dive_animation
 {
 	short animation;
@@ -1684,7 +1675,7 @@ long actor_pursuit_find_nearby_actors(
 				actor_pursuit_consider_nearby_actor(
 					actor_index,
 					pursuit_controller,
-					actor_iterator.actor_index))
+					actor_iterator.index))
 			{
 				long prop_index = prop_get_active_by_unit_index(
 					actor_index,

@@ -51,38 +51,6 @@ enum auxilary_overlay_use_team_color_flags
 
 /* ---------- structures */
 
-struct static_hud_element_definition
-{
-	struct hud_placement_definition placement;
-	struct tag_reference interface_bitmap;
-	struct hud_color_definition colors;
-	short sequence_index;
-	short pad;
-	struct tag_block multitexture_overlays;
-	long unused0[1];
-};
-
-struct meter_hud_element_definition
-{
-	struct hud_placement_definition placement;
-	struct tag_reference meter_bitmap;
-	unsigned long min_color;
-	unsigned long max_color;
-	unsigned long flash_color;
-	unsigned long empty_color;
-	byte meter_flags;
-	byte minimum_value;
-	short sequence_index;
-	byte alpha_multiplier;
-	byte alpha_bias;
-	short value_scale;
-	real opacity;
-	real fade;
-	unsigned long disabled_color;
-	struct tag_block multitexture_overlays;
-	long unused0[1];
-};
-
 struct shield_meter_extras_definition
 {
 	unsigned long overcharge_min_color;
@@ -165,10 +133,6 @@ struct unit_hud_interface_definition
 	long unused2[12];
 };
 
-typedef char static_hud_element_definition_size_assert[
-	sizeof(struct static_hud_element_definition) == 0x68 ? 1 : -1];
-typedef char meter_hud_element_definition_size_assert[
-	sizeof(struct meter_hud_element_definition) == 0x68 ? 1 : -1];
 typedef char metered_panel_definition_shield_extras_offset_assert[
 	offsetof(struct metered_panel_definition, shield_extras) == 0xD0 ? 1 : -1];
 typedef char metered_panel_definition_size_assert[

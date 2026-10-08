@@ -153,107 +153,6 @@ struct weapon_hud_globals
 	long script_flags;
 };
 
-struct number_hud_element_definition
-{
-	struct hud_placement_definition placement;
-	struct hud_color_definition colors;
-	char digits;
-	byte number_flags;
-	char fractional_digits;
-	byte pad;
-	long unused[3];
-};
-
-struct grenade_count_panel_definition
-{
-	struct static_hud_element_definition background;
-	struct number_hud_element_definition numbers;
-	short flash_cutoff;
-	short pad;
-};
-
-struct grenade_hud_interface_definition
-{
-	struct hud_absolute_placement_definition absolute_placement;
-	struct static_hud_element_definition background;
-	struct grenade_count_panel_definition grenade_count_panel;
-	struct weapon_hud_overlay_definition overlays;
-	struct tag_block warning_sounds;
-	long unused0[17];
-	struct tag_reference messaging_icon_bitmap;
-	long unused1[12];
-};
-
-struct weapon_hud_element_header
-{
-	short state_type;
-	short runtime_flags;
-	short use_on_map_type;
-	short pad;
-	long unused[7];
-};
-
-struct weapon_hud_static_element
-{
-	struct weapon_hud_element_header header;
-	struct static_hud_element_definition static_element;
-	long unused[10];
-};
-
-struct weapon_hud_meter_element
-{
-	struct weapon_hud_element_header header;
-	struct meter_hud_element_definition meter_element;
-	long unused[10];
-};
-
-struct weapon_hud_number_element
-{
-	struct weapon_hud_element_header header;
-	struct number_hud_element_definition number_element;
-	word weapon_flags;
-	short pad;
-	long unused[9];
-};
-
-struct weapon_hud_overlays_element
-{
-	short state_type;
-	short runtime_flags;
-	short use_on_map_type;
-	short pad;
-	long unused[7];
-	struct weapon_hud_overlay_definition overlays;
-	long unused2[10];
-};
-
-struct weapon_hud_crosshair_definition
-{
-	struct tag_reference bitmap;
-	struct tag_block items;
-};
-
-struct weapon_hud_crosshairs_element
-{
-	short crosshair_type;
-	short runtime_flags;
-	short use_on_map_type;
-	short pad;
-	long unused[7];
-	struct weapon_hud_crosshair_definition crosshairs;
-	long unused2[10];
-};
-
-struct weapon_hud_crosshair_item
-{
-	struct hud_placement_definition placement;
-	struct hud_color_definition colors;
-	short frame_rate;
-	short sequence_index;
-	unsigned long flags;
-	long unused[8];
-};
-
 typedef char weapon_hud_state_size_assert[
 	sizeof(struct weapon_hud_state) == 0x28 ? 1 : -1];
 typedef char crosshair_state_size_assert[
@@ -266,16 +165,8 @@ typedef char weapon_hud_globals_size_assert[
 	sizeof(struct weapon_hud_globals) == 0x1E4 ? 1 : -1];
 typedef char weapon_interface_state_size_assert[
 	sizeof(struct weapon_interface_state) == 0x20 ? 1 : -1];
-typedef char number_hud_element_definition_size_assert[
-	sizeof(struct number_hud_element_definition) == 0x54 ? 1 : -1];
-typedef char grenade_hud_interface_definition_size_assert[
-	sizeof(struct grenade_hud_interface_definition) == 0x1F8 ? 1 : -1];
 typedef char weapon_hud_interface_definition_size_assert[
 	sizeof(struct weapon_hud_interface_definition) == 0x17C ? 1 : -1];
-typedef char weapon_hud_crosshairs_element_size_assert[
-	sizeof(struct weapon_hud_crosshairs_element) == 0x68 ? 1 : -1];
-typedef char weapon_hud_crosshair_item_size_assert[
-	sizeof(struct weapon_hud_crosshair_item) == 0x6C ? 1 : -1];
 typedef char hud_weapon_globals_default_weapon_hud_index_offset_assert[
 	offsetof(struct hud_globals_definition, defaults.default_weapon_hud.index) == 0x2CC ? 1 : -1];
 

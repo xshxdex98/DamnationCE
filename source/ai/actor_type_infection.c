@@ -23,6 +23,7 @@ ACTOR_TYPE_INFECTION.C
 #include "units/unit_definitions.h"
 #include "ai/actors.h"
 #include "ai/actions.h"
+#include "units/unit_control_data.h"
 
 enum
 {
@@ -36,22 +37,6 @@ enum
 };
 
 /* ---------- structures */
-
-struct unit_control_data
-{
-	char animation_state;
-	char aiming_speed;
-	word control_flags;
-	short weapon_index;
-	short grenade_index;
-	short zoom_level;
-	short pad;
-	real_vector3d throttle;
-	real primary_trigger;
-	real_vector3d facing_vector;
-	real_vector3d aiming_vector;
-	real_vector3d looking_vector;
-};
 
 union projectile_aim_direction
 {
@@ -73,12 +58,6 @@ typedef char swarm_component_wander_offset_check[
 	offsetof(struct swarm_component_datum, wander) == 0x1C ? 1 : -1];
 typedef char swarm_component_obey_vector_offset_check[
 	offsetof(struct swarm_component_datum, obey.directmovement.vector) == 0x28 ? 1 : -1];
-typedef char unit_control_data_size_check[
-	sizeof(struct unit_control_data) == 0x40 ? 1 : -1];
-typedef char unit_control_data_throttle_offset_check[
-	offsetof(struct unit_control_data, throttle) == 0x0C ? 1 : -1];
-typedef char unit_control_data_facing_offset_check[
-	offsetof(struct unit_control_data, facing_vector) == 0x1C ? 1 : -1];
 typedef char projectile_aim_direction_size_check[
 	sizeof(union projectile_aim_direction) == sizeof(real_vector3d) ? 1 : -1];
 

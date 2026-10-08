@@ -58,6 +58,7 @@ UNITS.C
 #include "units/bipeds.h"
 #include "scenario/scenario_definitions.h"
 #include "units/units.h"
+#include "units/unit_control_data.h"
 
 /* port: the control and animation impulses the host's actors give their
 units go to the clients' copies (port/linux/game/network_actors.c) */
@@ -172,42 +173,8 @@ struct unit_acceleration_plan
 typedef char unit_acceleration_plan_size_check[
 	sizeof(struct unit_acceleration_plan) == 0x20 ? 1 : -1];
 
-struct unit_control_data
-{
-	char animation_state;
-	char aiming_speed;
-	word control_flags;
-	short weapon_index;
-	short grenade_index;
-	short zoom_level;
-	short pad;
-	real_vector3d throttle;
-	real primary_trigger;
-	real_vector3d facing_vector;
-	real_vector3d aiming_vector;
-	real_vector3d looking_vector;
-};
-
-typedef char unit_control_data_size_assert[
-	sizeof(struct unit_control_data) == 0x40 ? 1 : -1];
-
 typedef char unit_initial_weapon_size_assert[
 	sizeof(struct unit_initial_weapon) == 0x24 ? 1 : -1];
-
-/* This tag-block element layout is carried locally because this bounded wave
- * does not own the shared game-globals header. */
-struct game_globals_falling_damage
-{
-	byte unused0[0x48];
-	long unknown48;
-	byte unused4c[0x20];
-	struct tag_reference flaming_death_damage_effect;
-	byte unused1[0x1C];
-};
-typedef char game_globals_falling_damage_size_check[
-	sizeof(struct game_globals_falling_damage) == 0x98 ? 1 : -1];
-typedef char game_globals_flaming_death_offset_check[
-	offsetof(struct game_globals_falling_damage, flaming_death_damage_effect) == 0x6C ? 1 : -1];
 
 /* ---------- prototypes */
 
@@ -6541,7 +6508,7 @@ void unit_flame_to_death(
 	unit->object.damage_flags &= ~FLAG(_object_cannot_take_damage_bit);
 
 	if (falling_damage &&
-		falling_damage->flaming_death_damage_effect.index != NONE)
+		falling_damage->flaming_death_damage.index != NONE)
 	{
 		struct object_datum *attacker = object_try_and_get(
 			unit->unit.flaming_death_attacker_object_index);
@@ -6549,7 +6516,7 @@ void unit_flame_to_death(
 
 		damage_data_new(
 			&damage_data,
-			falling_damage->flaming_death_damage_effect.index);
+			falling_damage->flaming_death_damage.index);
 
 		if (attacker)
 		{

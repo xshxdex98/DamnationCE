@@ -904,12 +904,9 @@ void actor_perception_acknowledge(
 {
 	struct prop_datum *prop = prop_get(prop_index);
 
-#line 1037 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 	assert(prop->owner_actor_index == actor_index);
 	vassert(prop_acknowledged(prop), "prop_acknowledged(prop)");
-#line 1039 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 	vassert(prop->orphan_prop_index == NONE, "prop->orphan_prop_index == NONE");
-#line 300 "source\\ai\\actor_perception.c"
 
 	prop->tried_to_search = FALSE;
 	prop->tried_to_uncover = FALSE;
@@ -936,9 +933,7 @@ short actor_get_perception_knowledge(
 	{
 		struct prop_datum *prop = prop_get(prop_index);
 
-#line 1394 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		assert(prop->owner_actor_index == actor_index);
-#line 390 "source\\ai\\actor_perception.c"
 
 		if (prop_acknowledged(prop) ||
 			prop->unit_effect == _ai_unit_effect_shooting ||
@@ -1081,9 +1076,7 @@ void actor_situation_update_target_status(
 				unit_get(target_prop->unit_index);
 		short target_type;
 
-#line 4291 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		assert(target_prop->enemy);
-#line 510 "source\\ai\\actor_perception.c"
 
 		switch (target_prop->state)
 		{
@@ -1195,9 +1188,7 @@ void actor_situation_combat_status_update(
 			_actor_combat_status_none;
 	}
 
-#line 4408 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 	assert((actor->target.target_type >= 0) && (actor->target.target_type < NUMBER_OF_ACTOR_TARGET_TYPES));
-#line 540 "source\\ai\\actor_perception.c"
 
 	actor->state.combat_status = MAX(
 		actor->state.suspicion_combat_status,
@@ -1510,11 +1501,9 @@ boolean actor_perception_friend_prop_is_attacking(
 	struct prop_datum *friend_prop = prop_get(friend_prop_index);
 	boolean attacking = FALSE;
 
-#line 4710 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 	vassert(
 		prop_acknowledged(friend_prop) && !friend_prop->enemy && !friend_prop->dead,
 		"prop_acknowledged(friend_prop) && !friend_prop->enemy && !friend_prop->dead");
-#line 610 "source\\ai\\actor_perception.c"
 
 	if (friend_prop->swarm)
 	{
@@ -2741,9 +2730,7 @@ long actor_perception_find_recent_damaging_prop_index(
 
 		}
 
-#line 3726 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		assert(damaging_prop_index != 0x00000000);
-#line 500 "source\\ai\\actor_perception.c"
 	}
 
 	return damaging_prop_index;
@@ -2849,9 +2836,7 @@ void actor_perception_find_prop_pathfinding_location(
 	struct actor_perception_prop_view *prop =
 		(struct actor_perception_prop_view *)prop_get(prop_index);
 
-#line 3585 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 	assert(prop->owner_actor_index == actor_index);
-#line 510 "source\\ai\\actor_perception.c"
 
 	if (prop->pathfinding_surface_index == NONE)
 	{
@@ -4024,14 +4009,12 @@ boolean actor_expected_acknowledgement(
 	real delta_x;
 	real delta_y;
 
-#line 3613 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 	match_vassert(
 		__FILE__,
 		__LINE__,
 		!(prop->state >= _prop_state_uninspected_orphan &&
 			prop->state <= _prop_state_inspected_orphan),
 		"!prop_orphaned(prop)");
-#line 790 "source\\ai\\actor_perception.c"
 
 	prop_iterator_new(&iterator, actor_index);
 	current_prop =
@@ -4089,15 +4072,12 @@ void actor_perception_find_sense_position(
 		long best_unit_index = NONE;
 		short unit_index;
 
-#line 1637 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		assert(actor->meta.swarm_unit_count > 0);
-#line 1634 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		match_vassert(
 			__FILE__,
 			__LINE__,
 			actor->meta.swarm_unit_index != NONE,
 			"actor->meta.swarm_unit_index != NONE");
-#line 970 "source\\ai\\actor_perception.c"
 
 		for (unit_index = 0; unit_index < swarm->unit_count; unit_index++)
 		{
@@ -4113,13 +4093,11 @@ void actor_perception_find_sense_position(
 			}
 		}
 
-#line 1651 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		match_vassert(
 			__FILE__,
 			__LINE__,
 			best_unit_index != NONE,
 			"best_unit_index != NONE");
-#line 990 "source\\ai\\actor_perception.c"
 
 		actor_input_sample_position(
 			actor_index,
@@ -4144,9 +4122,7 @@ static long actor_perception_unit_from_swarm(
 	struct actor_datum *swarm_actor = actor_get(swarm_actor_index);
 	long best_unit_index = NONE;
 
-#line 1677 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 	assert(swarm_actor->meta.swarm);
-#line 1001 "source\\ai\\actor_perception.c"
 
 	if (swarm_actor->meta.swarm_cache_index != NONE)
 	{
@@ -4219,13 +4195,11 @@ static long actor_perception_unit_from_swarm(
 		}
 	}
 
-#line 1749 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 	match_vassert(
 		__FILE__,
 		__LINE__,
 		existing_unit_index == NONE || best_unit_index != NONE,
 		"(existing_unit_index == NONE) || (best_unit_index != NONE)");
-#line 1090 "source\\ai\\actor_perception.c"
 
 	return best_unit_index;
 }
@@ -4523,9 +4497,7 @@ static void actor_perception_refresh_danger_zone(
 		return;
 	}
 
-#line 3227 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 	assert((actor->danger_zone.danger_type == _actor_danger_zone_projectile) || (actor->danger_zone.danger_type == _actor_danger_zone_vehicle) || (actor->danger_zone.danger_type == _actor_danger_zone_suicide));
-#line 4986 "source\\ai\\actor_perception.c"
 
 	object_get_origin(
 		actor->danger_zone.object_index,
@@ -4670,9 +4642,7 @@ static void actor_perception_refresh_danger_zone(
 				attached_to_us = TRUE;
 			}
 
-#line 3257 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 			assert(object->object.type == _object_type_projectile);
-#line 5133 "source\\ai\\actor_perception.c"
 
 			if (projectile->projectile.detonation_timer > 0.0f &&
 				projectile->projectile.detonation_timer_delta > 0.0f)
@@ -4927,9 +4897,7 @@ static void actor_perception_refresh_test_object(
 
 					if (optional)
 					{
-#line 2966 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 						assert(!dead);
-#line 3258 "source\\ai\\actor_perception.c"
 
 						if (list->entry_count < 128)
 						{
@@ -5129,45 +5097,38 @@ boolean actor_perception_create_orphan_from_friend(
 				prop_get(current_orphan_index);
 		refresh_position = FALSE;
 
-#line 3759 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		match_vassert(
 			__FILE__,
 			__LINE__,
 			current_prop->state >= _prop_state_unacknowledged &&
 				current_prop->state <= _prop_state_becoming_acknowledged,
 			"prop_unacknowledged(current_prop)");
-#line 3760 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		match_vassert(
 			__FILE__,
 			__LINE__,
 			current_orphan->state >= _prop_state_uninspected_orphan &&
 				current_orphan->state <= _prop_state_inspected_orphan,
 			"prop_orphaned(current_orphan)");
-#line 3762 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		match_vassert(
 			__FILE__,
 			__LINE__,
 			current_prop->owner_actor_index == actor_index,
 			"current_prop->owner_actor_index == actor_index");
-#line 3763 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		match_vassert(
 			__FILE__,
 			__LINE__,
 			current_orphan->owner_actor_index == actor_index,
 			"current_orphan->owner_actor_index == actor_index");
-#line 3764 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		match_vassert(
 			__FILE__,
 			__LINE__,
 			current_prop->related_prop_index == current_orphan_index,
 			"current_prop->orphan_prop_index == current_orphan_index");
-#line 3765 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		match_vassert(
 			__FILE__,
 			__LINE__,
 			current_orphan->related_prop_index == current_prop_index,
 			"current_orphan->parent_prop_index == current_prop_index");
-#line 545 "source\\ai\\actor_perception.c"
 
 		if (friend_prop_index != NONE)
 		{
@@ -5201,14 +5162,12 @@ boolean actor_perception_create_orphan_from_friend(
 	}
 	else
 	{
-#line 3802 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		match_vassert(
 			__FILE__,
 			__LINE__,
 			current_prop->state >= _prop_state_unacknowledged &&
 				current_prop->state <= _prop_state_becoming_acknowledged,
 			"prop_unacknowledged(current_prop)");
-#line 586 "source\\ai\\actor_perception.c"
 
 		if (friend_prop_index != NONE)
 		{
@@ -5421,9 +5380,7 @@ static void actor_perception_refresh(
 
 				if (optional)
 				{
-#line 2669 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 					assert(!prop->dead);
-#line 5988 "source\\ai\\actor_perception.c"
 
 					if (list->entry_count < 128)
 					{
@@ -5692,9 +5649,7 @@ boolean actor_situation_try_new_target(
 
 	if (new_prop->target_weight > 0.0f)
 	{
-#line 4685 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 		assert(new_prop->enemy);
-#line 700 "source\\ai\\actor_perception.c"
 
 		if (!target_prop ||
 			new_prop->target_weight >= target_prop->target_weight)
@@ -5953,9 +5908,7 @@ void actor_perception_update(
 		if (prop->unopposable_casualty_decay_timer > 0 &&
 			--prop->unopposable_casualty_decay_timer == 0)
 		{
-#line 316 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 			assert(prop->unopposable_casualties_inflicted > 0);
-#line 6522 "source\\ai\\actor_perception.c"
 
 			if (--prop->unopposable_casualties_inflicted > 0)
 			{
@@ -6039,9 +5992,7 @@ void actor_perception_update(
 					{
 						struct prop_datum *parent_prop = prop_get(prop->orphan_prop_index);
 
-#line 402 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 						assert(parent_prop->orphan_prop_index == iterator.index);
-#line 6608 "source\\ai\\actor_perception.c"
 
 						parent_prop->in_use = prop->in_use;
 					}
@@ -6055,9 +6006,7 @@ void actor_perception_update(
 				refresh_position = TRUE;
 			}
 
-#line 416 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 			assert(!refresh_status || refresh_position);
-#line 6624 "source\\ai\\actor_perception.c"
 
 			if (refresh_position)
 			{
@@ -6120,10 +6069,8 @@ void actor_perception_update(
 					short awareness_speed;
 					real awareness_delta = 0.0f;
 
-#line 489 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 					assert((knowledge_type >= 0) && (knowledge_type < NUMBER_OF_ACTOR_KNOWLEDGE_TYPES));
 					assert((prop->perception >= 0) && (prop->perception < NUMBER_OF_ACTOR_PERCEPTION_TYPES));
-#line 6690 "source\\ai\\actor_perception.c"
 
 					awareness_speed = global_acknowledgement_speeds[knowledge_type][prop->perception];
 					switch (awareness_speed)
@@ -6149,9 +6096,7 @@ void actor_perception_update(
 						break;
 
 					default:
-#line 516 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 						assert(!"unreachable");
-#line 6718 "source\\ai\\actor_perception.c"
 						break;
 					}
 
@@ -6354,9 +6299,7 @@ void actor_perception_update(
 
 		if (new_state != NONE)
 		{
-#line 694 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 			assert(new_state!=prop->state);
-#line 6928 "source\\ai\\actor_perception.c"
 
 			switch (new_state)
 			{
@@ -6407,9 +6350,7 @@ void actor_perception_update(
 
 			parent_prop = prop_get(prop->parent_prop_index);
 
-#line 751 "c:\\halo\\SOURCE\\ai\\actor_perception.c"
 			assert(parent_prop->orphan_prop_index == iterator.index);
-#line 6981 "source\\ai\\actor_perception.c"
 
 			parent_prop->orphan_prop_index = NONE;
 			actor_switch_props(actor_index, iterator.index, NONE);

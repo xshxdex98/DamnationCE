@@ -260,6 +260,28 @@ struct game_globals
 	struct tag_block playlist;
 };
 
+struct game_globals_falling_damage
+{
+	long falling_unused[2];
+	real falling_distance_lower_bound;
+	real falling_distance_upper_bound;
+	struct tag_reference falling_damage;
+	long terminal_velocity_unused[2];
+	real maximum_distance;
+	struct tag_reference maximum_distance_damage;
+	struct tag_reference vehicle_hit_environment_damage_effect;
+	struct tag_reference vehicle_killed_unit_damage_effect;
+	struct tag_reference vehicle_collision_damage;
+	struct tag_reference flaming_death_damage;
+	long unused7c[4];
+	real runtime_maximum_falling_velocity;
+	real runtime_minimum_damage_velocity;
+	real runtime_maximum_damage_velocity;
+};
+
+typedef char game_globals_falling_damage_size_assert[
+	sizeof(struct game_globals_falling_damage) == 0x98 ? 1 : -1];
+
 /* ---------- prototypes/GAME_GLOBALS.C */
 
 char const *material_get_name(short material_type);

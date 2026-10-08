@@ -65,31 +65,6 @@ enum hud_waypoint_arrow_flags
 
 /* ---------- structures */
 
-struct number_hud_element_definition
-{
-	struct hud_placement_definition placement;
-	struct hud_color_definition colors;
-	byte digits;
-	byte number_flags;
-	byte fractional_digits;
-	byte pad;
-	long unused[3];
-};
-
-struct hud_waypoint_arrow
-{
-	char name[0x20];
-	long unused0[2];
-	unsigned long color;
-	real opacity;
-	real fade;
-	short sequence_indices[3];
-	short pad;
-	long unused1[4];
-	unsigned long flags;
-	long unused2[6];
-};
-
 struct hud_nav_point_datum
 {
 	short nav_index;

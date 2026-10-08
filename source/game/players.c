@@ -58,6 +58,7 @@ PLAYERS.C
 #include "units/vehicles.h"
 #include "editor_play.h" /* port: port/linux/game/editor_play.c */
 #include "game/players.h"
+#include "units/unit_control_data.h"
 #ifdef HALO_64BIT
 #include "cseries/errors.h"
 #include "networking/network_messages.h"
@@ -120,25 +121,6 @@ typedef char player_data_maximum_count_assert[
 	NETWORK_GAME_MAXIMUM_PLAYER_COUNT == HALO_PORT_MAXIMUM_NETWORK_PLAYERS ? 1 : -1];
 
 /* ---------- structures */
-
-struct unit_control_data
-{
-	char animation_state;
-	char aiming_speed;
-	word control_flags;
-	short weapon_index;
-	short grenade_index;
-	short zoom_level;
-	short pad;
-	real_vector3d throttle;
-	real primary_trigger;
-	real_vector3d facing_vector;
-	real_vector3d aiming_vector;
-	real_vector3d looking_vector;
-};
-
-typedef char unit_control_data_size_assert[
-	sizeof(struct unit_control_data) == 0x40 ? 1 : -1];
 
 /* Players needs the vehicle control prefix only.  VEHICLES.C owns the full
    runtime datum, which has not yet been made a shared definition. */

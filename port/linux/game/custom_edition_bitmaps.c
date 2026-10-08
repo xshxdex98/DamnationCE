@@ -39,6 +39,7 @@ pixels as they arrive, and samples them in this build's order
 #include "custom_edition_cache.h"
 
 #include <stdlib.h>
+#include "interface/weapon_hud_interface_definition.h"
 
 /* ---------- constants */
 
@@ -89,26 +90,8 @@ struct weapon_hud_interface_elements
 	struct tag_block meters;
 };
 
-struct weapon_hud_static_element
-{
-	byte header[0x24];
-	struct static_hud_element_definition static_element;
-	byte unused[0x28];
-};
-
-struct weapon_hud_meter_element
-{
-	byte header[0x24];
-	struct meter_hud_element_definition meter_element;
-	byte unused[0x28];
-};
-
 typedef char verify_weapon_hud_interface_elements_meters_offset[
 	offsetof(struct weapon_hud_interface_elements, meters) == 0x6C ? 1 : -1];
-typedef char verify_weapon_hud_static_element_size[
-	sizeof(struct weapon_hud_static_element) == 0xB4 ? 1 : -1];
-typedef char verify_weapon_hud_meter_element_size[
-	sizeof(struct weapon_hud_meter_element) == 0xB4 ? 1 : -1];
 
 /* a bitmap whose channels Halo PC keeps elsewhere than this build reads
 them from */

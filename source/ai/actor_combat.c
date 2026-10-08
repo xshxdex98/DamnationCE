@@ -99,13 +99,6 @@ enum
 
 /* ---------- structures */
 
-struct encounter_actor_iterator
-{
-	long encounter_index;
-	long index;
-	long next_index;
-};
-
 struct actor_combat_vehicle_definition_view
 {
 	byte __unknown0[0x2F0];

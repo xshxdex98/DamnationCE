@@ -593,12 +593,6 @@ struct hs_arguments_long_long_long
 	long value2;
 };
 
-struct hud_message_text_definition
-{
-	byte reserved_000[0x20];
-	struct tag_block messages;
-};
-
 struct hud_message_definition
 {
 	byte reserved[0x40];

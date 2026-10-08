@@ -75,23 +75,6 @@ struct compressed_animation_header
 	unsigned long rotation_node_headers[1];
 };
 
-/* the animation graph blocks this file reads */
-struct animation_graph_node
-{
-	char name[TAG_STRING_LENGTH+1];
-	short next_sibling_node_index;
-	short first_child_node_index;
-	short parent_node_index;
-	word pad;
-	unsigned long flags;
-	real_vector3d base_vector;
-	real range;
-	long pad1;
-};
-
-typedef char verify_animation_graph_node_size[
-	sizeof(struct animation_graph_node) == 0x40 ? 1 : -1];
-
 typedef char verify_animation_graph_sound_reference_size[
 	sizeof(struct animation_graph_sound_reference) == 0x14 ? 1 : -1];
 

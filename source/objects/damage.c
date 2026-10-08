@@ -138,32 +138,8 @@ enum
 
 /* ---------- macros */
 
-struct game_globals_falling_damage
-{
-	long unused0[2];
-	real falling_distance_lower_bound;
-	real falling_distance_upper_bound;
-	struct tag_reference falling_damage;
-	long terminal_velocity_unused[2];
-	real maximum_distance;
-	struct tag_reference maximum_distance_damage;
-	struct tag_reference vehicle_hit_environment_damage_effect;
-	struct tag_reference vehicle_killed_unit_damage_effect;
-	struct tag_reference vehicle_collision_damage;
-	struct tag_reference flaming_death_damage;
-	long unused7c[4];
-	real runtime_maximum_falling_velocity;
-	real runtime_minimum_damage_velocity;
-	real runtime_maximum_damage_velocity;
-};
-
 typedef char damage_region_size_assert[
 	sizeof(struct damage_region) == 0x54 ? 1 : -1];
-typedef char game_globals_falling_damage_size_assert[
-	sizeof(struct game_globals_falling_damage) == 0x98 ? 1 : -1];
-typedef char game_globals_falling_damage_effect_offset_assert[
-	offsetof(struct game_globals_falling_damage, falling_damage) +
-		offsetof(struct tag_reference, index) == 0x1C ? 1 : -1];
 
 typedef char object_deplete_body_definition_index_offset_assert[
 	offsetof(struct object_datum, definition_index) == 0x00 ? 1 : -1];

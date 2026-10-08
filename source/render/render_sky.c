@@ -15,45 +15,10 @@ RENDER_SKY.C
 #include "objects/objects.h"
 #include "rasterizer/rasterizer.h"
 #include "scenario/scenario.h"
+#include "scenario/sky_definitions.h"
 
 /* ---------- structures */
 
-struct sky
-{
-	struct tag_reference model;
-	struct tag_reference animation_graph;
-	byte pad20[0x8C];
-	struct tag_block render_model_regions;
-	struct tag_block animations;
-	struct tag_block lights;
-};
-
-struct sky_render_model_region
-{
-	byte unused[0x24];
-};
-
-struct sky_animation
-{
-	short animation_index;
-	word pad2;
-	real period;
-	byte unused8[0x1C];
-};
-
-struct sky_light
-{
-	struct tag_reference lens_flare;
-	char marker_name[TAG_STRING_LENGTH + 1];
-	byte pad31[0x37];
-	real_euler_angles2d direction;
-	byte pad70[4];
-};
-
-typedef char verify_sky_animations_offset[offsetof(struct sky, animations) == 0xB8 ? 1 : -1];
-typedef char verify_sky_lights_offset[offsetof(struct sky, lights) == 0xC4 ? 1 : -1];
-typedef char verify_sky_animation_size[sizeof(struct sky_animation) == 0x24 ? 1 : -1];
-typedef char verify_sky_light_size[sizeof(struct sky_light) == 0x74 ? 1 : -1];
 typedef char verify_sky_render_lighting_size[sizeof(struct render_lighting) == 0x74 ? 1 : -1];
 
 /* ---------- prototypes */
@@ -154,16 +119,16 @@ void render_sky(
 				global_up3d);
 
 			/* port: no more than region_scales holds (a map's count) */
-			if (sky->render_model_regions.count>(long)NUMBEROF(region_scales))
+			if (sky->shader_functions.count>(long)NUMBEROF(region_scales))
 			{
 				render_sky_data_error("shader functions");
 			}
-			for (i = 0; i < sky->render_model_regions.count && i < (short)NUMBEROF(region_scales); i++)
+			for (i = 0; i < sky->shader_functions.count && i < (short)NUMBEROF(region_scales); i++)
 			{
 				TAG_BLOCK_GET_ELEMENT(
-					&sky->render_model_regions,
+					&sky->shader_functions,
 					i,
-					struct sky_render_model_region);
+					struct sky_shader_function);
 				region_scales[i] = 1.f;
 			}
 

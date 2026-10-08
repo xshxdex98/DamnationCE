@@ -29,6 +29,8 @@ of its group: each shader group's check makes the type its group's.
 #include "objects/widgets/glow.h"
 #include "objects/widgets/flags.h"
 #include "objects/widgets/lightning.h"
+#include "structures/detail_object_definitions.h"
+#include "scenario/sky_definitions.h"
 
 /* ---------- constants */
 
@@ -635,121 +637,9 @@ typedef char verify_shader_model_size[sizeof(struct shader_model_definition) == 
 
 /* weather_particle_systems.c */
 
-struct weather_particle_type_definition
-{
-	char name[32];
-	unsigned long flags;
-	real distance_fade[4];
-	real height_fade[4];
-	long unused44[24];
-	real particle_count_lower_bound;
-	real particle_count_upper_bound;
-	struct tag_reference physics;
-	long unusedBC[4];
-	real acceleration[4];
-	long unusedDC[8];
-	real radius_lower_bound;
-	real radius_upper_bound;
-	real animation_rate_lower_bound;
-	real animation_rate_upper_bound;
-	real rotation_rate_lower_bound;
-	real rotation_rate_upper_bound;
-	long unused114[8];
-	real_argb_color color_lower_bound;
-	real_argb_color color_upper_bound;
-	real runtime_one_over_sprite_width;
-	long unused158[15];
-	struct tag_reference bitmap;
-	short render_mode;
-	short render_direction_source;
-	struct shader_effect_definition shader;
-};
-
-typedef char verify_weather_particle_type_definition_bitmap_offset[
-	offsetof(struct weather_particle_type_definition, bitmap) == 0x194 ? 1 : -1];
-typedef char verify_weather_particle_type_definition_size[
-	sizeof(struct weather_particle_type_definition) == 0x25C ? 1 : -1];
-
 /* decals.c */
 
-struct decal_shader_definition
-{
-	struct shader shader;
-	word flags;
-	short type;
-	short framebuffer_blend_function;
-	word pad2E;
-	long unused30[5];
-	struct tag_reference map;
-	long unused54[5];
-};
-
-struct decal_definition
-{
-	word flags;
-	short type;
-	short layer;
-	word pad006;
-	struct tag_reference next_decal_in_chain;
-	real radius_lower_bound;
-	real radius_upper_bound;
-	long unused020[3];
-	real intensity_lower_bound;
-	real intensity_upper_bound;
-	real_rgb_color color_lower_bound;
-	real_rgb_color color_upper_bound;
-	long unused04C[3];
-	short animation_loop_frame_index;
-	short animation_speed;
-	long unused05C[7];
-	real lifetime_lower_bound;
-	real lifetime_upper_bound;
-	real decay_time_lower_bound;
-	real decay_time_upper_bound;
-	long unused088[3];
-	struct decal_shader_definition shader;
-	real runtime_maximum_sprite_extent;
-	word runtime_incremental_counter;
-	word pad102;
-	long unused104[2];
-};
-
-typedef char verify_decal_definition_map_index_offset[
-	offsetof(struct decal_definition, shader.map.index) == 0xE4 ? 1 : -1];
-typedef char verify_decal_definition_size[sizeof(struct decal_definition) == 0x10C ? 1 : -1];
-
 /* rasterizer_xbox_detail_objects.c */
-
-struct detail_object_type_definition
-{
-	char name[32];
-	byte sequence_index;
-	byte flags;
-	byte first_sprite_index;
-	byte sprite_count;
-	real color_override_factor;
-	long unused28[2];
-	real near_fade_distance;
-	real far_fade_distance;
-	real size_min;
-	real size_max;
-	byte reserved40[0x20];
-};
-
-struct detail_object_collection_definition
-{
-	short collection_type;
-	word pad02;
-	real global_z_offset;
-	long unused08[11];
-	struct tag_reference map;
-	struct tag_block type_definitions;
-	long unused50[12];
-};
-
-typedef char verify_detail_object_type_definition_size[sizeof(struct detail_object_type_definition) == 0x60 ? 1 : -1];
-typedef char verify_detail_object_collection_definition_size[
-	sizeof(struct detail_object_collection_definition) == 0x80 ? 1 : -1];
 
 /* rasterizer_lights.c */
 
@@ -937,48 +827,6 @@ enum
 {
 	_lightning_marker_not_connected_to_next_marker_bit = 0,
 };
-
-/* render_sky.c, sky_definitions.h */
-
-struct sky_shader_function
-{
-	long unused;
-	char global_function_name[TAG_STRING_LENGTH + 1];
-};
-
-struct sky_animation
-{
-	short animation_index;
-	word pad02;
-	real period;
-	byte unused08[0x1C];
-};
-
-struct sky_light
-{
-	struct tag_reference lens_flare;
-	char marker_name[TAG_STRING_LENGTH + 1];
-	byte unused30[0x44];
-};
-
-struct sky_definition
-{
-	struct tag_reference model;
-	struct tag_reference animation_graph;
-	byte unused20[0x78];
-	struct tag_reference indoor_fog_screen;
-	long unusedA8;
-	struct tag_block shader_functions;
-	struct tag_block animations;
-	struct tag_block lights;
-};
-
-typedef char verify_sky_shader_function_size[sizeof(struct sky_shader_function) == 0x24 ? 1 : -1];
-typedef char verify_sky_animation_size[sizeof(struct sky_animation) == 0x24 ? 1 : -1];
-typedef char verify_sky_light_size[sizeof(struct sky_light) == 0x74 ? 1 : -1];
-typedef char verify_sky_indoor_fog_screen_offset[offsetof(struct sky_definition, indoor_fog_screen) == 0x98 ? 1 : -1];
-typedef char verify_sky_animations_offset[offsetof(struct sky_definition, animations) == 0xB8 ? 1 : -1];
-typedef char verify_sky_size[sizeof(struct sky_definition) == 0xD0 ? 1 : -1];
 
 /* ---------- private code */
 
@@ -2562,13 +2410,13 @@ static struct tag_schema_definition const sky_light_schema =
 a phase for each animation, render_sky_globals[MAXIMUM_SKIES_PER_SCENARIO]) */
 static struct tag_schema_field const sky_fields[] =
 {
-	TAG_SCHEMA_REFERENCE(struct sky_definition, model, TAG_SCHEMA_GROUPS('mode')),
-	TAG_SCHEMA_REFERENCE(struct sky_definition, animation_graph, TAG_SCHEMA_GROUPS('antr')),
-	TAG_SCHEMA_REFERENCE(struct sky_definition, indoor_fog_screen, TAG_SCHEMA_GROUPS('fog ')),
-	TAG_SCHEMA_BLOCK(struct sky_definition, shader_functions, sky_shader_function_schema,
+	TAG_SCHEMA_REFERENCE(struct sky, model, TAG_SCHEMA_GROUPS('mode')),
+	TAG_SCHEMA_REFERENCE(struct sky, animation_graph, TAG_SCHEMA_GROUPS('antr')),
+	TAG_SCHEMA_REFERENCE(struct sky, indoor_fog_screen, TAG_SCHEMA_GROUPS('fog ')),
+	TAG_SCHEMA_BLOCK(struct sky, shader_functions, sky_shader_function_schema,
 		MAXIMUM_SKY_SHADER_FUNCTIONS),
-	TAG_SCHEMA_BLOCK(struct sky_definition, animations, sky_animation_schema, MAXIMUM_SKY_ANIMATIONS),
-	TAG_SCHEMA_BLOCK(struct sky_definition, lights, sky_light_schema, MAXIMUM_SKY_LIGHTS),
+	TAG_SCHEMA_BLOCK(struct sky, animations, sky_animation_schema, MAXIMUM_SKY_ANIMATIONS),
+	TAG_SCHEMA_BLOCK(struct sky, lights, sky_light_schema, MAXIMUM_SKY_LIGHTS),
 	TAG_SCHEMA_END
 };
 
@@ -2628,7 +2476,7 @@ static struct tag_schema_definition const shader_transparent_plasma_schema =
 static struct tag_schema_definition const color_table_schema =
 	TAG_SCHEMA_DEFINITION(color_table, struct color_table_definition, color_table_fields);
 static struct tag_schema_definition const sky_schema =
-	TAG_SCHEMA_DEFINITION(sky, struct sky_definition, sky_fields);
+	TAG_SCHEMA_DEFINITION(sky, struct sky, sky_fields);
 static struct tag_schema_definition const wind_schema =
 	TAG_SCHEMA_DEFINITION(wind, struct wind_definition, wind_fields);
 static struct tag_schema_definition const bitmap_group_schema =

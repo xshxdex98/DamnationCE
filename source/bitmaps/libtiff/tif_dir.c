@@ -39,7 +39,6 @@ static char data_002b7f88[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_dir
  */
 #pragma warning(disable: 4047)
 #pragma warning(disable: 4716)
-#line 40
 #include "tiffioP.h"
 #include "prototypes.h"
 

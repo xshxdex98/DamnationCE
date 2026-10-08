@@ -121,7 +121,6 @@ boolean shader_transparent_chicago_create(
 	short map_index;
 	short map_count;
 
-#line 100 "c:\\halo\\SOURCE\\rasterizer\\xbox\\shader_transparent_chicago_preprocessor.c"
 	match_assert(__FILE__, __LINE__, shader);
 	match_assert(__FILE__, __LINE__, pixel_shader);
 

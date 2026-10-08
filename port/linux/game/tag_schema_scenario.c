@@ -195,13 +195,6 @@ struct scenario_conversation_participant
 	byte unknown48[0x0C];
 };
 
-/* rasterizer_xbox_detail_objects.c */
-struct scenario_detail_object_collection_palette_entry
-{
-	struct tag_reference collection;
-	byte reserved10[0x20];
-};
-
 struct scenario_conversation_line
 {
 	word flags;
@@ -236,8 +229,6 @@ typedef char verify_light_fixture_placement_size[sizeof(struct light_fixture_pla
 typedef char verify_sound_scenery_placement_size[sizeof(struct sound_scenery_placement) == 0x28 ? 1 : -1];
 typedef char verify_scenario_object_palette_entry_size[sizeof(struct scenario_object_palette_entry) == 0x30 ? 1 : -1];
 typedef char verify_scenario_object_name_size[sizeof(struct scenario_object_name) == 0x24 ? 1 : -1];
-typedef char verify_scenario_detail_object_collection_palette_entry_size[
-	sizeof(struct scenario_detail_object_collection_palette_entry) == 0x30 ? 1 : -1];
 typedef char verify_encounter_player_starting_location_size[
 	sizeof(struct encounter_player_starting_location) == 0x34 ? 1 : -1];
 typedef char verify_scenario_device_group_size[sizeof(struct scenario_device_group) == 0x34 ? 1 : -1];

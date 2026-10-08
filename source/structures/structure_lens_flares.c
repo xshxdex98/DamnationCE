@@ -43,18 +43,6 @@ struct temporary_lens_flare_marker
 	word pad;
 };
 
-struct structure_lens_flare
-{
-	struct tag_reference lens_flare;
-};
-
-struct structure_lens_flare_marker
-{
-	real_point3d position;
-	char direction[3];
-	byte lens_flare_index;
-};
-
 struct structure_cluster_lens_flare_data
 {
 	byte reserved[0x40];
