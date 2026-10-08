@@ -1,7 +1,5 @@
 /*
 SOUND_CACHE.H
-
-header included in hcex build.
 */
 
 #ifndef __SOUND_CACHE_H

@@ -1,7 +1,5 @@
 /*
 ACTOR_TYPES.H
-
-header included in hcex build.
 */
 
 #ifndef __ACTOR_TYPES_H

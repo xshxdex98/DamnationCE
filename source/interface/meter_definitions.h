@@ -1,7 +1,5 @@
 /*
 METER_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __METER_DEFINITIONS_H

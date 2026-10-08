@@ -1,7 +1,5 @@
 /*
 PLATFORM.H
-
-header included in hcex build.
 */
 
 #ifndef __PLATFORM_H

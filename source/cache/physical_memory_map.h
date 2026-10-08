@@ -1,7 +1,5 @@
 /*
 PHYSICAL_MEMORY_MAP.H
-
-header included in hcex build.
 */
 
 #ifndef __PHYSICAL_MEMORY_MAP_H

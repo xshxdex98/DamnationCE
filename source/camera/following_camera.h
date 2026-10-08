@@ -1,7 +1,5 @@
 /*
 FOLLOWING_CAMERA.H
-
-header included in hcex build.
 */
 
 #ifndef __FOLLOWING_CAMERA_H

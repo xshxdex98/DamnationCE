@@ -1,7 +1,5 @@
 /*
 ACTIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __ACTIONS_H

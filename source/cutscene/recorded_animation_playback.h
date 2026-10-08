@@ -1,7 +1,5 @@
 /*
 RECORDED_ANIMATION_PLAYBACK.H
-
-header included in hcex build.
 */
 
 #ifndef __RECORDED_ANIMATION_PLAYBACK_H

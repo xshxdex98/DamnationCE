@@ -1,7 +1,5 @@
 /*
 BUILD_NUMBER.H
-
-header included in hcex build.
 */
 
 #ifndef __BUILD_NUMBER_H

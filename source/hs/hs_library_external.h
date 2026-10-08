@@ -1,7 +1,5 @@
 /*
 HS_LIBRARY_EXTERNAL.H
-
-header included in hcex build.
 */
 
 #ifndef __HS_LIBRARY_EXTERNAL_H

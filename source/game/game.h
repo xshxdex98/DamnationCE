@@ -1,7 +1,5 @@
 /*
 GAME.H
-
-header included in hcex build.
 */
 
 #ifndef __GAME_H

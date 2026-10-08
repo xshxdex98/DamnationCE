@@ -1,7 +1,5 @@
 /*
 SCENERY.H
-
-header included in hcex build.
 */
 
 #ifndef __SCENERY_H

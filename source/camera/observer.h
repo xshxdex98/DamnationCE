@@ -1,7 +1,5 @@
 /*
 OBSERVER.H
-
-header included in hcex build.
 */
 
 #ifndef __OBSERVER_H

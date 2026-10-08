@@ -1,7 +1,5 @@
 /*
 HS_FUNCTION.H
-
-header included in hcex build.
 */
 
 #ifndef __HS_FUNCTION_H

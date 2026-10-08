@@ -1,7 +1,5 @@
 /*
 FIRST_PERSON_WEAPONS.H
-
-header included in hcex build.
 */
 
 #ifndef __FIRST_PERSON_WEAPONS_H

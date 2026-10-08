@@ -1,7 +1,5 @@
 /*
 BIPED_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __BIPED_DEFINITIONS_H

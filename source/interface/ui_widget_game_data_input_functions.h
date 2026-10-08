@@ -1,7 +1,5 @@
 /*
 UI_WIDGET_GAME_DATA_INPUT_FUNCTIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __UI_WIDGET_GAME_DATA_INPUT_FUNCTIONS_H

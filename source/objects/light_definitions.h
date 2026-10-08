@@ -1,7 +1,5 @@
 /*
 LIGHT_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __LIGHT_DEFINITIONS_H

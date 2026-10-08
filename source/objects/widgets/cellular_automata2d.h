@@ -1,7 +1,5 @@
 /*
 CELLULAR_AUTOMATA2D.H
-
-header included in hcex build.
 */
 
 #ifndef __CELLULAR_AUTOMATA2D_H

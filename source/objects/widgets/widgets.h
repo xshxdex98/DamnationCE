@@ -1,7 +1,5 @@
 /*
 WIDGETS.H
-
-header included in hcex build.
 */
 
 #ifndef __WIDGETS_H

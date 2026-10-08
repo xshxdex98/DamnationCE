@@ -1,7 +1,5 @@
 /*
 GAME_ENGINE.H
-
-header included in hcex build.
 */
 
 #ifndef __GAME_ENGINE_H

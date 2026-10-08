@@ -1,7 +1,5 @@
 /*
 ALEPH.H
-
-header included in hcex build.
 */
 
 #ifndef __ALEPH_H

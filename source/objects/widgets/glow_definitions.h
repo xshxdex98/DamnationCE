@@ -1,7 +1,5 @@
 /*
 GLOW_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __GLOW_DEFINITIONS_H

@@ -1,7 +1,5 @@
 /*
 INPUT_WINDOWS.H
-
-header included in hcex build.
 */
 
 #ifndef __INPUT_WINDOWS_H

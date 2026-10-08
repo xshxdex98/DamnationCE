@@ -1,7 +1,5 @@
 /*
 DETAIL_OBJECT_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __DETAIL_OBJECT_DEFINITIONS_H

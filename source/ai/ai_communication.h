@@ -1,7 +1,5 @@
 /*
 AI_COMMUNICATION.H
-
-header included in hcex build.
 */
 
 #ifndef __AI_COMMUNICATION_H

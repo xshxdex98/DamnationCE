@@ -1,7 +1,5 @@
 /*
 DEVICES.H
-
-header included in hcex build.
 */
 
 #ifndef __DEVICES_H

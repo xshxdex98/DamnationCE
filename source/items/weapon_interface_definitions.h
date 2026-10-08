@@ -1,7 +1,5 @@
 /*
 WEAPON_INTERFACE_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __WEAPON_INTERFACE_DEFINITIONS_H

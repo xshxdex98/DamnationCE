@@ -1,7 +1,5 @@
 /*
 EFFECTS.H
-
-header included in hcex build.
 */
 
 #ifndef __EFFECTS_H

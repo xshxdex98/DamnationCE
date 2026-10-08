@@ -1,7 +1,5 @@
 /*
 COLLISION_MODEL_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __COLLISION_MODEL_DEFINITIONS_H

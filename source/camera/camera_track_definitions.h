@@ -1,7 +1,5 @@
 /*
 CAMERA_TRACK_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __CAMERA_TRACK_DEFINITIONS_H

@@ -1,7 +1,5 @@
 /*
 UI_WIDGET_TEXT_SEARCH_AND_REPLACE_FUNCTIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __UI_WIDGET_TEXT_SEARCH_AND_REPLACE_FUNCTIONS_H

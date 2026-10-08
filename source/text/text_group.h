@@ -1,7 +1,5 @@
 /*
 TEXT_GROUP.H
-
-header included in hcex build.
 */
 
 #ifndef __TEXT_GROUP_H

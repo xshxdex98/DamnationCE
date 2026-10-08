@@ -1,7 +1,5 @@
 /*
 DAMAGE_EFFECT_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __DAMAGE_EFFECT_DEFINITIONS_H

@@ -1,7 +1,5 @@
 /*
 RENDER_CAMERAS.H
-
-header included in hcex build.
 */
 
 #ifndef __RENDER_CAMERAS_H

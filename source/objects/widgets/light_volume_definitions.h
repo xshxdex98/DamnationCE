@@ -1,7 +1,5 @@
 /*
 LIGHT_VOLUME_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __LIGHT_VOLUME_DEFINITIONS_H

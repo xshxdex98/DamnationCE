@@ -1,7 +1,5 @@
 /*
 THREAD.H
-
-header included in hcex build.
 */
 
 #ifndef __THREAD_H

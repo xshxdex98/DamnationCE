@@ -1,7 +1,5 @@
 /*
 PARTICLE_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __PARTICLE_DEFINITIONS_H

@@ -1,7 +1,5 @@
 /*
 WEAPONS.H
-
-header included in hcex build.
 */
 
 #ifndef __WEAPONS_H

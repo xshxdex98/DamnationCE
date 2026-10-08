@@ -1,7 +1,5 @@
 /*
 CHEATS.H
-
-header included in hcex build.
 */
 
 #ifndef __CHEATS_H

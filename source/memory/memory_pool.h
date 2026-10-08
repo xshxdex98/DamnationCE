@@ -1,7 +1,5 @@
 /*
 MEMORY_POOL.H
-
-header included in hcex build.
 */
 
 #ifndef __MEMORY_POOL_H

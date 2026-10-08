@@ -1,7 +1,5 @@
 /*
 PERIODIC_FUNCTIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __PERIODIC_FUNCTIONS_H

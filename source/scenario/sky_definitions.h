@@ -1,7 +1,5 @@
 /*
 SKY_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __SKY_DEFINITIONS_H

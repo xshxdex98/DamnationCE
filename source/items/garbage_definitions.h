@@ -1,7 +1,5 @@
 /*
 GARBAGE_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __GARBAGE_DEFINITIONS_H

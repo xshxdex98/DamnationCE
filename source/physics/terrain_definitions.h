@@ -1,7 +1,5 @@
 /*
 TERRAIN_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __TERRAIN_DEFINITIONS_H

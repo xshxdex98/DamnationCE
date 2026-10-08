@@ -1,7 +1,5 @@
 /*
 CIRCULAR_QUEUE.H
-
-header included in hcex build.
 */
 
 #ifndef __CIRCULAR_QUEUE_H

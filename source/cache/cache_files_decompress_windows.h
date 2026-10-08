@@ -1,7 +1,5 @@
 /*
 CACHE_FILES_DECOMPRESS_WINDOWS.H
-
-header included in hcex build.
 */
 
 #ifndef __CACHE_FILES_DECOMPRESS_WINDOWS_H

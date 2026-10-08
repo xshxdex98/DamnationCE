@@ -1,7 +1,5 @@
 /*
 PLACEHOLDER_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __PLACEHOLDER_DEFINITIONS_H

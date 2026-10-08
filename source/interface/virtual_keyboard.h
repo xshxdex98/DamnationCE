@@ -1,7 +1,5 @@
 /*
 VIRTUAL_KEYBOARD.H
-
-header included in hcex build.
 */
 
 #ifndef __VIRTUAL_KEYBOARD_H

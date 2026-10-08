@@ -1,7 +1,5 @@
 /*
 DEVICE_LIGHT_FIXTURES.H
-
-header included in hcex build.
 */
 
 #ifndef __DEVICE_LIGHT_FIXTURES_H

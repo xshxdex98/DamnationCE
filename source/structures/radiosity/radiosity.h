@@ -1,7 +1,5 @@
 /*
 RADIOSITY.H
-
-header included in hcex build.
 */
 
 #ifndef __RADIOSITY_H

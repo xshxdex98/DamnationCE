@@ -1,7 +1,5 @@
 /*
 SHADERS.H
-
-header included in hcex build.
 */
 
 #ifndef __SHADERS_H

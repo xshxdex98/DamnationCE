@@ -1,7 +1,5 @@
 /*
 AI.H
-
-header included in hcex build.
 */
 
 #ifndef __AI_H

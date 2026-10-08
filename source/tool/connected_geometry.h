@@ -1,7 +1,5 @@
 /*
 CONNECTED_GEOMETRY.H
-
-header included in hcex build.
 */
 
 #ifndef __CONNECTED_GEOMETRY_H

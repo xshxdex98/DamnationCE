@@ -1,7 +1,5 @@
 /*
 STRUCTURES.H
-
-header included in hcex build.
 */
 
 #ifndef __STRUCTURES_H

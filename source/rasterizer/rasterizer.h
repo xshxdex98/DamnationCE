@@ -1,7 +1,5 @@
 /*
 RASTERIZER.H
-
-header included in hcex build.
 */
 
 #ifndef __RASTERIZER_H

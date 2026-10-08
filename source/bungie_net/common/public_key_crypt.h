@@ -1,7 +1,5 @@
 /*
 PUBLIC_KEY_CRYPT.H
-
-header included in hcex build.
 */
 
 #ifndef __PUBLIC_KEY_CRYPT_H

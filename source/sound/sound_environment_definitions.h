@@ -1,7 +1,5 @@
 /*
 SOUND_ENVIRONMENT_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __SOUND_ENVIRONMENT_DEFINITIONS_H

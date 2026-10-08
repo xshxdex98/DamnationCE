@@ -1,7 +1,5 @@
 /*
 GAME_GLOBALS.H
-
-header included in hcex build.
 */
 
 #ifndef __GAME_GLOBALS_H

@@ -1,7 +1,5 @@
 /*
 LRU_CACHE.H
-
-header included in hcex build.
 */
 
 #ifndef __LRU_CACHE_H

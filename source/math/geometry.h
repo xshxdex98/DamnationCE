@@ -1,7 +1,5 @@
 /*
 GEOMETRY.H
-
-header included in hcex build.
 */
 
 #ifndef __GEOMETRY_H

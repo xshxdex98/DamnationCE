@@ -1,7 +1,5 @@
 /*
 MODELS.H
-
-header included in hcex build.
 */
 
 #ifndef __MODELS_H

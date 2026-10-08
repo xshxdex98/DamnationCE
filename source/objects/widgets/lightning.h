@@ -1,7 +1,5 @@
 /*
 LIGHTNING.H
-
-header included in hcex build.
 */
 
 #ifndef __LIGHTNING_H

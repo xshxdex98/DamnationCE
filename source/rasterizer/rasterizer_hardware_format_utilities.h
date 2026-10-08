@@ -1,7 +1,5 @@
 /*
 RASTERIZER_HARDWARE_FORMAT_UTILITIES.H
-
-header included in hcex build.
 */
 
 #ifndef __RASTERIZER_HARDWARE_FORMAT_UTILITIES_H

@@ -1,7 +1,5 @@
 /*
 COLLISION_BSP.H
-
-header included in hcex build.
 */
 
 #ifndef __COLLISION_BSP_H

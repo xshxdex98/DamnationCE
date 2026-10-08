@@ -1,7 +1,5 @@
 /*
 VEHICLE_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __VEHICLE_DEFINITIONS_H

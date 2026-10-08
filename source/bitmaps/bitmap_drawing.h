@@ -1,7 +1,5 @@
 /*
 BITMAP_DRAWING.H
-
-header included in hcex build.
 */
 
 #ifndef __BITMAP_DRAWING_H

@@ -1,7 +1,5 @@
 /*
 INTERFACE_PANELS.H
-
-header included in hcex build.
 */
 
 #ifndef __INTERFACE_PANELS_H

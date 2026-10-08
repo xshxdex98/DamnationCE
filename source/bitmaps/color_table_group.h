@@ -1,7 +1,5 @@
 /*
 COLOR_TABLE_GROUP.H
-
-header included in hcex build.
 */
 
 #ifndef __COLOR_TABLE_GROUP_H

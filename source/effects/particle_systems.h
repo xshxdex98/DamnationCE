@@ -1,7 +1,5 @@
 /*
 PARTICLE_SYSTEMS.H
-
-header included in hcex build.
 */
 
 #ifndef __PARTICLE_SYSTEMS_H

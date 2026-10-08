@@ -1,7 +1,5 @@
 /*
 OBJECT_LIGHTS.H
-
-header included in hcex build.
 */
 
 #ifndef __OBJECT_LIGHTS_H

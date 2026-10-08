@@ -1,7 +1,5 @@
 /*
 ANTENNA_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __ANTENNA_DEFINITIONS_H

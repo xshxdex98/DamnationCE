@@ -1,7 +1,5 @@
 /*
 UI_WIDGET_GROUP.H
-
-header included in hcex build.
 */
 
 #ifndef __UI_WIDGET_GROUP_H

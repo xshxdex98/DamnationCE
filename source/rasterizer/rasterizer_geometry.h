@@ -1,7 +1,5 @@
 /*
 RASTERIZER_GEOMETRY.H
-
-header included in hcex build.
 */
 
 #ifndef __RASTERIZER_GEOMETRY_H

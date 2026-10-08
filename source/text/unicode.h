@@ -1,7 +1,5 @@
 /*
 UNICODE.H
-
-header included in hcex build.
 */
 
 #ifndef __UNICODE_H

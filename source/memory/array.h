@@ -1,7 +1,5 @@
 /*
 ARRAY.H
-
-header included in hcex build.
 */
 
 #ifndef __ARRAY_H

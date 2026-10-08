@@ -1,7 +1,5 @@
 /*
 PROPS.H
-
-header included in hcex build.
 */
 
 #ifndef __PROPS_H

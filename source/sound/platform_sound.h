@@ -1,7 +1,5 @@
 /*
 PLATFORM_SOUND.H
-
-header included in hcex build.
 */
 
 #ifndef __PLATFORM_SOUND_H

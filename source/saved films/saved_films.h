@@ -1,7 +1,5 @@
 /*
 SAVED_FILMS.H
-
-header included in hcex build.
 */
 
 #ifndef __SAVED_FILMS_H

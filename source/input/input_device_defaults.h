@@ -1,7 +1,5 @@
 /*
 INPUT_DEVICE_DEFAULTS.H
-
-header included in hcex build.
 */
 
 #ifndef __INPUT_DEVICE_DEFAULTS_H

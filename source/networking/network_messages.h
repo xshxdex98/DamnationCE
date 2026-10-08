@@ -1,7 +1,5 @@
 /*
 NETWORK_MESSAGES.H
-
-header included in hcex build.
 */
 
 #ifndef __NETWORK_MESSAGES_H

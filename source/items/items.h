@@ -1,7 +1,5 @@
 /*
 ITEMS.H
-
-header included in hcex build.
 */
 
 #ifndef __ITEMS_H

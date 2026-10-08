@@ -1,7 +1,5 @@
 /*
 LIGHT_VOLUMES.H
-
-header included in hcex build.
 */
 
 #ifndef __LIGHT_VOLUMES_H

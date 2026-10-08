@@ -1,7 +1,5 @@
 /*
 VEHICLES.H
-
-header included in hcex build.
 */
 
 #ifndef __VEHICLES_H

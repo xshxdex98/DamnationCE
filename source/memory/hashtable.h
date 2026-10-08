@@ -1,7 +1,5 @@
 /*
 HASHTABLE.H
-
-header included in hcex build.
 */
 
 #ifndef __HASHTABLE_H

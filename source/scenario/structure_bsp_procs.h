@@ -1,7 +1,5 @@
 /*
 STRUCTURE_BSP_PROCS.H
-
-header included in hcex build.
 */
 
 #ifndef __STRUCTURE_BSP_PROCS_H

@@ -1,7 +1,5 @@
 /*
 SHADER_TEXTURE_ANIMATION.H
-
-header included in hcex build.
 */
 
 #ifndef __SHADER_TEXTURE_ANIMATION_H

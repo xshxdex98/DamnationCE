@@ -1,7 +1,5 @@
 /*
 DECALS.H
-
-header included in hcex build.
 */
 
 #ifndef __DECALS_H

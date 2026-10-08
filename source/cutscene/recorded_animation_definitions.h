@@ -1,7 +1,5 @@
 /*
 RECORDED_ANIMATION_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __RECORDED_ANIMATION_DEFINITIONS_H

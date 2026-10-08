@@ -1,7 +1,5 @@
 /*
 STACK_MEMORY_POOL.H
-
-header included in hcex build.
 */
 
 #ifndef __STACK_MEMORY_POOL_H

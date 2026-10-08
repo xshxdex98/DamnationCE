@@ -1,7 +1,5 @@
 /*
 NETWORK_CONNECTION.H
-
-header included in hcex build.
 */
 
 #ifndef __NETWORK_CONNECTION_H
