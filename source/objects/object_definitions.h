@@ -1,7 +1,5 @@
 /*
 OBJECT_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __OBJECT_DEFINITIONS_H

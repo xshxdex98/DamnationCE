@@ -1,7 +1,5 @@
 /*
 BITMAP_MACROS.H
-
-header included in hcex build.
 */
 
 #ifndef __BITMAP_MACROS_H

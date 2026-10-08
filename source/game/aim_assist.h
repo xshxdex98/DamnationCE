@@ -1,7 +1,5 @@
 /*
 AIM_ASSIST.H
-
-header included in hcex build.
 */
 
 #ifndef __AIM_ASSIST_H

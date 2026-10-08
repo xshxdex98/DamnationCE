@@ -1,7 +1,5 @@
 /*
 BSP2D.H
-
-header included in hcex build.
 */
 
 #ifndef __BSP2D_H

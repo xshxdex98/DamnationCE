@@ -1,7 +1,5 @@
 /*
 UI_WIDGET_EVENT_HANDLER_FUNCTIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __UI_WIDGET_EVENT_HANDLER_FUNCTIONS_H

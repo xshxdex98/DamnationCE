@@ -6,9 +6,16 @@ PLAYER_QUEUES_NEW.H
 #define __PLAYER_QUEUES_NEW_H
 #pragma once
 
+/* ---------- headers */
+
+#include "game/players.h"
+
 /* ---------- structures */
 
-struct player_action_collection;
+struct player_action_collection
+{
+	struct player_action actions[MAXIMUM_LOCAL_PLAYERS];
+};
 struct player_action;
 struct server_update;
 

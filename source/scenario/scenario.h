@@ -1,7 +1,5 @@
 /*
 SCENARIO.H
-
-header included in hcex build.
 */
 
 #ifndef __SCENARIO_H

@@ -1,7 +1,5 @@
 /*
 RESOURCE.H
-
-header included in hcex build.
 */
 
 #ifndef __RESOURCE_H

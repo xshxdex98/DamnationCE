@@ -1,7 +1,5 @@
 /*
 INVENTORY_DISPLAYS.H
-
-header included in hcex build.
 */
 
 #ifndef __INVENTORY_DISPLAYS_H

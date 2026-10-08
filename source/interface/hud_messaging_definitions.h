@@ -1,7 +1,5 @@
 /*
 HUD_MESSAGING_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __HUD_MESSAGING_DEFINITIONS_H

@@ -1,7 +1,5 @@
 /*
 INPUT_ABSTRACTION.H
-
-header included in hcex build.
 */
 
 #ifndef __INPUT_ABSTRACTION_H

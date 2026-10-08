@@ -1,7 +1,5 @@
 /*
 LIGHTNING_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __LIGHTNING_DEFINITIONS_H

@@ -1,7 +1,5 @@
 /*
 RENDER_PARTICLES.H
-
-header included in hcex build.
 */
 
 #ifndef __RENDER_PARTICLES_H

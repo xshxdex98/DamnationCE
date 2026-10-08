@@ -1,7 +1,5 @@
 /*
 DATA_ENCODING.H
-
-header included in hcex build.
 */
 
 #ifndef __DATA_ENCODING_H

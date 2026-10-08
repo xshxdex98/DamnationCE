@@ -1,7 +1,5 @@
 /*
 CRC.H
-
-header included in hcex build.
 */
 
 #ifndef __CRC_H

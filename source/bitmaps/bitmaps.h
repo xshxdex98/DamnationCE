@@ -1,7 +1,5 @@
 /*
 BITMAPS.H
-
-header included in hcex build.
 */
 
 #ifndef __BITMAPS_H

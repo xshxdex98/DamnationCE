@@ -31,11 +31,6 @@ NETWORK_GAME_GLOBALS.C
 struct network_game_server;
 struct network_game_client;
 
-struct player_action_collection
-{
-	struct player_action actions[MAXIMUM_LOCAL_PLAYERS];
-};
-
 typedef char network_player_action_collection_size_assert[
 	sizeof(struct player_action_collection) == 0x80 ? 1 : -1];
 

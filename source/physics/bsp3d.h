@@ -1,7 +1,5 @@
 /*
 BSP3D.H
-
-header included in hcex build.
 */
 
 #ifndef __BSP3D_H

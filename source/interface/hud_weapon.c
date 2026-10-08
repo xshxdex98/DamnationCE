@@ -153,26 +153,6 @@ struct weapon_hud_globals
 	long script_flags;
 };
 
-struct weapon_interface_magazine_state
-{
-	boolean reloading;
-	boolean can_fire;
-	short rounds_loaded;
-	short rounds_loaded_maximum;
-	short rounds_remaining;
-	short rounds_remaining_maximum;
-};
-
-struct weapon_interface_state
-{
-	real heat;
-	real age;
-	boolean overheated;
-	byte pad09;
-	short magazine_count;
-	struct weapon_interface_magazine_state magazines[2];
-};
-
 struct number_hud_element_definition
 {
 	struct hud_placement_definition placement;

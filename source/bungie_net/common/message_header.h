@@ -1,7 +1,5 @@
 /*
 MESSAGE_HEADER.H
-
-header included in hcex build.
 */
 
 #ifndef __MESSAGE_HEADER_H

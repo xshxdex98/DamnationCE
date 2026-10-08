@@ -1,7 +1,5 @@
 /*
 AI_SCENARIO_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __AI_SCENARIO_DEFINITIONS_H

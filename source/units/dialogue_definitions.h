@@ -1,7 +1,5 @@
 /*
 DIALOGUE_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __DIALOGUE_DEFINITIONS_H

@@ -1,7 +1,5 @@
 /*
 STACK_MEMORY_POOL.H
-
-header included in hcex build.
 */
 
 #ifndef __STACK_MEMORY_POOL_H
@@ -13,6 +11,25 @@ header included in hcex build.
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct stack_memory_pool
+{
+	char const *name;
+	byte *base_address;
+	long size;
+	long maximum_block_count;
+	long next_block_index;
+	long bytes_used;
+	long maximum_bytes_used;
+	unsigned long block_count;
+	unsigned long maximum_block_count_used;
+	long largest_block_size;
+	boolean disable_compaction;
+	byte unused29[3];
+	struct stack_memory_pool_block *first_block;
+	struct stack_memory_pool_block *last_block;
+	struct stack_memory_pool_block *blocks[1];
+};
 
 struct stack_memory_pool;
 

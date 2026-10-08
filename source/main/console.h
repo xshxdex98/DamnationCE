@@ -1,7 +1,5 @@
 /*
 CONSOLE.H
-
-header included in hcex build.
 */
 
 #ifndef __CONSOLE_H

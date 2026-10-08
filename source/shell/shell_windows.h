@@ -1,7 +1,5 @@
 /*
 SHELL_WINDOWS.H
-
-header included in hcex build.
 */
 
 #ifndef __SHELL_WINDOWS_H

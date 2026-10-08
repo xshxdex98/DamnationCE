@@ -1,7 +1,5 @@
 /*
 DATA_PACKETS.H
-
-header included in hcex build.
 */
 
 #ifndef __DATA_PACKETS_H

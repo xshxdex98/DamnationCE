@@ -1,7 +1,5 @@
 /*
 COLLISION_USAGE.H
-
-header included in hcex build.
 */
 
 #ifndef __COLLISION_USAGE_H

@@ -151,19 +151,6 @@ struct hud_number_definition
 	long unused[19];
 };
 
-struct rasterizer_meter_parameters
-{
-	pixel32 gradient_min_color;
-	pixel32 gradient_max_color;
-	pixel32 background_color;
-	pixel32 flash_color;
-	boolean flash_color_is_negative;
-	boolean tint_mode_2;
-	byte pad12[2];
-	pixel32 tint_color;
-	real gradient;
-};
-
 struct weapon_hud_overlay_item
 {
 	struct hud_placement_definition placement;
@@ -180,26 +167,6 @@ struct weapon_hud_overlay_definition
 {
 	struct tag_reference bitmap;
 	struct tag_block items;
-};
-
-struct weapon_interface_magazine_state
-{
-	boolean reloading;
-	boolean can_fire;
-	short rounds_loaded;
-	short rounds_loaded_maximum;
-	short rounds_remaining;
-	short rounds_remaining_maximum;
-};
-
-struct weapon_interface_state
-{
-	real heat;
-	real age;
-	boolean overheated;
-	byte pad09;
-	short magazine_count;
-	struct weapon_interface_magazine_state magazines[2];
 };
 
 struct multitexture_overlay_hud_element_effector_definition

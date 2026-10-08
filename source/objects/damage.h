@@ -1,7 +1,5 @@
 /*
 DAMAGE.H
-
-header included in hcex build.
 */
 
 #ifndef __DAMAGE_H

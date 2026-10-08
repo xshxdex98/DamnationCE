@@ -1,7 +1,5 @@
 /*
 HS_GLUE.H
-
-header included in hcex build.
 */
 
 #ifndef __HS_GLUE_H

@@ -1,7 +1,5 @@
 /*
 WEAPON_HUD_INTERFACE_DEFINITION.H
-
-header included in hcex build.
 */
 
 #ifndef __WEAPON_HUD_INTERFACE_DEFINITION_H

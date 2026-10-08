@@ -1,7 +1,5 @@
 /*
 MATERIAL_EFFECT_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __MATERIAL_EFFECT_DEFINITIONS_H

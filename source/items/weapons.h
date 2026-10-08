@@ -1,7 +1,5 @@
 /*
 WEAPONS.H
-
-header included in hcex build.
 */
 
 #ifndef __WEAPONS_H
@@ -157,6 +155,26 @@ enum
 #define weapon_try_and_get(index)	((struct weapon_datum*)object_try_and_get_and_verify_type(index, _object_mask_weapon))
 
 /* ---------- structures */
+
+struct weapon_interface_magazine_state
+{
+	boolean reloading;
+	boolean can_fire;
+	short rounds_loaded;
+	short rounds_loaded_maximum;
+	short rounds_remaining;
+	short rounds_remaining_maximum;
+};
+
+struct weapon_interface_state
+{
+	real heat;
+	real age;
+	boolean overheated;
+	byte pad09;
+	short magazine_count;
+	struct weapon_interface_magazine_state magazines[2];
+};
 
 struct weapon_trigger
 {

@@ -1,7 +1,5 @@
 /*
 RASTERIZER_GEOMETRY.H
-
-header included in hcex build.
 */
 
 #ifndef __RASTERIZER_GEOMETRY_H
@@ -45,6 +43,22 @@ enum
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct environment_lightmap_vertex_compressed
+{
+	unsigned long incident_radiosity;
+	short lightmap_u;
+	short lightmap_v;
+};
+
+struct environment_vertex_compressed
+{
+	real_point3d position;
+	unsigned long normal;
+	unsigned long binormal;
+	unsigned long tangent;
+	real_point2d texcoord;
+};
 
 union real_vector3d;
 

@@ -8,6 +8,7 @@ RECORDED_ANIMATION_PLAYBACK_V1.C
 #include "cseries/errors.h"
 #include "math/real_math.h"
 #include "memory/byte_swapping.h"
+#include "cutscene/recorded_animation_definitions.h"
 
 /* ---------- constants */
 
@@ -92,23 +93,6 @@ struct recorded_angle_vector_set_event_v1
 {
 	struct recorded_animation_event_v1 event;
 	real_euler_angles2d angles;
-};
-
-struct recorded_unit_control
-{
-	byte byte_field0;
-	byte byte_field1;
-	short word_field2;
-	short word_field4;
-	short version2_field;
-	short version3_field;
-	short unused_field10;
-	real_vector2d vector2d_field12;
-	long long_field20;
-	long version1_field;
-	real_vector3d vector3d_field28;
-	real_vector3d vector3d_field40;
-	real_vector3d vector3d_field52;
 };
 
 typedef void (*recorded_animation_apply_event_v1_proc)(

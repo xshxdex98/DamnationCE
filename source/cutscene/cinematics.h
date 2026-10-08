@@ -1,7 +1,5 @@
 /*
 CINEMATICS.H
-
-header included in hcex build.
 */
 
 #ifndef __CINEMATICS_H

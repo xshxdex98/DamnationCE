@@ -1,7 +1,5 @@
 /*
 LRUV_CACHE.H
-
-header included in hcex build.
 */
 
 #ifndef __LRUV_CACHE_H

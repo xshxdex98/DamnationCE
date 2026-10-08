@@ -1,7 +1,5 @@
 /*
 NETWORK_SERVER_MANAGER.H
-
-header included in hcex build.
 */
 
 #ifndef __NETWORK_SERVER_MANAGER_H

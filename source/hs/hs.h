@@ -1,7 +1,5 @@
 /*
 HS.H
-
-header included in hcex build.
 */
 
 #ifndef __HS_H

@@ -1,7 +1,5 @@
 /*
 PHYSICS_CONSTANTS.H
-
-header included in hcex build.
 */
 
 #ifndef __PHYSICS_CONSTANTS_H

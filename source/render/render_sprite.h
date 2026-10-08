@@ -1,7 +1,5 @@
 /*
 RENDER_SPRITE.H
-
-header included in hcex build.
 */
 
 #ifndef __RENDER_SPRITE_H

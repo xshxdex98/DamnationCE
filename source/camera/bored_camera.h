@@ -1,7 +1,5 @@
 /*
 BORED_CAMERA.H
-
-header included in hcex build.
 */
 
 #ifndef __BORED_CAMERA_H

@@ -1,7 +1,5 @@
 /*
 VECTOR_TREE.H
-
-header included in hcex build.
 */
 
 #ifndef __VECTOR_TREE_H

@@ -1,7 +1,5 @@
 /*
 DATA.H
-
-header included in hcex build.
 */
 
 #ifndef __DATA_H

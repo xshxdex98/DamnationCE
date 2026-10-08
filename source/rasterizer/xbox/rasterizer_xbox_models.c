@@ -89,48 +89,6 @@ enum
 	NUMBER_OF_MODEL_VERTEX_SHADER_PERMUTATIONS
 };
 
-/* ---------- structures */
-
-struct shader_model_properties
-{
-	word flags;
-	short type;
-	byte reserved04[0xC];
-	real translucency;
-	byte reserved14[0x10];
-	short change_color_source;
-	byte reserved26[0x1E];
-	word self_illumination_flags;
-	short pad46;
-	short self_illumination_color_source;
-	short self_illumination_animation_function;
-	real self_illumination_animation_period;
-	real_rgb_color self_illumination_animation_color_lower_bound;
-	real_rgb_color self_illumination_animation_color_upper_bound;
-	byte reserved68[0xC];
-	real map_u_scale;
-	real map_v_scale;
-	struct tag_reference base_map;
-	byte reserved8C[8];
-	struct tag_reference multipurpose_map;
-	byte reservedA4[8];
-	short detail_function;
-	short detail_mask;
-	real detail_map_scale;
-	struct tag_reference detail_map;
-	real detail_map_v_scale;
-	byte reservedC8[0xC];
-	struct shader_texture_animation texture_animation;
-	byte reserved10C[8];
-	real reflection_falloff_distance;
-	real reflection_cutoff_distance;
-	real perpendicular_brightness;
-	real_rgb_color perpendicular_tint_color;
-	real parallel_brightness;
-	real_rgb_color parallel_tint_color;
-	struct tag_reference reflection_cube_map;
-};
-
 struct shader_model_definition
 {
 	struct shader shader;
@@ -206,18 +164,6 @@ struct shader_environment_diffuse_properties
 	struct tag_reference bump_map;
 	real_vector2d runtime_bump_map_scale;
 	byte reservedD4[0x40];
-};
-
-struct shader_environment_specular_properties
-{
-	word flags;
-	short type;
-	long unused04[4];
-	real brightness;
-	long unused18[5];
-	real_rgb_color view_perpendicular_color;
-	real_rgb_color view_parallel_color;
-	long unused44[4];
 };
 
 struct shader_environment_reflection_properties

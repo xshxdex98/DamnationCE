@@ -1,7 +1,5 @@
 /*
 FILES.H
-
-header included in hcex build.
 */
 
 #ifndef __FILES_H

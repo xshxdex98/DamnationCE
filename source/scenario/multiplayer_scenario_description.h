@@ -1,7 +1,5 @@
 /*
 MULTIPLAYER_SCENARIO_DESCRIPTION.H
-
-header included in hcex build.
 */
 
 #ifndef __MULTIPLAYER_SCENARIO_DESCRIPTION_H

@@ -1,7 +1,5 @@
 /*
 TERMINAL.H
-
-header included in hcex build.
 */
 
 #ifndef __TERMINAL_H

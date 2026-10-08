@@ -38,6 +38,7 @@ ENCOUNTERS.C
 #include "units/units.h"
 #include "coop_enemies.h" /* port: port/linux/game/coop_enemies.c */
 #include "ai/actors.h"
+#include "ai/encounters.h"
 
 #include <stddef.h>
 
@@ -159,13 +160,6 @@ struct post_combat_possibility
 	real weight;
 	long prop_index;
 	long unit_index;
-};
-
-struct encounter_iterator
-{
-	struct data_iterator data;
-	long index;
-	boolean active_only;
 };
 
 struct encounter_actor_iterator

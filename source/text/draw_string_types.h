@@ -1,7 +1,5 @@
 /*
 DRAW_STRING_TYPES.H
-
-header included in hcex build.
 */
 
 #ifndef __DRAW_STRING_TYPES_H

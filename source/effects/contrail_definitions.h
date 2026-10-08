@@ -1,7 +1,5 @@
 /*
 CONTRAIL_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __CONTRAIL_DEFINITIONS_H

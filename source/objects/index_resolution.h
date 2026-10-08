@@ -1,7 +1,5 @@
 /*
 INDEX_RESOLUTION.H
-
-header included in hcex build.
 */
 
 #ifndef __INDEX_RESOLUTION_H

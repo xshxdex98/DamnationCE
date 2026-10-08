@@ -1,7 +1,5 @@
 /*
 GAME_ENGINE_LIST.H
-
-header included in hcex build.
 */
 
 #ifndef __GAME_ENGINE_LIST_H

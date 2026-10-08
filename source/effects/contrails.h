@@ -1,7 +1,5 @@
 /*
 CONTRAILS.H
-
-header included in hcex build.
 */
 
 #ifndef __CONTRAILS_H

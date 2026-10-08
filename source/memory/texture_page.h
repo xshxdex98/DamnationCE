@@ -1,7 +1,5 @@
 /*
 TEXTURE_PAGE.H
-
-header included in hcex build.
 */
 
 #ifndef __TEXTURE_PAGE_H

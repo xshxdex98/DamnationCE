@@ -44,13 +44,6 @@ enum
 
 /* ---------- macros */
 
-/* ---------- structures */
-
-struct player_action_collection
-{
-	struct player_action actions[MAXIMUM_LOCAL_PLAYERS];
-};
-
 struct server_update
 {
 	word action_count;

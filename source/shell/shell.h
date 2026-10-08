@@ -1,7 +1,5 @@
 /*
 SHELL.H
-
-header included in hcex build.
 */
 
 #ifndef __SHELL_H

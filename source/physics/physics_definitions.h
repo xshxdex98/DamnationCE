@@ -1,7 +1,5 @@
 /*
 PHYSICS_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __PHYSICS_DEFINITIONS_H

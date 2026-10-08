@@ -1,7 +1,5 @@
 /*
 CAMERA_SCRIPTING.H
-
-header included in hcex build.
 */
 
 #ifndef __CAMERA_SCRIPTING_H

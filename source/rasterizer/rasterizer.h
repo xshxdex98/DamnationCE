@@ -1,7 +1,5 @@
 /*
 RASTERIZER.H
-
-header included in hcex build.
 */
 
 #ifndef __RASTERIZER_H
@@ -150,6 +148,19 @@ enum rasterizer_lock_operation
 #define RASTERIZER_GLOBALS_FLOATING_POINT_ZBUFFER(globals) ((globals).floating_point_zbuffer)
 
 /* ---------- structures */
+
+struct rasterizer_meter_parameters
+{
+	pixel32 gradient_min_color;
+	pixel32 gradient_max_color;
+	pixel32 background_color;
+	pixel32 flash_color;
+	boolean flash_color_is_negative;
+	boolean tint_mode_2;
+	byte pad12[2];
+	pixel32 tint_color;
+	real gradient;
+};
 
 struct rasterizer_cinematic_screen_effect_parameters;
 

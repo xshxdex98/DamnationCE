@@ -1,7 +1,5 @@
 /*
 FONT_GROUP.H
-
-header included in hcex build.
 */
 
 #ifndef __FONT_GROUP_H

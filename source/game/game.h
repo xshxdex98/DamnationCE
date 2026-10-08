@@ -1,7 +1,5 @@
 /*
 GAME.H
-
-header included in hcex build.
 */
 
 #ifndef __GAME_H
@@ -54,6 +52,15 @@ enum
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct game_options
+{
+	unsigned long flags;
+	short code_version;
+	short difficulty;
+	unsigned long random_seed;
+	char map_name[256];
+};
 
 struct slayer_statistics
 {

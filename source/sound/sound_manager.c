@@ -26,6 +26,7 @@ SOUND_MANAGER.C
 #include "render/render_debug.h"
 #include "scenario/scenario.h"
 #include "tag_files/tag_files.h"
+#include "sound/sound_manager.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -136,17 +137,6 @@ struct sound_location;
 struct sound_permutation;
 struct sound_preferences;
 
-struct sound_source
-{
-	short spatialization_mode;
-	short pad_2;
-	real scale;
-	real gain;
-	struct sound_location location;
-	real obstruction;
-	real occlusion;
-};
-
 struct loop_impulse_sound_tracking_data
 {
 	real_vector3d position_offset;
@@ -180,27 +170,6 @@ struct sound_channel_summary
 	short like_source_count;
 	short like_source_channels[MAXIMUM_SOUND_INSTANCES_PER_OBJECT_PER_DEFINITION];
 	short maximum_source_instance_count;
-};
-
-struct platform_sound_channel_properties
-{
-	real minimum_distance;
-	real maximum_distance;
-	real pitch;
-	real gain;
-	real cone_inside_angle;
-	real cone_outside_angle;
-	real cone_outside_gain;
-	real reverb_attenuation;
-};
-
-struct platform_sound_listener_properties
-{
-	real_point3d position;
-	real_vector3d forward;
-	real_vector3d up;
-	real_vector3d velocity;
-	struct sound_environment_definition const *environment;
 };
 
 struct sound_datum

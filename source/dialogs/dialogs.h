@@ -1,7 +1,5 @@
 /*
 DIALOGS.H
-
-header included in hcex build.
 */
 
 #ifndef __DIALOGS_H

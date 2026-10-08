@@ -1,7 +1,5 @@
 /*
 LEAF_MAP.H
-
-header included in hcex build.
 */
 
 #ifndef __LEAF_MAP_H

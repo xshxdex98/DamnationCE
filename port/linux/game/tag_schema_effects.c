@@ -29,6 +29,8 @@ fonts and strings (font, str#, ustr); matg and mply.
 #include "shaders/shader_definitions.h"
 #include "objects/damage.h"
 #include "effects/player_effects.h"
+#include "scenario/multiplayer_scenario_description.h"
+#include "physics/breakable_surfaces.h"
 
 #include <string.h>
 
@@ -637,11 +639,6 @@ struct multiplayer_scenario_description_entry
 	long pad;
 };
 
-struct multiplayer_scenario_description
-{
-	struct tag_block scenarios;
-};
-
 typedef char verify_multiplayer_scenario_description_entry_size[
 	sizeof(struct multiplayer_scenario_description_entry) == 0x44 ? 1 : -1];
 
@@ -669,26 +666,6 @@ struct game_globals_falling_damage
 	real runtime_maximum_falling_velocity;
 	real runtime_minimum_damage_velocity;
 	real runtime_maximum_damage_velocity;
-};
-
-/* breakable_surfaces.h's */
-struct breakable_surface_particle_effect
-{
-	struct tag_reference particle;
-	unsigned long flags;
-	real density;
-	real velocity_scale_lower_bound;
-	real velocity_scale_upper_bound;
-	real velocity_cone_angle;
-	real angular_velocity_lower_bound;
-	real angular_velocity_upper_bound;
-	unsigned long unused1[2];
-	real radius_lower_bound;
-	real radius_upper_bound;
-	unsigned long unused2[2];
-	real_argb_color tint_lower_bound;
-	real_argb_color tint_upper_bound;
-	unsigned long unused3[7];
 };
 
 typedef char verify_game_globals_falling_damage_size[sizeof(struct game_globals_falling_damage) == 0x98 ? 1 : -1];

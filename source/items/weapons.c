@@ -34,6 +34,7 @@ WEAPONS.C
 #include "sound/sound_definitions.h"
 #include "units/unit_definitions.h"
 #include "units/units.h"
+#include "items/weapons.h"
 
 #ifdef HALO_PORT_MAXIMUM_NETWORK_PLAYERS
 #include "bitmaps/bitmap_group.h"
@@ -103,30 +104,6 @@ enum weapon_magazine_flags
 	_weapon_magazine_wastes_rounds_when_reloaded_bit = 0,
 	_weapon_magazine_must_be_chambered_every_shot_bit,
 	NUMBER_OF_WEAPON_MAGAZINE_FLAGS,
-};
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-struct weapon_interface_magazine_state
-{
-	boolean reloading;
-	boolean can_fire;
-	short rounds_loaded;
-	short rounds_loaded_maximum;
-	short rounds_remaining;
-	short rounds_remaining_maximum;
-};
-
-struct weapon_interface_state
-{
-	real heat;
-	real age;
-	boolean overheated;
-	byte _pad09;
-	short magazine_count;
-	struct weapon_interface_magazine_state magazines[2];
 };
 
 struct animation_graph_weapon_animations

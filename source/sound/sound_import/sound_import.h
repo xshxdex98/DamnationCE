@@ -1,7 +1,5 @@
 /*
 SOUND_IMPORT.H
-
-header included in hcex build.
 */
 
 #ifndef __SOUND_IMPORT_H

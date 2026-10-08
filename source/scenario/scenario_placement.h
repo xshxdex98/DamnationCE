@@ -1,7 +1,5 @@
 /*
 SCENARIO_PLACEMENT.H
-
-header included in hcex build.
 */
 
 #ifndef __SCENARIO_PLACEMENT_H

@@ -1,7 +1,5 @@
 /*
 TRANSPORT.H
-
-header included in hcex build.
 */
 
 #ifndef __TRANSPORT_H

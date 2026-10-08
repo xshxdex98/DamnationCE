@@ -1,7 +1,5 @@
 /*
 WIND_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __WIND_DEFINITIONS_H

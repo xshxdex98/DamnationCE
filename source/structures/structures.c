@@ -21,6 +21,7 @@ STRUCTURES.C
 #include "structure_vector_tests.h"
 #include "structures.h"
 #include "physics/collision_bsp.h"
+#include "rasterizer/rasterizer_geometry.h"
 
 /* ---------- constants */
 
@@ -92,15 +93,6 @@ struct structure_surface_reference
 {
 	long surface_index;
 	long bsp3d_node_index;
-};
-
-struct environment_vertex_compressed
-{
-	real_point3d position;
-	unsigned long normal;
-	unsigned long binormal;
-	unsigned long tangent;
-	real_point2d texcoord;
 };
 
 struct fog_screen

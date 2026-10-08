@@ -1,7 +1,5 @@
 /*
 MODEL_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __MODEL_DEFINITIONS_H

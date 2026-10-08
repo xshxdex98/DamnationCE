@@ -1,7 +1,5 @@
 /*
 HS_ENUM.H
-
-header included in hcex build.
 */
 
 #ifndef __HS_ENUM_H

@@ -1,7 +1,5 @@
 /*
 WEATHER_PARTICLE_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __WEATHER_PARTICLE_DEFINITIONS_H

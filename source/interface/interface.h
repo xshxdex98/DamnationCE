@@ -1,7 +1,5 @@
 /*
 INTERFACE.H
-
-header included in hcex build.
 */
 
 #ifndef __INTERFACE_H

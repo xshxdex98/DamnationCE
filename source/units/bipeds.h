@@ -1,7 +1,5 @@
 /*
 BIPEDS.H
-
-header included in hcex build.
 */
 
 #ifndef __BIPEDS_H

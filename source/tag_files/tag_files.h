@@ -1,7 +1,5 @@
 /*
 TAG_FILES.H
-
-header included in hcex build.
 */
 
 #ifndef __TAG_FILES_H

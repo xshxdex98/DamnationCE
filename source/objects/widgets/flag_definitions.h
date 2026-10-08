@@ -1,7 +1,5 @@
 /*
 FLAG_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __FLAG_DEFINITIONS_H

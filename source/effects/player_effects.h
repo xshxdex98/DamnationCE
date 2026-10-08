@@ -1,7 +1,5 @@
 /*
 PLAYER_EFFECTS.H
-
-header included in hcex build.
 */
 
 #ifndef __PLAYER_EFFECTS_H

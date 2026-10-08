@@ -1,7 +1,5 @@
 /*
 S3TC.H
-
-header included in hcex build.
 */
 
 #ifndef __S3TC_H

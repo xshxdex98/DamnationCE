@@ -54,27 +54,6 @@ typedef char verify_compressed_quaternion_8byte_size[
 typedef char verify_compressed_quaternion_6byte_size[
 	sizeof(struct compressed_quaternion_6byte) == 0x06 ? 1 : -1];
 
-struct animation_frame_info_dx_dy
-{
-	real dx;
-	real dy;
-};
-
-struct animation_frame_info_dx_dy_dyaw
-{
-	real dx;
-	real dy;
-	real dyaw;
-};
-
-struct animation_frame_info_dx_dy_dz_dyaw
-{
-	real dx;
-	real dy;
-	real dz;
-	real dyaw;
-};
-
 typedef char verify_animation_frame_info_dx_dy_size[
 	sizeof(struct animation_frame_info_dx_dy) == 0x08 ? 1 : -1];
 typedef char verify_animation_frame_info_dx_dy_dyaw_size[

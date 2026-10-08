@@ -10,6 +10,7 @@ RASTERIZER_GEOMETRY.C
 #include "rasterizer/rasterizer_model_types.h"
 #include "rasterizer_geometry.h"
 #include "rasterizer_geometry_compression.h"
+#include "rasterizer/rasterizer_geometry.h"
 
 /* ---------- constants */
 
@@ -26,26 +27,10 @@ struct environment_vertex_uncompressed
 	real_point2d texcoord;
 };
 
-struct environment_vertex_compressed
-{
-	real_point3d position;
-	unsigned long normal;
-	unsigned long binormal;
-	unsigned long tangent;
-	real_point2d texcoord;
-};
-
 struct environment_lightmap_vertex_uncompressed
 {
 	real_vector3d incident_radiosity;
 	real_point2d texcoord;
-};
-
-struct environment_lightmap_vertex_compressed
-{
-	unsigned long incident_radiosity;
-	short lightmap_u;
-	short lightmap_v;
 };
 
 /* ---------- globals */

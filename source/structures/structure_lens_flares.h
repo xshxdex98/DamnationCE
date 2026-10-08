@@ -1,7 +1,5 @@
 /*
 STRUCTURE_LENS_FLARES.H
-
-header included in hcex build.
 */
 
 #ifndef __STRUCTURE_LENS_FLARES_H

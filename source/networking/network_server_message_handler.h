@@ -1,7 +1,5 @@
 /*
 NETWORK_SERVER_MESSAGE_HANDLER.H
-
-header included in hcex build.
 */
 
 #ifndef __NETWORK_SERVER_MESSAGE_HANDLER_H

@@ -1,7 +1,5 @@
 /*
 EQUIPMENT.H
-
-header included in hcex build.
 */
 
 #ifndef __EQUIPMENT_H

@@ -115,19 +115,6 @@ typedef char transparent_geometry_group_cortana_hack_offset_assert[
 	offsetof(struct transparent_geometry_group, cortana_hack) == 0x9D ? 1 : -1];
 #endif
 
-struct rasterizer_meter_parameters
-{
-	pixel32 gradient_min_color;
-	pixel32 gradient_max_color;
-	pixel32 background_color;
-	pixel32 flash_color;
-	boolean flash_color_is_negative;
-	boolean tint_mode_2;
-	byte pad12[2];
-	pixel32 tint_color;
-	real gradient;
-};
-
 typedef char rasterizer_dynamic_geometry_pixel_shader_size_assert[
 	sizeof(struct pixel_shader_definition) == 0xF0 ? 1 : -1];
 

@@ -1,7 +1,5 @@
 /*
 EDIT_TEXT.H
-
-header included in hcex build.
 */
 
 #ifndef __EDIT_TEXT_H

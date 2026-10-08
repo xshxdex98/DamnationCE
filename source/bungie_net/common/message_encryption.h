@@ -1,7 +1,5 @@
 /*
 MESSAGE_ENCRYPTION.H
-
-header included in hcex build.
 */
 
 #ifndef __MESSAGE_ENCRYPTION_H

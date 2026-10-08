@@ -1,7 +1,5 @@
 /*
 MEMORY_MANAGER.H
-
-header included in hcex build.
 */
 
 #ifndef __MEMORY_MANAGER_H

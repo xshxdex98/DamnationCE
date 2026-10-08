@@ -1,7 +1,5 @@
 /*
 HUD.H
-
-header included in hcex build.
 */
 
 #ifndef __HUD_H

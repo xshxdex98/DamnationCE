@@ -1,7 +1,5 @@
 /*
 SOUND_PREFERENCES.H
-
-header included in hcex build.
 */
 
 #ifndef __SOUND_PREFERENCES_H

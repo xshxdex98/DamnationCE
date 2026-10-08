@@ -1,7 +1,5 @@
 /*
 NETWORK_GAME_GLOBALS.H
-
-header included in hcex build.
 */
 
 #ifndef __NETWORK_GAME_GLOBALS_H

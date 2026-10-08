@@ -1,7 +1,5 @@
 /*
 DIRECTOR.H
-
-header included in hcex build.
 */
 
 #ifndef __DIRECTOR_H

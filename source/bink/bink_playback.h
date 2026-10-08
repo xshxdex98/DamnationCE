@@ -1,7 +1,5 @@
 /*
 BINK_PLAYBACK.H
-
-header included in hcex build.
 */
 
 #ifndef __BINK_PLAYBACK_H

@@ -1,7 +1,5 @@
 /*
 AI_GLOBALS.H
-
-header included in hcex build.
 */
 
 #ifndef __AI_GLOBALS_H

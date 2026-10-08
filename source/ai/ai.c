@@ -129,13 +129,6 @@ struct line_of_fire_pill
 	real width;
 };
 
-struct encounter_iterator
-{
-	struct data_iterator data;
-	long index;
-	boolean active_only;
-};
-
 typedef char ai_globals_active_offset_assert[
 	offsetof(struct ai_globals, ai_active) == 0x0 ? 1 : -1];
 typedef char ai_globals_initialized_offset_assert[

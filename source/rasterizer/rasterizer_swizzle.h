@@ -1,7 +1,5 @@
 /*
 RASTERIZER_SWIZZLE.H
-
-header included in hcex build.
 */
 
 #ifndef __RASTERIZER_SWIZZLE_H

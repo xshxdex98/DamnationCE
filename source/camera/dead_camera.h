@@ -1,7 +1,5 @@
 /*
 DEAD_CAMERA.H
-
-header included in hcex build.
 */
 
 #ifndef __DEAD_CAMERA_H

@@ -1,7 +1,5 @@
 /*
 INTERMEDIATE_GEOMETRY.H
-
-header included in hcex build.
 */
 
 #ifndef __INTERMEDIATE_GEOMETRY_H

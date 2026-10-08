@@ -1,7 +1,5 @@
 /*
 PRIME_NUMBERS.H
-
-header included in hcex build.
 */
 
 #ifndef __PRIME_NUMBERS_H

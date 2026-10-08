@@ -1,7 +1,5 @@
 /*
 STATIC_CAMERA.H
-
-header included in hcex build.
 */
 
 #ifndef __STATIC_CAMERA_H

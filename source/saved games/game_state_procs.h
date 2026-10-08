@@ -1,7 +1,5 @@
 /*
 GAME_STATE_PROCS.H
-
-header included in hcex build.
 */
 
 #ifndef __GAME_STATE_PROCS_H

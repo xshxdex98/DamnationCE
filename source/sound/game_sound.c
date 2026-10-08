@@ -54,19 +54,6 @@ enum game_looping_sound_state
 #define game_looping_sound_get(index) \
 	((struct game_looping_sound_datum *)datum_get(game_looping_sound_data, (index)))
 
-/* ---------- structures */
-
-struct sound_source
-{
-	short spatialization_mode;
-	short pad_2;
-	real scale;
-	real gain;
-	struct sound_location location;
-	real obstruction;
-	real occlusion;
-};
-
 struct sound_attachment_data
 {
 	short function_index;

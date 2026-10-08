@@ -1,7 +1,5 @@
 /*
 SCENARIO_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __SCENARIO_DEFINITIONS_H
@@ -63,6 +61,12 @@ enum netgame_flag_type
 #define scenario_definition_get(index) ((struct scenario *)tag_get(SCENARIO_TAG, (index)))
 
 /* ---------- structures */
+
+struct scenario_unit_datum
+{
+	real body_vitality;
+	unsigned long flags;
+};
 
 struct scenario_object_palette_entry
 {

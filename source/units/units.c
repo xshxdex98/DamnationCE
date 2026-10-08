@@ -56,6 +56,7 @@ UNITS.C
 #include "coop_scripts.h" /* port: port/linux/game/coop_scripts.c */
 #include "coop_enemies.h" /* port: port/linux/game/coop_enemies.c */
 #include "units/bipeds.h"
+#include "scenario/scenario_definitions.h"
 
 /* port: the control and animation impulses the host's actors give their
 units go to the clients' copies (port/linux/game/network_actors.c) */
@@ -3970,11 +3971,6 @@ enum
 	_scenario_unit_dead_bit = 0,
 };
 
-struct scenario_unit_datum
-{
-	real body_vitality;
-	unsigned long flags;
-};
 typedef char scenario_unit_datum_size_check[
 	sizeof(struct scenario_unit_datum) == 0x08 ? 1 : -1];
 

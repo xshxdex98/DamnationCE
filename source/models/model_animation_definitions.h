@@ -1,7 +1,5 @@
 /*
 MODEL_ANIMATION_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __MODEL_ANIMATION_DEFINITIONS_H
@@ -73,6 +71,27 @@ enum
 #define animation_get_default_data(animation) xbox_pointer((animation)->default_data.address)
 
 /* ---------- structures */
+
+struct animation_frame_info_dx_dy_dz_dyaw
+{
+	real dx;
+	real dy;
+	real dz;
+	real dyaw;
+};
+
+struct animation_frame_info_dx_dy_dyaw
+{
+	real dx;
+	real dy;
+	real dyaw;
+};
+
+struct animation_frame_info_dx_dy
+{
+	real dx;
+	real dy;
+};
 
 struct animation
 {

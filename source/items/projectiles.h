@@ -1,7 +1,5 @@
 /*
 PROJECTILES.H
-
-header included in hcex build.
 */
 
 #ifndef __PROJECTILES_H

@@ -505,6 +505,12 @@ struct real_plane3d
 };
 typedef struct real_plane3d real_plane3d;
 
+struct real_bounds
+{
+	real lower;
+	real upper;
+};
+
 union real_rectangle2d
 {
 	real n[4];
