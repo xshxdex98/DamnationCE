@@ -16,7 +16,7 @@ DEAD_CAMERA.C
 
 struct camera_control
 {
-	long unknown0;
+	long local_player_index;
 	real seconds_elapsed;
 };
 

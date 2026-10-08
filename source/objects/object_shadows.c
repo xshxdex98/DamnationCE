@@ -14,7 +14,7 @@ struct object_shadow
 	real object_bounding_radius;
 	real_rectangle3d bounds;
 	short count;
-	short unknown1;
+	short pad;
 };
 
 /* ---------- public code */
@@ -57,7 +57,6 @@ boolean object_build_shadow(
 	shadow->bounds.z0 = REAL_MAX;
 	shadow->bounds.z1 = -REAL_MAX;
 	shadow->count = 0;
-	shadow->unknown1 = 0;
 
 	object_shadow_get_object(object_index);
 	object_build_shadow_recursive(object->object.first_child_object_index, context, shadow);
