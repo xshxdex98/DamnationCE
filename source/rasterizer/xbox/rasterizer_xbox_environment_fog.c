@@ -111,14 +111,6 @@ enum
 
 /* ---------- macros */
 
-/* ---------- structures */
-
-struct real_bounds
-{
-	real lower;
-	real upper;
-};
-
 struct fog_screen
 {
 	word flags;

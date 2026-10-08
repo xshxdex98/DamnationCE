@@ -68,12 +68,6 @@ enum detail_dont_play_flags
 
 /* ---------- structures */
 
-struct real_bounds
-{
-	real lower;
-	real upper;
-};
-
 struct sound_permutation
 {
 	char name[32];

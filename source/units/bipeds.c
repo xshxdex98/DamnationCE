@@ -47,6 +47,7 @@ BIPEDS.C
 #include "scenario/scenario.h"
 #include "structures/structure_bsp_definitions.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
+#include "scenario/scenario_definitions.h"
 
 /* port: port/linux/game/network_objects.c's (a client deletes the host's
 objects on the host's word alone) */
@@ -220,26 +221,6 @@ struct vehicle_runtime_datum
 		short reserved;
 		byte airborne_ticks;
 	} vehicle;
-};
-
-struct scenario_object_datum
-{
-	short palette_entry_index;
-	short name_index;
-	word placement_flags;
-	short variant_number;
-	real_point3d position;
-	real_euler_angles3d rotation;
-	word on_bsp_flags;
-	word misc_flags;
-	unsigned long unused;
-};
-
-struct scenario_object_permutation
-{
-	unsigned long change_colors[4];
-	byte region_permutations[8];
-	unsigned long unused[2];
 };
 
 struct scenario_unit_datum
