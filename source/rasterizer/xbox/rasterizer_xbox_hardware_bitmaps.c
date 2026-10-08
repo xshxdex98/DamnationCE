@@ -19,7 +19,6 @@ RASTERIZER_XBOX_HARDWARE_BITMAPS.C
 
 enum
 {
-	NUMBER_OF_BITMAP_FORMATS = 18,
 	_bitmap_type_2d = 0,
 	_bitmap_type_3d,
 	_bitmap_type_cube_map,

@@ -21,20 +21,6 @@ TIFF_FILE.C
 /* The modern fork drops libtiff: the platform layer writes screenshots
 (HALO_SCREENSHOT_DIR), and importing TIFFs is the tools' business. */
 #else
-/* ---------- constants */
-
-enum
-{
-	_bitmap_format_a8 = 0,
-	_bitmap_format_y8 = 1,
-	_bitmap_format_ay8 = 2,
-	_bitmap_format_r5g6b5 = 6,
-	_bitmap_format_a1r5g5b5 = 8,
-	_bitmap_format_a4r4g4b4 = 9,
-	_bitmap_format_x8r8g8b8 = 10,
-	_bitmap_format_a8r8g8b8 = 11,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */

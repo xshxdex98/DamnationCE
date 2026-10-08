@@ -83,13 +83,6 @@ MAIN.C
 #endif
 #endif
 
-/* ---------- constants */
-
-enum
-{
-	_bitmap_format_x8r8g8b8 = 10,
-};
-
 enum
 {
 	_text_justification_left = 0,

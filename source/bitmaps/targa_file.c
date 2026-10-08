@@ -15,7 +15,6 @@ TARGA_FILE.C
 enum
 {
 	_bitmap_type_2d = 0,
-	_bitmap_format_x8r8g8b8 = 10,
 };
 
 /* ---------- macros */

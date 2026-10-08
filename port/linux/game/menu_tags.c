@@ -94,7 +94,6 @@ adds to */
 enum
 {
 	_bitmap_type_2d = 0,
-	_bitmap_format_a8r8g8b8 = 11,
 	_bitmap_has_power_of_two_dimensions_bit = 0,
 };
 

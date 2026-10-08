@@ -64,11 +64,6 @@ enum
 
 enum
 {
-	_bitmap_format_x8r8g8b8= 10
-};
-
-enum
-{
 	_bitmap_linear_bit= 4
 };
 

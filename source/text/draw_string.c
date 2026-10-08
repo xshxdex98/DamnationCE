@@ -48,11 +48,6 @@ enum
 	_string_index_cannot_end_words = 5,
 	_string_index_cannot_begin_words = 6,
 
-	_bitmap_format_a8 = 0,
-	_bitmap_format_y8 = 1,
-	_bitmap_format_ay8 = 2,
-	_bitmap_format_r5g6b5 = 6,
-	_bitmap_format_a8r8g8b8 = 11,
 };
 
 /* ---------- structures */

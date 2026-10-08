@@ -40,12 +40,6 @@ enum
 	_bitmap_type_cube_map,
 	NUMBER_OF_BITMAP_TYPES,
 
-	_bitmap_format_a8 = 0,
-	_bitmap_format_dxt1 = 14,
-	_bitmap_format_dxt3,
-	_bitmap_format_dxt5,
-	_bitmap_format_p8_bump,
-	NUMBER_OF_BITMAP_FORMATS,
 
 	_bitmap_has_power_of_two_dimensions_bit = 0,
 	_bitmap_compressed_bit,

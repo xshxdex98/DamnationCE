@@ -128,13 +128,6 @@ enum
 	NUMBER_OF_FOG_DEFINITION_FLAGS
 };
 
-/* the only two bitmap formats a screenshot capture accepts */
-enum
-{
-	_bitmap_format_x8r8g8b8 = 10,
-	_bitmap_format_a8r8g8b8 = 11
-};
-
 /* combiner_count register layout: the active combiner count in the low
  * nibble, "C0 unique per stage" at bit 12 and "C1 unique per stage" at bit 16.
  * Six or more combiners are uploaded as a whole program instead. */

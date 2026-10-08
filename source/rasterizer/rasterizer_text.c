@@ -50,11 +50,6 @@ enum
 
 enum
 {
-	_bitmap_format_a4r4g4b4 = 9,
-};
-
-enum
-{
 	_rasterizer_target_render_primary = 0,
 	_shader_framebuffer_blend_function_alpha_blend = 0,
 };
