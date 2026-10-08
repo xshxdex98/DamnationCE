@@ -1265,10 +1265,8 @@ void weapon_build_weapon_interface_state(
 	struct weapon_definition *weapon_definition = weapon_definition_get(weapon->definition_index);
 	short magazine_index;
 
-	/* port: every caller's state is on its stack, unset: a weapon's
-	magazines past its own count read as empty, not as what was there (a
-	one-magazine weapon's second "reloading" set the HUD's secondary
-	warnings off) */
+	/* port: every caller's state is unset stack, so magazines past the
+	weapon's own count read as empty rather than as whatever was there */
 	csmemset(state, 0, sizeof(*state));
 	state->heat = weapon->weapon.heat;
 	state->age = weapon->weapon.age;

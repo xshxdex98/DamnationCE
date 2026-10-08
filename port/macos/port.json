@@ -1,5 +1,5 @@
 {
-  "comment": "Native macOS build inputs; the game sources and the platform layer are the Linux build's (port/linux/port.json), compiled as 64-bit code (HALO_64BIT). libtiff is left out: its structures hold pointers the 64-bit build has no use for (bitmaps/tiff_file.c). So is the map tag validator, which reads the tags' Xbox addresses as pointers: port/macos/src/macos_tag_validate.c stands in for it. See port/macos/README.md.",
+  "comment": "Native macOS build inputs; the game sources and the platform layer are the Linux build's (port/linux/port.json), compiled as 64-bit code (HALO_64BIT). libtiff is left out: its structures hold pointers the 64-bit build has no use for (bitmaps/tiff_file.c). So is the map tag validator, which reads the tags' Xbox addresses as pointers: port/macos/src/macos_tag_validate.c stands in for it. So is the trace_marker refusal (posix_trace_marker.c), which is SteamOS's. See port/macos/README.md.",
   "exclude_sources": [
     "source/bitmaps/libtiff/tif_aux.c",
     "source/bitmaps/libtiff/tif_ccittrle.c",
@@ -40,7 +40,8 @@
     "port/linux/game/tag_schema_render.c",
     "port/linux/game/tag_schema_scenario.c",
     "port/linux/game/tag_validate.c",
-    "port/linux/game/tag_validate_report.c"
+    "port/linux/game/tag_validate_report.c",
+    "port/linux/src/posix_trace_marker.c"
   ],
   "libraries": [
     "SDL3",
