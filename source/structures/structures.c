@@ -449,10 +449,8 @@ static short structure_clusters_in_sphere_recursive(
 
 			cluster_count += added_count;
 			maximum_count -= added_count;
-			/* BUG (original): January and HCEA advance by every visited cluster,
-			 * even after the output capacity is exhausted, which can form an
-			 * out-of-bounds pointer. A corrected build should advance only by
-			 * the number actually written, clamped to the remaining capacity. */
+			/* (as the original: the output advances by every visited cluster, even past its
+			 * capacity) */
 			intersected_indices += added_count;
 		}
 	}
@@ -1031,9 +1029,8 @@ void structure_get_planar_fog(
 					&structure->fog_planes,
 					cluster->fog_reference & SHORT_MAX,
 					struct structure_fog_plane_render);
-				/* BUG: January and two independent later reconstructions scale
-				 * the authored animation distance by a literal zero, disabling
-				 * planar-fog motion. */
+				/* (as the original: the animation distance is scaled by zero, so planar fog doesn't
+				 * move) */
 				offset = definition->animation_distance * 0.0f;
 
 				fog->plane.d += offset;

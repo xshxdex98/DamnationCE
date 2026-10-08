@@ -2717,7 +2717,7 @@ void network_game_generate_join_game_token(
 	};
 
 	match_assert(NETWORK_SERVER_MANAGER_FILE, 1754, join_token);
-	/* January and the supplied source both clear the decayed pointer's size. */
+	/* (clears the size of the pointer, as the original) */
 	memset(join_token, 0, sizeof(join_token));
 	memcpy(join_token, join_token_initializer,
 		MIN(NETWORK_JOIN_GAME_TOKEN_SIZE, sizeof(join_token_initializer)));
@@ -4393,9 +4393,7 @@ boolean network_game_server_reset_to_pregame(
 	server->queued_player_valid = FALSE;
 	server->waiting_player_count = 0;
 	csmemset(network_game_server_ingame_additions, 0, sizeof(network_game_server_ingame_additions));
-	/* Preserve January's 32-bit wrap without overflowing signed arithmetic.
-	 * VC7 converts the unsigned result back to the same signed bit pattern.
-	 */
+	/* (wraps at 32 bits without signed overflow) */
 	server->game.number_of_games_played =
 		(long)((unsigned long)server->game.number_of_games_played + 1);
 

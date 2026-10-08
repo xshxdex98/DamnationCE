@@ -123,8 +123,8 @@ enum
 	_unit_damage_part_head = 2,
 };
 
-/* January computes these direction-cone limits from single-precision pi, then
-   promotes the rounded results for the double-precision fabs comparisons. */
+/* (the cone limits come from single-precision pi, promoted for the
+   double-precision fabs comparisons) */
 #define UNIT_DAMAGE_REAR_CONE_ANGLE 0.7853981852531433
 #define UNIT_DAMAGE_FRONT_CONE_ANGLE 2.159845009446144
 
@@ -538,12 +538,8 @@ void unit_export_function_values(
 					animation->private_loop_frame_index;
 				boolean before_private_loop;
 
-				/*
-				The January executable compares and divides the animation index here.
-				That is almost certainly an original bug: frame_index would measure
-				progress through the animation. Preserve index for exact behavior; a
-				corrected build may replace both uses below with state.frame_index.
-				*/
+				/* (as the original: the animation index is compared and divided here, where
+				   the frame index was probably meant) */
 				before_private_loop =
 					unit->object.animation.state.index <
 					private_loop_frame_index;
@@ -1813,7 +1809,6 @@ boolean unit_solo_player_integrated_night_vision_is_active(
 }
 
 // HCEX_Release.pdb and the September 2001 map both name this private
-// helper unit_add_initial_weapons (file-static; no cachebeta public).
 static void unit_add_initial_weapons(
 	long unit_index)
 {
@@ -3027,10 +3022,7 @@ void unit_shield_sapping_update(
 			unit->object.animation.state.index,
 			struct animation);
 
-		/*
-		 * Original bug: January compares the animation index to the loop
-		 * frame. A behavior-corrected build would use state.frame_index.
-		 */
+		/* (as the original: the animation index is compared with the loop frame) */
 		if (unit->object.animation.state.index >=
 			animation->private_loop_frame_index)
 		{
@@ -4361,12 +4353,7 @@ void unit_render_debug(
 		struct object_marker marker;
 		real mouth_aperture;
 
-		/*
-		 * BUG (original): January ignores the marker count and consumes the
-		 * output even when the requested head marker is absent. A safe,
-		 * intentionally nonmatching build should render only when this call
-		 * returns a value greater than zero.
-		 */
+		/* (as the original: the head marker is used even when it isn't found) */
 		object_get_marker_by_name(unit_index, "head", &marker, 1);
 		mouth_aperture = unit->unit.mouth_aperture;
 		origin = marker.matrix.position;
@@ -11320,8 +11307,6 @@ static boolean unit_integrated_night_vision_is_active(
 	return active;
 }
 
-/* Verify the public seat-helper declaration without perturbing this legacy
- * translation unit's authenticated function-declaration order. */
 /* the distributed netcode (port/linux/game/network_objects.c): a client's
 unit carries the host's weapons, the same objects, moved in and out as the
 host's unit had them (the host has applied the game's rules) */

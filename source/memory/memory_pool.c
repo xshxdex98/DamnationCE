@@ -21,9 +21,6 @@ MEMORY_POOL.C
 
 static long memory_pool_block_compute_actual_size(
 	long size);
-static void *memory_pool_block_new(
-	struct memory_pool *pool,
-	long size);
 static void memory_pool_verify(
 	struct memory_pool *pool);
 static struct memory_pool_block *memory_pool_block_get(
@@ -116,12 +113,6 @@ boolean memory_pool_block_allocate(
 		*reference = block+1;
 		return TRUE;
 	}
-	/*
-	The January object retains the private fit helper even though this caller
-	contains its exact expanded source shape.
-	*/
-	if (FALSE)
-		memory_pool_block_new(pool, actual_size);
 	return FALSE;
 }
 
@@ -261,20 +252,6 @@ static long memory_pool_block_compute_actual_size(
 	return size;
 }
 
-static void *memory_pool_block_new(
-	struct memory_pool *pool,
-	long size)
-{
-	byte *address;
-
-	address = pool->last_block
-		? (byte *)pool->last_block+pool->last_block->size
-		: pool->base_address;
-
-	return address+size <= (byte *)pool->base_address+pool->size
-		? address
-		: NULL;
-}
 
 static void memory_pool_verify(
 	struct memory_pool *pool)

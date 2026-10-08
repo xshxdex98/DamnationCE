@@ -33,13 +33,7 @@ enum
 
 /* ---------- structures */
 
-/* ---------- declarations that belong in tag_files/tag_groups.h
-   These are shared tag-system types, not bitmap_group's own: seven
-   tag_field_type constants January's bitmap_fields uses, and struct
-   tag_flags_definition and struct tag_group (member lists attested by
-   HCEX.pdb).  They are held here because this lane may not commit shared
-   cross-lane headers; moving them to tag_groups.h is an owner action and is
-   data-inert (VC7 lays .data out by declaration order, not name count).
+/* ---------- tag system declarations (they belong in tag_files/tag_groups.h)
    ---------- */
 
 enum
@@ -597,7 +591,7 @@ short bitmap_group_add_bitmap(
 		SET_FLAG(fake_bitmap.flags, _bitmap_palettized_bit, TRUE);
 	}
 
-	/* January repeats these validation guards after assigning format flags. */
+	/* (the validation is repeated after the format flags are set) */
 	if (group->type == _bitmap_group_type_cube_maps && width != height)
 	{
 		fprintf(

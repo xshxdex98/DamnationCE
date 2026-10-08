@@ -71,10 +71,6 @@ enum
 
 /* ---------- macros */
 
-/* January's physics.c expands point_from_line3d in place for points and
- * vectors alike; this scalar expansion preserves that inline schedule without
- * selecting the external point_from_line3d COMDAT for this object (the same
- * emitted-symbol invariant as COLLISION_POINT_FROM_LINE3D in collisions.c). */
 #define PHYSICS_POINT_FROM_LINE3D(point, vector, distance, result) \
 	do \
 	{ \
@@ -110,9 +106,8 @@ struct powered_mass_point_definition
 
 #include "units/vehicle_datum.h"
 
-/* TU-local copy: no shared header declares the game globals falling-damage
- * block yet; identical complete copies live in objects/damage.c and
- * units/bipeds.c. */
+/* the game globals' falling damage block (no header declares it yet;
+ * damage.c and bipeds.c keep copies) */
 struct game_globals_falling_damage
 {
 	long unused0[2];
@@ -560,7 +555,6 @@ boolean physics_test_vector(
 			real_point3d intersection;
 
 			result->t = t;
-			// Preserve the January inline schedule without emitting a point_from_line3d COMDAT.
 			intersection.x = local_vector.i*t + local_point.x;
 			intersection.y = local_vector.j*t + local_point.y;
 			intersection.z = local_vector.k*t + local_point.z;
@@ -1572,10 +1566,6 @@ void physics_update_new(
 	return;
 }
 
-/* NonMatching: the owner-safe natural reconstruction is 0x1500 bytes with 116
- * relocations versus the January target's 0x1430 bytes and 115 relocations.
- * Its final axes predicate also falls out of line after the earlier codegen
- * divergence, so this coherent candidate is parked without schedule tuning. */
 static void physics_update_old(
 	long object_index,
 	struct powered_mass_point_datum *powered_mass_points,

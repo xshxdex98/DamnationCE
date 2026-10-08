@@ -1,9 +1,7 @@
 /*
 NETWORK_SERVER_MANAGER_INTERNAL.H
 
-Private networking declarations shared by the server manager and its message
-handler.  Keep these out of the widely included public manager header: the
-January compiler is sensitive to declaration position even in unrelated code.
+Declarations shared by the server manager and its message handler.
 */
 
 #ifndef __NETWORK_SERVER_MANAGER_INTERNAL_H

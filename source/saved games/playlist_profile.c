@@ -43,8 +43,7 @@ enum
 /* ---------- structures */
 
 #ifdef HALO_64BIT
-/* host-only: January packed it to match its .data layout, which would
-misalign the function pointers on a 64-bit host */
+/* (natural alignment on 64-bit: the function pointers need it) */
 #else
 #pragma pack(push, 1)
 #endif

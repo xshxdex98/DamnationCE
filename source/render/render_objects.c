@@ -417,8 +417,7 @@ static void render_object_list(
 				}
 				else
 				{
-					/* January copies the parent effect again on this path (a second block copy in
-					   both the PC and Xbox builds) */
+					/* (the parent effect is copied again on this path) */
 					model_effect = *parent_model_effect;
 				}
 			}
@@ -496,8 +495,7 @@ static void render_object_list(
 							!TEST_FLAG(object_header->flags, _object_header_active_bit) &&
 							definition->object.model.index != NONE)
 						{
-							/* point_from_line3d(center, global_up3d, 0.2f, &text_point), expanded so this
-							   object does not emit the real_math.h point_from_line3d COMDAT */
+							/* (point_from_line3d(center, global_up3d, 0.2f, &text_point)) */
 							real_point3d const *center = &object->object.bounding_sphere_center;
 
 							text_point.x = global_up3d->i * 0.2f + center->x;

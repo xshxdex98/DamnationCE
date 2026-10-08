@@ -94,8 +94,6 @@ void reference_list_remove(
 	return;
 }
 
-/* The initialization and cursor-advance order preserve January's coalescing
- * of the source cursor into EBX and the loop index into ESI. */
 void reference_list_copy(
 	struct data_array *result,
 	struct data_array *source)

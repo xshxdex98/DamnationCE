@@ -774,11 +774,9 @@ static void bitmap_2d_smooth(
 	}
 	else
 	{
-		/* BUG (preserved): January supplies an unused newline vararg. */
 		fprintf(
 			stdout,
-			"### WARNING tried to smooth a bitmap with a filter which is too large",
-			"\r\n");
+			"### WARNING tried to smooth a bitmap with a filter which is too large\r\n");
 		fflush(stdout);
 	}
 
@@ -936,11 +934,9 @@ static void bitmap_3d_smooth(
 	}
 	else
 	{
-		/* BUG (preserved): January supplies an unused newline vararg. */
 		fprintf(
 			stdout,
-			"### WARNING tried to smooth a bitmap with a filter which is too large",
-			"\r\n");
+			"### WARNING tried to smooth a bitmap with a filter which is too large\r\n");
 		fflush(stdout);
 	}
 

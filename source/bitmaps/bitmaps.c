@@ -531,8 +531,6 @@ void *bitmap_mipmap_address(
 	struct bitmap_data *bitmap,
 	short mipmap_index)
 {
-	/* January relies on the fatal assertion for unsupported types; there is
-	 * no fallback address if system_exit unexpectedly returns. */
 	void *mipmap_address;
 
 	match_assert("c:\\halo\\SOURCE\\bitmaps\\bitmaps.c", 0x20D, bitmap);
@@ -565,9 +563,6 @@ pixel32 bitmap_format_to_a8r8g8b8(
 	void const *mipmap_address,
 	long pixel_index)
 {
-	/* January relies on the fatal assertion for unsupported formats, as
-	 * bitmap_mipmap_address does for unsupported types; there is no fallback
-	 * pixel if system_exit unexpectedly returns. */
 	pixel32 result;
 
 	match_assert("c:\\halo\\SOURCE\\bitmaps\\bitmaps.c", 0x22B, mipmap_address);

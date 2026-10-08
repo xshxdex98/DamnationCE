@@ -381,9 +381,7 @@ char const *winsock_error_to_string(
 {
 	char const *error_string;
 
-	/* The January table names the Win32 WSA aliases. Use their underlying
-	 * system constants where the XDK's WIN16 fallback has different values.
-	 */
+	/* (the Win32 WSA aliases' system values, where the XDK's differ) */
 	switch (error_code)
 	{
 	case ERROR_INVALID_HANDLE:

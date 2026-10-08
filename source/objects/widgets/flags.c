@@ -421,10 +421,7 @@ void flag_update_attachment(
 	delta.k = attachment_points->z - flag->first_attachment.z;
 
 	/*
-	 * BUG (original): integer truncation makes this an effective two-unit
-	 * threshold, as in antenna_update_attachment. A non-matching correctness
-	 * fix would compare fabs(delta.i), fabs(delta.j), and fabs(delta.k)
-	 * directly against 1.0f.
+	 * (as the original: the integer truncation makes this a two-unit threshold)
 	 */
 	if ((real)abs((long)delta.i) > 1.0f ||
 		(real)abs((long)delta.j) > 1.0f ||

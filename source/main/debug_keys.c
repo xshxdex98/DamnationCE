@@ -27,7 +27,6 @@ static void debug_key_profile_reset(boolean key_is_down);
 
 /* ---------- globals */
 
-// Debug-key bitvector. January PDB: public, module 233 .bss; NULL avoids COMMON.
 long *global_debug_key_down = NULL;
 
 struct debug_key global_debug_key_list[10] =

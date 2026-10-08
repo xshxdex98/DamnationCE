@@ -64,9 +64,7 @@ enum
 	MAXIMUM_NUMBER_OF_MAGAZINES_PER_WEAPON = 2,
 };
 
-/* TU-local copies: no shared header declares these tag/runtime enumerations yet.
-   Names follow the HCEA database enumerations; ai.c and actors.c carry their own
-   ai unit effect copies, and first_person_weapons.c an animation update result copy. */
+/* weapon tag and runtime enumerations (no header declares them yet) */
 enum trigger_distribution_function
 {
 	_trigger_distribution_point = 0,
@@ -162,7 +160,7 @@ struct animation_graph_first_person_weapon_animations
 	struct tag_block animations;
 };
 
-/* TU-local: weapon_trigger_definition.firing_effects element; no shared header declares it yet. */
+/* weapon_trigger_definition.firing_effects element (no header declares it yet) */
 struct trigger_firing_effect
 {
 	short shots_lower_bound;
@@ -1202,7 +1200,8 @@ short weapon_get_first_person_animation_time(
 						struct animation *shotgun_exit_empty = TAG_BLOCK_GET_ELEMENT(&animation_graph->animations, _first_person_weapon_animation_shotgun_exit_empty<weapon_animations->animations.count ? animation_graph_animation_index_get(&weapon_animations->animations)[_first_person_weapon_animation_shotgun_exit_empty].animation_index : NONE, struct animation);
 						struct animation *shotgun_exit_full = TAG_BLOCK_GET_ELEMENT(&animation_graph->animations, _first_person_weapon_animation_shotgun_exit_full<weapon_animations->animations.count ? animation_graph_animation_index_get(&weapon_animations->animations)[_first_person_weapon_animation_shotgun_exit_full].animation_index : NONE, struct animation);
 
-						/* January resolves all three reload variants, but both handled phases use the enter animation. */
+						/* (all three reload variants are looked up; both handled phases use the
+						 * enter animation) */
 						(void)shotgun_exit_empty;
 						(void)shotgun_exit_full;
 						switch (shotgun_reload_type)

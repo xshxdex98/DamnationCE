@@ -56,8 +56,8 @@ enum
 	_vehicle_type_alien_fighter = 5,
 };
 
-/* January promotes the rounded 45- and 10-degree single-precision constants
- * before subtracting them; the 35-degree window and its reciprocal are double. */
+/* (the 45 and 10 degree constants are single precision, promoted before
+ * subtracting; the 35 degree window and its reciprocal are double) */
 #define STICK_DIAGONAL_ANGLE 0.7853981852531433f
 #define STICK_SECOND_QUADRANT_DIAGONAL_ANGLE 2.356194496154785f
 #define RIGHT_STICK_DIAGONAL_SNAP_ANGLE ((double)0.1745329201221466f)
@@ -77,8 +77,7 @@ struct game_input_state
 	real pitch;
 };
 
-/* Vehicle tags remain opaque in the shared header. This authenticated prefix
- * is sufficient for the aircraft-type check; it is not a complete tag layout. */
+/* the start of a vehicle definition, enough for the aircraft check */
 struct vehicle_definition
 {
 	struct unit_definition unit;

@@ -251,8 +251,7 @@ static const long bitmap_d3d_format_tables
 		NONE,
 	},
 };
-/* provisional name: the January map leaves this .bss array unnamed; it holds the debug
- * listing's cached bitmaps */
+/* the debug listing's cached bitmaps */
 static struct bitmap_data *texture_cache_debug_bitmaps[XBOX_TEXTURE_CACHE_PAGE_COUNT];
 static struct xbox_texture_cache_globals xbox_texture_cache_globals;
 struct texture_cache_debug_options texture_cache_debug_options = {0};

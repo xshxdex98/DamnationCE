@@ -117,8 +117,6 @@ void dead_camera_update(
 
 /* ---------- globals */
 
-/* name from the 2003 PC demo PDB and the HCEX PDB (camera_scripting file static); January's 64 bytes are
- * identical to the demo's and it has no public for it (static) */
 static struct scripted_camera_globals camera_script_globals =
 {
 	FALSE,

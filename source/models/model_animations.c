@@ -108,7 +108,7 @@ struct compressed_animation_header
 	unsigned long rotation_node_headers[1];
 };
 
-/* Recovered animation-graph block layouts kept TU-private to preserve VC7 header scheduling. */
+/* the animation graph blocks this file reads */
 struct animation_graph_node
 {
 	char name[TAG_STRING_LENGTH+1];

@@ -1892,7 +1892,7 @@ static boolean extract_3d_textures(
 		short bitmap_count = 0;
 		boolean incompatible_dimensions = FALSE;
 
-		// BUG (preserved): January does not bound the final run before reading its next sequence index.
+		// (as the original: the final run isn't bounded before its next sequence index is read)
 		while (!incompatible_dimensions &&
 			extract_data.bitmaps[first_bitmap_index + bitmap_count].sequence_index == sequence_index)
 		{
@@ -2036,9 +2036,8 @@ static boolean extract_cube_maps(
 
 			if (skip_cube_map)
 			{
-				/* BUG (original): January frees the partial cube map without clearing temporary_bitmap,
-				so the !temporary_bitmap assert fires at the next face-0 entry. */
 				bitmap_delete(temporary_bitmap);
+				temporary_bitmap = NULL;
 				face_index = 0;
 			}
 		}

@@ -306,7 +306,6 @@ void CALLBACK cache_copy_FileIOCompletionRoutine(
 static struct decompressor_runtime_globals decompressor_globals;
 static struct simple_decompressor_definition *global_self = &decompressor_globals.self;
 static long performance_frequency = 1;
-/* January PDB: public, module 33 .bss+0xcc0; explicit zero avoids COMMON. */
 boolean decompressor_print_timing = FALSE;
 
 /* ---------- code */

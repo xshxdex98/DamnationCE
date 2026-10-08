@@ -54,8 +54,6 @@ static struct damage_breaking_effect_definition const *breakable_surface_breakin
 	return &none;
 }
 
-/* January evaluates the j/k terms as one group in this translation unit.
-   The shared helper must remain flat for its other exact consumers. */
 static __inline real breakable_surface_plane_distance(
 	real_plane3d const *plane,
 	real_point3d const *point)

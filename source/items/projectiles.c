@@ -90,11 +90,8 @@ enum projectile_potential_response_flags
 	NUMBER_OF_PROJECTILE_POTENTIAL_RESPONSE_FLAGS,
 };
 
-/* TU-local copies: no shared header declares these yet.  The effect vector
- * enum duplicates objects/damage.c, the spatial effect enum duplicates
- * ai/actors.c and ai/ai.c, the surface flag duplicates ai/path.c and
- * ai/path_smoothing.c, and the periodic function enum duplicates
- * math/periodic_functions.c. */
+/* effect vectors, spatial effects, surface flags and periodic functions (no
+ * header declares them yet; other files keep copies) */
 enum
 {
 	_effect_vector_normal = 0,

@@ -78,7 +78,6 @@ static long get_next_available_set_array_index(
 		"c:\\halo\\SOURCE\\bungie_net\\network\\transport_endpoint_set_winsock.c",
 		0x39,
 		set);
-	/* January permits one-past-capacity here; preserve the original boundary. */
 	/* ... except in the native builds, which keep to the array */
 	if (set->last_endpoint_index >= set->max_endpoints - 1)
 	{
@@ -415,7 +414,6 @@ short poll_endpoint_set(
 			set->last_endpoint_index + 1,
 			sizeof(*set->ep_array),
 			poll_ep_array_compare_proc);
-		/* January has no lower-bound guard when every entry has been removed. */
 		while (!set->ep_array[set->last_endpoint_index])
 		{
 			set->last_endpoint_index--;
@@ -495,7 +493,7 @@ short add_endpoint_to_set(
 	if (endpoint_index >= 0)
 	{
 		set->ep_array[endpoint_index] = ep;
-		/* the listening test with two identical FD_SET arms is original: January and the first-party debug build both have it */
+		/* (both arms are the original's) */
 		if (TEST_FLAG(ep->flags, _transport_endpoint_listening_bit))
 		{
 			FD_SET(set->ep_array[endpoint_index]->socket, &set->sockets);

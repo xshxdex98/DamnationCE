@@ -460,7 +460,6 @@ void data_compact(
 	struct data_array *data)
 {
 	void *compacted_data;
-	/* Keep the null sentinel distinct; VC7 coalesces it with compacted_count. */
 	void *empty = NULL;
 	struct datum_header *datum;
 	short compacted_count;

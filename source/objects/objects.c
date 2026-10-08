@@ -2399,7 +2399,6 @@ void object_export_function_values(
 
 // These local variants preserve the original XDK 3911 operand provenance for
 // this large function.  They are semantically identical to the shared matrix
-// validation macros, but the typed aliases reproduce the January codegen.
 #define ocnm_root_matrix_internal(file, line, matrix, string) \
 match_vassert(file, line, valid_real((*matrix).scale), csprintf(temporary, "%s had a bad scale %f", string, (*matrix).scale)); \
 match_vassert(file, line, valid_real_normal3d(&(*matrix).forward), csprintf(temporary, "%s had a bad forward (%f,%f,%f)", string, (*matrix).forward.i, (*matrix).forward.j, (*matrix).forward.k)); \
@@ -3498,7 +3497,6 @@ long object_new(
 			object->object.translational_velocity = data->translational_velocity;
 			object->object.angular_velocity = data->angular_velocity;
 			
-			// Preserve the January inline schedule without emitting a point_from_line3d COMDAT.
 			{
 				real_point3d const *p = &object->object.position;
 				real_vector3d const *v = &object->object.up;

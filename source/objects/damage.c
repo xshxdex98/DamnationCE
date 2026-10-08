@@ -279,11 +279,6 @@ static void damage_material_type_error(
 
 boolean debug_damage;
 
-/* Name and type from the 2003 PC demo PDB ONLY (file static long); HCEX has no such static, so
-   the name is singly attested. January corroborates the storage: .bss +0x48, after
-   object_cause_damage's default material. Both statics are uninitialised and VC7 orders
-   uninitialised statics by a hash of their names, so this name takes part in producing
-   January's order; no other name was tested. */
 static long global_debug_damage_object_index;
 
 /* ---------- public code */
@@ -1304,10 +1299,6 @@ void object_cause_damage(
 	short material_index,
 	real_vector3d const *object_normal)
 {
-	/* Name and function scope from the 2003 PC demo PDB and the HCEX PDB (static local of
-	   object_cause_damage; their type is named damage_material). Neither PDB records the block:
-	   placing it at the top of the function is unattested. January corroborates: .bss +0, and only
-	   this function takes its address. */
 	static struct damage_resistance_material default_damage_material;
 	struct damage_effect_definition *damage_effect;
 	struct damage_definition const *damage_definition;

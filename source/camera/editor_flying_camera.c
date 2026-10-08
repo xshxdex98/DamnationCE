@@ -100,13 +100,6 @@ static void translate_orbiting_to_flying(
 
 /* ---------- globals */
 
-/* January kept these as file-scope scalars and arrays; VC7 hoists loads of
-   non-address-taken statics across pointer stores where it reloads aggregates.
-   The .data and .bss statics follow the definition order and names recorded for
-   this translation unit in the HCEX PDB; January's .bss offsets (+0x00 .. +0x78)
-   and its camera_mode assertion text agree. The speed scalar is the .data
-   anchor; is_scripted is a private .bss anchor as in January. The 124-byte
-   .bss reserves local_player_index at +0x30. */
 static real editor_camera_speed = 1.f;
 static long unit_focus = NONE;
 static boolean is_scripted = FALSE;

@@ -1243,7 +1243,6 @@ static long biped_find_ground_surface(
 	global_current_collision_users[global_current_collision_user_depth++] = _collision_user_bipeds;
 
 	object_get_origin(object_index, &origin);
-	/* Preserve January's inline schedule without owning point_from_line3d here. */
 	origin.x = global_up3d->i*0.4f + origin.x;
 	origin.y = global_up3d->j*0.4f + origin.y;
 	origin.z = global_up3d->k*0.4f + origin.z;

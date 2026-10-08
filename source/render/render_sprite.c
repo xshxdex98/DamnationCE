@@ -108,8 +108,6 @@ struct
 typedef char build_sprite_globals_data_size_assert[
 	sizeof(build_sprite_globals) == 0x28 ? 1 : -1];
 
-/* name from the 2003 PC demo PDB and the HCEX PDB (file static char *[3]); January's three pointers
- * name the same strings in the same order, followed by the enum definition at +0xC as in the demo */
 static char *global_sprite_render_orientations_enum_strings[NUMBER_OF_BUILD_SPRITE_ORIENTATIONS] =
 {
 	"screen facing",
@@ -694,9 +692,6 @@ static short build_sprite_get_group(
 	struct build_sprite_data *data,
 	struct bitmap_data *bitmap)
 {
-	/* Name, type and function scope from the 2003 PC demo PDB and the HCEX PDB (static local
-	   unsigned char warned). Neither PDB records the block: placing it at the top of the function
-	   is unattested. January corroborates: its one-byte .bss is referenced only here. */
 	static boolean warned;
 	short group_index;
 

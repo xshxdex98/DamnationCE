@@ -229,7 +229,6 @@ static void decal_sprite_get_bounds(
 	real radius,
 	real_rectangle2d *sprite_bounds,
 	real_rectangle2d *extent);
-/* These January-private callees belong to this translation unit. */
 static void decal_projection_create(
 	real_matrix4x3 const *basis,
 	real_rectangle2d const *extent,
@@ -280,7 +279,6 @@ struct decal_wrap_parameters const decal_wrap_parameters[NUMBER_OF_DECAL_TYPES] 
 	{ 10.0f,  10.0f, 1.5f, FALSE }
 };
 
-/* SECONDS_PER_TICK: name from the 2003 PC demo PDB and the HCEX PDB (decals file static const float) */
 static real const SECONDS_PER_TICK = 1.0f / TICKS_PER_SECOND;
 boolean debug_decals;
 

@@ -1290,8 +1290,7 @@ static void particle_system_update(
 					{
 						real t;
 
-						/* January performs this lookup of the current particle state only for its
-						 * validation side effect; the element is not otherwise needed. */
+						/* (only checks the element) */
 						TAG_BLOCK_GET_ELEMENT(
 							&type_definition->particle_states,
 							particle->state_index,

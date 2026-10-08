@@ -2060,8 +2060,7 @@ void hs_evaluate_inspect(
 		if (hs_type_valid(expression->type) && hs_type_inspectors[expression->type])
 		{
 			hs_type_inspectors[expression->type](expression->type, *value, string);
-			/* port: printed through "%s" (January passes the text as the
-			format, 0x4bc840 +0xdd..+0xe6), and as chatter (see hs_print) */
+			/* port: printed through "%s", and as chatter (see hs_print) */
 			if (terminal_shows(terminal_command_running ? _terminal_message_serious : _terminal_message_chatter))
 				console_printf(FALSE, "%s", string);
 		}

@@ -63,20 +63,6 @@ static u_short photometric = { 0 };
 static u_short samplesperpixel = { 0 };
 static u_short bitspersample = { 0 };
 
-/* January anonymous-symbol map, recovered from exact bodies and relocation
- * call graphs against the authentic libtiff 1.8 source above:
- * 00058910 checkcmap                 00059df0 pickTileContigCase
- * 00058a20 makebwmap                 00059f10 pickTileSeparateCase
- * 00058c40 makecmap                  00059f50 gtTileContig
- * 00058f80 put8bitcmaptile           0005a0e0 gtTileSeparate
- * 00059010 put4bitcmaptile           0005a320 gtStripContig
- * 000590b0 put2bitcmaptile           0005a4b0 gtStripSeparate
- * 00059180 put1bitcmaptile           0005a6f0 gt
- * 000592d0 putgreytile
- * 00059a60 initYCbCrConversion
- * 00059ab0 putRGBContigYCbCrClump
- * 00059c80 putcontig8bitYCbCrtile
- */
 
 static	int gt();
 static	int makebwmap();
@@ -519,9 +505,8 @@ gtStripSeparate(tif, raster, Map, h, w)
 	b = g + stripsize;
 	put = pickTileSeparateCase(Map);
 	if (put == 0) {
-		/* BUG (original): buf is leaked on this error path. A corrected build
-		 * should debug_free(buf, TIF_GETIMAGE_FILE, 517) before returning. */
 		TIFFError(filename, "Can not handle format");
+		debug_free(buf, TIF_GETIMAGE_FILE, 509);
 		return (0);
 	}
 	y = setorientation(tif, h);
