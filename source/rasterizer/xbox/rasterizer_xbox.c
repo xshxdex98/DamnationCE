@@ -41,13 +41,6 @@ enum
 	RASTERIZER_MAXIMUM_TEXTURE_STAGES = 4,
 };
 
-enum
-{
-	/* the eighth target has no first-party name in this object; it is the
-	 * second render-primary surface/texture pair */
-
-};
-
 /* mode 1 makes the window clear to black instead of to the atmospheric fog
  * colour; the remaining values are not exercised by this object. */
 enum
