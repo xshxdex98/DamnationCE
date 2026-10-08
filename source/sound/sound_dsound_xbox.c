@@ -48,7 +48,6 @@ enum sound_channel_state
 
 /* ---------- macros */
 
-#define cache_base_address unknown1
 
 /* deferred DirectSound parameters are only resubmitted when they change by more than epsilon */
 #define realcmp_epsilon(a, b, epsilon) (fabs((a)-(b))<(epsilon))

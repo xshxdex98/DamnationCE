@@ -37,10 +37,6 @@ enum
 
 /* ---------- macros */
 
-#define cache_block_index unknown0
-#define cache_base_address unknown1
-#define cache_tag_index unknown2
-#define runtime_tag_index unknown3
 
 /* ---------- structures */
 

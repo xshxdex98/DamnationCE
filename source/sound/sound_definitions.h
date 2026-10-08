@@ -75,11 +75,11 @@ struct sound_permutation
 	real gain;
 	short compression;
 	short next_permutation_index;
-	long unknown0;
-	unsigned long unknown1;
-	unsigned long unknown2;
+	long cache_block_index;
+	unsigned long cache_base_address;
+	unsigned long cache_tag_index;
 	unsigned long sample_buffer_size;
-	unsigned long unknown3;
+	unsigned long runtime_tag_index;
 	struct tag_data samples;
 	struct tag_data mouth_data;
 	struct tag_data subtitle_data;
