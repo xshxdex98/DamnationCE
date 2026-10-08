@@ -79,7 +79,7 @@ struct event_handler_globals
 	long last_player1_profile_index;
 	long unknown3C;
 	char *multiplayer_levels[13];
-	short unknown74;
+	short new_profile_controller_index;
 };
 #ifndef HALO_64BIT
 #pragma pack(pop)
@@ -860,7 +860,7 @@ static boolean new_campaign_decision(
 	wchar_t name[128];
 
 	result = FALSE;
-	if (event_handler_functions.unknown74 != NONE)
+	if (event_handler_functions.new_profile_controller_index != NONE)
 	{
 		if (virtual_keyboard_last_exit_saved_text())
 		{
@@ -868,14 +868,14 @@ static boolean new_campaign_decision(
 			{
 				long profile_index;
 
-				player_ui_set_single_player_local_player_controller(0, event_handler_functions.unknown74);
-				profile_index = player_profile_new(event_handler_functions.unknown74, new_campaign_profile_name);
+				player_ui_set_single_player_local_player_controller(0, event_handler_functions.new_profile_controller_index);
+				profile_index = player_profile_new(event_handler_functions.new_profile_controller_index, new_campaign_profile_name);
 				if (profile_index == NONE)
 				{
 					saved_game_file_get_useable_untitled_profile_name(name);
 					ustrncpy(new_campaign_profile_name, name, 11);
 					new_campaign_profile_name[11] = L'\0';
-					profile_index = player_profile_new(event_handler_functions.unknown74, new_campaign_profile_name);
+					profile_index = player_profile_new(event_handler_functions.new_profile_controller_index, new_campaign_profile_name);
 				}
 				if (profile_index != NONE)
 				{
@@ -908,7 +908,7 @@ static boolean new_campaign_decision(
 				ui_play_audio_feedback_sound(4);
 			}
 		}
-		event_handler_functions.unknown74 = NONE;
+		event_handler_functions.new_profile_controller_index = NONE;
 	}
 	return result;
 }
@@ -2564,7 +2564,7 @@ static boolean new_campaign_chosen(
 	saved_game_file_get_useable_untitled_profile_name(name);
 	ustrncpy(new_campaign_profile_name, name, 11);
 	new_campaign_profile_name[11] = L'\0';
-	event_handler_functions.unknown74 = event->controller_index;
+	event_handler_functions.new_profile_controller_index = event->controller_index;
 	if (!virtual_keyboard_launch(new_campaign_profile_name, 24, 8))
 		error(2, "failed to invoke the virtual keyboard for a new campaign profile name");
 	return TRUE;

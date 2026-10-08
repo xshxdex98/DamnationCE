@@ -738,10 +738,10 @@ static struct loose_sound *loose_sound_new(
 				permutation->subtitle_data.address = subtitle_size ? file + cursor : NULL;
 				cursor += subtitle_size;
 				/* the sound cache's (xbox_sound_cache.c: block, address, tag) */
-				permutation->unknown0 = NONE;
-				permutation->unknown1 = 0;
-				permutation->unknown2 = (unsigned long)tag_index;
-				permutation->unknown3 = (unsigned long)tag_index;
+				permutation->cache_block_index = NONE;
+				permutation->cache_base_address = 0;
+				permutation->cache_tag_index = (unsigned long)tag_index;
+				permutation->runtime_tag_index = (unsigned long)tag_index;
 			}
 
 			/* a map's build's gains, and the longest the range plays: a
@@ -836,7 +836,7 @@ static void sounds_let_go(
 			in_use = override->sound == sound;
 			for (index = 0; !in_use && index < sound->permutation_count; index++)
 			{
-				in_use = (long)sound->permutations[index].unknown0 != NONE;
+				in_use = (long)sound->permutations[index].cache_block_index != NONE;
 			}
 		}
 		if (in_use)

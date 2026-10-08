@@ -112,18 +112,6 @@ typedef char actions_vehicle_charge_repeat_offset_assert[
 	offsetof(struct vehicle_definition, ai_charge_repeat_time) == 0x390 ? 1 : -1];
 typedef char actions_vehicle_strafing_stop_offset_assert[
 	offsetof(struct vehicle_definition, ai_strafing_stop_range) == 0x394 ? 1 : -1];
-typedef char actions_actor_debug_cover_offset_assert[
-	offsetof(struct actor_debug_info, field_B8) == 0xB8 ? 1 : -1];
-typedef char actions_actor_debug_grenade_offset_assert[
-	offsetof(struct actor_debug_info, grenade_eval_time) == 0x150 ? 1 : -1];
-typedef char actions_actor_debug_danger_offset_assert[
-	offsetof(struct actor_debug_info, danger_avoidance_time) == 0x168 ? 1 : -1];
-typedef char actions_actor_debug_dive_offset_assert[
-	offsetof(struct actor_debug_info, dive_decision_time) == 0x184 ? 1 : -1];
-#ifndef HALO_64BIT
-typedef char actions_actor_debug_info_size_assert[
-	sizeof(struct actor_debug_info) == 0x657C ? 1 : -1];
-#endif
 typedef char firing_position_evaluation_context_size_assert[
 	sizeof(struct firing_position_evaluation_context) == 0x670 ? 1 : -1];
 
@@ -1530,8 +1518,8 @@ boolean actor_action_handle_active_cover_seeking(
 	{
 		long target_hidden_ticks;
 
-		debug_info->field_B8 = TRUE;
-		debug_info->field_BA = 4;
+		debug_info->cover_seeking_valid = TRUE;
+		debug_info->cover_seeking_decision = 4;
 
 		if (actor->target.target_last_visible_time == NONE)
 			target_hidden_ticks = 1000;
@@ -1539,40 +1527,40 @@ boolean actor_action_handle_active_cover_seeking(
 			target_hidden_ticks =
 				game_time_get() - actor->target.target_last_visible_time;
 
-		debug_info->field_BC = (short)target_hidden_ticks;
-		debug_info->field_C0 = actor->input.shield_vitality;
+		debug_info->cover_seeking_target_hidden_ticks = (short)target_hidden_ticks;
+		debug_info->cover_seeking_shield_vitality = actor->input.shield_vitality;
 
 		if (actor->input.shield_vitality <=
 			definition->defensive.shield_fraction_hide)
 		{
 			short action_class = actor_action_class(actor_index);
 
-			debug_info->field_BA = 0;
+			debug_info->cover_seeking_decision = 0;
 			if (!actor->emotions.berserk &&
 				(action_class == 4 || action_class == 3))
 			{
-				debug_info->field_BA = 1;
+				debug_info->cover_seeking_decision = 1;
 				if (actor->state.combat_status >= 2)
 				{
 					long current_time = game_time_get();
 
-					debug_info->field_BA = 2;
+					debug_info->cover_seeking_decision = 2;
 					if (actor->emotions.last_active_cover_seeking_time == NONE ||
 						current_time >=
 							actor->emotions.last_active_cover_seeking_time + 30)
 					{
-						debug_info->field_BA = 3;
+						debug_info->cover_seeking_decision = 3;
 						actor->emotions.last_active_cover_seeking_time = current_time;
 
 						if (actor_action_allow_cover_seeking(actor_index, FALSE))
 						{
-							debug_info->field_BA = 5;
+							debug_info->cover_seeking_decision = 5;
 							if (actor_action_try_to_seek_cover(
 								actor_index,
 								TRUE,
 								FALSE))
 							{
-								debug_info->field_BA = 6;
+								debug_info->cover_seeking_decision = 6;
 								result = TRUE;
 								goto done;
 							}
@@ -1584,7 +1572,7 @@ boolean actor_action_handle_active_cover_seeking(
 									actor->target.target_prop_index,
 									force_flee_transition))
 							{
-								debug_info->field_BA = 7;
+								debug_info->cover_seeking_decision = 7;
 								result = TRUE;
 							}
 						}

@@ -1220,7 +1220,7 @@ static void actor_move_vector_avoidance(
 		short ray_index;
 		boolean sharp_turn = FALSE;
 
-		debug_info->field_19C = game_time_get();
+		debug_info->vector_avoidance_time = game_time_get();
 		avoidance_data.structure = global_structure_bsp_get();
 		avoidance_data.bsp = global_collision_bsp_get();
 		avoidance_data.object_index = object_index;
@@ -1307,9 +1307,9 @@ static void actor_move_vector_avoidance(
 					&ray_direction,
 					&avoid_ray_t[ray_index],
 					&actor->control.vector_avoidance_clear_times[direction_index][ray_index]);
-				debug_info->field_6358[direction_index][ray_index] = ray_origin;
-				debug_info->field_6418[direction_index][ray_index] = ray_direction;
-				debug_info->field_62F8[direction_index][ray_index] = avoid_ray_result[ray_index];
+				debug_info->avoid_ray_origin[direction_index][ray_index] = ray_origin;
+				debug_info->avoid_ray_direction[direction_index][ray_index] = ray_direction;
+				debug_info->avoid_ray_result[direction_index][ray_index] = avoid_ray_result[ray_index];
 				debug_info->avoid_t[direction_index][ray_index] = avoid_ray_t[ray_index];
 			}
 
@@ -1363,7 +1363,7 @@ static void actor_move_vector_avoidance(
 		}
 
 		angular_speed = magnitude3d(&object->object.angular_velocity);
-		debug_info->field_6551 = FALSE;
+		debug_info->velocity_valid = FALSE;
 		if (angular_speed > 0.02f)
 		{
 			real velocity_weight = MIN((angular_speed - 0.02f)*12.5f, 1.f)*0.8f;
@@ -1400,11 +1400,11 @@ static void actor_move_vector_avoidance(
 				velocity_weight = 0.f;
 			}
 
-			debug_info->field_6554 = velocity_weight;
-			debug_info->field_6558 = angular_speed;
-			debug_info->field_6551 = TRUE;
+			debug_info->velocity_weight = velocity_weight;
+			debug_info->angular_speed = angular_speed;
+			debug_info->velocity_valid = TRUE;
 			debug_info->avoidance_vector = velocity_direction;
-			debug_info->field_6568 = velocity_approximate_weight;
+			debug_info->velocity_approximate_weight = velocity_approximate_weight;
 		}
 
 		best_weight = -REAL_MAX;
@@ -1423,7 +1423,7 @@ static void actor_move_vector_avoidance(
 			"c:\\halo\\SOURCE\\ai\\actor_moving.c",
 			2435,
 			(best_avoidance_direction >= 0) && (best_avoidance_direction < VECTOR_AVOIDANCE_NUMBER_OF_DIRECTIONS));
-		csmemcpy(debug_info->field_64D8, avoidance_weights, sizeof(avoidance_weights));
+		csmemcpy(debug_info->avoidance_weights, avoidance_weights, sizeof(avoidance_weights));
 
 		movement_vector = *movement_direction;
 		forward_dot = 1.f;
@@ -1453,12 +1453,12 @@ static void actor_move_vector_avoidance(
 		}
 
 		weight_difference = best_weight - movement_approximate_weight;
-		debug_info->field_6524 = avoidance_data.forward;
-		debug_info->field_6530 = *movement_direction;
-		debug_info->field_6504 = movement_direction_approximation;
-		debug_info->field_64FC = best_weight;
-		debug_info->field_6500 = best_avoidance_direction;
-		debug_info->field_6508 = movement_approximate_weight;
+		debug_info->avoidance_forward = avoidance_data.forward;
+		debug_info->movement_direction = *movement_direction;
+		debug_info->movement_direction_approximation = movement_direction_approximation;
+		debug_info->best_avoidance_weight = best_weight;
+		debug_info->best_avoidance_direction = best_avoidance_direction;
+		debug_info->movement_approximate_weight = movement_approximate_weight;
 		if (maximum_sense_emergency > 0.6f)
 		{
 			emergency_scale = 1.f + MIN(1.f, (maximum_sense_emergency - 0.6f)/(1.f - 0.6f));
@@ -1467,7 +1467,7 @@ static void actor_move_vector_avoidance(
 		{
 			emergency_scale = MIN(1.f, maximum_sense_emergency/0.3f);
 		}
-		debug_info->field_6510 = forward_dot;
+		debug_info->forward_dot = forward_dot;
 		debug_info->sign_no_danger = weight_difference;
 
 		if (forward_dot < -0.2f)
@@ -1475,20 +1475,20 @@ static void actor_move_vector_avoidance(
 			if (actor->control.vector_avoidance_sharp_turn_timer != NONE &&
 				actor->control.vector_avoidance_sharp_turn_timer < 90)
 			{
-				debug_info->field_653C = 7;
+				debug_info->emergency_decision = 7;
 				sharp_turn = TRUE;
 			}
 			else if (magnitude_squared3d(&object->object.angular_velocity) > 0.05f*0.05f)
 			{
 				if (weight_difference > 2.f && best_weight > 2.f)
 				{
-					debug_info->field_653C = 6;
+					debug_info->emergency_decision = 6;
 					sharp_turn = TRUE;
 				}
 			}
 			else if (emergency_scale > 0.5f)
 			{
-				debug_info->field_653C = 5;
+				debug_info->emergency_decision = 5;
 				sharp_turn = TRUE;
 			}
 		}
@@ -1556,18 +1556,18 @@ static void actor_move_vector_avoidance(
 						rotation.j = avoidance_data.forward.j*rotation_angle;
 						rotation.k = avoidance_data.forward.k*rotation_angle;
 						direction_chosen = TRUE;
-						debug_info->field_653C = 4;
+						debug_info->emergency_decision = 4;
 						debug_info->sign_rotated = rotation_angle;
 					}
 					else
 					{
 						debug_info->sign_too_far_cosangle = direction_dot;
-						debug_info->field_653C = 3;
+						debug_info->emergency_decision = 3;
 					}
 				}
 				else
 				{
-					debug_info->field_653C = 2;
+					debug_info->emergency_decision = 2;
 				}
 			}
 			else if (maximum_sense_emergency > 0.f)
@@ -1595,25 +1595,25 @@ static void actor_move_vector_avoidance(
 					rotation.j *= rotation_angle;
 					rotation.k *= rotation_angle;
 				}
-				debug_info->field_6520 = rotation_angle;
+				debug_info->rotation_angle = rotation_angle;
 				direction_chosen = TRUE;
-				debug_info->field_653C = 1;
-				debug_info->field_651C = maximum_sense_emergency;
+				debug_info->emergency_decision = 1;
+				debug_info->maximum_sense_emergency = maximum_sense_emergency;
 			}
 			else
 			{
-				debug_info->field_653C = 0;
+				debug_info->emergency_decision = 0;
 			}
 		}
 
-		debug_info->field_6550 = direction_chosen;
+		debug_info->avoidance_direction_chosen = direction_chosen;
 		if (direction_chosen)
 			actor->control.vector_avoidance_current_direction = best_avoidance_direction;
 		else
 			actor->control.vector_avoidance_current_direction = NONE;
 		debug_info->avoidance_data = avoidance_data;
-		debug_info->field_654C = emergency;
-		debug_info->field_6540 = rotation;
+		debug_info->emergency = emergency;
+		debug_info->emergency_rotation = rotation;
 	}
 
 	*avoidance_rotation = rotation;

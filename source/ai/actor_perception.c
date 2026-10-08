@@ -599,10 +599,6 @@ typedef char actor_emotion_definition_minimum_stand_offset_assert[
 	offsetof(struct actor_definition, defensive.defensive_crouch_min_stand_time) == 0x304 ? 1 : -1];
 typedef char actor_emotion_definition_minimum_crouch_offset_assert[
 	offsetof(struct actor_definition, defensive.defensive_crouch_min_crouch_time) == 0x308 ? 1 : -1];
-#ifndef HALO_64BIT
-typedef char actor_perception_debug_awareness_speed_offset_assert[
-	offsetof(struct actor_debug_info, perception_awareness_speed) == 0x6578 ? 1 : -1];
-#endif
 typedef char actor_perception_source_unit_sound_offset_assert[
 	offsetof(struct unit_definition, unit.constant_sound) == 0x182 ? 1 : -1];
 typedef char actor_perception_source_actor_target_offset_assert[
@@ -631,12 +627,6 @@ typedef char actor_perception_encounter_view_corpse_ignore_time_offset_assert[
 	offsetof(struct actor_perception_encounter_view, corpse_ignore_time) == 0x58 ? 1 : -1];
 typedef char actor_visibility_variant_modified_vision_range_offset_assert[
 	offsetof(struct actor_variant_definition, ranged_combat.modified_vision_range) == 0x150 ? 1 : -1];
-#ifndef HALO_64BIT
-typedef char actor_visibility_debug_info_size_assert[
-	sizeof(struct actor_debug_info) == 0x657C ? 1 : -1];
-typedef char actor_visibility_debug_info_last_time_offset_assert[
-	offsetof(struct actor_debug_info, vision_last_time) == 0x656C ? 1 : -1];
-#endif
 typedef char actor_orphan_prop_view_related_prop_index_offset_assert[
 	offsetof(struct actor_orphan_prop_view, related_prop_index) == 0xC ? 1 : -1];
 typedef char actor_orphan_prop_view_orphan_inspection_ticks_offset_assert[
@@ -2326,12 +2316,12 @@ short actor_audibility_at_point(
 				&actor_debug_array[
 					DATUM_INDEX_TO_ABSOLUTE_INDEX(actor_index)];
 
-			debug->field_A8 = maximum_distance;
-			debug->field_A4 = TRUE;
-			debug->field_A6 = result;
-			debug->field_B0 = encoded_distance;
-			debug->field_AC = square_root(distance_squared);
-			debug->field_B4 = audible_distance;
+			debug->audibility_maximum_distance = maximum_distance;
+			debug->audibility_valid = TRUE;
+			debug->audibility_result = result;
+			debug->audibility_encoded_distance = encoded_distance;
+			debug->audibility_distance = square_root(distance_squared);
+			debug->audibility_audible_distance = audible_distance;
 		}
 	}
 

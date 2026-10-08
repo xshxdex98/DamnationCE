@@ -726,8 +726,8 @@ static struct tag_schema_field const sound_permutation_fields[] =
 	TAG_SCHEMA_STRING(struct sound_permutation, name),
 	TAG_SCHEMA_BLOCK_INDEX(struct sound_permutation, next_permutation_index, 1,
 		offsetof(struct sound_pitch_range, permutations), FLAG(_tag_schema_none_bit)),
-	TAG_SCHEMA_RESET(struct sound_permutation, unknown0, NONE),
-	TAG_SCHEMA_RESET(struct sound_permutation, unknown1, 0),
+	TAG_SCHEMA_RESET(struct sound_permutation, cache_block_index, NONE),
+	TAG_SCHEMA_RESET(struct sound_permutation, cache_base_address, 0),
 	TAG_SCHEMA_FILE_DATA(struct sound_permutation, samples, SOUND_CACHE_SIZE),
 	TAG_SCHEMA_DATA(struct sound_permutation, mouth_data, MAXIMUM_SOUND_MOUTH_DATA_SIZE),
 	TAG_SCHEMA_DATA(struct sound_permutation, subtitle_data, MAXIMUM_SOUND_SUBTITLE_DATA_SIZE),
@@ -1960,9 +1960,8 @@ static boolean sound_check(
 			struct sound_permutation *permutation =
 				(struct sound_permutation *)range->permutations.address + permutation_index;
 
-			/* (cache_tag_index and runtime_tag_index) */
-			if (tag_validate_tag_get(validation, (long)permutation->unknown2, SOUND_DEFINITION_TAG) != base ||
-				permutation->unknown3 != permutation->unknown2)
+			if (tag_validate_tag_get(validation, (long)permutation->cache_tag_index, SOUND_DEFINITION_TAG) != base ||
+				permutation->runtime_tag_index != permutation->cache_tag_index)
 			{
 				if (!tag_index_known)
 				{
@@ -1970,9 +1969,9 @@ static boolean sound_check(
 					tag_index_known = TRUE;
 				}
 				tag_validate_correct(validation, "has permutation %ld of pitch range %ld of tag %08lx, not %08lx",
-					permutation_index, range_index, permutation->unknown2, tag_index);
-				permutation->unknown2 = (unsigned long)tag_index;
-				permutation->unknown3 = (unsigned long)tag_index;
+					permutation_index, range_index, permutation->cache_tag_index, tag_index);
+				permutation->cache_tag_index = (unsigned long)tag_index;
+				permutation->runtime_tag_index = (unsigned long)tag_index;
 			}
 			/* (only that permutation: one of no samples is not loaded,
 			xbox_sound_cache.c) */

@@ -28,8 +28,6 @@ ACTION_UNCOVER.C
 
 /* ---------- structures */
 
-typedef char action_uncover_ai_debug_printing_offset_must_be_0xA4[
-	offsetof(struct ai_debug_state, print_uncovering) == 0xA4 ? 1 : -1];
 
 /* ---------- public code */
 

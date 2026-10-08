@@ -982,8 +982,8 @@ long actor_aim_projectile(
 			1071,
 			vector);
 
-		actor_debug_info->field_60 = actor->control.burst_aim_by_vector;
-		actor_debug_info->field_64 = *origin;
+		actor_debug_info->burst_aim_by_vector = actor->control.burst_aim_by_vector;
+		actor_debug_info->burst_origin = *origin;
 
 		if (actor->control.burst_aim_by_vector)
 		{
@@ -993,7 +993,7 @@ long actor_aim_projectile(
 		{
 			real_point3d const *burst_target = &actor->control.burst_target;
 
-			actor_debug_info->field_7C = *burst_target;
+			actor_debug_info->burst_target = *burst_target;
 			vector->i = burst_target->x - origin->x;
 			vector->j = burst_target->y - origin->y;
 			vector->k = burst_target->z - origin->z;
@@ -1004,7 +1004,7 @@ long actor_aim_projectile(
 			"c:\\halo\\SOURCE\\ai\\actor_combat.c",
 			1090,
 			vector);
-		actor_debug_info->field_70 = *vector;
+		actor_debug_info->burst_vector = *vector;
 
 		{
 			real_vector3d weapon_vector;
@@ -1035,13 +1035,13 @@ long actor_aim_projectile(
 						GRENADE_AIMING_ANGLE_COSINE);
 				}
 
-				actor_debug_info->field_88 = TRUE;
-				actor_debug_info->field_98 = weapon_vector;
-				actor_debug_info->field_8C = *vector;
+				actor_debug_info->burst_weapon_vector_valid = TRUE;
+				actor_debug_info->burst_weapon_vector = weapon_vector;
+				actor_debug_info->burst_requested_vector = *vector;
 			}
 			else
 			{
-				actor_debug_info->field_88 = FALSE;
+				actor_debug_info->burst_weapon_vector_valid = FALSE;
 			}
 		}
 

@@ -457,12 +457,12 @@ static boolean action_vehicle_find_destination(
 		}
 
 		debug->last_vehicle_avoidance_time = game_time_get();
-		debug->field_C8 = actor->input.position.body_position;
-		debug->field_D4 = vehicle_center;
-		debug->field_E0 = vehicle_radius;
-		debug->field_E4 = target_point;
-		debug->field_F0 = REAL_MAX;
-		debug->field_F4 = FALSE;
+		debug->vehicle_avoidance_start = actor->input.position.body_position;
+		debug->vehicle_avoidance_center = vehicle_center;
+		debug->vehicle_avoidance_radius = vehicle_radius;
+		debug->vehicle_avoidance_target = target_point;
+		debug->vehicle_avoidance_t = REAL_MAX;
+		debug->vehicle_avoidance_modified = FALSE;
 
 		actor_to_target_point_distance_squared =
 			magnitude_squared2d(&actor_to_target_point);
@@ -474,7 +474,7 @@ static boolean action_vehicle_find_destination(
 			real_vector2d avoid_vehicle_direction;
 			boolean avoid_vehicle = FALSE;
 
-			debug->field_F0 = t;
+			debug->vehicle_avoidance_t = t;
 			if (t > 0.0f && t < 1.2f)
 			{
 				perpendicular2d(&actor_to_target_point, &avoid_vehicle_direction);
@@ -532,8 +532,8 @@ static boolean action_vehicle_find_destination(
 					}
 				}
 
-				debug->field_F4 = TRUE;
-				debug->field_F8 = modified_destination;
+				debug->vehicle_avoidance_modified = TRUE;
+				debug->vehicle_avoidance_destination = modified_destination;
 			}
 		}
 	}

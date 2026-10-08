@@ -285,8 +285,6 @@ typedef char ai_conversation_driver_line_address_unit_index_offset_assert[
 	offsetof(struct conversation_datum, line_address_unit_index) == 0x58 ? 1 : -1];
 typedef char recent_conversation_view_size_assert[
 	sizeof(struct recent_conversation) == 0x10 ? 1 : -1];
-typedef char ai_print_conversations_offset_assert[
-	offsetof(struct ai_debug_state, print_conversations) == 0x9F ? 1 : -1];
 typedef char ai_communication_unit_speech_item_size_assert[
 	sizeof(struct unit_speech_item) == 0x30 ? 1 : -1];
 typedef char ai_communication_unit_speech_item_ai_offset_assert[

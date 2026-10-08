@@ -36,6 +36,7 @@ itmc).
 #include "camera/bored_camera.h"
 #include "units/bipeds.h"
 #include "ai/actors.h"
+#include "physics/physics_variables.h"
 
 /* ---------- constants */
 
@@ -120,19 +121,16 @@ struct vehicle_definition
 	unsigned long flags;
 	short vehicle_type;
 	short pad2f6;
-	real unknown2f8;
-	real unknown2fc;
-	real unknown300;
-	real unknown304;
-	real unknown308;
-	real unknown30c;
+	struct physics_variable_speed_parameters speed;
+	real maximum_left_turn;
+	real maximum_right_turn;
 	real wheel_circumference;
-	real unknown314;
+	real turn_rate;
 	real unknown318;
 	short function_modes[4];
 	byte unknown324[0xc];
-	real unknown330;
-	real unknown334;
+	real maximum_left_slide;
+	real maximum_right_slide;
 	byte unused338[8];
 	real unknown340;
 	real unknown344;

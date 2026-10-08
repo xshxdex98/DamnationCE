@@ -32,7 +32,7 @@ enum
 
 struct camera_control
 {
-	long unknown0;
+	long local_player_index;
 	real seconds_elapsed;
 };
 
@@ -467,7 +467,7 @@ void scripted_camera_update(
 			{
 				dead_camera_new(
 					camera,
-					(short)controls->unknown0,
+					(short)controls->local_player_index,
 					camera_script_globals.relative_object_index);
 			}
 			dead_camera_update(camera, controls, result);
