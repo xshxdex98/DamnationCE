@@ -55,13 +55,6 @@ enum
 	NUMBER_OF_REMOTE_MACHINE_PANELS = 3,
 };
 
-enum network_game_platform
-{
-	_network_game_platform_xbox,
-	_network_game_platform_pc,
-	NUMBER_OF_NETWORK_GAME_PLATFORMS,
-};
-
 enum multiplayer_game_text_string
 {
 	_multiplayer_game_text_string_capture_the_flag = 3,

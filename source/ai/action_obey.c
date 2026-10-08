@@ -67,9 +67,6 @@ struct vehicle_possibility
    them yet; other files keep their own copies) */
 enum
 {
-	_actor_fire_target_none = 0,
-	_actor_fire_target_prop = 1,
-	_actor_fire_target_manual_point = 2,
 	number_of_actor_fire_targets = 3,
 };
 

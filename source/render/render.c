@@ -32,6 +32,7 @@ RENDER.C
 #include "effects/weather_particle_systems.h"
 #include "main/main.h"
 #include "structures/structures.h"
+#include "effects/decals.h"
 
 /* ---------- constants */
 
@@ -39,15 +40,6 @@ enum
 {
 	_render_target_primary = 0,
 	_render_target_secondary,
-};
-
-enum
-{
-	_decal_layer_primary = 0,
-	_decal_layer_secondary,
-	_decal_layer_light,
-	_decal_layer_alpha_tested,
-	_decal_layer_water,
 };
 
 enum

@@ -19,28 +19,6 @@ RASTERIZER_XBOX_DECALS.C
 #include "saved games/game_state.h"
 #include "shaders/shader_definitions.h"
 
-/* ---------- constants */
-
-enum
-{
-	NUMBER_OF_DECAL_LAYERS = 5
-};
-
-enum
-{
-	_decal_layer_primary = 0,
-	_decal_layer_secondary,
-	_decal_layer_light,
-	_decal_layer_alpha_tested,
-	_decal_layer_water
-};
-
-enum
-{
-	_decal_locked_bit,
-	_decal_permanent_bit
-};
-
 enum
 {
 	_rasterizer_drawing_mode_normal = 0
@@ -54,12 +32,6 @@ enum
 enum
 {
 	PIXEL32_COMPONENT_MASK = 0xff
-};
-
-enum
-{
-	RASTERIZER_STENCIL_MODE_REJECT = 2,
-	RASTERIZER_STENCIL_MODE_WRITE_ALPHA_TESTED_DECAL = 4
 };
 
 enum

@@ -42,8 +42,6 @@ int rasterizer_frame_statistics_count_static_vertices(
 
 enum
 {
-	RASTERIZER_STENCIL_MODE_WRITE = 1,
-	RASTERIZER_STENCIL_MODE_REJECT = 2,
 	_render_model_effect_type_none = 0,
 	_render_model_effect_type_active_camouflage,
 	_render_model_effect_type_modifier,

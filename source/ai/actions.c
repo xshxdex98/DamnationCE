@@ -28,17 +28,7 @@ ACTIONS.C
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
 #include "ai/actors.h"
-
-enum
-{
-	_actor_panic_none = 0,
-	_actor_panic_damage,
-	_actor_panic_unopposable_enemy = 5,
-	_actor_panic_surprise = 7,
-	_actor_panic_delayed_projectile_attached_to_us = 10,
-	_actor_panic_melee_attached_to_us = 11,
-	_actor_panic_burning_to_death,
-};
+#include "ai/ai_communication.h"
 
 enum
 {
@@ -46,13 +36,6 @@ enum
 	_actor_berserk_proximity,
 	_actor_berserk_damage = 3,
 	_actor_berserk_attached_projectile,
-};
-
-enum
-{
-	_ai_conversation_stop_if_damaged_bit = 1,
-	_ai_conversation_stop_if_visible_enemy_bit,
-	_ai_conversation_stop_if_alerted_to_enemy_bit,
 };
 
 enum
@@ -67,16 +50,6 @@ enum
 	_actor_animation_surprise_back,
 	_actor_animation_evade_left,
 	_actor_animation_evade_right,
-};
-
-/* (actor_moving.c keeps the other copy: no header declares it yet) */
-enum actor_evade_direction
-{
-	_actor_evade_left = 0,
-	_actor_evade_right,
-	_actor_evade_forward,
-	_actor_evade_back,
-	_actor_evade_random,
 };
 
 enum

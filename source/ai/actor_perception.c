@@ -46,14 +46,6 @@ enum
 	NUMBER_OF_ACTOR_KNOWLEDGE_TYPES,
 };
 
-/* actor_external_orders.desired_target_type (ai_script.c keeps a copy) */
-enum
-{
-	_desired_target_none = 0,
-	_desired_target_ai,
-	_desired_target_player,
-};
-
 /* acknowledgement speeds, indexed from global_acknowledgement_speeds */
 enum
 {
@@ -62,22 +54,6 @@ enum
 	_awareness_speed_guard,
 	_awareness_speed_combat,
 	_awareness_speed_instant,
-};
-
-/* (actors.c, action_obey.c and actor_combat.c keep copies) */
-enum
-{
-	_actor_fire_target_none = 0,
-	_actor_fire_target_prop,
-};
-
-/* the ai_information_data selector (ai.h has the union) */
-enum
-{
-	_ai_information_none = 0,
-	_ai_information_allegiance,
-	_ai_information_combat_stimulus,
-	_ai_information_target_knowledge,
 };
 
 enum

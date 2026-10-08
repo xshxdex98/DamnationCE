@@ -38,6 +38,7 @@ bad_sky).
 #include "text/text_group.h"
 #include "units/dialogue_definitions.h"
 #include "ai/actors.h"
+#include "text/draw_string.h"
 
 #include <string.h>
 
@@ -92,7 +93,6 @@ enum
 	/* ui_widget_group.c */
 	NUMBER_OF_SCENARIO_TYPES = 3,
 	/* draw_string.c */
-	NUMBER_OF_TEXT_JUSTIFICATIONS = 3,
 
 	/* the tool's limits, where the game has none of its own */
 	MAXIMUM_PREDICTED_RESOURCES = 1024,

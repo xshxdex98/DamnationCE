@@ -51,14 +51,6 @@ enum sound_promotion_result
 	_sound_promotion_dont_play,
 };
 
-enum sound_spatialization_mode
-{
-	_sound_spatialization_mode_none,
-	_sound_spatialization_mode_absolute,
-	_sound_spatialization_mode_relative,
-	NUMBER_OF_SOUND_SPATIALIZATION_MODES,
-};
-
 enum sound_type
 {
 	_sound_impulse = 0,

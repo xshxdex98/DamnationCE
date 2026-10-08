@@ -84,13 +84,6 @@ enum
 	_game_advertisement_oddball_variant_bit
 };
 
-enum network_game_platform
-{
-	_network_game_platform_xbox,
-	_network_game_platform_pc,
-	NUMBER_OF_NETWORK_GAME_PLATFORMS
-};
-
 enum
 {
 	_network_connection_type_client = 2,

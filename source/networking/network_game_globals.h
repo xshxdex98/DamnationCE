@@ -10,6 +10,14 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* network game platforms */
+enum
+{
+	_network_game_platform_xbox,
+	_network_game_platform_pc,
+	NUMBER_OF_NETWORK_GAME_PLATFORMS
+};
+
 /* network game client states */
 enum
 {

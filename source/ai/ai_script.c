@@ -57,9 +57,6 @@ enum actor_default_state
 /* actor_external_orders.desired_target_type (actors.h does not yet declare these) */
 enum
 {
-	_desired_target_none = 0,
-	_desired_target_ai,
-	_desired_target_player,
 	NUMBER_OF_DESIRED_TARGET_TYPES,
 };
 

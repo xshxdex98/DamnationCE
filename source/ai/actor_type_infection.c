@@ -22,11 +22,7 @@ ACTOR_TYPE_INFECTION.C
 #include "units/units.h"
 #include "units/unit_definitions.h"
 #include "ai/actors.h"
-
-enum
-{
-	_actor_panic_none = 0,
-};
+#include "ai/actions.h"
 
 enum
 {

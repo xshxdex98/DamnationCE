@@ -39,12 +39,6 @@ enum
 
 enum
 {
-	RASTERIZER_STENCIL_MODE_NONE = 0,
-	RASTERIZER_STENCIL_MODE_REJECT = 2,
-};
-
-enum
-{
 	_shadow_convolution_vertex_shader_index = 0x26,
 	_shadow_vertex_shader_index = 0x1d,
 	_shadow_model_vertex_shader_index = 0x27,

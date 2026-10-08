@@ -94,8 +94,6 @@ enum
 enum animation_update_result
 {
 	_animation_no_key_frame = 0,
-	_animation_key_frame,
-	_animation_will_restart_on_next_frame,
 };
 
 /* ---------- macros */

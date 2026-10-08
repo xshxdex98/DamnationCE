@@ -78,21 +78,6 @@ enum oddball_message
 	_oddball_message_you_have_the_ball_tick,
 };
 
-enum multiplayer_information_sound
-{
-	_multiplayer_sound_play_ball = 0,
-	_multiplayer_sound_one_minute_to_win = 2,
-	_multiplayer_sound_30_seconds_to_win = 3,
-	_multiplayer_sound_red_team_minute_to_win = 4,
-	_multiplayer_sound_red_team_30_seconds_to_win = 5,
-	_multiplayer_sound_blue_team_minute_to_win = 6,
-	_multiplayer_sound_blue_team_30_seconds_to_win = 7,
-	_multiplayer_sound_oddball = 0x13,
-	_multiplayer_sound_hill_move = 0x1E,
-	_multiplayer_sound_team_oddball = 0x21,
-	_multiplayer_sound_countdown_timer_end = 0x2A,
-};
-
 /* ui\multiplayer_game_text string indices */
 enum multiplayer_game_text
 {

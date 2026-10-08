@@ -25,6 +25,7 @@ GAME_ENGINE_KING.C
 #include "text/text_group.h"
 #include "text/unicode.h"
 #include "units/units.h"
+#include "game/game_engine.h"
 #ifdef HALO_64BIT
 #include "rasterizer/rasterizer_model_types.h"
 #endif
@@ -44,22 +45,6 @@ enum
 	HILL_SCORE_SOUND_INTERVAL = 5*TICKS_PER_SECOND,
 	HILL_30_SECOND_WARNING = 30*TICKS_PER_SECOND,
 	HILL_60_SECOND_WARNING = TICKS_PER_MINUTE,
-};
-
-enum
-{
-	_multiplayer_sound_60_seconds = 0x2,
-	_multiplayer_sound_30_seconds,
-	_multiplayer_sound_red_60_seconds,
-	_multiplayer_sound_red_30_seconds,
-	_multiplayer_sound_blue_60_seconds,
-	_multiplayer_sound_blue_30_seconds,
-	_multiplayer_sound_hill_move = 0x1E,
-	_multiplayer_sound_team_king = 0x20,
-	_multiplayer_sound_king = 0x24,
-	_multiplayer_sound_hill_contested = 0x27,
-	_multiplayer_sound_hill_controlled,
-	_multiplayer_sound_countdown_timer_end = 0x2A,
 };
 
 enum

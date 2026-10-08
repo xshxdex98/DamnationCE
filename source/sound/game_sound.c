@@ -49,14 +49,6 @@ enum game_looping_sound_state
 	NUMBER_OF_GAME_LOOPING_SOUND_STATES,
 };
 
-enum sound_spatialization_mode
-{
-	_sound_spatialization_mode_none,
-	_sound_spatialization_mode_absolute,
-	_sound_spatialization_mode_relative,
-	NUMBER_OF_SOUND_SPATIALIZATION_MODES,
-};
-
 /* ---------- macros */
 
 #define game_looping_sound_get(index) \

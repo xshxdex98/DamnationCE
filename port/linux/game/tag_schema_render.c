@@ -25,6 +25,7 @@ of its group: each shader group's check makes the type its group's.
 #include "objects/objects.h"
 #include "scenario/wind_definitions.h"
 #include "shaders/shader_definitions.h"
+#include "effects/decals.h"
 
 /* ---------- constants */
 
@@ -116,7 +117,6 @@ enum
 	which render_contrails draws all but ground */
 	NUMBER_OF_CONTRAIL_RENDER_TYPES = 5,
 	/* decals.c */
-	NUMBER_OF_DECAL_LAYERS = 5,
 	/* rasterizer_xbox_detail_objects.c: a constant for each type on the
 	stack (type_data; its sprites' it caps itself); two collection types
 	(vertex shader permutations), or none */

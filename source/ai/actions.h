@@ -14,6 +14,34 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* panic reasons */
+enum
+{
+	_actor_panic_none,
+	_actor_panic_damage,
+	_actor_panic_friend_fleeing,
+	_actor_panic_friend_same_type_killed,
+	_actor_panic_unopposable_enemy = 5,
+	_actor_panic_platoon_retreating,
+	_actor_panic_surprise,
+	_actor_panic_friend_leader_type_killed,
+	_actor_panic_grenade_attached_to_us,
+	_actor_panic_delayed_projectile_attached_to_us,
+	_actor_panic_melee_attached_to_us,
+	_actor_panic_burning_to_death
+};
+
+/* evasion directions */
+enum
+{
+	_actor_evade_left,
+	_actor_evade_right,
+	_actor_evade_forward,
+	_actor_evade_back,
+	_actor_evade_random,
+	_actor_evade_random_side = 4
+};
+
 enum
 {
 	_obey_metadata_targeting_bit = 0,

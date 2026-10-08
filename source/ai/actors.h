@@ -18,6 +18,22 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* actor_external_orders.desired_target_type */
+enum
+{
+	_desired_target_none,
+	_desired_target_ai,
+	_desired_target_player
+};
+
+/* actor fire targets */
+enum
+{
+	_actor_fire_target_none,
+	_actor_fire_target_prop,
+	_actor_fire_target_manual_point
+};
+
 /* actor default states */
 enum
 {

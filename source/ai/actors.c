@@ -45,14 +45,6 @@ ACTORS.C
 #include "ai/ai.h"
 #include "ai/encounters.h"
 
-/* ---------- constants */
-
-enum
-{
-	_actor_fire_target_none = 0,
-	_actor_fire_target_prop,
-};
-
 enum actor_default_state
 {
 	number_of_actor_default_states,
@@ -125,11 +117,6 @@ enum
 /* ai_information_packet.information_type (ai.h does not yet declare these) */
 enum
 {
-	_ai_information_none = 0,
-	_ai_information_allegiance,
-	_ai_information_combat_stimulus,
-	_ai_information_target_knowledge,
-	_ai_information_flee,
 	NUMBER_OF_AI_INFORMATION_TYPES,
 };
 

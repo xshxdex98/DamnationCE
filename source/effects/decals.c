@@ -35,16 +35,9 @@ DECALS.C
 
 enum
 {
-	NUMBER_OF_DECAL_LAYERS = 5,
 	MAXIMUM_DECALS_PER_MAP = 2048,
 	MAXIMUM_DECAL_VERTICES = 1024,
 	MAXIMUM_DECAL_SURFACE_QUEUE_SIZE = 1024
-};
-
-enum
-{
-	_decal_locked_bit,
-	_decal_permanent_bit
 };
 
 /* ---------- macros */

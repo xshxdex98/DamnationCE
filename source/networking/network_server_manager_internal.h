@@ -15,6 +15,16 @@ Declarations shared by the server manager and its message handler.
 
 /* ---------- constants */
 
+/* server countdown events */
+enum
+{
+	_network_game_server_countdown_event_player_left,
+	_network_game_server_countdown_event_player_joined,
+	_network_game_server_countdown_event_stop,
+	_network_game_server_countdown_event_start_immediately,
+	NUMBER_OF_NETWORK_GAME_SERVER_COUNTDOWN_EVENTS
+};
+
 /* ---------- macros */
 
 /* ---------- structures */

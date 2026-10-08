@@ -10,6 +10,18 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* ai_information_data selector */
+enum
+{
+	_ai_information_none,
+	_ai_information_allegiance,
+	_ai_information_look_unit = 1,
+	_ai_information_combat_stimulus,
+	_ai_information_look_object = 2,
+	_ai_information_target_knowledge,
+	_ai_information_flee
+};
+
 /* ai reference types (an ai reference's top two bits) */
 enum
 {

@@ -15,6 +15,24 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* decal flags */
+enum
+{
+	_decal_locked_bit,
+	_decal_permanent_bit
+};
+
+/* decal layers */
+enum
+{
+	_decal_layer_primary,
+	_decal_layer_secondary,
+	_decal_layer_light,
+	_decal_layer_alpha_tested,
+	_decal_layer_water,
+	NUMBER_OF_DECAL_LAYERS
+};
+
 /* ---------- macros */
 
 /* ---------- structures */

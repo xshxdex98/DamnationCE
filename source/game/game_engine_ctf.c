@@ -18,6 +18,7 @@ GAME_ENGINE_CTF.C
 #include "text/text_group.h"
 #include "text/unicode.h"
 #include "units/units.h"
+#include "game/game_engine.h"
 
 /* ---------- constants */
 
@@ -35,20 +36,6 @@ enum
 enum
 {
 	_ctf_weapon_handled_bit = 6,
-};
-
-enum
-{
-	_multiplayer_sound_blue_team_has_the_flag = 0x8,
-	_multiplayer_sound_blue_team_flag_returned = 0x9,
-	_multiplayer_sound_blue_team_score = 0xA,
-	_multiplayer_sound_red_team_has_the_flag = 0xB,
-	_multiplayer_sound_red_team_flag_returned = 0xC,
-	_multiplayer_sound_red_team_score = 0xD,
-	_multiplayer_sound_capture_the_flag = 0x16,
-	_multiplayer_sound_flag_failure = 0x1C,
-	_multiplayer_sound_blue_team_ctf = 0x25,
-	_multiplayer_sound_red_team_ctf = 0x26,
 };
 
 enum

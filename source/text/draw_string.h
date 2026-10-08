@@ -10,6 +10,15 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* text justification */
+enum
+{
+	_text_justification_left,
+	_text_justification_right,
+	_text_justification_center,
+	NUMBER_OF_TEXT_JUSTIFICATIONS
+};
+
 /* ---------- macros */
 
 /* ---------- structures */

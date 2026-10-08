@@ -105,16 +105,6 @@ enum weapon_magazine_flags
 	NUMBER_OF_WEAPON_MAGAZINE_FLAGS,
 };
 
-enum animation_update_result
-{
-	_animation_running = 0,
-	_animation_key_frame,
-	_animation_will_restart_on_next_frame,
-	_animation_restarted,
-	_animation_looped,
-	NUMBER_OF_ANIMATION_UPDATE_RESULTS,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */

@@ -23,6 +23,7 @@ ACTOR_STIMULUS.C
 #include "memory/data.h"
 
 #include "units/units.h"
+#include "ai/actions.h"
 
 #include <stddef.h>
 
@@ -47,14 +48,6 @@ enum
 	_actor_surprise_unexpected_enemy_close_shooting = 6,
 	_actor_surprise_unexpected_enemy_close_flanked_shooting = 7,
 	NUMBER_OF_ACTOR_SURPRISE_TYPES,
-};
-
-enum
-{
-	_actor_panic_friend_fleeing = 2,
-	_actor_panic_friend_same_type_killed = 3,
-	_actor_panic_platoon_retreating = 6,
-	_actor_panic_friend_leader_type_killed = 8,
 };
 
 enum

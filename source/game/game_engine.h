@@ -12,6 +12,76 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* game variant vehicle sets */
+enum
+{
+	_game_engine_vehicles_default,
+	_game_engine_vehicles_none,
+	_game_engine_vehicles_warthog,
+	_game_engine_vehicles_ghost,
+	_game_engine_vehicles_tank,
+	NUMBER_OF_GAME_ENGINE_VEHICLE_SETS
+};
+
+/* multiplayer announcer sounds */
+enum
+{
+	_multiplayer_sound_play_ball,
+	_multiplayer_sound_game_over,
+	_multiplayer_sound_60_seconds,
+	_multiplayer_sound_one_minute_to_win = 2,
+	_multiplayer_sound_30_seconds,
+	_multiplayer_sound_30_seconds_to_win = 3,
+	_multiplayer_sound_red_60_seconds,
+	_multiplayer_sound_red_team_minute_to_win = 4,
+	_multiplayer_sound_red_30_seconds,
+	_multiplayer_sound_red_team_30_seconds_to_win = 5,
+	_multiplayer_sound_blue_60_seconds,
+	_multiplayer_sound_blue_team_minute_to_win = 6,
+	_multiplayer_sound_blue_30_seconds,
+	_multiplayer_sound_blue_team_30_seconds_to_win = 7,
+	_multiplayer_sound_blue_team_has_the_flag,
+	_multiplayer_sound_blue_team_flag_returned,
+	_multiplayer_sound_blue_team_score,
+	_multiplayer_sound_red_team_has_the_flag,
+	_multiplayer_sound_red_team_flag_returned,
+	_multiplayer_sound_red_team_score,
+	_multiplayer_sound_double_kill,
+	_multiplayer_sound_triple_kill,
+	_multiplayer_sound_killtacular_kill,
+	_multiplayer_sound_killtacular = 16,
+	_multiplayer_sound_running_riot,
+	_multiplayer_sound_killing_spree,
+	_multiplayer_sound_oddball,
+	_multiplayer_sound_race,
+	_multiplayer_sound_slayer,
+	_multiplayer_sound_capture_the_flag,
+	_multiplayer_sound_warthog,
+	_multiplayer_sound_ghost,
+	_multiplayer_sound_scorpion,
+	_multiplayer_sound_countdown_timer,
+	_multiplayer_sound_teleporter_activate,
+	_multiplayer_sound_flag_failure,
+	_multiplayer_sound_countdown_for_respawn,
+	_multiplayer_sound_hill_move,
+	_multiplayer_sound_respawn,
+	_multiplayer_sound_player_respawn = 31,
+	_multiplayer_sound_team_king,
+	_multiplayer_sound_team_king_of_the_hill = 32,
+	_multiplayer_sound_team_oddball,
+	_multiplayer_sound_team_race,
+	_multiplayer_sound_team_slayer,
+	_multiplayer_sound_king,
+	_multiplayer_sound_king_of_the_hill = 36,
+	_multiplayer_sound_blue_team_ctf,
+	_multiplayer_sound_red_team_ctf,
+	_multiplayer_sound_hill_contested,
+	_multiplayer_sound_hill_controlled,
+	_multiplayer_sound_hill_occupied,
+	_multiplayer_sound_countdown_timer_end,
+	_multiplayer_sound_ting
+};
+
 enum
 {
 	_game_engine_disable_dynamic_light_bit = 0,

@@ -15,13 +15,12 @@ GAME_ENGINE_SLAYER.C
 #include "text/text_group.h"
 #include "text/unicode.h"
 #include "units/units.h"
+#include "game/game_engine.h"
 
 /* ---------- constants */
 
 enum
 {
-	_multiplayer_sound_slayer = 0x15,
-	_multiplayer_sound_team_slayer = 0x23,
 	_slayer_message_new_target = 0x1E,
 	_game_engine_message_show_score = 0x16,
 	_string_score = 0x9A,

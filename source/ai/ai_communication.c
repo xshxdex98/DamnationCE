@@ -35,6 +35,7 @@ AI_COMMUNICATION.C
 #include "units/dialogue_definitions.h"
 #include "units/units.h"
 #include "ai/actors.h"
+#include "ai/ai.h"
 
 /* ---------- constants */
 
@@ -51,10 +52,6 @@ enum
 	MAXIMUM_PARTICIPANTS_PER_CONVERSATION = 8,
 	MAXIMUM_DIALOGUE_VARIANTS_PER_CONVERSATION_PARTICIPANT = 6,
 	MAXIMUM_RECENT_CONVERSATIONS = 16,
-	_ai_conversation_stop_if_anyone_dies_bit = 0,
-	_ai_conversation_stop_if_damaged_bit = 1,
-	_ai_conversation_stop_if_visible_enemy_bit = 2,
-	_ai_conversation_stop_if_alerted_to_enemy_bit = 3,
 	_ai_conversation_player_must_be_visible_bit = 4,
 	_ai_conversation_stop_other_actions_bit = 5,
 	_ai_conversation_keep_trying_to_play_bit = 6,
@@ -86,10 +83,6 @@ enum
 	_find_actor_same_vehicle_bit = 2,
 	_find_actor_allow_subject_bit = 3,
 	_find_actor_allow_cause_bit = 4,
-	_ai_information_none = 0,
-	_ai_information_look_unit = 1,
-	_ai_information_look_object = 2,
-	_ai_information_allegiance = 1,
 	_dialogue_usage_lookup_bit = 0,
 	_dialogue_usage_force_bit = 1,
 	_dialogue_usage_immediate_notify_bit = 2,

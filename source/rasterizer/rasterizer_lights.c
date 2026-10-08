@@ -101,12 +101,6 @@ enum
 	NUMBER_OF_LENS_FLARE_DEFINITION_FLAGS
 };
 
-enum
-{
-	RASTERIZER_STENCIL_MODE_NONE = 0,
-	RASTERIZER_STENCIL_MODE_REJECT = 2
-};
-
 /* ---------- macros */
 
 #define LENS_FLARE_LIGHT_COLOR_ALPHA(color) ((color)>>24)

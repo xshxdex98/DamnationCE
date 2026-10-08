@@ -56,15 +56,6 @@ enum
 
 enum
 {
-	_actor_evade_left = 0,
-	_actor_evade_right,
-	_actor_evade_forward,
-	_actor_evade_back,
-	_actor_evade_random_side,
-};
-
-enum
-{
 	_actor_definition_flags2_pathfinding_ignores_danger_bit = 4,
 };
 

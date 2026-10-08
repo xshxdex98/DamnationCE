@@ -50,9 +50,6 @@ ACTOR_COMBAT.C
 
 enum
 {
-	_actor_fire_target_none = 0,
-	_actor_fire_target_prop,
-	_actor_fire_target_manual_point,
 
 	_vehicle_ai_weapon_cannot_rotate_bit = 8,
 

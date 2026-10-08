@@ -83,12 +83,6 @@ MAIN.C
 #endif
 #endif
 
-enum
-{
-	_text_justification_left = 0,
-	_text_justification_right,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */
