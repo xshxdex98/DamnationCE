@@ -6,12 +6,6 @@ CRC.H
 #define __CRC_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/CRC.C */
 
 void crc_new(
@@ -20,9 +14,5 @@ void crc_checksum_buffer(
 	unsigned long *crc_reference,
 	void const *buffer,
 	long buffer_size);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __CRC_H

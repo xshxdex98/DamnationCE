@@ -30,12 +30,6 @@ enum
 #define action_guard_actor_is_moving(actor) (*(boolean *)((byte *)(actor) + 0x484))
 #define action_guard_cower_retreat_timer(actor) (*(short *)((byte *)(actor) + 0x3A8))
 
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 boolean

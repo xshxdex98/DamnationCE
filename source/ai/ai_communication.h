@@ -213,6 +213,4 @@ void ai_communication_event(
 
 extern struct data_array *conversation_data;
 
-/* ---------- public code */
-
 #endif // __AI_COMMUNICATION_H

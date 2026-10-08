@@ -8,14 +8,6 @@ BSP2D.C
 #include "cseries/errors.h" /* port: error */
 #include "bsp2d.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 /* port: whether a map's malformed bsp2d was reported (once) */
@@ -56,4 +48,3 @@ long bsp2d_test_point(
 	return node_index != NONE ? node_index & LONG_MAX : NONE;
 }
 
-/* ---------- private code */

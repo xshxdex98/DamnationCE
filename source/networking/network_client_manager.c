@@ -430,7 +430,6 @@ static struct
 	byte flags;
 } network_game_client_advertised_versions[MAXIMUM_NETWORK_ADVERTISED_GAMES];
 
-
 struct network_game_client network_game_client_dont_use_directly;
 boolean allow_out_of_sync = FALSE;
 boolean network_game_client_dont_use_directly_in_use = FALSE;
@@ -2672,7 +2671,6 @@ static boolean network_game_client_idle_postgame(
 	return success;
 }
 
-
 static void network_game_client_set_error(
 	struct network_game_client *client,
 	word error)
@@ -2840,7 +2838,6 @@ boolean network_game_client_set_team(
 	}
 	return success;
 }
-
 
 #ifdef HALO_GAME_BROWSER
 /* the game list's game whose invite this machine joined (the Online Games

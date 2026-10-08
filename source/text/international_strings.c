@@ -7,14 +7,6 @@ INTERNATIONAL_STRINGS.C
 #include "cseries.h"
 #include "international_strings.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static short global_language_code;
@@ -85,7 +77,6 @@ word get_previous_character(
 		result = get_next_character(string, &i);
 	}
 	while (i<*index);
-
 
 	match_vwarn(
 		"c:\\halo\\SOURCE\\text\\international_strings.c",
@@ -236,4 +227,3 @@ boolean character_in_pattern(
 	return result;
 }
 
-/* ---------- private code */

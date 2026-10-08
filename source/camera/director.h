@@ -53,8 +53,6 @@ enum director_variable
 	NUMBER_OF_DIRECTOR_VARIABLES
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef short director_perspective;
@@ -161,7 +159,5 @@ void director_update(
 
 extern boolean *director_camera_scripted;
 extern boolean director_camera_switch_fast;
-
-/* ---------- public code */
 
 #endif // __DIRECTOR_H

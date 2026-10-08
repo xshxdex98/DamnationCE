@@ -20,10 +20,6 @@ enum
 	_path_test_pill_endpoint_near_wall_ok_bit = 0,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static byte path_pathfinding_surface(

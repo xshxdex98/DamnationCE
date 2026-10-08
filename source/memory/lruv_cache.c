@@ -44,8 +44,6 @@ static long lruv_cache_bytes_to_pages(
 	struct lruv_cache *cache,
 	long size);
 
-/* ---------- globals */
-
 /* ---------- public code */
 
 long lruv_allocation_size(

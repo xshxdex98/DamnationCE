@@ -23,10 +23,6 @@ enum
 		FLAG(_periodic_function_slide_variable_period),
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void __fastcall periodic_function_build_variable_period_x_table(

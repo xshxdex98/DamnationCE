@@ -12,10 +12,6 @@ BORED_CAMERA.H
 #include "math/real_math.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct unit_camera_track
@@ -48,9 +44,5 @@ boolean is_bored(
 
 boolean is_still_bored(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __BORED_CAMERA_H

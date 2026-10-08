@@ -16,14 +16,6 @@ PROPS.C
 #include "units/unit_definitions.h"
 #include "units/units.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static long last_prop_data_full_warn_time = NONE;

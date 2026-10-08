@@ -35,10 +35,6 @@ boolean playlist_profile_get_options(long playlist_profile_index, struct game_va
 #include "halo_menus.h" /* port: PC_MENU_FUNCTION_BASE */
 #include "custom_edition_maps.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct single_player_level_entry
@@ -560,7 +556,6 @@ static boolean solo_level_initialize_list_single_player(
 	struct widget_instance *widget,
 	struct event_record *event,
 	boolean *widget_deleted);
-
 
 /* ---------- globals */
 
@@ -1332,7 +1327,6 @@ static boolean begin_music_fade_out(
 	return TRUE;
 }
 
-
 static boolean solo_level_dispose_list(
 	struct widget_instance *widget,
 	struct event_record *event,
@@ -1771,7 +1765,6 @@ static boolean single_player_set_player2_controller_choice(
 	return TRUE;
 }
 
-
 static boolean player_profile_save_changes(
 	struct widget_instance *widget,
 	struct event_record *event,
@@ -1819,7 +1812,6 @@ static boolean start_network_game_if_no_advertised_servers(
 		error(2, "not attempting to start a new server; there are other servers available");
 	return result;
 }
-
 
 static boolean delete_player_profile_request(
 	struct widget_instance *widget,
@@ -3873,7 +3865,6 @@ static boolean player_profile_change_controller_settings(
 	return FALSE;
 }
 
-
 static boolean playlist_profile_initialize_racing_rules(
 	struct widget_instance *widget,
 	struct event_record *event,
@@ -3949,7 +3940,6 @@ static boolean playlist_profile_initialize_racing_rules(
 	error(2, "failed to retrieve editable game variant");
 	return FALSE;
 }
-
 
 static boolean playlist_profile_initialize_slayer_rules(
 	struct widget_instance *widget,
@@ -4042,7 +4032,6 @@ static boolean playlist_profile_initialize_slayer_rules(
 	error(2, "failed to retrieve editable game variant");
 	return FALSE;
 }
-
 
 static boolean playlist_profile_initialize_ctf_rules(
 	struct widget_instance *widget,
@@ -4891,7 +4880,6 @@ static boolean multiplayer_profile_set_for_game(
 	error(2, "failed to retrieve user selected game variant");
 	return FALSE;
 }
-
 
 static boolean solo_level_initialize_list_single_player(
 	struct widget_instance *widget,

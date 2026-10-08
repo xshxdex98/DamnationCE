@@ -252,10 +252,4 @@ typedef char particle_system_type_state_variables_offset_assert[
 typedef char particle_system_type_state_particle_update_physics_offset_assert[
 	offsetof(struct particle_system_type_state, particle_update_physics) == 0xB2 ? 1 : -1];
 
-/* ---------- prototypes */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __PARTICLE_SYSTEM_DEFINITIONS_H

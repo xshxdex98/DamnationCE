@@ -7,14 +7,6 @@ HUD_DEFINITIONS.C
 #include "cseries/cseries.h"
 #include "hud_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 char const *global_hud_anchor_names[NUMBER_OF_HUD_ANCHORS]=
@@ -26,6 +18,3 @@ char const *global_hud_anchor_names[NUMBER_OF_HUD_ANCHORS]=
 	"center"
 };
 
-/* ---------- public code */
-
-/* ---------- private code */

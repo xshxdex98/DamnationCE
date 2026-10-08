@@ -11,10 +11,6 @@ LEAF_MAP.H
 #include "tag_files/tag_groups.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct map_leaf
@@ -96,7 +92,5 @@ boolean leaf_map_closure(
 /* ---------- globals */
 
 extern boolean debug_leaf_portals;
-
-/* ---------- public code */
 
 #endif // __LEAF_MAP_H

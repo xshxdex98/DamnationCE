@@ -48,10 +48,4 @@ enum decal_type
 
 struct decal_definition;
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __DECAL_DEFINITIONS_H

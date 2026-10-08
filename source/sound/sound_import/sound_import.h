@@ -6,10 +6,6 @@ SOUND_IMPORT.H
 #define __SOUND_IMPORT_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct file_reference;
@@ -20,10 +16,6 @@ struct sound_file_info
 	short block_alignment;
 	short significant_bits_per_sample;
 };
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
 
 /* ---------- public code */
 

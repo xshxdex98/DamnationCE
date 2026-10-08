@@ -10,10 +10,6 @@ AIM_ASSIST.H
 
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct aim_assist_target;
@@ -67,9 +63,5 @@ long local_player_aim_assist(
 	real *magnetism_level,
 	real_euler_angles2d *target_angular_position,
 	real_euler_angles2d *target_angular_velocity);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __AIM_ASSIST_H

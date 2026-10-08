@@ -13,8 +13,6 @@ enum
 	_valid_strip_iterator_signature = 's',
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct triangle_strip_iterator
@@ -42,9 +40,5 @@ void triangle_strip_iterator_new(
 boolean triangle_strip_iterator_get_triangle(
 	struct triangle_strip_iterator *iterator,
 	word *vertices);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __TRIANGLE_STRIPS_H

@@ -12,16 +12,6 @@ GARBAGE.C
 #include "objects/object_types.h"
 #include "objects/objects.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 boolean garbage_update(
@@ -51,4 +41,3 @@ boolean garbage_new(
 	return TRUE;
 }
 
-/* ---------- private code */

@@ -11,10 +11,6 @@ DEAD_CAMERA.H
 #include "cseries/cseries.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct dead_camera
@@ -46,9 +42,5 @@ void dead_camera_update(
 	struct dead_camera *camera,
 	struct camera_control const *controls,
 	struct dead_camera_command *result);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __DEAD_CAMERA_H

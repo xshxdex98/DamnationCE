@@ -90,7 +90,6 @@ static word *build_finalize_key_agreement_message(
 
 /* ---------- globals */
 
-
 static struct data_packet_field message_initiate_key_agreement_packet_fields[4] =
 {
 	DATA_PACKET_FIELD(_data_packet_field_longs, 2),

@@ -9,16 +9,6 @@ NETWORK_GAME_UI.C
 #include "tag_files/tag_groups.h"
 #include "text/text_group.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 wchar_t const *network_game_get_random_player_name(
@@ -44,4 +34,3 @@ wchar_t const *network_game_get_random_player_name(
 	return player_name;
 }
 
-/* ---------- private code */

@@ -25,8 +25,6 @@ enum
 	NUMBER_OF_EFFECT_MARKERS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct effect_location_definition
@@ -155,7 +153,5 @@ void effects_start_on_first_person_weapon(
 
 extern boolean effects_corpse_nonviolent;
 extern boolean debug_effects_nonviolent;
-
-/* ---------- public code */
 
 #endif // __EFFECTS_H

@@ -163,8 +163,4 @@ struct bitmap_data *bitmap_group_get_bitmap_from_sequence(
 	short sequence_index,
 	short frame_index);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __BITMAP_GROUP_H

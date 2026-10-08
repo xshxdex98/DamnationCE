@@ -22,8 +22,6 @@ enum
 	_lra_block_deleted_bit,
 };
 
-/* ---------- macros */
-
 /* ---------- types */
 
 typedef void (*lra_update_proc)(
@@ -99,9 +97,5 @@ void *lra_allocate(
 #else
 	long *address);
 #endif
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __LRA_CACHE_H

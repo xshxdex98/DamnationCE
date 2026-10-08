@@ -30,8 +30,6 @@ enum
 	_cache_file_read_failed = 2,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct cache_file_tag_instance
@@ -208,9 +206,5 @@ boolean cache_file_tag_cache_contains(void const *address, long size);
 void texture_cache_bitmap_new(
 	long bitmap_group_index,
 	struct bitmap_data *bitmap);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __CACHE_FILES_H

@@ -6,16 +6,4 @@ CELLULAR_AUTOMATA.H
 #define __CELLULAR_AUTOMATA_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __CELLULAR_AUTOMATA_H

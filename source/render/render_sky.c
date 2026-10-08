@@ -16,10 +16,6 @@ RENDER_SKY.C
 #include "rasterizer/rasterizer.h"
 #include "scenario/scenario.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct sky

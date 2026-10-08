@@ -42,10 +42,6 @@ enum
 #define TAG_BLOCK_TRY_AND_GET_ELEMENT(block_address, index, type) \
 	((block_address)->count ? TAG_BLOCK_GET_ELEMENT((block_address), (index), type) : NULL)
 
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static char cheat_strings[MAXIMUM_CHEATS][MAXIMUM_CHEAT_LENGTH] = {0};

@@ -8,12 +8,6 @@ PHYSICS_VARIABLES.C
 #include "math/real_math.h"
 #include "physics/physics_variables.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static real physics_variable_position_get_seek_direction(
@@ -21,8 +15,6 @@ static real physics_variable_position_get_seek_direction(
 	real position,
 	boolean wrap,
 	real target);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

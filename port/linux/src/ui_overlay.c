@@ -802,7 +802,6 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 		count += 6;
 	}
 
-
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glViewport(0, 0, window_width, window_height);
 	glDisable(GL_SCISSOR_TEST);

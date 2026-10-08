@@ -8,10 +8,6 @@ COLLISION_BSP_DEFINITIONS.C
 #include "physics/collision_bsp_definitions.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct collision_bsp_flags_definition
@@ -51,8 +47,6 @@ typedef char collision_bsp_definition_data_size_assert[
 	sizeof(struct collision_bsp_definition_data) == 0x318 ? 1 : -1];
 
 #endif
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static struct collision_bsp_definition_data global_collision_bsp_definition_data =
@@ -159,6 +153,3 @@ struct tag_field global_collision_bsp_fields[9] =
 	{ _tag_field_terminator, 0, NULL, NULL },
 };
 
-/* ---------- public code */
-
-/* ---------- private code */

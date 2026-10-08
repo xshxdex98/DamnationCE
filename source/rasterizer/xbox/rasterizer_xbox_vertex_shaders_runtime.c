@@ -19,8 +19,6 @@ enum
 	NUMBER_OF_RASTERIZER_VERTEX_TYPES = 12,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct packed_vertex_shader
@@ -349,4 +347,3 @@ void rasterizer_set_vertex_shader_permutation(
 	return;
 }
 
-/* ---------- private code */

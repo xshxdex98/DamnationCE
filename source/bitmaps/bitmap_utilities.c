@@ -44,8 +44,6 @@ match_vassert( \
 	) \
 )
 
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static struct bitmap_data *bitmap_2d_shrink(

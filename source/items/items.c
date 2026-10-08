@@ -38,12 +38,6 @@ enum
 	ITEM_UPDATE_COLLISION_TEST_FLAGS = 0x1FF3E9,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static struct profile_section item_update_section = { "item_update", NONE, TRUE };

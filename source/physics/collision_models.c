@@ -20,12 +20,6 @@ COLLISION_MODELS.C
 #include "objects/objects.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static boolean collision_node_region_valid(

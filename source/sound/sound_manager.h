@@ -44,8 +44,6 @@ enum looping_sound_refresh_state
 	NUMBER_OF_LOOPING_SOUND_REFRESH_STATES,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct platform_sound_channel_properties
@@ -145,7 +143,5 @@ boolean sound_refresh_looping(
 /* ---------- globals */
 
 extern boolean debug_sound;
-
-/* ---------- public code */
 
 #endif // __SOUND_MANAGER_H

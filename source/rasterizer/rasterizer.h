@@ -967,6 +967,4 @@ extern struct rasterizer_window_begin_parameters global_window_parameters;
 
 extern struct rasterizer_frame_statistics_globals rasterizer_frame_statistics;
 
-/* ---------- public code */
-
 #endif // __RASTERIZER_H

@@ -44,8 +44,6 @@ enum
 	_shadow_model_vertex_shader_index = 0x27,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct shader_model_definition

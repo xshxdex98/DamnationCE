@@ -403,7 +403,6 @@ static boolean terminal_update_input(
 	return result;
 }
 
-
 static void terminal_update_output(
 	void)
 {

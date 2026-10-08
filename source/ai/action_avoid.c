@@ -18,14 +18,6 @@ enum
 	_action_avoid_idle_look_type = 4,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 boolean action_avoid_setup(
@@ -123,4 +115,3 @@ finish_control:
 	actor->orders.move.emerge_from_cover = FALSE;
 }
 
-/* ---------- private code */

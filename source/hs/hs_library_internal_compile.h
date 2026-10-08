@@ -8,16 +8,4 @@ file has inline function assertions.
 #define __HS_LIBRARY_INTERNAL_COMPILE_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/HS_COMPILE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __HS_LIBRARY_INTERNAL_COMPILE_H

@@ -15,14 +15,6 @@ RASTERIZER_COMMON.C
 #include "rasterizer_common.h"
 #include "rasterizer_cinematics.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 struct game_globals_rasterizer_data *global_rasterizer_data = NULL;

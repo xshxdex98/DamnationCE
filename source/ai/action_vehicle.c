@@ -31,10 +31,6 @@ enum
 	_actor_definition_disallow_vehicle_combat_bit = 3,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static boolean action_vehicle_desirable(
@@ -75,8 +71,6 @@ static short action_vehicle_find_impromptu_seat(
 	real_point3d *entry_point,
 	real_vector3d *entry_facing,
 	real_point3d *hint_point);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

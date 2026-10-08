@@ -11,14 +11,6 @@ RASTERIZER_XBOX_HARDWARE_GEOMETRY.C
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void __stdcall code_00158450(
@@ -283,4 +275,3 @@ void rasterizer_triangle_buffer_delete(
 	return;
 }
 
-/* ---------- private code */

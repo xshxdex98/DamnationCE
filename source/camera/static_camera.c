@@ -6,16 +6,6 @@ STATIC_CAMERA.C
 
 #include "static_camera.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void static_camera_new(
@@ -102,4 +92,3 @@ void static_camera_update(
 	return;
 }
 
-/* ---------- private code */

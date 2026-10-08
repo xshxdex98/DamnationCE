@@ -2947,7 +2947,6 @@ static void configure_sampler(int stage, BOOL mipmapped, BOOL hires)
 	state_sampler(stage, configured_sampler[stage]);
 }
 
-
 /* ---------- render targets sampled with their mip chain
 
 The game renders some textures one mip level at a time, each level being a
@@ -3971,7 +3970,6 @@ static void trace_draw(const char *kind, D3DPRIMITIVETYPE type, unsigned long co
 		}
 	}
 }
-
 
 /* Mesa's GL thread queues a glBufferSubData of up to 8 KB; a larger one
 first waits for everything queued before it to have run. The same bytes in

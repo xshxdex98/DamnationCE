@@ -8,14 +8,6 @@ TRANSPORT_ADDRESS.C
 
 #include "bungie_net/network/transport.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 #if !defined(HALO_ANDROID) && !defined(__APPLE__) /* Mach-O section names differ; the default is .bss anyway */
@@ -179,4 +171,3 @@ char const *transport_error_to_string(
 	}
 }
 
-/* ---------- private code */

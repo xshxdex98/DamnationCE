@@ -180,10 +180,4 @@ struct damage_effect_definition
 	struct damage_definition damage;
 };
 
-/* ---------- prototypes */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __DAMAGE_EFFECT_DEFINITIONS_H

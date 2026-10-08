@@ -35,8 +35,6 @@ enum
 	_default_player_profile_inverted
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef char verify_player_profile_size[

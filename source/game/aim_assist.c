@@ -37,8 +37,6 @@ enum
 	MAXIMUM_AIM_ASSIST_OBJECTS= 2048
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct aim_assist_target
@@ -96,8 +94,6 @@ static short find_aim_assist_targets(
 	short ignore_team_index,
 	short maximum_target_count,
 	struct aim_assist_target *targets);
-
-/* ---------- globals */
 
 /* ---------- code */
 

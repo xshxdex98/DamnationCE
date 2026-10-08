@@ -32,7 +32,6 @@ enum
 	NUMBER_OF_PROP_LIGHTING_STATES,
 };
 
-
 /* ---------- macros */
 
 #define prop_get(index)			((struct prop_datum *)datum_get(prop_data, (index)))

@@ -17,8 +17,6 @@ enum
 	NUMBER_OF_GAME_TEAMS = 10
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct game_allegiance_record

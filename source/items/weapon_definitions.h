@@ -235,8 +235,4 @@ struct weapon_definition
 
 real weapon_definition_get_damage_potential(long weapon_definition_index, real *rate_of_fire);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __WEAPON_DEFINITIONS_H

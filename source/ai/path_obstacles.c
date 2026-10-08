@@ -13,14 +13,10 @@ PATH_OBSTACLES.C
 #include "physics/collisions.h"
 #include "render/render_debug.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define path_obstacles_device_datum_from_object(object) \
 	((struct device_datum const *)(object))
-
-/* ---------- structures */
 
 /* ---------- prototypes */
 

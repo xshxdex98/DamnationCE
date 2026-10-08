@@ -105,6 +105,4 @@ unsigned long point_physics_update(
 
 extern boolean debug_point_physics;
 
-/* ---------- public code */
-
 #endif // __POINT_PHYSICS_H

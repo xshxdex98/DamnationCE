@@ -6,8 +6,6 @@ OBJECT_LISTS.H
 #define __OBJECT_LISTS_H
 #pragma once
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define object_list_header_get(index)	((struct object_list_header_datum*)(datum_get(object_list_header_data, (index))))
@@ -48,7 +46,6 @@ void object_list_gc(
 	void);
 short object_list_count(
 	long object_list_index);
-
 
 /* ---------- globals */
 

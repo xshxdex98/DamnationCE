@@ -11,10 +11,6 @@ EDITOR_FLYING_CAMERA.H
 #include "cseries/cseries.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct flying_camera;
@@ -70,9 +66,5 @@ void editor_camera_set_scripted(
 
 real editor_camera_get_field_of_view(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __EDITOR_FLYING_CAMERA_H

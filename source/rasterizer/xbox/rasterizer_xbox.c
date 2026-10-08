@@ -116,7 +116,6 @@ enum
 	NUMBER_OF_MODEL_LIGHTING_CONSTANTS = 11
 };
 
-
 /* the device the preinitialization probe creates; the creation-flag name is
  * first-party (it appears verbatim in this object's IDirect3D8_CreateDevice
  * error string), the two dimension names are inferred. */
@@ -132,7 +131,6 @@ enum
 {
 	INVALID_RASTERIZER_HARDWARE_STATE = -1,
 };
-
 
 /* the Direct3D push buffer sizes used while rasterizer_globals' are zero */
 enum
@@ -185,9 +183,6 @@ enum
 	DEFAULT_BITMAP_PIXEL1 = 0xf0f0
 };
 
-/* ---------- macros */
-
-
 /* ---------- structures */
 
 struct rasterizer_hardware_state_cache
@@ -232,7 +227,6 @@ struct point_light_definition
 	unsigned long flags;
 	struct point_light_geometry_parameters geometry;
 };
-
 
 /* the shell's window globals; only hWndPresentTarget is read here */
 struct window_data
@@ -334,7 +328,6 @@ static struct rasterizer_hardware_state_cache rasterizer_state_cache =
 	0,
 	INVALID_RASTERIZER_HARDWARE_STATE,
 };
-
 
 extern struct window_data window_globals;
 
@@ -2389,8 +2382,6 @@ void rasterizer_set_vertex_shader(
 	return;
 }
 
-
-
 typedef char verify_rasterizer_xbox_push_buffer_size_offset[
 	offsetof(
 		struct rasterizer_globals_definition,
@@ -3008,7 +2999,6 @@ void SetupSmartStates(
 		texture_table[stage_index] = NULL;
 	return;
 }
-
 
 void *rasterizer_get_bitmap_default_hardware_format(
 	struct bitmap_data const *bitmap)

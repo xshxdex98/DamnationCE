@@ -10,10 +10,6 @@ DATA.H
 
 #include "tag_files.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct data_array
@@ -79,10 +75,5 @@ long data_next_index(struct data_array *data, long index);
 long data_prev_index(struct data_array *data, long index);
 void data_compact(struct data_array *data);
 void data_make_valid(struct data_array *data);
-
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __DATA_H

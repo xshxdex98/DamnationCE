@@ -29,12 +29,6 @@ OBJECT_TYPES.C
 #include "game/game_engine.h" /* port: game_engine_vehicle_placement_begin, _allowed */
 #endif
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void object_types_place_objects(
@@ -1182,7 +1176,6 @@ void object_names_postprocess(
 
 	return;
 }
-
 
 /* ---------- private code */
 

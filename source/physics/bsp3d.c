@@ -18,8 +18,6 @@ enum
 
 #define CLIP_LINE_EPSILON (1.0f / 4096.0f)
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef void (*bsp3d_line_leaf_proc)(

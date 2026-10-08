@@ -21,8 +21,6 @@ enum
 	MULTIPLAYER_SOUND_QUEUE_INITIAL_DELAY_TICKS = 2 * TICKS_PER_SECOND,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct queued_multiplayer_sound
@@ -199,4 +197,3 @@ void game_engine_intialize_queued_sounds(
 	return;
 }
 
-/* ---------- private code */

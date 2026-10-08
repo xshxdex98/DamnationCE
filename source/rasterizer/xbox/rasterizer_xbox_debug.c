@@ -16,16 +16,6 @@ RASTERIZER_XBOX_DEBUG.C
 #include "rasterizer/xbox/rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void rasterizer_debug_drawing_begin(
@@ -498,4 +488,3 @@ void _rasterizer_debug_immediate_linestrip_screenspace(
 	return;
 }
 
-/* ---------- private code */

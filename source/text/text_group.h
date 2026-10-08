@@ -50,8 +50,4 @@ struct string_list_entry
 char *string_list_get_string(long tag_index, short string_index);
 wchar_t *unicode_string_list_get_string(long tag_index, short string_index);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __TEXT_GROUP_H

@@ -22,12 +22,6 @@ enum
 	MAXIMUM_STRING_SIZE = 0x8000,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 #if !defined(HALO_ANDROID) && !defined(__APPLE__) /* Mach-O section names differ; the default is .bss anyway */
@@ -1240,4 +1234,3 @@ wchar_t *ustrerror(
 	return bss_004c1a08;
 }
 
-/* ---------- private code */

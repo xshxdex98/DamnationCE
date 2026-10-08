@@ -139,6 +139,4 @@ void light_volume_submit(
 	struct render_lighting const *lighting,
 	struct render_animation const *animation);
 
-/* ---------- public code */
-
 #endif // __LIGHT_VOLUMES_H

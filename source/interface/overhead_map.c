@@ -10,10 +10,6 @@ OVERHEAD_MAP.C
 #include "math/integer_math.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct overhead_map_globals
@@ -44,8 +40,6 @@ typedef char verify_overhead_map_viewport_size_offset[offsetof(struct overhead_m
 typedef char verify_overhead_map_bitmap_origin_offset[offsetof(struct overhead_map_globals, bitmap_origin) == 0x1C ? 1 : -1];
 typedef char verify_overhead_map_last_update_offset[offsetof(struct overhead_map_globals, last_render_bounds_update_time) == 0x20 ? 1 : -1];
 typedef char verify_overhead_map_bitmap_offset[offsetof(struct overhead_map_globals, bitmap) == 0x28 ? 1 : -1];
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -101,4 +95,3 @@ void overhead_map_post_rasterize(
 	}
 }
 
-/* ---------- private code */

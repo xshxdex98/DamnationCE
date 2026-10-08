@@ -6,16 +6,4 @@ UI_WIDGET_GROUP.H
 #define __UI_WIDGET_GROUP_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __UI_WIDGET_GROUP_H

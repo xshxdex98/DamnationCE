@@ -554,8 +554,6 @@ static long game_engine_did_team_win(
 	return result;
 }
 
-
-
 static void game_engine_generate_title_string(
 	wchar_t *title_string,
 	long player_index)
@@ -1059,11 +1057,6 @@ long populate_statistic_buffer(
 
 	return player_count;
 }
-
-
-
-
-
 
 static long select_players_to_display(
 	enum postgame_statistic statistic,
@@ -2329,7 +2322,6 @@ static boolean multiplayer_message_internal(
 
 	return result;
 }
-
 
 static void multiplayer_message(
 	long player_index,
@@ -3867,7 +3859,6 @@ void game_engine_update(
 
 	return;
 }
-
 
 enum game_engine_message
 {
@@ -6564,7 +6555,6 @@ real game_engine_get_distance_rating_for_spawn(
 	return rating;
 }
 
-
 real game_engine_get_starting_location_rating(
 	long player_index,
 	struct player_starting_location const *starting_location)
@@ -7900,7 +7890,6 @@ static long random_item(
 	return NONE;
 }
 
-
 static void game_engine_update_item_spawn(
 	void)
 {
@@ -8255,9 +8244,6 @@ void game_engine_postspawn_player_update(
 
 	return;
 }
-
-
-
 
 boolean game_engine_get_state_message(
 	long player_index,

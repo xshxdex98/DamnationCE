@@ -52,8 +52,6 @@ enum
 	MOTION_SENSOR_UPDATE_PERIOD = 15
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct tiny_point2d

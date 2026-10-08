@@ -40,10 +40,4 @@ struct collision_model
 	struct tag_block nodes;
 };
 
-/* ---------- prototypes/COLLISION_MODEL_DEFINITIONS.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __COLLISION_MODEL_DEFINITIONS_H

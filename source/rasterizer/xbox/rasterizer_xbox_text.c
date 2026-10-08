@@ -13,10 +13,6 @@ RASTERIZER_XBOX_TEXT.C
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct rasterizer_text_vertex
@@ -73,7 +69,6 @@ void rasterizer_set_vertex_shader_permutation(
 
 void rasterizer_set_pixel_shader(
 	struct pixel_shader_definition const *pixel_shader_definition);
-
 
 /* ---------- globals */
 
@@ -422,4 +417,3 @@ void rasterizer_text_draw_character(
 	return;
 }
 
-/* ---------- private code */

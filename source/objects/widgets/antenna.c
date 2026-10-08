@@ -17,10 +17,6 @@ ANTENNA.C
 #include "scenario/scenario.h"
 #include "shaders/shader_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 /* A chain's shape after each of the last two ticks, relative to the point

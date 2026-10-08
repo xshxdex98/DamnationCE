@@ -30,14 +30,6 @@ enum
 	NUMBER_OF_SCREEN_FLASH_TYPES
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/PLAYER_EFFECTS.C */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void player_effect_initialize(

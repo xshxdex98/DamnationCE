@@ -47,8 +47,4 @@ boolean map_name_from_multiplayer_scenario_description_item(
 	char *map_name,
 	unsigned long map_name_size);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __MULTIPLAYER_SCENARIO_DESCRIPTION_H

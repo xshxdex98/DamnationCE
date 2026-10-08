@@ -6,10 +6,6 @@ HUD.H
 #define __HUD_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 #ifndef HALO_64BIT
@@ -140,7 +136,5 @@ void hud_play_sound(
 
 extern struct hud_globals_definition *hud_globals;
 extern struct hud_scripted_globals_definition *hud_scripted_globals;
-
-/* ---------- public code */
 
 #endif // __HUD_H

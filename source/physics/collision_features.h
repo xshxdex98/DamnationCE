@@ -27,8 +27,6 @@ enum
 	NUMBER_OF_COLLISION_FEATURE_TYPES,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct collision_feature
@@ -278,9 +276,5 @@ short collision_move_point(
 	real_vector3d *clipped_velocity,
 	short maximum_collision_count,
 	struct collision_plane *collisions);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __COLLISION_FEATURES_H

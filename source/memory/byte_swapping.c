@@ -7,16 +7,12 @@ BYTE_SWAPPING.C
 #include "cseries.h"
 #include "byte_swapping.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define SWAP8(q) \
 	(((q)>>56) | (((q)>>40)&0xff00) | (((q)>>24)&0xff0000) | (((q)>>8)&0xff000000) | \
 	 (((q)<<8)&0xff00000000ui64) | (((q)<<24)&0xff0000000000ui64) | \
 	 (((q)<<40)&0xff000000000000ui64) | ((q)<<56))
-
-/* ---------- structures */
 
 /* ---------- prototypes */
 
@@ -395,4 +391,3 @@ void byte_swap_data_explicit(
 	return;
 }
 
-/* ---------- private code */

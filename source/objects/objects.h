@@ -103,7 +103,6 @@ enum
 	NUMBER_OF_NEW_OBJECT_DATA_FLAGS,
 };
 
-
 enum
 {
 	_object_passed_body_damage_threshold_bit = 0,
@@ -187,7 +186,6 @@ enum
 	NUMBER_OF_GARBAGE_COLLECTION_MODES,
 };
 
-
 /* ---------- macros */
 
 #define object_header_get(index)			((struct object_header_datum*)datum_get(object_header_data, (index)))
@@ -205,7 +203,6 @@ enum
 /* ---------- structures */
 
 typedef void (*object_deleted_proc)(long);
-
 
 struct object_cluster_iterator
 {
@@ -466,7 +463,6 @@ void objects_garbage_collection(void);
 void objects_update(void);
 void objects_memory_compact(void);
 
-
 /* ---------- prototypes/OBJECT_DELETED_PROCS.C */
 
 void object_deleted_procs_call(long deleted_object_index);
@@ -536,6 +532,5 @@ __inline void object_get_render_bounding_sphere(
 
 	return;
 }
-
 
 #endif // __OBJECTS_H

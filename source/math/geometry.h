@@ -6,10 +6,6 @@ GEOMETRY.H
 #define __GEOMETRY_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct geosphere
@@ -197,7 +193,5 @@ boolean convex_hull3d_test_vector(
 
 extern real global_convex_hull3d_delta;
 extern real global_convex_hull3d_epsilon;
-
-/* ---------- public code */
 
 #endif // __GEOMETRY_H

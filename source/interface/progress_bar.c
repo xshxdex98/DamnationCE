@@ -19,8 +19,6 @@ enum
 	NUMBER_OF_PROGRESS_BAR_SOUNDS= 4
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct progress_bar_globals

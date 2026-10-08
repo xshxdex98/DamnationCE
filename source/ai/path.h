@@ -66,9 +66,6 @@ enum
 	NUMBER_OF_PATH_BUILD_RESULTS,
 };
 
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct structure_bsp;

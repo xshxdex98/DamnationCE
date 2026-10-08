@@ -11,10 +11,6 @@ CONNECTED_GEOMETRY.H
 #include "memory/array.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct connected_geometry_edge
@@ -52,9 +48,5 @@ long connected_geometry_add_triangle(
 	boolean report_duplicates);
 long connected_geometry_group_coplanar(
 	struct connected_geometry *geometry);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __CONNECTED_GEOMETRY_H

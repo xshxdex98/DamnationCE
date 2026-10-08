@@ -16,12 +16,6 @@ RASTERIZER_XBOX_MOTION_SENSOR.C
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 struct bitmap_data *bitmap_group_try_and_get_bitmap(
@@ -576,4 +570,3 @@ void _rasterizer_hud_motion_sensor_blip_end(
 	return;
 }
 
-/* ---------- private code */

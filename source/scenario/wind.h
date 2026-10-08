@@ -11,8 +11,6 @@ WIND.H
 #include "cseries/cseries.h"
 #include "math/real_math.h"
 
-/* ---------- structures */
-
 /* ---------- prototypes/WIND.C */
 
 void wind_dispose_from_old_map(
@@ -31,7 +29,5 @@ void scenario_get_water_current(
 	real_point3d const *position,
 	real_vector3d *wind_vector,
 	long flags);
-
-/* ---------- globals */
 
 #endif // __WIND_H

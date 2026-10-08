@@ -33,8 +33,6 @@ struct sound_class_datum
 typedef char verify_sound_class_definition_size[
 	sizeof(struct sound_class_definition) == 0x2C ? 1 : -1];
 
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 struct sound_class_datum *sound_class_data;
@@ -357,4 +355,3 @@ void sound_class_set_gain(
 	return;
 }
 
-/* ---------- private code */

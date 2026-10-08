@@ -77,8 +77,6 @@ enum
 	_string_score,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef char verify_scenario_netgame_flag_size[

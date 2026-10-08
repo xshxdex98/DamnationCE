@@ -9,14 +9,6 @@ MODEL_ANIMATION_DEFINITIONS.C
 #include "model_animation_definitions.h"
 #include "models.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 extern boolean hs_model_animation_compression_enabled;
@@ -288,4 +280,3 @@ char const *animation_list_get_string(struct animation_list const *animation_lis
 	return "#<invalid>";
 }
 
-/* ---------- private code */

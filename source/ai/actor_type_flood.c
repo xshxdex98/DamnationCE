@@ -21,10 +21,6 @@ enum
 	_actor_movement_switching_switch_types,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void flood_decide_action(
@@ -47,8 +43,6 @@ struct actor_type_definition actor_type_flood =
 	NULL,
 	NULL
 };
-
-/* ---------- public code */
 
 /* ---------- private code */
 

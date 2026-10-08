@@ -6,10 +6,6 @@ PROGRESS.H
 #define __PROGRESS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef void (*progress_update_proc)(void *context, const char *description, long status, long percent_complete);
@@ -33,9 +29,5 @@ struct progress_data
 
 void progress_new(struct progress_data *data, const struct progress_callback *callback, const char *description, long total);
 void progress_update(struct progress_data *data, long status, long completed, boolean force_update);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __PROGRESS_H

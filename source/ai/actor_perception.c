@@ -1864,9 +1864,6 @@ range_weight_done:
 			weights.bonus_weight);
 }
 
-
-
-
 static long actor_emotion_assess_unopposable_danger(
 	long prop_index)
 {
@@ -2029,8 +2026,6 @@ static short actor_emotion_get_unopposable_enemy(
 
 	return target_index;
 }
-
-
 
 short actor_visibility_at_point(
 	long actor_index,
@@ -3328,7 +3323,6 @@ void actor_emotion_update(
 
 	return;
 }
-
 
 void actor_perception_unreachable(
 	long actor_index,
@@ -4813,10 +4807,6 @@ static void actor_perception_refresh_danger_zone(
 	return;
 }
 
-
-
-
-
 static void actor_perception_refresh_test_object(
 	long actor_index,
 	long object_index,
@@ -5301,7 +5291,6 @@ done:
 	return result;
 }
 
-
 static void actor_perception_refresh(
 	long actor_index)
 {
@@ -5733,7 +5722,6 @@ boolean actor_situation_try_new_target(
 
 	return result;
 }
-
 
 /* ---------- private code */
 

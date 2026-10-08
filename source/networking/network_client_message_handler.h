@@ -11,10 +11,6 @@ NETWORK_CLIENT_MESSAGE_HANDLER.H
 #include "math/real_math.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct message_server_graceful_game_exit_postgame
@@ -76,9 +72,5 @@ boolean network_game_client_handle_message(
 	word *message,
 	short message_size,
 	struct transport_address *source_address);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __NETWORK_CLIENT_MESSAGE_HANDLER_H

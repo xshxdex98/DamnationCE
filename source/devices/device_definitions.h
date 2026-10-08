@@ -39,7 +39,6 @@ enum
 	NUMBER_OF_MACHINE_FLAGS,
 };
 
-
 /* ---------- macros */
 
 #define device_definition_get(index) ((struct device_definition *)tag_get(DEVICE_DEFINITION_TAG, index))
@@ -102,11 +101,5 @@ struct machine_definition
 	struct _device_definition device;
 	struct _machine_definition machine;
 };
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __DEVICE_DEFINITIONS_H

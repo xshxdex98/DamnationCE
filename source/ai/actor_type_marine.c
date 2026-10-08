@@ -10,12 +10,6 @@ ACTOR_TYPE_MARINE.C
 #include "actors.h"
 #include "actor_types.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void marine_decide_action(
@@ -38,8 +32,6 @@ struct actor_type_definition actor_type_marine =
 	NULL,
 	NULL
 };
-
-/* ---------- public code */
 
 /* ---------- private code */
 

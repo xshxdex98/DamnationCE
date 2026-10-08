@@ -38,8 +38,6 @@ enum
 	_rasterizer_statistics_mode_memory
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct rasterizer_memory_usage_report
@@ -841,4 +839,3 @@ void rasterizer_frame_statistics_dispose(
 	return;
 }
 
-/* ---------- private code */

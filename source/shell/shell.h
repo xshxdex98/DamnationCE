@@ -6,12 +6,6 @@ SHELL.H
 #define __SHELL_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/SHELL.C */
 
 boolean shell_initialize(void);
@@ -27,9 +21,5 @@ void shell_platform_dispose(void);
 void shell_platform_verify(void);
 void shell_screen_pause(boolean paused);
 void shell_idle(void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __SHELL_H

@@ -9,14 +9,6 @@ PROJECTILE_DEFINITIONS.C
 
 #include "effects/effect_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 struct projectile_material_response_definition default_projectile_material_response =
@@ -58,6 +50,3 @@ struct projectile_material_response_definition default_projectile_material_respo
 	0.0f,
 };
 
-/* ---------- public code */
-
-/* ---------- private code */

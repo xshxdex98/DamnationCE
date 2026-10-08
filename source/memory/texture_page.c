@@ -17,8 +17,6 @@ enum
 	MAXIMUM_TEXTURE_PAGE_INDICES = 0x8000
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct texture_page_channel

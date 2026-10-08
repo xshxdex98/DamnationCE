@@ -29,8 +29,6 @@ enum
 	CAMERA_TRACK_DEFINITION_TAG = 'trak'
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct following_camera_control

@@ -6,10 +6,6 @@ RASTERIZER_CINEMATICS.H
 #define __RASTERIZER_CINEMATICS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_data;
@@ -118,9 +114,5 @@ void rasterizer_screen_effect_port_get(
 	struct rasterizer_screen_effect_port_state *state);
 void rasterizer_screen_effect_port_set(
 	struct rasterizer_screen_effect_port_state const *state);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __RASTERIZER_CINEMATICS_H

@@ -48,8 +48,6 @@ AI_DEBUG.C
 #include "cseries/errors.h"
 #endif
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 /* labels are drawn 0.15 world units above an attractor node */
@@ -1235,7 +1233,6 @@ static void ai_debug_render_actor(
 					struct encounter_datum *encounter = encounter_get(actor->meta.encounter_index);
 					boolean outside_current_bsp = FALSE;
 
-
 					if (encounter_definition->runtime_structure_bsp_reference_index==NONE)
 					{
 						encounter_color = global_real_argb_green;
@@ -2000,7 +1997,6 @@ static void ai_debug_render_actor(
 				render_debug_vector(TRUE, &p0, &unit->unit.aiming_vector, 1.f, global_real_argb_darkgreen);
 				render_debug_vector(TRUE, &p0, &unit->unit.looking_vector, 1.f, global_real_argb_blue);
 
-
 				if (unit->object.type==_object_type_biped && unit->object.parent_object_index==NONE)
 				{
 					real_vector3d throttle_vector;
@@ -2635,7 +2631,6 @@ static void ai_debug_render_actor(
 						actor->control.burst_damage_modifier,
 						actor->control.blocked_communication_timer),
 					global_real_argb_white);
-
 
 				if (actor->emotions.berserk)
 				{
@@ -3471,7 +3466,6 @@ static void ai_debug_render_actor(
 			render_debug_sphere(TRUE, &actor->control.burst_target, 0.1f, global_real_argb_red);
 			render_debug_vector(TRUE, &actor->control.burst_target, &actor->control.burst_adjustment, 5.f, global_real_argb_red);
 		}
-
 
 		/*  Vision cones */
 

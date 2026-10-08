@@ -162,8 +162,6 @@ static boolean actor_combat_retarget_grenade(
 	long actor_index,
 	real_point3d const *desired_grenade_target);
 
-/* ---------- globals */
-
 /* ---------- public code */
 
 static boolean actor_combat_enable_special_fire_situation(

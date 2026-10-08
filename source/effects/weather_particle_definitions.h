@@ -34,10 +34,4 @@ struct weather_particle_system_definition
 typedef char weather_particle_system_definition_size_assert[
 	sizeof(struct weather_particle_system_definition) == 0x30 ? 1 : -1];
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __WEATHER_PARTICLE_DEFINITIONS_H

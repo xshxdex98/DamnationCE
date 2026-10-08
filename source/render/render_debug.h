@@ -6,12 +6,6 @@ RENDER_DEBUG.H
 #define __RENDER_DEBUG_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/RENDER_DEBUG.C */
 
 void render_debug(
@@ -100,9 +94,5 @@ void render_debug_polygon_edges(
 	real_point3d const *points,
 	short point_count,
 	real_argb_color const *color);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __RENDER_DEBUG_H

@@ -65,8 +65,6 @@ enum
 	_bitmap_group_sprite_usage_double_multiply,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_extract_data

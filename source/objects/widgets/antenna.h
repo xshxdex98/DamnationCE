@@ -116,6 +116,4 @@ void antenna_render(
 
 extern struct data_array *antenna_data;
 
-/* ---------- public code */
-
 #endif // __ANTENNA_H

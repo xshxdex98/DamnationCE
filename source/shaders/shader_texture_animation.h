@@ -35,6 +35,4 @@ struct shader_texture_animation
 typedef char verify_shader_texture_animation_size[
 	sizeof(struct shader_texture_animation) == 0x38 ? 1 : -1];
 
-/* ---------- public code */
-
 #endif // __SHADER_TEXTURE_ANIMATION_H

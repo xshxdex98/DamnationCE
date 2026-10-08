@@ -42,8 +42,6 @@ enum hud_anchor
 	NUMBER_OF_HUD_ANCHORS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct hud_absolute_placement_definition
@@ -212,12 +210,8 @@ typedef char hud_placement_definition_size_assert[
 typedef char hud_color_definition_size_assert[
 	sizeof(struct hud_color_definition) == 0x20 ? 1 : -1];
 
-/* ---------- prototypes/EXAMPLE.C */
-
 /* ---------- globals */
 
 extern char const *global_hud_anchor_names[NUMBER_OF_HUD_ANCHORS];
-
-/* ---------- public code */
 
 #endif // __HUD_DEFINITIONS_H

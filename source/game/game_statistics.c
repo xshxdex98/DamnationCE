@@ -13,14 +13,6 @@ GAME_STATISTICS.C
 #include "memory/data.h"
 #include "units/units.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static boolean game_statistics_active = FALSE;
@@ -219,4 +211,3 @@ void game_statistics_record_kill(
 	return;
 }
 
-/* ---------- private code */

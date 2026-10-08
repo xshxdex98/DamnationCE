@@ -10,10 +10,6 @@ DAMAGE_RESISTANCES.H
 
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct damage_resistance_material
@@ -83,11 +79,5 @@ struct damage_resistance
 	struct tag_block regions;
 	struct tag_block modifiers;
 };
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __DAMAGE_RESISTANCES_H

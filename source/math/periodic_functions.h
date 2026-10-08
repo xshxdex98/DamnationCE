@@ -41,10 +41,6 @@ enum
 	NUMBER_OF_TRANSITION_FUNCTIONS,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/PERIODIC_FUNCTIONS.C */
 
 real periodic_function_evaluate(
@@ -57,9 +53,5 @@ void periodic_functions_initialize(
 	void);
 void periodic_functions_dispose(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __PERIODIC_FUNCTIONS_H

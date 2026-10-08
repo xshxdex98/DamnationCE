@@ -11,10 +11,6 @@ UNIT_CONTROL_DATA.H
 #include "cseries.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct unit_control_data
@@ -32,11 +28,5 @@ struct unit_control_data
 	real_vector3d aiming_vector;
 	real_vector3d looking_vector;
 };
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __UNIT_CONTROL_DATA_H

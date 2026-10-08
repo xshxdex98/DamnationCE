@@ -51,8 +51,6 @@ enum
 	MAXIMUM_QUEUED_LENS_FLARES = 8,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct render_distant_light
@@ -81,7 +79,6 @@ struct render_skinning
 	real_matrix4x3 const *node_matrices;
 	short node_matrix_count;
 };
-
 
 struct rendered_cluster
 {
@@ -172,7 +169,5 @@ void render_object_shadows(
 
 extern struct render_globals render;
 extern boolean render_particle_systems_enabled;
-
-/* ---------- public code */
 
 #endif // __RENDER_H

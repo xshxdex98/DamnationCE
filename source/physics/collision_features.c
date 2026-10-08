@@ -11,16 +11,6 @@ COLLISION_FEATURES.C
 #include "render/render_debug.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void collision_features_new(

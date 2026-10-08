@@ -9,8 +9,6 @@ RECORDED_ANIMATION_INITIALIZE.C
 #include "math/real_math.h"
 #include "cutscene/recorded_animation_definitions.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 struct recorded_animation_control_field

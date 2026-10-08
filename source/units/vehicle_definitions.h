@@ -31,10 +31,4 @@ enum
 
 struct vehicle_definition;
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __VEHICLE_DEFINITIONS_H

@@ -9,12 +9,6 @@ ACTOR_TYPE_GRUNT.C
 #include "actors.h"
 #include "actor_types.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void grunt_decide_action(
@@ -38,8 +32,6 @@ __declspec(align(4)) struct actor_type_definition actor_type_grunt=
 	NULL,
 	NULL,
 };
-
-/* ---------- public code */
 
 /* ---------- private code */
 

@@ -27,12 +27,6 @@ enum
 	_material_effect_underwater_material_type = 0x1C,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 #if !defined(HALO_ANDROID) && !defined(__APPLE__) /* Mach-O section names differ; the default is .bss anyway */
@@ -190,4 +184,3 @@ void material_effect_new_from_point(
 	return;
 }
 
-/* ---------- private code */

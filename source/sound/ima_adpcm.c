@@ -18,8 +18,6 @@ enum
 	STEP_SIZE_ADJUSTMENT_TABLE_COUNT = 16,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bungie_ima_adpcm_header_byte_swap_data
@@ -32,8 +30,6 @@ struct bungie_ima_adpcm_header_byte_swap_data
 typedef char verify_bungie_ima_adpcm_header_byte_swap_data_size[
 	sizeof(struct bungie_ima_adpcm_header_byte_swap_data) == 0x2C ? 1 : -1];
 #endif
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -306,4 +302,3 @@ void byte_swap_bungie_ima_adpcm_header(
 	return;
 }
 
-/* ---------- private code */

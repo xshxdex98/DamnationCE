@@ -635,4 +635,3 @@ void game_state_create_persistent_storage(
 	return;
 }
 
-/* ---------- private code */

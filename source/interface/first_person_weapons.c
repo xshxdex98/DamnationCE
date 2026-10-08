@@ -83,8 +83,6 @@ enum animation_update_result
 	_animation_no_key_frame = 0,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct shader;

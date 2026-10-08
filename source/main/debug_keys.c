@@ -90,7 +90,6 @@ void debug_keys_update(
 	modifier_down[_debug_key_ctrl] = !shift_down && control_down;
 	modifier_down[_debug_key_shift_ctrl] = shift_down && control_down;
 
-
 	for (key_index = 0; global_debug_key_list[key_index].name; key_index++)
 	{
 		boolean down =

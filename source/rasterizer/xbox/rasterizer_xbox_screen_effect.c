@@ -44,8 +44,6 @@ enum
 	_rasterizer_vertex_register_position = 0
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef char rasterizer_screen_effect_debug_options_flashes_offset_assert[
@@ -74,9 +72,6 @@ typedef char rasterizer_screen_effect_window_flash_offset_assert[
 #endif
 typedef char rasterizer_screen_effect_pixel_shader_size_assert[
 	sizeof(struct pixel_shader_definition) == 0xF0 ? 1 : -1];
-
-/* ---------- globals */
-
 
 /* ---------- private code */
 

@@ -6,10 +6,6 @@ MOTION_SENSOR.H
 #define __MOTION_SENSOR_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 union point2d;
@@ -26,9 +22,5 @@ void motion_sensor_draw_screen(
 	short local_player_index,
 	boolean in_multiplayer,
 	union point2d const *pt);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __MOTION_SENSOR_H

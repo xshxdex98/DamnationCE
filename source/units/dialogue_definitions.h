@@ -40,8 +40,4 @@ short dialogue_get_vocalization_type_by_name(
 void unit_dialogue_determine_variant(
 	long unit_index);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __DIALOGUE_DEFINITIONS_H

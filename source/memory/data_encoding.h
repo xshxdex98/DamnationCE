@@ -6,10 +6,6 @@ DATA_ENCODING.H
 #define __DATA_ENCODING_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct byte_swap_definition;
@@ -100,9 +96,5 @@ void *data_decode_array(
 char *data_decode_string(
 	struct data_encoding_state *state,
 	word maximum_length);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __DATA_ENCODING_H

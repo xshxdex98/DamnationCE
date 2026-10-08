@@ -8,16 +8,6 @@ RANDOM_NUMBERS.H
 
 #include "bungie_net/common/64bit_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 long randomrange(long min, long max);

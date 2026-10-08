@@ -8,16 +8,6 @@ MESSAGE_HEADER.C
 #include "message_header.h"
 #include "networking/network_messages.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void build_message_header(
@@ -98,4 +88,3 @@ void *create_message(
 	return buffer;
 }
 
-/* ---------- private code */

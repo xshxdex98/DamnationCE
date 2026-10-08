@@ -27,7 +27,6 @@ enum
 	NUMBER_OF_TEXT_FLAGS = 4,
 	MAXIMUM_NUMBER_OF_TAB_STOPS = 16,
 
-
 	_draw_text_wrap_horizontally_bit = 0,
 	_draw_text_wrap_vertically_bit,
 
@@ -150,7 +149,6 @@ static struct
 } text_bounds_globals = { 0 };
 
 static struct font_drawing_globals font_drawing_globals = { 0 };
-
 
 /* ---------- public code */
 

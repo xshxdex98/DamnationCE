@@ -95,7 +95,6 @@ netcode, whose players' weapons, grenades and power-ups are the host's
 (port/linux/game/network_distributed.c) */
 #define players_decide_pickups() (!network_game_distributed_client())
 
-
 /* ---------- constants */
 
 enum
@@ -119,8 +118,6 @@ enum
 by a player's datum index */
 typedef char player_data_maximum_count_assert[
 	NETWORK_GAME_MAXIMUM_PLAYER_COUNT == HALO_PORT_MAXIMUM_NETWORK_PLAYERS ? 1 : -1];
-
-/* ---------- macros */
 
 /* ---------- structures */
 
@@ -4768,4 +4765,3 @@ boolean player_name_valid(
 	return TRUE;
 }
 
-/* ---------- private code */

@@ -111,8 +111,6 @@ enum
 	NUMBER_OF_ACTOR_DEBUG_CHARGE_DECISIONS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 /* one record per encounter firing position, filled by actor_select_firing_position */
@@ -613,13 +611,10 @@ extern struct ai_debug_state ai_debug;
 extern struct actor_debug_info *actor_debug_array;
 extern struct path_debug_storage *actor_path_debug_array;
 
-
 extern real_point3d global_ai_debug_drawstack_next_position;
 extern real_point3d global_ai_debug_drawstack_last_position;
 extern real global_ai_debug_drawstack_height;
 extern short global_ai_debug_string_position;
 extern real_argb_color global_temporary_render_color;
-
-/* ---------- public code */
 
 #endif // __AI_DEBUG_H

@@ -116,10 +116,4 @@ struct biped_definition
 	struct _biped_definition biped;
 };
 
-/* ---------- prototypes/BIPED_DEFINITIONS.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __BIPED_DEFINITIONS_H

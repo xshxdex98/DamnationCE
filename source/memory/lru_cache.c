@@ -17,8 +17,6 @@ enum
 	_lru_block_signature = 0x55626C6A,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct lru_cache_block
@@ -65,8 +63,6 @@ static long get_lru_cache_block_offset(
 	struct lru_cache_block *block);
 static void verify_lru_cache(
 	struct lru_cache *cache);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

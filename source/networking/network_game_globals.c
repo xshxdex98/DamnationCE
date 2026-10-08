@@ -105,8 +105,6 @@ typedef char network_game_globals_size_assert[
 	sizeof(struct network_game_globals) == 0x10 ? 1 : -1];
 #endif
 
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 static struct network_game_globals bss_004566dc = { 0 };
@@ -689,4 +687,3 @@ boolean create_global_network_game_server(
 	return global_network_game_server != NULL;
 }
 
-/* ---------- private code */

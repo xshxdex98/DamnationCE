@@ -1773,7 +1773,6 @@ void hs_evaluate_begin(
 	return;
 }
 
-
 void hs_evaluate_equality(
 	short function_index,
 	long thread_index,

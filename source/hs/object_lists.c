@@ -22,12 +22,6 @@ enum
 	MAXIMUM_LISTED_OBJECTS_PER_MAP = HALO_PORT_MAXIMUM_LISTED_OBJECTS_PER_MAP,
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 struct data_array *object_list_header_data;
@@ -210,4 +204,3 @@ long object_list_get_first(
 	return index;
 }
 
-/* ---------- private code */

@@ -28,8 +28,6 @@ enum
 	NUMBER_OF_SAVED_GAME_FILE_TYPES
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct file_reference;
@@ -104,9 +102,5 @@ word saved_game_file_get_type(
 	long profile_index);
 void enumerate_memory_units_test(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __SAVED_GAME_FILES_H

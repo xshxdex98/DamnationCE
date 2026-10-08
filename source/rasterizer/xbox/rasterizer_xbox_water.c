@@ -982,4 +982,3 @@ void rasterizer_water_draw(
 	return;
 }
 
-/* ---------- private code */

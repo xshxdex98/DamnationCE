@@ -39,9 +39,6 @@ enum
 
 	/* xbox_texture_cache.c, bitmap_group.c */
 
-
-
-
 	/* the device's (d3d8_gl.c, D3DDevice_GetDeviceCaps; xbox_textures.c
 	uploads nothing larger) */
 	MAXIMUM_BITMAP_SIZE = 4096,

@@ -20,10 +20,6 @@ enum
 	_transport_type_tcp
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/TRANSPORT_ENDPOINT_SET_WINSOCK.C */
 
 void transport_client_stop(
@@ -44,9 +40,5 @@ XNKID transport_get_key_id(
 	void);
 XNKEY transport_get_key(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __TRANSPORT_ENDPOINT_WINSOCK_H

@@ -6,10 +6,6 @@ CHEATS.H
 #define __CHEATS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct cheat_globals
@@ -58,7 +54,5 @@ void cheat_active_camouflage_local_player(
 /* ---------- globals */
 
 extern struct cheat_globals cheat;
-
-/* ---------- public code */
 
 #endif // __CHEATS_H

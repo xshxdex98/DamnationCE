@@ -10,12 +10,6 @@ STRUCTURE_RENDER.H
 
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/STRUCTURE_RENDER.C */
 
 void structure_render_set_fog_offset(
@@ -63,7 +57,5 @@ void structure_render_shadow(
 
 extern long debug_leaf_index;
 extern long debug_leaf_portal_index;
-
-/* ---------- public code */
 
 #endif // __STRUCTURE_RENDER_H

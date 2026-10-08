@@ -1648,6 +1648,4 @@ extern struct data_array *swarm_data;
 extern struct data_array *swarm_component_data;
 extern struct data_array *actor_data;
 
-/* ---------- public code */
-
 #endif // __ACTORS_H

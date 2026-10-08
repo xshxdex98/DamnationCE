@@ -35,8 +35,6 @@ enum
 #endif
 #define cseries_assert(expr) cseries_match_assert(__FILE__, __LINE__, expr)
 
-/* ---------- structures */
-
 /* ---------- globals */
 
 char temporary[256];
@@ -157,7 +155,6 @@ long strnlen(
 
 	return length;
 }
-
 
 char *strnupr(
 	char *string,
@@ -543,4 +540,3 @@ unsigned long string_hash(
 	return hash;
 }
 
-/* ---------- private code */

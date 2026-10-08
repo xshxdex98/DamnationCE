@@ -11,14 +11,6 @@ GAME_ENGINE_LIST.C
 #include "game/game_engine_slayer.h"
 #include "game/game_engine_list.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 extern struct game_engine stub_engine;
@@ -38,6 +30,3 @@ struct game_engine *game_engines[] =
 	NULL,
 };
 
-/* ---------- public code */
-
-/* ---------- private code */

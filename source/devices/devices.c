@@ -59,8 +59,6 @@ enum
 	NUMBER_OF_DEVICE_ANIMATIONS,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct device_group_datum
@@ -110,8 +108,6 @@ static void create_initial_device_groups(
 	void);
 static void device_group_delete(
 	short group_index);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

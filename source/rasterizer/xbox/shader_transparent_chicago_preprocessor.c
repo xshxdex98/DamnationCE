@@ -33,8 +33,6 @@ enum
 	MAXIMUM_SHADER_TRANSPARENT_CHICAGO_MAPS = 4
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct shader_transparent_chicago_map

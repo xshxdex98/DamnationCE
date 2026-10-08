@@ -10,10 +10,6 @@ DEVICE_CONTROLS.C
 #include "memory/data.h"
 #include "scenario/scenario_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct scenario_control_datum
@@ -36,8 +32,6 @@ struct device_group_datum
 
 static void control_toggle(
 	long control_index);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

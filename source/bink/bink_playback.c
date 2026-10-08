@@ -56,8 +56,6 @@ enum
 		(2<<D3DFORMAT_DIMENSION_SHIFT)|D3DFORMAT_BORDERSOURCE_COLOR|D3DFORMAT_DMACHANNEL_A
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 /* Bink SDK (RAD Game Tools) handle; the vendored bink.h is not in the tree, so the

@@ -33,8 +33,6 @@ enum
 	COMPRESSED_ANIMATION_NODE_HEADER_KEYFRAME_COUNT_BITS = 12,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct compressed_quaternion_8byte

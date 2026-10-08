@@ -46,10 +46,6 @@ struct font_header
 	struct tag_data pixels;
 };
 
-/* ---------- prototypes/FONT_GROUP.C */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 struct font_character *font_get_character_by_ascii_code(struct font_header *font, word character_code);

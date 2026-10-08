@@ -7,19 +7,11 @@
 #include "cseries.h"
 #include "bungie_net/common/64bit_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void negate64(
 	struct qword_value const *a,
 	struct qword_value *result);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

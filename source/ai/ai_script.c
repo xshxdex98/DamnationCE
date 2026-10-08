@@ -50,8 +50,6 @@ enum
 
 /* actor default states (actors.c keeps this enum file-local too) */
 /* actor_external_orders.desired_target_type (actors.h does not yet declare these) */
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef char ai_script_squad_iterator_size_assert[

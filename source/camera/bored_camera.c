@@ -14,10 +14,6 @@ BORED_CAMERA.C
 #include "observer.h"
 #include "camera/bored_camera.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct camera_action
@@ -34,8 +30,6 @@ static long bored_camera_shot_threshold_milliseconds(
 	long boredom_count);
 static long bored_camera_shot_duration_milliseconds(
 	long boredom_count);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

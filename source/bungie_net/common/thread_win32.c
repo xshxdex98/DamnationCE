@@ -24,8 +24,6 @@ enum
 	THREAD_STILL_ACTIVE = 0x103
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct thread_reference

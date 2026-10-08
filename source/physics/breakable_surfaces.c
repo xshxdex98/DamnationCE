@@ -250,7 +250,6 @@ void breakable_surface_damage(
 	return;
 }
 
-
 void breakable_surface_damage_area_of_effect(
 	const struct damage_data *damage_data)
 {

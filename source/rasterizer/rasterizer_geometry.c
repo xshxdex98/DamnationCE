@@ -12,10 +12,6 @@ RASTERIZER_GEOMETRY.C
 #include "rasterizer_geometry_compression.h"
 #include "rasterizer/rasterizer_geometry.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct environment_vertex_uncompressed
@@ -239,7 +235,6 @@ void environment_lightmap_vertex_compressed_get_texcoord(
 
 	return;
 }
-
 
 byte compress_real_to_int8(
 	real z)

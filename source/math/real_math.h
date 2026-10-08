@@ -377,7 +377,6 @@ match_vassert(file, line, 													\
 		(*matrix).up.i, (*matrix).up.j, (*matrix).up.k));					\
 match_vassert(file, line, valid_real_matrix4x3(matrix), csprintf(temporary, "%s: assert_valid_real_matrix4x3", string));	\
 
-
 #define match_assert_valid_real_matrix4x3(file, line, matrix)							\
 if (!valid_real_matrix4x3(matrix))														\
 {																						\
@@ -842,7 +841,6 @@ real_matrix3x3 *matrix3x3_from_forward_and_up(
 	real_vector3d const *forward,
 	real_vector3d const *up);
 real_vector3d *matrix3x3_transform_vector(real_matrix3x3 const *matrix, real_vector3d const *vector, real_vector3d *result);
-
 
 /* ---------- prototypes/RANDOM_MATH.C */
 

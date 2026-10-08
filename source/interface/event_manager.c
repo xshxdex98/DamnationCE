@@ -19,8 +19,6 @@ enum
 	STICK_EVENT_REPEAT_MILLISECONDS = 250
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct event_manager_state

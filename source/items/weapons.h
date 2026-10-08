@@ -334,8 +334,4 @@ real weapon_estimate_time_to_target(
 	short trigger_index,
 	real distance);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __WEAPONS_H

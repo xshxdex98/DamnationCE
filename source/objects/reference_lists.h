@@ -12,10 +12,6 @@ file has inline function assertions.
 
 #include "game_state.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct data_reference
@@ -25,10 +21,6 @@ struct data_reference
 	long datum_index;
 	long next_reference_index;
 };
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
 
 /* ---------- public code */
 

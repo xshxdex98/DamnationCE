@@ -139,6 +139,4 @@ struct shader *shader_get_and_verify_type(struct shader *shader, short shader_ty
 extern struct shader_effect_definition global_shader_effect_additive;
 extern struct shader_effect_definition global_shader_effect_alpha_blended;
 
-/* ---------- public code */
-
 #endif // __SHADER_DEFINITIONS_H

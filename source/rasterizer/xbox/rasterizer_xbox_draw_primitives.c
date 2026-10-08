@@ -36,8 +36,6 @@ enum
 #define RASTERIZER_XBOX_DRAW_PRIMITIVES_FILE \
 	"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_draw_primitives.c"
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct rasterizer_triangle
@@ -126,13 +124,11 @@ static D3DPRIMITIVETYPE const d3d_primitive_type_table[NUMBER_OF_TRIANGLE_BUFFER
 	D3DPT_TRIANGLESTRIP
 };
 
-
 static struct dynamic_vertices_globals dynamic_vertices = {0};
 static struct dynamic_triangles_globals dynamic_triangles = {0};
 static D3DVertexBuffer *aux_dynamic_unlit_vb = NULL;
 static boolean dynamic_triangles_overflow_warning = FALSE;
 static boolean dynamic_vertices_overflow_warning = FALSE;
-
 
 /* ---------- public code */
 

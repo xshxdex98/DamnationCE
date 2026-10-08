@@ -10,10 +10,6 @@ ORBITING_CAMERA.C
 #include "camera/director.h"
 #include "objects/objects.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct camera_action
@@ -149,4 +145,3 @@ void orbiting_camera_update(
 	return;
 }
 
-/* ---------- private code */

@@ -17,8 +17,6 @@ LIGHT_VOLUMES.C
 #include "saved games/game_state.h"
 #include "shaders/shaders.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define light_volume_get(light_volume_index) \

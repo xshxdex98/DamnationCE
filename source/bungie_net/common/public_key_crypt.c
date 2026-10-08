@@ -15,12 +15,6 @@ PUBLIC_KEY_CRYPT.C
 #include "cseries/errors.h"
 #endif
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static unsigned long x_exp_y_mod_n(
@@ -35,8 +29,6 @@ static unsigned long generate_diffie_hellman_private_key(
 	unsigned long public_key,
 	unsigned long p,
 	unsigned long x);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

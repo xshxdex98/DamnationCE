@@ -33,8 +33,6 @@ enum
 	_contrail_point_transitioning_bit = 1,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct contrail_vertex
@@ -484,4 +482,3 @@ void render_contrails_normal(
 	return;
 }
 
-/* ---------- private code */

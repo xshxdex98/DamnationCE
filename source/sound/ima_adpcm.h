@@ -6,10 +6,6 @@ IMA_ADPCM.H
 #define __IMA_ADPCM_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bungie_ima_adpcm_header
@@ -47,9 +43,5 @@ long decompress_ima_adpcm_audio_data(
 	struct bungie_ima_adpcm_state *state);
 void byte_swap_bungie_ima_adpcm_header(
 	struct bungie_ima_adpcm_header *header);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __IMA_ADPCM_H

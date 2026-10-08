@@ -2,7 +2,6 @@
 NETWORK_SERVER_MESSAGE_HANDLER.C
 */
 
-
 /* ---------- headers */
 
 #include "cseries.h"

@@ -8,16 +8,6 @@ TEXT_GROUP.C
 #include "text/text_group.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- NTSC maps' missing multiplayer strings */
 
 #include "tag_files/tag_files.h"
@@ -277,4 +267,3 @@ wchar_t *unicode_string_list_get_string(long tag_index, short string_index)
 	return result;
 }
 
-/* ---------- private code */

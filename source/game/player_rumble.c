@@ -24,8 +24,6 @@ enum
 	MAXIMUM_RUMBLE_MOTOR_VALUE = 65535
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct rumble_player

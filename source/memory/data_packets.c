@@ -9,12 +9,6 @@ DATA_PACKETS.C
 #include "memory/data_packet_groups.h"
 #include "memory/data_packets.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void _data_packet_verify(
@@ -40,8 +34,6 @@ static void _data_packet_decode(
 	short *encoded_packet_size,
 	struct data_packet_field *fields,
 	short *field_count);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

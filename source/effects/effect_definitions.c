@@ -8,14 +8,6 @@ EFFECT_DEFINITIONS.C
 #include "effects/effect_definitions.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 struct tag_reference_definition global_effect_reference =
@@ -25,6 +17,3 @@ struct tag_reference_definition global_effect_reference =
 	NULL,
 };
 
-/* ---------- public code */
-
-/* ---------- private code */

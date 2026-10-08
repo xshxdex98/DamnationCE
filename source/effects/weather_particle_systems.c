@@ -59,8 +59,6 @@ enum
 	_weather_particle_clipping_plane_far,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 /* the weather particle type definition */

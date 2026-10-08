@@ -17,8 +17,6 @@ enum
 	NUMBER_OF_ENTRIES_IN_PALETTE = 256
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_data;
@@ -161,7 +159,5 @@ union real_rgb_color *rgb_colors_interpolate_and_scale(
 /* ---------- globals */
 
 extern pixel32 global_vector_palette[NUMBER_OF_ENTRIES_IN_PALETTE];
-
-/* ---------- public code */
 
 #endif // __BITMAPS_H

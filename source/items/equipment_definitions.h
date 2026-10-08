@@ -48,10 +48,4 @@ struct equipment_definition
 	struct _equipment_definition equipment;
 };
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __EQUIPMENT_DEFINITIONS_H

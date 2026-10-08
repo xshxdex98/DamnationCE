@@ -91,10 +91,4 @@ typedef char mass_point_definition_position_offset_assert[
 typedef char mass_point_definition_radius_offset_assert[
 	offsetof(struct mass_point_definition, radius) == 0x68 ? 1 : -1];
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __PHYSICS_DEFINITIONS_H

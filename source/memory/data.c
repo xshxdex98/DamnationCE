@@ -7,19 +7,11 @@ DATA.C
 #include "cseries.h"
 #include "data.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void datum_initialize(struct data_array *data, struct datum_header *header);
 static boolean data_usable(struct data_array *data, void const *caller);
 void platform_log(const char *format, ...);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

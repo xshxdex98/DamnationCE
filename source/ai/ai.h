@@ -78,8 +78,6 @@ enum
 	NUMBER_OF_AI_LINE_OF_SIGHT_MODES,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct ai_unit_information_look_data

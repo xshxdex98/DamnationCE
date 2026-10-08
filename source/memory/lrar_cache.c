@@ -16,8 +16,6 @@ enum
 	_lrar_block_signature = 0x52626C6B,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct lrar_cache_block
@@ -69,8 +67,6 @@ static void verify_lrar_cache_block(
 	struct lrar_cache_block *block);
 static void verify_lrar_cache(
 	struct lrar_cache *cache);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

@@ -2,7 +2,6 @@
 TELNET_CONSOLE.C
 */
 
-
 /* ---------- headers */
 
 #include "cseries.h"
@@ -28,8 +27,6 @@ enum
 	TELNET_CONSOLE_DEFAULT_PORT = 2323,
 	_transport_endpoint_type_telnet = 0x12
 };
-
-/* ---------- macros */
 
 /* ---------- structures */
 

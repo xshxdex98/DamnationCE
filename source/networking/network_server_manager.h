@@ -10,12 +10,6 @@ NETWORK_SERVER_MANAGER.H
 
 #include "cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes/NETWORK_SERVER_MANAGER.C */
 
 /* port: whether the host's game is being played (not its lobby) */
@@ -98,9 +92,5 @@ void network_game_server_change_map_name(
 void network_game_server_change_game_variant(
 	struct network_game_server *server,
 	struct game_variant *variant);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __NETWORK_SERVER_MANAGER_H

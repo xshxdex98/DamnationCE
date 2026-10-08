@@ -12,10 +12,6 @@ RECORDED_ANIMATION_DEFINITIONS.H
 #include "tag_files/tag_groups.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct recorded_unit_control
@@ -53,9 +49,5 @@ struct recorded_animation_definition
 /* ---------- prototypes/RECORDED_ANIMATION_DEFINITIONS.C */
 
 short scenario_get_animation_by_name(struct scenario const *scenario, char const *name);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __RECORDED_ANIMATION_DEFINITIONS_H

@@ -11,10 +11,6 @@ CLUSTER_PARTITIONS.H
 #include "math/real_math.h"
 #include "memory/data.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct cluster_partition
@@ -78,10 +74,5 @@ long cluster_partition_get_first_cluster(
 long cluster_partition_get_next_cluster(
 	struct cluster_partition const *partition,
 	long *reference_index);
-
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __CLUSTER_PARTITIONS_H

@@ -10,8 +10,6 @@ SCENERY.H
 #include "objects/objects.h"
 #include "scenario/scenario_definitions.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define scenery_get(index) ((struct scenery_datum *)object_get_and_verify_type((index), _object_mask_scenery))
@@ -60,9 +58,5 @@ void scenery_animation_start_at_frame(
 	long animation_graph_index,
 	char const *animation_name,
 	short frame_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __SCENERY_H

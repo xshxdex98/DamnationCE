@@ -71,8 +71,6 @@ enum decompressor_timer
 	NUMBER_OF_DECOMPRESSOR_TIMERS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct cache_file_header

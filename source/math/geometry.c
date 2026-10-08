@@ -23,10 +23,6 @@ enum
 	CLIP_BUFFER_SIZE= 512
 };
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static short points_dimension2d(

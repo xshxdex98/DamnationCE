@@ -9,10 +9,6 @@ HASHTABLE.H
 #include "math/real_math.h"
 #include "memory/array.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct hashtable;
@@ -72,9 +68,5 @@ boolean hashtable_grow(
 void *hashtable_put(
 	struct hashtable *table,
 	const void *key);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __HASHTABLE_H

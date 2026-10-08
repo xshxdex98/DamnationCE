@@ -105,8 +105,6 @@ match_vassert(																\
 	)																	\
 )
 
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static boolean new_particle_is_visible(
@@ -992,4 +990,3 @@ void particles_update(
 	return;
 }
 
-/* ---------- private code */

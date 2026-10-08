@@ -63,8 +63,6 @@ enum
 #define AI_INDEX_SCOPE(index) ((unsigned long)(index) >> 30)
 #define AI_INDEX_SUB_INDEX(index) (((unsigned long)(index) >> 16) & 0xFF)
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef char scenario_conversation_action_definition_size_assert[
@@ -175,7 +173,6 @@ boolean actor_move_try_evasion_vector(
 	real ledge_avoidance_distance,
 	boolean *is_ledge,
 	void *collision_result);
-
 
 static boolean actor_action_allowed_to_enter_vehicle(
 	long actor_index,
@@ -4528,4 +4525,3 @@ try_avoid_action:
 	return result;
 }
 
-/* ---------- private code */

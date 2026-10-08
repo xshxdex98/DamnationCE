@@ -3895,4 +3895,3 @@ void actors_update(
 	return;
 }
 
-/* ---------- private code */

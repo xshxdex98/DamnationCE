@@ -13,10 +13,6 @@ MEMORY_POOL.C
 #define BLOCK_HEADER_SIGNATURE 'head'
 #define BLOCK_TRAILER_SIGNATURE 'tail'
 
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static long memory_pool_block_compute_actual_size(
@@ -26,8 +22,6 @@ static void memory_pool_verify(
 static struct memory_pool_block *memory_pool_block_get(
 	struct memory_pool *pool,
 	void **reference);
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -251,7 +245,6 @@ static long memory_pool_block_compute_actual_size(
 
 	return size;
 }
-
 
 static void memory_pool_verify(
 	struct memory_pool *pool)

@@ -39,8 +39,6 @@ enum observer_time_flags
 	_observer_time_force_bit
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct observer_result
@@ -112,9 +110,5 @@ void observer_up_from_forward(
 void observer_set_camera(
 	short local_player_index,
 	struct observer_command *command);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __OBSERVER_H

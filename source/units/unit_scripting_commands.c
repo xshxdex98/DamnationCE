@@ -11,12 +11,6 @@ UNIT_SCRIPTING_COMMANDS.C
 #include "units.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void unit_scripting_set_current_vitality(
@@ -27,8 +21,6 @@ void unit_scripting_set_current_vitality_of(
 	long unit_index,
 	real body_vitality,
 	real shield_vitality);
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -265,4 +257,3 @@ boolean unit_scripting_has_weapon_readied(
 	return result;
 }
 
-/* ---------- private code */

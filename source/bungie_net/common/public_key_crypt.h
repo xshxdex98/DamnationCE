@@ -6,20 +6,12 @@ PUBLIC_KEY_CRYPT.H
 #define __PUBLIC_KEY_CRYPT_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct public_key
 {
 	unsigned long dwords[2];
 };
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
 
 /* ---------- public code */
 

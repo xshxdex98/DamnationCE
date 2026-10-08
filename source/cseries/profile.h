@@ -203,6 +203,4 @@ extern boolean profile_dump_lost_frames;
 extern boolean profile_display;
 extern boolean profile_graph;
 
-/* ---------- public code */
-
 #endif // __PROFILE_H

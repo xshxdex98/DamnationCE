@@ -192,10 +192,6 @@ typedef char looping_sound_track_size_assert[
 typedef char looping_sound_detail_size_assert[
 	sizeof(struct looping_sound_detail) == 0x68 ? 1 : -1];
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 real sound_definition_get_maximum_distance(

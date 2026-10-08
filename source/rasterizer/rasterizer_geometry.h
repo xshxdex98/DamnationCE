@@ -44,8 +44,6 @@ enum
 	NUMBER_OF_RASTERIZER_VERTEX_TYPES,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct environment_lightmap_vertex_compressed
@@ -154,9 +152,5 @@ boolean rasterizer_triangle_buffer_new(
 	void const *triangles);
 void rasterizer_triangle_buffer_delete(
 	struct triangle_buffer *triangle_buffer);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __RASTERIZER_GEOMETRY_H

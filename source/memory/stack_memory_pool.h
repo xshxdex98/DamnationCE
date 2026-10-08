@@ -6,10 +6,6 @@ STACK_MEMORY_POOL.H
 #define __STACK_MEMORY_POOL_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct stack_memory_pool
@@ -51,9 +47,5 @@ void *pool_resize_pointer(
 	long allocation_size,
 	char const *file,
 	unsigned long line);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __STACK_MEMORY_POOL_H

@@ -10,8 +10,6 @@ UI_WIDGET_GROUP.C
 #include "scenario/scenario_definitions.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 #define LOAD_UI_TAG(group, path, message) \
@@ -19,12 +17,6 @@ UI_WIDGET_GROUP.C
 		error(_error_silent, message)
 
 #define SCENARIO_GET(tag_index) ((struct scenario *)tag_get('scnr', tag_index))
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -78,4 +70,3 @@ void ui_load_tags_for_scenario(
 	return;
 }
 
-/* ---------- private code */

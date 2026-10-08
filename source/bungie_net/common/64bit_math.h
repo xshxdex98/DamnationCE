@@ -6,10 +6,6 @@
 #define __64BIT_MATH_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct qword_value
@@ -20,10 +16,6 @@ struct qword_value
 		word words[4];
 	};
 };
-
-/* ---------- prototypes */
-
-/* ---------- globals */
 
 /* ---------- public code */
 

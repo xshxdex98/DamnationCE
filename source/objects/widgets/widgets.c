@@ -28,8 +28,6 @@ enum
 
 #define widget_type_definitions data_0030b2b0
 
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static struct widget_type_definition *widget_type_definition_get(

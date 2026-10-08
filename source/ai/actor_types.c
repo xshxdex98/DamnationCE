@@ -9,13 +9,6 @@ ACTOR_TYPES.C
 #include "actors.h"
 #include "actor_types.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static struct actor_type_definition *actor_type_definition_get(

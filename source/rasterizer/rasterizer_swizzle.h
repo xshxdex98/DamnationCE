@@ -10,10 +10,6 @@ RASTERIZER_SWIZZLE.H
 
 #include "cseries/cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct bitmap_data;
@@ -75,9 +71,5 @@ long rasterizer_xbox_bitmap_get_pixel_data_size(
 	struct bitmap_data *bitmap);
 boolean rasterizer_xbox_bitmap_rebuild_hardware_format(
 	struct bitmap_data *bitmap);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __RASTERIZER_SWIZZLE_H

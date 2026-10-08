@@ -12,10 +12,6 @@ ERRORS.C
 #include <stdarg.h>
 #include <time.h>
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct error_suppression_globals
@@ -324,4 +320,3 @@ void errors_clear(
 	return;
 }
 
-/* ---------- private code */

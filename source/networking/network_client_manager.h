@@ -6,10 +6,6 @@ NETWORK_CLIENT_MANAGER.H
 #define __NETWORK_CLIENT_MANAGER_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct network_advertised_game;
@@ -184,7 +180,5 @@ extern boolean allow_out_of_sync;
 extern long network_game_client_late_join_time;
 extern boolean network_game_client_dont_use_directly_in_use;
 extern struct network_game_client network_game_client_dont_use_directly;
-
-/* ---------- public code */
 
 #endif // __NETWORK_CLIENT_MANAGER_H

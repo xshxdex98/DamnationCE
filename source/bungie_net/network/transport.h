@@ -43,8 +43,6 @@ enum transport_error
 	_transport_error_none,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct transport_address_data
@@ -102,7 +100,5 @@ boolean transport_network_available(
 /* ---------- globals */
 
 extern boolean transport_initialized;
-
-/* ---------- public code */
 
 #endif // __TRANSPORT_H

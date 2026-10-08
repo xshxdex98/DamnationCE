@@ -7,18 +7,6 @@ MATRIX_MATH.C
 #include "cseries.h"
 #include "real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void
@@ -935,4 +923,3 @@ void matrix4x3_from_plane(
 	return;
 }
 
-/* ---------- private code */

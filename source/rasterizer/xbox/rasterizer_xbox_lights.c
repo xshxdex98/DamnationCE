@@ -25,8 +25,6 @@ enum
 	SUN_GLOW_RAY_COUNT = 16
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct lens_flare_definition

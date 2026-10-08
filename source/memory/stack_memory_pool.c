@@ -7,10 +7,6 @@ STACK_MEMORY_POOL.C
 #include "cseries.h"
 #include "memory/stack_memory_pool.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct stack_memory_pool_block
@@ -92,8 +88,6 @@ static struct stack_memory_pool_block *stack_memory_pool_resize_block(
 	unsigned long new_size,
 	char const *file,
 	unsigned long line);
-
-/* ---------- globals */
 
 /* ---------- public code */
 

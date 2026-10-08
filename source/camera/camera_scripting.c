@@ -28,8 +28,6 @@ enum
 	NUMBER_OF_CAMERA_SCRIPT_MODES,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct camera_control
@@ -523,4 +521,3 @@ void scripted_camera_update(
 	return;
 }
 
-/* ---------- private code */

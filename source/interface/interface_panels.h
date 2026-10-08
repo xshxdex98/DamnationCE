@@ -6,16 +6,4 @@ INTERFACE_PANELS.H
 #define __INTERFACE_PANELS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __INTERFACE_PANELS_H

@@ -8,14 +8,6 @@ SHADER_DEFINITIONS.C
 #include "real_math.h"
 #include "shader_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 struct shader_effect_definition global_shader_effect_additive =
@@ -83,4 +75,3 @@ struct shader *shader_get_and_verify_type(struct shader *shader, short shader_ty
 	return shader;
 }
 
-/* ---------- private code */

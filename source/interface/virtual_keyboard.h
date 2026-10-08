@@ -12,10 +12,6 @@ VIRTUAL_KEYBOARD.H
 #include "math/real_math.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct virtual_keyboard_definition
@@ -62,9 +58,5 @@ void virtual_keyboard_process(
 	void);
 void virtual_keyboard_render(
 	void);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __VIRTUAL_KEYBOARD_H

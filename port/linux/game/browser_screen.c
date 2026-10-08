@@ -887,7 +887,6 @@ static char const *type_name(
 	return text;
 }
 
-
 /* the screen's frame and title, and how many games and players there are */
 static void render_header(
 	long players)

@@ -6,7 +6,6 @@ SCENARIO.H
 #define __SCENARIO_H
 #pragma once
 
-
 /* ---------- headers */
 
 #include "real_math.h"
@@ -57,8 +56,6 @@ enum
 	_scenario_current_force_no_water_bit,
 	NUMBER_OF_SCENARIO_GET_CURRENT_BITS,
 };
-
-/* ---------- macros */
 
 /* ---------- structures */
 
@@ -168,7 +165,5 @@ extern struct scenario *global_scenario;
 extern struct collision_bsp *global_collision_bsp;
 extern struct bsp3d *global_bsp3d;
 extern struct game_globals *global_game_globals;
-
-/* ---------- public code */
 
 #endif // __SCENARIO_H

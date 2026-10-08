@@ -121,8 +121,6 @@ enum
 	NUMBER_OF_NAME_FLAGS,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct file_reference
@@ -203,7 +201,5 @@ boolean find_files_next(struct file_reference *file, struct file_last_modificati
 /* ---------- globals */
 
 extern char file_location_volume_names[NUMBER_OF_FILE_REFERENCE_LOCATIONS][256];
-
-/* ---------- public code */
 
 #endif // __FILES_H

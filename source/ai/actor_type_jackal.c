@@ -11,12 +11,6 @@ ACTOR_TYPE_JACKAL.C
 #include "actors.h"
 #include "actions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 void jackal_decide_action(
@@ -39,8 +33,6 @@ struct actor_type_definition actor_type_jackal =
 	NULL,
 	NULL
 };
-
-/* ---------- public code */
 
 /* ---------- private code */
 

@@ -10,10 +10,6 @@ PHYSICS_VARIABLES.H
 
 #include "cseries.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct physics_variable_speed_parameters
@@ -64,9 +60,5 @@ boolean physics_variable_update_seek(
 	boolean update_velocity,
 	real target,
 	real delta);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __PHYSICS_VARIABLES_H

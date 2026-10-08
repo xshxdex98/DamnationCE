@@ -2207,4 +2207,3 @@ void physics_update(
 	return;
 }
 
-/* ---------- private code */

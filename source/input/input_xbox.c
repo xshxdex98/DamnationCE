@@ -77,8 +77,6 @@ enum
 	_key_modifier_alt
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct raw_gamepad_state

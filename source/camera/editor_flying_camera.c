@@ -48,8 +48,6 @@ enum editor_camera_persisted_camera_slot
 	NUMBER_OF_EDITOR_CAMERA_PERSISTED_CAMERA_SLOTS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct editor_camera_focus_definition
@@ -789,7 +787,6 @@ static void editor_camera_orbiting_update(
 
 	return;
 }
-
 
 static void translate_orbiting_to_flying(
 	struct flying_camera *camera)

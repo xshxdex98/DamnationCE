@@ -18,8 +18,6 @@ enum
 	TRANSPORT_NONCE_LENGTH = 8,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct server_transport_globals
@@ -593,7 +591,6 @@ long count_endpoints_in_set(
 	return set->last_endpoint_index + 1;
 }
 
-
 void transport_get_nonce(
 	void *dst,
 	long bytes)
@@ -662,4 +659,3 @@ void transport_client_start(
 	return;
 }
 
-/* ---------- private code */

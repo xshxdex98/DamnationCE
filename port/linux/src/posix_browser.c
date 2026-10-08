@@ -479,7 +479,6 @@ int posix_browser_request(const char *url, const char *form, const char *content
 	return status;
 }
 
-
 #ifdef _WIN32
 
 /* a UTF-8 path as Windows' */

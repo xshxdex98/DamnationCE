@@ -63,8 +63,6 @@ enum
 	NUMBER_OF_BITMAP_D3D_FORMAT_TABLES,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct xbox_texture_cache_globals

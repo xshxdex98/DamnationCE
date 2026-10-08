@@ -27,8 +27,6 @@ enum
 	_shader_type_transparent_water = 7,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 #ifndef HALO_64BIT
@@ -89,7 +87,6 @@ static long transparent_geometry_group_count = 0;
 static long transparent_geometry_group_count2 = 0;
 static short *transparent_geometry_group_sorted_indices = NULL;
 static short transparent_geometry_next_group_sorted_index = 0;
-
 
 /* ---------- public code */
 

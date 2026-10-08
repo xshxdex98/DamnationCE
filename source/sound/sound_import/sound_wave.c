@@ -21,8 +21,6 @@ enum
 	WAVE_FORMAT_PCM= 1
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct riff_container_chunk
@@ -49,10 +47,7 @@ struct riff_format_chunk
 	short extra_data_size;
 };
 
-/* ---------- prototypes */
-
 /* ---------- globals */
-
 
 static byte_swap_code riff_container_chunk_bs_codes[6]=
 {
@@ -249,4 +244,3 @@ void sound_file_wave_format(
 	return;
 }
 
-/* ---------- private code */

@@ -11,10 +11,6 @@ ORBITING_CAMERA.H
 #include "cseries/cseries.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct orbiting_camera
@@ -36,9 +32,5 @@ void orbiting_camera_update(
 	struct orbiting_camera *camera,
 	struct camera_action const *action,
 	struct camera_command *result);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __ORBITING_CAMERA_H

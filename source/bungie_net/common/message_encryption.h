@@ -6,16 +6,6 @@ MESSAGE_ENCRYPTION.H
 #define __MESSAGE_ENCRYPTION_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void reversible_crypt(

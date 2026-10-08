@@ -12,16 +12,6 @@ UNICODE.H
 #include <time.h>
 #include <stdarg.h>
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes/UNICODE.C */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 int uisalpha(

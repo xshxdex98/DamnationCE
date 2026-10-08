@@ -68,10 +68,4 @@ struct item_collection_definition
 	long unused[19];
 };
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __ITEM_DEFINITIONS_H

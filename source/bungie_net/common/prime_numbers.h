@@ -6,10 +6,6 @@ PRIME_NUMBERS.H
 #define __PRIME_NUMBERS_H
 #pragma once
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct qword_value;
@@ -21,9 +17,5 @@ unsigned long randomprime(
 
 void probable_prime64(
 	struct qword_value *result);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __PRIME_NUMBERS_H

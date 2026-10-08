@@ -19,8 +19,6 @@ enum
 	RANDOM_C= 1013904223L
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct random_math_globals

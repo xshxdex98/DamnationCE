@@ -12,8 +12,6 @@ ACTION_WAIT.C
 #include "props.h"
 #include "game/game.h"
 
-/* ---------- constants */
-
 /* ---------- macros */
 
 /*
@@ -22,12 +20,6 @@ ACTION_WAIT.C
  * accessor local until the shared path layout is corrected as its own change.
  */
 #define actor_wait_is_moving(actor) (*(boolean *)((byte *)(actor) + 0x504))
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -196,4 +188,3 @@ action_wait_update(
 	return;
 }
 
-/* ---------- private code */

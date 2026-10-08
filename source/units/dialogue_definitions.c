@@ -6,14 +6,6 @@ DIALOGUE_DEFINITIONS.C
 
 #include "units/dialogue_definitions.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
 /* ---------- globals */
 
 char const *dialogue_vocalization_type_name[NUMBER_OF_DIALOGUE_VOCALIZATION_TYPES][2] =
@@ -283,4 +275,3 @@ short dialogue_get_vocalization_type_by_name(
 	return vocalization_type;
 }
 
-/* ---------- private code */

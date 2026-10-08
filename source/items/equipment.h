@@ -42,8 +42,4 @@ void equipment_place(long equipment_index, struct scenario_equipment_datum *scen
 void equipment_definition_handle_pickup(long equipment_definition_index);
 void equipment_handle_pickup(long equipment_index);
 
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __EQUIPMENT_H

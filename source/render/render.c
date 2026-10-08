@@ -52,8 +52,6 @@ enum
 #define RASTERIZER_TARGET_RENDER_PRIMARY_WIDTH halo_screen_width()
 #define RASTERIZER_TARGET_RENDER_PRIMARY_HEIGHT 480
 
-/* ---------- structures */
-
 /* ---------- prototypes */
 
 static void render_nonplayer_frame(
@@ -587,4 +585,3 @@ void render_frame(
 	return;
 }
 
-/* ---------- private code */

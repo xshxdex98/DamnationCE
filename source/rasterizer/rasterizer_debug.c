@@ -32,8 +32,6 @@ enum
 	NUMBER_OF_RASTERIZER_STATS_MODES
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct rasterizer_debug_vertex
@@ -639,4 +637,3 @@ void rasterizer_debug_triangle(
 	return;
 }
 
-/* ---------- private code */

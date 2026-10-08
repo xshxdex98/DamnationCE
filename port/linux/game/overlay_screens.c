@@ -106,7 +106,6 @@ enum
 #define CAIRO_LIT_EDGE 0xFFFFFF70
 #define CAIRO_LIT_GLOW 0xCEE6FF30
 
-
 /* ---------- public code */
 
 struct overlay_palette const *overlay_palette_current(

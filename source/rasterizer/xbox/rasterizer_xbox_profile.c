@@ -36,8 +36,6 @@ enum
 	_rasterizer_profile_callback_begin_bit = 31
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct rasterizer_profile_globals
@@ -116,7 +114,6 @@ static void frame_callback_function(
 	unsigned long context);
 
 /* ---------- globals */
-
 
 static LARGE_INTEGER rasterizer_profile_performance_counter_frequency = { 1 };
 static struct rasterizer_profile_globals rasterizer_profile_globals =

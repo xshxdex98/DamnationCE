@@ -328,10 +328,4 @@ struct scenario_cutscene_flag
 	byte unused[0x24];
 };
 
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __SCENARIO_DEFINITIONS_H

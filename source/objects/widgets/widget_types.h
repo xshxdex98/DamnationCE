@@ -34,8 +34,6 @@ enum
 	NUMBER_OF_RASTERIZER_WIDGET_FLAGS
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct render_animation;
@@ -75,10 +73,4 @@ typedef char widget_type_definition_size_assert[
 	sizeof(struct widget_type_definition) == 0x28 ? 1 : -1];
 
 #endif
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-/* ---------- public code */
-
 #endif // __WIDGET_TYPES_H

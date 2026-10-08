@@ -32,8 +32,6 @@ enum
 	_object_runtime_unit_cannot_open_doors_automatically_bit = 14,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct device_group_datum
@@ -42,10 +40,6 @@ struct device_group_datum
 	word pad;
 	real actual_value;
 };
-
-/* ---------- prototypes */
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -335,4 +329,3 @@ boolean machine_update(
 	return TRUE;
 }
 
-/* ---------- private code */

@@ -13,16 +13,6 @@ EQUIPMENT.C
 #include "objects/objects.h"
 #include "sound/game_sound.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-/* ---------- prototypes */
-
-/* ---------- globals */
-
 /* ---------- public code */
 
 void equipment_place(
@@ -70,4 +60,3 @@ void equipment_definition_handle_pickup(
 	return;
 }
 
-/* ---------- private code */

@@ -36,8 +36,6 @@ RASTERIZER_XBOX_ERRORS.C
 #define D3DERR_INVALIDDEVICE MAKE_D3D_HRESULT(2155)
 #define D3DERR_INVALIDCALL MAKE_D3D_HRESULT(2156)
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 typedef long hresult;
@@ -53,8 +51,6 @@ hresult __stdcall D3DXGetErrorStringA(
 	hresult error_result,
 	char *buffer,
 	unsigned long buffer_length);
-
-/* ---------- globals */
 
 /* ---------- public code */
 
@@ -157,4 +153,3 @@ void rasterizer_error(
 	return;
 }
 
-/* ---------- private code */

@@ -16,8 +16,6 @@ RASTERIZER_CINEMATICS.C
 #include "rasterizer/rasterizer_globals_internal.h"
 #include "saved games/game_state.h"
 
-/* ---------- constants */
-
 /* ---------- structures */
 
 struct rasterizer_cinematic_screen_effect_state
@@ -534,4 +532,3 @@ void rasterizer_screen_effect_port_set(
 	globals->near_clip_distance = state->near_clip_distance;
 }
 
-/* ---------- private code */

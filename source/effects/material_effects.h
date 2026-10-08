@@ -11,15 +11,9 @@ MATERIAL_EFFECTS.H
 #include "cseries/cseries.h"
 #include "math/real_math.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct location;
-
-/* ---------- prototypes/EXAMPLE.C */
 
 /* ---------- globals */
 

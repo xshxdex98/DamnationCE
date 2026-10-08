@@ -204,7 +204,6 @@ enum
 	NUMBER_OF_UNIT_ANIMATION_FLAGS,
 };
 
-
 enum
 {
 	_unit_animation_state_asleep = 0,
@@ -311,7 +310,6 @@ enum
 	_unit_weapon_class_animation_unused13,
 	NUMBER_OF_UNIT_WEAPON_CLASS_ANIMATIONS,
 };
-
 
 enum
 {
@@ -865,7 +863,6 @@ boolean unit_set_seat(
 	long unit_index,
 	char const *seat_label);
 
-
 boolean unit_can_use_weapon(
 	long unit_index,
 	long weapon_index);
@@ -1001,7 +998,6 @@ void unit_postprocess_node_matrices(
 	long object_index,
 	struct real_matrix4x3 *node_matrices);
 
-
 /* ---------- prototypes/UNIT_DIALOGUE.C */
 
 short unit_test_speech(
@@ -1048,7 +1044,6 @@ short unit_update_animation(
 void unit_dialogue_update(
 	long unit_index);
 
-
 /* ---------- globals */
 
 extern short magic_base_animation_seat_index;
@@ -1060,7 +1055,5 @@ extern boolean debug_damage_taken;
 extern boolean debug_unit_illumination;
 extern boolean debug_unit_animations;
 extern boolean debug_unit_all_animations;
-
-/* ---------- public code */
 
 #endif // __UNITS_H

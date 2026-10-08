@@ -25,8 +25,6 @@ enum
 	SOME_LARGE_NUMBER_OF_TICKS = 1000, // 0x03E8
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct game_time_globals_struct
@@ -44,8 +42,6 @@ struct game_time_globals_struct
 	real speed;
 	real leftover_dt;
 };
-
-/* ---------- prototypes */
 
 /* ---------- globals */
 
@@ -472,4 +468,3 @@ void game_time_update(
 	return;
 }
 
-/* ---------- private code */

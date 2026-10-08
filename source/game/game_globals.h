@@ -99,8 +99,6 @@ enum
 	NUMBER_OF_GAME_DIFFICULTY_VALUES,
 };
 
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct game_globals_grenade
@@ -267,9 +265,5 @@ struct game_globals
 char const *material_get_name(short material_type);
 real game_difficulty_get_value(short value_type);
 real game_difficulty_get_team_value(short value_type, short team_index);
-
-/* ---------- globals */
-
-/* ---------- public code */
 
 #endif // __GAME_GLOBALS_H

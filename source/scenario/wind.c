@@ -19,10 +19,6 @@ WIND.C
 #include "tag_files/tag_groups.h"
 #include "effects/weather_particle_systems.h"
 
-/* ---------- constants */
-
-/* ---------- macros */
-
 /* ---------- structures */
 
 struct wind_state
