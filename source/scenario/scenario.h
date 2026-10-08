@@ -11,6 +11,8 @@ SCENARIO.H
 
 #include "real_math.h"
 #include "sound/sound_environment_definitions.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -59,6 +61,12 @@ enum
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct memory_status
+{
+	unsigned long minimum_available_memory;
+	unsigned long maximum_available_memory;
+};
 
 struct scenario_globals
 {

@@ -13,6 +13,7 @@ COLLISION_BSP.C
 #include "render/render_debug.h"
 #include "scenario/scenario.h"
 #include "tag_files/tag_groups.h"
+#include "physics/collision_bsp.h"
 
 /* ---------- constants */
 
@@ -121,19 +122,6 @@ typedef char collision_bsp_test_sphere_context_projection_axis_offset_assert[
 typedef char collision_bsp_test_sphere_context_center2d_offset_assert[
 	offsetof(struct test_sphere_data, center2d) == 0x220 ? 1 : -1];
 #endif
-
-struct collision_leaf
-{
-	word flags;
-	short bsp2d_reference_count;
-	long first_bsp2d_reference_index;
-};
-
-struct bsp2d_reference
-{
-	long plane_designator;
-	long root_index;
-};
 
 typedef char collision_leaf_size_assert[
 	sizeof(struct collision_leaf) == 0x08 ? 1 : -1];

@@ -38,6 +38,7 @@ no screen pauses the game (a network game's clock runs on).
 
 #include "halo_menus.h"
 #include "cache/cache_files.h"
+#include "interface/ui_widget.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -125,64 +126,8 @@ enum
 	_child_widget_use_custom_controller_index_bit = 0,
 };
 
-/* ---------- structures */
-
-struct cache_file_tag_instance
-{
-	long group_tag;
-	long parent_group_tags[2];
-	long tag_index;
-	/* Xbox addresses (as in cache_files.c) */
-	XPTR(char) name;
-	XPTR(void) base_address;
-	unsigned long unused[2];
-};
-
 typedef char verify_cache_file_tag_instance_size[
 	sizeof(struct cache_file_tag_instance) == 0x20 ? 1 : -1];
-
-/* the widget definition, as ui_widget.c has it */
-struct ui_widget_event_handler_reference
-{
-	long flags;
-	short event_type;
-	short function;
-	struct tag_reference widget_tag;
-	struct tag_reference sound_effect;
-	char script[32];
-};
-
-struct ui_widget_child_reference
-{
-	struct tag_reference widget_tag;
-	char name[32];
-	long flags;
-	short custom_controller_index;
-	short vertical_offset;
-	short horizontal_offset;
-	byte unknown03A[0x50 - 0x3A];
-};
-
-struct ui_widget_conditional_reference
-{
-	struct tag_reference widget_tag;
-	char name[32];
-	long flags;
-	short custom_controller_index;
-	byte unknown036[0x50 - 0x36];
-};
-
-struct ui_widget_search_and_replace_reference
-{
-	char search_string[32];
-	short replace_function;
-};
-
-struct ui_widget_game_data_input_reference
-{
-	short function;
-	byte unknown002[0x24 - 0x02];
-};
 
 struct ui_widget_definition
 {

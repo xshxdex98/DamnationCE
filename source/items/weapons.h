@@ -9,6 +9,8 @@ WEAPONS.H
 /* ---------- headers */
 
 #include "items.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -155,6 +157,12 @@ enum
 #define weapon_try_and_get(index)	((struct weapon_datum*)object_try_and_get_and_verify_type(index, _object_mask_weapon))
 
 /* ---------- structures */
+
+struct animation_graph_weapon_animations
+{
+	long unused1[4];
+	struct tag_block animations;
+};
 
 struct weapon_interface_magazine_state
 {

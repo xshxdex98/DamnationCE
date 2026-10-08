@@ -10,6 +10,8 @@ Narrow cross-translation-unit interface owned by HUD_DRAW.C.
 
 #include "math/integer_math.h"
 #include "math/real_math.h"
+#include "tag_files/tag_groups.h"
+#include "interface/hud_definitions.h"
 
 /* ---------- constants */
 
@@ -43,6 +45,76 @@ and ends with this check of both its return address and its fill pattern. */
 }
 
 /* ---------- structures */
+
+struct multitexture_overlay_hud_element_definition
+{
+	word flags;
+	short type;
+	short framebuffer_blend_function;
+	word pad06;
+	long unused08[8];
+	word map_flags[3];
+	short map_blending_function[2];
+	short pad32;
+	real_vector2d map_scale[3];
+	real_vector2d map_offset[3];
+	struct tag_reference map[3];
+	short map_clamp[3];
+	short pad9A;
+	long unused9C[46];
+	struct tag_block functions;
+	long unused160[32];
+};
+
+struct multitexture_overlay_hud_element_effector_definition
+{
+	long unused0[16];
+	short destination_type;
+	short destination;
+	short source;
+	word pad46;
+	real in_bounds[2];
+	real out_bounds[2];
+	long unused58[16];
+	real_rgb_color tint_color_lower_bounds;
+	real_rgb_color tint_color_upper_bounds;
+	short periodic_function;
+	word padB2;
+	real periodic_function_period;
+	real periodic_function_phase;
+	long unusedBC[8];
+};
+
+struct weapon_hud_overlay_definition
+{
+	struct tag_reference bitmap;
+	struct tag_block items;
+};
+
+struct weapon_hud_overlay_item
+{
+	struct hud_placement_definition placement;
+	struct hud_color_definition colors;
+	short frame_rate;
+	short pad;
+	short sequence_index;
+	short type;
+	long flags;
+	long unused[14];
+};
+
+struct hud_number_definition
+{
+	struct tag_reference number_bitmap;
+	char character_width;
+	char screen_width;
+	char x_offset;
+	char y_offset;
+	char decimal_point_width;
+	char colon_width;
+	short pad;
+	long unused[19];
+};
 
 struct bitmap_data;
 struct hud_absolute_placement_definition;

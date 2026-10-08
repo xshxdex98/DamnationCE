@@ -10,12 +10,39 @@ WEATHER_PARTICLE_SYSTEMS.H
 
 #include "cseries/cseries.h"
 #include "memory/data.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct structure_weather_polyhedron
+{
+	real_point3d bounding_sphere_center;
+	real bounding_sphere_radius;
+	long unused;
+	struct tag_block planes;
+};
+
+struct structure_weather_palette_entry
+{
+	char name[32];
+	struct tag_reference particle_system;
+	word pad30;
+	short runtime_particle_system_global_function_index;
+	char particle_system_global_function_name[32];
+	long particle_system_unused[11];
+	struct tag_reference wind;
+	real_vector3d wind_direction;
+	real wind_magnitude;
+	word padA0;
+	short wind_global_function_index;
+	char wind_global_function_name[32];
+	long wind_unused[11];
+};
 
 /* ---------- prototypes/WEATHER_PARTICLE_SYSTEMS.C */
 

@@ -10,6 +10,7 @@ EFFECTS.H
 
 #include "cseries/cseries.h"
 #include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -27,6 +28,48 @@ enum
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct effect_location_definition
+{
+	char marker_name[32];
+};
+
+struct effect_particles_definition
+{
+	short environment;
+	short disposition;
+	short camera_mode;
+	short unused006;
+	short location_index;
+	short unused00a;
+	real_euler_angles2d direction;
+	real_vector3d offset;
+	real_vector3d runtime_direction;
+	long unused02c[10];
+	struct tag_reference particle;
+	unsigned long flags;
+	short distribution_function;
+	short unused06a;
+	short count_lower_bound;
+	short count_upper_bound;
+	real distribution_radius_lower_bound;
+	real distribution_radius_upper_bound;
+	long unused078[3];
+	real velocity_lower_bound;
+	real velocity_upper_bound;
+	real velocity_cone_angle;
+	real angular_velocity_lower_bound;
+	real angular_velocity_upper_bound;
+	long unused098[2];
+	real radius_lower_bound;
+	real radius_upper_bound;
+	long unused0a8[2];
+	real_argb_color tint_lower_bound;
+	real_argb_color tint_upper_bound;
+	long unused0d0[4];
+	unsigned long scale_a_flags;
+	unsigned long scale_b_flags;
+};
 
 struct effect_vector_field;
 struct effects_information

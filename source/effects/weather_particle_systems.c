@@ -162,32 +162,6 @@ typedef char weather_particle_size_assert[
 typedef char weather_particle_system_globals_size_assert[
 	sizeof(struct weather_particle_system_globals) == 0x274 ? 1 : -1];
 
-/* structure BSP weather and wind palette entries (no header declares them yet) */
-struct structure_weather_palette_entry
-{
-	char name[32];
-	struct tag_reference particle_system;
-	word pad30;
-	short runtime_particle_system_global_function_index;
-	char particle_system_global_function_name[32];
-	long particle_system_unused[11];
-	struct tag_reference wind;
-	real_vector3d wind_direction;
-	real wind_magnitude;
-	word padA0;
-	short wind_global_function_index;
-	char wind_global_function_name[32];
-	long wind_unused[11];
-};
-
-struct structure_weather_polyhedron
-{
-	real_point3d bounding_sphere_center;
-	real bounding_sphere_radius;
-	long unused;
-	struct tag_block planes;
-};
-
 typedef char structure_weather_palette_entry_size_assert[
 	sizeof(struct structure_weather_palette_entry) == 0xF0 ? 1 : -1];
 typedef char structure_weather_polyhedron_size_assert[

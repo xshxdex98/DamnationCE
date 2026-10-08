@@ -44,6 +44,7 @@ ACTORS.C
 #include "networking/network_game_globals.h"
 #include "ai/ai.h"
 #include "ai/encounters.h"
+#include "ai/actors.h"
 
 enum
 {
@@ -121,13 +122,6 @@ typedef char actor_iterator_size_assert[
 typedef char actor_iterator_index_offset_assert[
 	offsetof(struct actor_iterator, index) == 0x14 ? 1 : -1];
 #endif
-
-struct actor_variant_change_colors
-{
-	real_rgb_color color_lower_bound;
-	real_rgb_color color_upper_bound;
-	unsigned long unused[2];
-};
 
 typedef char actor_variant_change_colors_size_assert[
 	sizeof(struct actor_variant_change_colors) == 0x20 ? 1 : -1];

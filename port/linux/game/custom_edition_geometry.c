@@ -33,6 +33,7 @@ Edition vertices (docs/custom_edition_caches.md).
 #include "structures/structure_bsp_definitions.h"
 #include "cache_file_formats.h"
 #include "custom_edition_cache.h"
+#include "models/models.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -64,34 +65,6 @@ enum
 component this far past 1 stays within that after the packing's rounding
 (every vector of the maps examined is within 1.0001) */
 #define MAXIMUM_COMPRESSIBLE_COMPONENT 1.005f
-
-/* ---------- structures */
-
-/* this build's model geometry and part, as models.c and rasterizer.c each
-define them for themselves (no header declares them) */
-struct model_geometry
-{
-	byte reserved[0x24];
-	struct tag_block parts;
-};
-
-struct model_geometry_part
-{
-	unsigned long flags;
-	short shader_index;
-	char previous_part_index;
-	char next_part_index;
-	short centroid_primary_node_index;
-	short centroid_secondary_node_index;
-	real centroid_primary_node_weight;
-	real centroid_secondary_node_weight;
-	real_point3d centroid;
-	struct tag_block uncompressed_vertices;
-	struct tag_block compressed_vertices;
-	struct tag_block triangles;
-	struct triangle_buffer triangle_buffer;
-	struct vertex_buffer vertex_buffer;
-};
 
 /* A model part as Custom Edition caches hold it (OpenSauce
 model_definitions.hpp, gbxmodel_geometry_part). Where this build keeps its

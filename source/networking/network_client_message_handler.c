@@ -58,17 +58,6 @@ typedef char network_game_players_offset_assert[
 typedef char network_game_size_assert[
 	sizeof(struct network_game) == HALO_PORT_NETWORK_GAME_SIZE ? 1 : -1];
 
-/* one piece of the game settings record, which no longer fits one message
-(network_server_message_handler.c sends them in order) */
-struct message_server_game_settings_update
-{
-	word total_size;
-	word offset;
-	word length;
-	word pad;
-	byte data[HALO_PORT_NETWORK_GAME_SETTINGS_FRAGMENT_SIZE];
-};
-
 struct message_server_game_advertise
 {
 	byte client_nonce[TRANSPORT_NONCE_LENGTH];
@@ -91,11 +80,6 @@ struct message_server_game_advertise
 	byte join_game_token[JOIN_GAME_TOKEN_LENGTH];
 };
 
-struct message_server_pong
-{
-	long timestamp;
-};
-
 struct message_server_machine_accepted
 {
 	long random_seed;
@@ -113,26 +97,6 @@ struct message_server_pregame_countdown
 	short seconds_remaining;
 };
 
-struct message_server_pregame_keep_alive
-{
-	short unused;
-};
-
-struct message_server_postgame_keep_alive
-{
-	short unused;
-};
-
-struct message_server_begin_game
-{
-	long unused;
-};
-
-struct message_server_graceful_game_exit_pregame
-{
-	long unused;
-};
-
 struct message_server_game_update
 {
 	unsigned long update_number;
@@ -147,21 +111,6 @@ struct message_server_remove_player_ingame
 {
 	struct network_player player;
 	long reason;
-};
-
-struct message_server_game_over
-{
-	long unused;
-};
-
-struct message_server_switch_to_pregame
-{
-	long unused;
-};
-
-struct message_server_graceful_game_exit_postgame
-{
-	long unused;
 };
 
 /* ---------- prototypes */

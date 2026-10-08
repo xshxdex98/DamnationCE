@@ -41,6 +41,7 @@ DAMAGE.C
 #include "units/bipeds.h"
 #include "units/units.h"
 #include "units/vehicles.h"
+#include "objects/damage.h"
 
 /* network_game_globals.c's */
 boolean network_game_distributed_client(void);
@@ -136,19 +137,6 @@ enum
 };
 
 /* ---------- macros */
-
-/* ---------- structures */
-
-struct damage_region
-{
-	char name[TAG_STRING_LENGTH+1];
-	unsigned long flags;
-	long unused0;
-	real damage_threshold;
-	long unused1[3];
-	struct tag_reference destroyed_effect;
-	struct tag_block permutations;
-};
 
 struct game_globals_falling_damage
 {

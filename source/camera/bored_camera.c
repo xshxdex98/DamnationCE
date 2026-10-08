@@ -12,6 +12,7 @@ BORED_CAMERA.C
 #include "units/unit_definitions.h"
 #include "units/units.h"
 #include "observer.h"
+#include "camera/bored_camera.h"
 
 /* ---------- constants */
 
@@ -22,12 +23,6 @@ BORED_CAMERA.C
 struct camera_action
 {
 	short local_player_index;
-};
-
-struct unit_camera_track
-{
-	struct tag_reference track;
-	long unused[3];
 };
 
 typedef char unit_camera_track_size_assert[

@@ -106,18 +106,6 @@ enum weapon_magazine_flags
 	NUMBER_OF_WEAPON_MAGAZINE_FLAGS,
 };
 
-struct animation_graph_weapon_animations
-{
-	long unused1[4];
-	struct tag_block animations;
-};
-
-struct animation_graph_first_person_weapon_animations
-{
-	long unused1[4];
-	struct tag_block animations;
-};
-
 /* weapon_trigger_definition.firing_effects element (no header declares it yet) */
 struct trigger_firing_effect
 {

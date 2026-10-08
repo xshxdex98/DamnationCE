@@ -41,6 +41,7 @@ void map_screen_server_disposed(void);
 #endif
 #include "interface/player_ui.h"
 #include "tag_files/tag_files.h"
+#include "networking/network_client_message_handler.h"
 
 /* port: internet play's Discord presence (port/linux/src/p2p.c), and the
 server browser's listing of a public game (p2p_lobby.c) */
@@ -126,35 +127,10 @@ struct countdown_timer
 	unsigned long last_update_time;
 };
 
-struct message_server_game_over
-{
-	long unused;
-};
-
-struct message_server_begin_game
-{
-	long unused;
-};
-
 struct message_server_remove_player_ingame
 {
 	struct network_player player;
 	long reason;
-};
-
-struct message_server_graceful_game_exit_pregame
-{
-	long unused;
-};
-
-struct message_server_switch_to_pregame
-{
-	long unused;
-};
-
-struct message_server_graceful_game_exit_postgame
-{
-	long unused;
 };
 
 struct message_server_machine_rejected
@@ -165,16 +141,6 @@ struct message_server_machine_rejected
 struct message_server_pregame_countdown
 {
 	short seconds_to_start;
-};
-
-struct message_server_pregame_keep_alive
-{
-	short unused;
-};
-
-struct message_server_postgame_keep_alive
-{
-	short unused;
 };
 
 struct message_client_game_update

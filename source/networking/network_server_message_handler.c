@@ -22,6 +22,7 @@ NETWORK_SERVER_MESSAGE_HANDLER.C
 #include "text/unicode.h"
 /* system_milliseconds(), for the settings update interval */
 #include "cseries/cseries_windows.h"
+#include "networking/network_client_message_handler.h"
 
 /* port/linux/game/network_distributed.c's */
 void network_distributed_handle_message(long machine_index, word const *message, word size);
@@ -130,11 +131,6 @@ struct message_client_game_update
 	struct player_action actions[MAXIMUM_LOCAL_PLAYERS];
 };
 
-struct message_server_pong
-{
-	long timestamp;
-};
-
 struct message_server_game_advertise
 {
 	byte client_nonce[TRANSPORT_NONCE_LENGTH];
@@ -212,17 +208,6 @@ struct message_server_machine_accepted
 struct message_server_machine_rejected
 {
 	short reason;
-};
-
-/* the game settings record no longer fits one message: it goes out as
-consecutive pieces, which the clients put back together */
-struct message_server_game_settings_update
-{
-	word total_size;
-	word offset;
-	word length;
-	word pad;
-	byte data[HALO_PORT_NETWORK_GAME_SETTINGS_FRAGMENT_SIZE];
 };
 
 struct message_server_remove_player_ingame

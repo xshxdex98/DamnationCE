@@ -73,40 +73,6 @@ enum
 
 /* ---------- macros */
 
-/* ---------- structures */
-
-struct model_shader_reference
-{
-	struct tag_reference shader;
-	short permutation_index;
-	word pad;
-	long unused[3];
-};
-
-struct model_geometry
-{
-	byte reserved[0x24];
-	struct tag_block parts;
-};
-
-struct model_geometry_part
-{
-	unsigned long flags;
-	short shader_index;
-	char previous_part_index;
-	char next_part_index;
-	short centroid_primary_node_index;
-	short centroid_secondary_node_index;
-	real centroid_primary_node_weight;
-	real centroid_secondary_node_weight;
-	real_point3d centroid;
-	struct tag_block uncompressed_vertices;
-	struct tag_block compressed_vertices;
-	struct tag_block triangles;
-	struct triangle_buffer triangle_buffer;
-	struct vertex_buffer vertex_buffer;
-};
-
 typedef char verify_model_shader_reference_size[sizeof(struct model_shader_reference) == 0x20 ? 1 : -1];
 typedef char verify_model_geometry_part_size[sizeof(struct model_geometry_part) == 0x68 ? 1 : -1];
 
@@ -137,6 +103,7 @@ typedef char verify_rasterizer_model_begin_parameters_size[sizeof(struct rasteri
 /* ---------- prototypes */
 
 #include "rasterizer/rasterizer_models.h"
+#include "models/models.h"
 #ifdef HALO_64BIT
 #include "rasterizer/rasterizer_model_types.h"
 #endif

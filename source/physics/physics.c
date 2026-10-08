@@ -73,21 +73,6 @@ enum
 		line_result[2] = line_vector[2] * line_distance + line_point[2]; \
 	} while (0)
 
-/* ---------- structures */
-
-struct powered_mass_point_definition
-{
-	char name[32];
-	unsigned long flags;
-	real antigrav_strength;
-	real antigrav_offset;
-	real antigrav_height;
-	real antigrav_damp_fraction;
-	real antigrav_normal_k1;
-	real antigrav_normal_k0;
-	real unused[17];
-};
-
 #include "friction_datum.h"
 
 #include "powered_mass_point_datum.h"
@@ -96,6 +81,7 @@ struct powered_mass_point_definition
 
 #include "units/vehicle_datum.h"
 #include "physics/collision_bsp.h"
+#include "physics/physics.h"
 
 /* the game globals' falling damage block (no header declares it yet;
  * damage.c and bipeds.c keep copies) */

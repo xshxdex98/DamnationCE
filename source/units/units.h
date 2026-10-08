@@ -10,6 +10,8 @@ UNITS.H
 
 #include "ai/ai.h"
 #include "objects/objects.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -383,6 +385,12 @@ enum
 #define unit_try_and_get(index)	((struct unit_datum*)object_try_and_get_and_verify_type(index, _object_mask_unit))
 
 /* ---------- structures */
+
+struct unit_initial_weapon
+{
+	struct tag_reference weapon;
+	long unused[5];
+};
 
 struct unit_control_data;
 struct scenario_unit_datum;

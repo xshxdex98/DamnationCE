@@ -10,12 +10,27 @@ FOLLOWING_CAMERA.H
 
 #include "cseries/cseries.h"
 #include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct camera_track_definition
+{
+	unsigned long flags;
+	struct tag_block control_points;
+	long unused[8];
+};
+
+struct camera_track_control_point
+{
+	real_vector3d position;
+	real_quaternion orientation;
+	long unused[8];
+};
 
 struct following_camera
 {

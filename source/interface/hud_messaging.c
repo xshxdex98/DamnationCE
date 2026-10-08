@@ -89,27 +89,11 @@ struct hud_message_definition
 	byte pad8B;
 };
 
-struct hud_state_message_definition
-{
-	char name[32];
-	word text_start_index;
-	word element_start_index;
-	byte element_count;
-	byte pad25[3];
-	long unused28[6];
-};
-
 enum
 {
 	_hud_message_type_text,
 	_hud_message_type_icon,
 	NUMBER_OF_HUD_MESSAGE_TYPES
-};
-
-struct hud_state_message_element
-{
-	byte type;
-	byte data;
 };
 
 struct hud_state_message_text_info_definition
@@ -192,19 +176,6 @@ struct number_hud_element_definition
 	char fractional_digits;
 	byte pad;
 	long unused[3];
-};
-
-struct hud_number_definition
-{
-	struct tag_reference number_bitmap;
-	char character_width;
-	char screen_width;
-	char x_offset;
-	char y_offset;
-	char decimal_point_width;
-	char colon_width;
-	short pad;
-	long unused[19];
 };
 
 typedef char hud_timer_data_size_assert[

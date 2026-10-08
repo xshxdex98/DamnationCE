@@ -10,12 +10,25 @@ FIRST_PERSON_WEAPONS.H
 
 #include "cseries/cseries.h"
 #include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct animation_graph_first_person_weapon_animations
+{
+	long unused[4];
+	struct tag_block animations;		// animation_graph_animation_index
+};
+
+struct animation_graph_sound_reference
+{
+	struct tag_reference sound;
+	long unused;
+};
 
 struct real_matrix4x3;
 struct animation_state;

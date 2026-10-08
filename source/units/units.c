@@ -57,6 +57,7 @@ UNITS.C
 #include "coop_enemies.h" /* port: port/linux/game/coop_enemies.c */
 #include "units/bipeds.h"
 #include "scenario/scenario_definitions.h"
+#include "units/units.h"
 
 /* port: the control and animation impulses the host's actors give their
 units go to the clients' copies (port/linux/game/network_actors.c) */
@@ -189,12 +190,6 @@ struct unit_control_data
 
 typedef char unit_control_data_size_assert[
 	sizeof(struct unit_control_data) == 0x40 ? 1 : -1];
-
-struct unit_initial_weapon
-{
-	struct tag_reference weapon;
-	long unused[5];
-};
 
 typedef char unit_initial_weapon_size_assert[
 	sizeof(struct unit_initial_weapon) == 0x24 ? 1 : -1];

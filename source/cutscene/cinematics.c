@@ -27,6 +27,7 @@ CINEMATICS.C
 #include "text/draw_string.h"
 #include "text/text_group.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
+#include "cutscene/cinematics.h"
 
 /* ---------- constants */
 
@@ -36,27 +37,6 @@ enum
 };
 
 /* ---------- macros */
-
-/* ---------- structures */
-
-struct scenario_cutscene_title
-{
-	long flags;
-	char name[TAG_STRING_LENGTH+1];
-	long pad24;
-	rectangle2d bounds;
-	short text_index;
-	word style;
-	word justification;
-	word pad36;
-	unsigned long text_flags;
-	pixel32 foreground_color;
-	pixel32 shadow_color;
-	real fade_in_time;
-	real up_time;
-	real fade_out_time;
-	byte unused50[0x10];
-};
 
 typedef char verify_scenario_cutscene_title_size[
 	sizeof(struct scenario_cutscene_title) == 0x60 ? 1 : -1];

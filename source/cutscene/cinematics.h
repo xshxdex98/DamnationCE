@@ -9,12 +9,33 @@ CINEMATICS.H
 /* ---------- headers */
 
 #include "math/real_math.h"
+#include "tag_files/tag_groups.h"
+#include "tag_files/tag_files.h"
 
 /* ---------- constants */
 
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct scenario_cutscene_title
+{
+	long flags;
+	char name[TAG_STRING_LENGTH+1];
+	long pad24;
+	rectangle2d bounds;
+	short text_index;
+	word style;
+	word justification;
+	word pad36;
+	unsigned long text_flags;
+	pixel32 foreground_color;
+	pixel32 shadow_color;
+	real fade_in_time;
+	real up_time;
+	real fade_out_time;
+	byte unused50[0x10];
+};
 
 struct cinematic_title
 {

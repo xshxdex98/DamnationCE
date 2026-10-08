@@ -21,6 +21,7 @@ DEVICES.C
 #include "sound/game_sound.h"
 #include "sound/sound_definitions.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
+#include "devices/devices.h"
 
 /* ---------- constants */
 
@@ -67,20 +68,6 @@ struct device_group_datum
 	short identifier;
 	word flags;
 	real actual_value;
-};
-
-struct scenario_device_group
-{
-	char name[32];
-	real initial_value;
-	unsigned long flags;
-	long unused[3];
-};
-
-struct animation_graph_device_animations
-{
-	long unused[21];
-	struct tag_block animations;
 };
 
 typedef char device_group_datum_size_assert[

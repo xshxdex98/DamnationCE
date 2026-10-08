@@ -57,6 +57,7 @@ PLAYERS.C
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
 #include "editor_play.h" /* port: port/linux/game/editor_play.c */
+#include "game/players.h"
 #ifdef HALO_64BIT
 #include "cseries/errors.h"
 #include "networking/network_messages.h"
@@ -122,17 +123,6 @@ typedef char player_data_maximum_count_assert[
 /* ---------- macros */
 
 /* ---------- structures */
-
-/* These scenario records are consumed only by Players.  The broader scenario
-   header intentionally cannot own them yet: older consumers still carry their
-   own incompatible partial definitions. */
-struct scenario_bsp_switch_trigger_volume
-{
-	short trigger_volume_index;
-	short source_structure_bsp_index;
-	short destination_structure_bsp_index;
-	short cutscene_flag_index;
-};
 
 struct unit_control_data
 {

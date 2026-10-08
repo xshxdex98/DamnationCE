@@ -9,6 +9,9 @@ VEHICLES.H
 /* ---------- headers */
 
 #include "units.h"
+#include "models/model_animation_definitions.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -42,6 +45,23 @@ enum vehicle_flags
 #define vehicle_runtime_get(index) ((struct vehicle_runtime_datum *)object_get_and_verify_type((index), _object_mask_vehicle))
 
 /* ---------- structures */
+
+struct vehicle_suspension
+{
+	short mass_point_index;
+	short animation_index;
+	real unknown4;
+	real unknown8;
+	byte unknownc[8];
+};
+
+struct vehicle_animation
+{
+	struct animation_aiming_screen_bounds steering_screen_bounds;
+	long unused[0x11];
+	struct tag_block animations;
+	struct tag_block suspensions;
+};
 
 struct vehicle_runtime_datum;
 

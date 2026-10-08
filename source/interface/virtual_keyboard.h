@@ -9,12 +9,38 @@ VIRTUAL_KEYBOARD.H
 /* ---------- headers */
 
 #include "cseries/cseries.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct virtual_keyboard_definition
+{
+	struct tag_reference font_tag;
+	struct tag_reference background_bitmap_tag;
+	struct tag_reference special_key_labels_string_list_tag;
+	struct tag_block keys;
+};
+
+struct virtual_keyboard_key
+{
+	short keycode;
+	wchar_t character;
+	wchar_t shift_character;
+	wchar_t caps_character;
+	wchar_t symbols_character;
+	wchar_t shift_caps_character;
+	wchar_t shift_symbols_character;
+	wchar_t caps_symbols_character;
+	struct tag_reference unselected_background_bitmap_tag;
+	struct tag_reference selected_background_bitmap_tag;
+	struct tag_reference active_background_bitmap_tag;
+	struct tag_reference sticky_background_bitmap_tag;
+};
 
 /* ---------- prototypes/EXAMPLE.C */
 

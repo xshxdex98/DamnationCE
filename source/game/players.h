@@ -10,6 +10,8 @@ PLAYERS.H
 
 #include "game/game.h"
 #include "networking/network_connection.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -46,6 +48,14 @@ enum player_action_result
 #define player_try_and_get(index)	((struct player_datum*)datum_try_and_get(player_data, index))
 
 /* ---------- structures */
+
+struct scenario_bsp_switch_trigger_volume
+{
+	short trigger_volume_index;
+	short source_structure_bsp_index;
+	short destination_structure_bsp_index;
+	short cutscene_flag_index;
+};
 
 struct player_action
 {
