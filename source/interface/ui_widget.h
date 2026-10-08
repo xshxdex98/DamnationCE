@@ -22,7 +22,8 @@ enum
 	_ui_audio_feedback_cursor,
 	_ui_audio_feedback_forward,
 	_ui_audio_feedback_back,
-	_ui_audio_feedback_flag_failure
+	_ui_audio_feedback_flag_failure,
+	NUMBER_OF_UI_AUDIO_FEEDBACK_SOUNDS
 };
 
 /* ui event types */
@@ -31,7 +32,8 @@ enum
 	_event_type_null,
 	_event_type_left_stick,
 	_event_type_right_stick,
-	_event_type_button
+	_event_type_button,
+	NUMBER_OF_EVENT_TYPES
 };
 
 enum

@@ -95,11 +95,6 @@ enum projectile_potential_response_flags
  * header declares them yet; other files keep copies) */
 enum
 {
-	NUMBER_OF_EFFECT_MARKERS,
-};
-
-enum
-{
 	_ai_spatial_effect_environmental_noise = 0,
 	_ai_spatial_effect_weapon_impact,
 	_ai_spatial_effect_weapon_detonation,

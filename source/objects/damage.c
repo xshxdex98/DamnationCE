@@ -86,11 +86,6 @@ enum
 
 enum
 {
-	NUMBER_OF_EFFECT_MARKERS,
-};
-
-enum
-{
 	_damage_effect_dont_scale_damage_by_distance_bit = 0,
 };
 

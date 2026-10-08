@@ -49,17 +49,7 @@ enum
 };
 
 /* actor default states (actors.c keeps this enum file-local too) */
-enum actor_default_state
-{
-	number_of_actor_default_states,
-};
-
 /* actor_external_orders.desired_target_type (actors.h does not yet declare these) */
-enum
-{
-	NUMBER_OF_DESIRED_TARGET_TYPES,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */
@@ -3121,7 +3111,7 @@ void ai_scripting_set_return_state(
 			default_state);
 	}
 
-	if (VALID_INDEX(default_state, number_of_actor_default_states))
+	if (VALID_INDEX(default_state, NUMBER_OF_ACTOR_DEFAULT_STATES))
 	{
 		struct ai_script_actor_reference_iterator iterator;
 		struct actor_datum *actor;
@@ -3411,7 +3401,7 @@ void ai_scripting_set_current_state(
 			current_state);
 	}
 
-	if (VALID_INDEX(current_state, number_of_actor_default_states))
+	if (VALID_INDEX(current_state, NUMBER_OF_ACTOR_DEFAULT_STATES))
 	{
 		struct ai_script_actor_reference_iterator iterator;
 

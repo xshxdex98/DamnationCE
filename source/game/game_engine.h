@@ -79,7 +79,8 @@ enum
 	_multiplayer_sound_hill_controlled,
 	_multiplayer_sound_hill_occupied,
 	_multiplayer_sound_countdown_timer_end,
-	_multiplayer_sound_ting
+	_multiplayer_sound_ting,
+	NUMBER_OF_MULTIPLAYER_INFORMATION_SOUNDS
 };
 
 enum

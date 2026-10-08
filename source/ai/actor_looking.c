@@ -40,11 +40,6 @@ enum
 /* actor combat status (no header declares it yet; action_obey.c keeps a copy) */
 enum
 {
-	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS,
-};
-
-enum
-{
 	_idle_timer_facing = 0,
 	_idle_timer_aiming,
 	_idle_timer_looking,

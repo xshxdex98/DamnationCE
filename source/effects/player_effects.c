@@ -56,12 +56,6 @@ enum screen_flash_priority
 	NUMBER_OF_SCREEN_FLASH_PRIORITIES
 };
 
-enum render_screen_flash_type
-{
-
-	NUMBER_OF_RENDER_SCREEN_FLASH_TYPES
-};
-
 enum
 {
 	_scripted_player_effect_active_bit,

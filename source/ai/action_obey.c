@@ -70,11 +70,6 @@ enum
 	number_of_actor_fire_targets = 3,
 };
 
-enum
-{
-	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS = 8,
-};
-
 /* unit animation impulses (no header declares them yet) */
 enum
 {
