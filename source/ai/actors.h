@@ -23,7 +23,8 @@ enum
 {
 	_desired_target_none,
 	_desired_target_ai,
-	_desired_target_player
+	_desired_target_player,
+	NUMBER_OF_DESIRED_TARGET_TYPES
 };
 
 /* actor fire targets */
@@ -62,7 +63,8 @@ enum
 	_actor_combat_status_certain,
 	_actor_combat_status_clear_los,
 	_actor_combat_status_dangerous,
-	_actor_combat_status_visible
+	_actor_combat_status_visible,
+	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS
 };
 
 /* actor modes (actor_state_data.mode) */

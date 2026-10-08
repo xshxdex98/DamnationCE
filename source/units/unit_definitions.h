@@ -28,6 +28,7 @@ enum
 	_unit_unused_bit,
 	_unit_causes_passenger_dialogue_bit,
 	_unit_resists_pings_bit,
+	_unit_melee_attack_is_fatal_bit,
 	_unit_does_not_reorient_during_pings_bit,
 	_unit_has_no_aiming_bit,
 	_unit_simple_creature_bit,

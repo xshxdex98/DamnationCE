@@ -19,7 +19,8 @@ enum
 	_ai_information_combat_stimulus,
 	_ai_information_look_object = 2,
 	_ai_information_target_knowledge,
-	_ai_information_flee
+	_ai_information_flee,
+	NUMBER_OF_AI_INFORMATION_TYPES
 };
 
 /* ai reference types (an ai reference's top two bits) */

@@ -78,11 +78,6 @@ enum
 };
 
 /* The shared scenario-AI header does not yet own this source-attested enum. */
-enum actor_default_state
-{
-	number_of_actor_default_states,
-};
-
 /* ---------- macros */
 
 #define AI_SPATIAL_EFFECT_NEXT_INDEX(index) (((index) + 1) & (MAXIMUM_AI_SPATIAL_EFFECTS - 1))

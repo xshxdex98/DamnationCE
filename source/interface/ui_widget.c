@@ -120,11 +120,6 @@ enum
 
 enum
 {
-	NUMBER_OF_UI_AUDIO_FEEDBACK_SOUNDS
-};
-
-enum
-{
 	/* only the icon types below _icon_action name a button bitmap of their own;
 	the rest are resolved through the local player's control preferences */
 	NUM_ICONS = _icon_action
@@ -211,12 +206,6 @@ enum
 {
 	/* only the bit this file tests is named */
 	_text_box_flashing_text_bit = 2
-};
-
-enum
-{
-	/* EVENT_MANAGER.C owns this enumeration and publishes none of it */
-	NUMBER_OF_EVENT_TYPES
 };
 
 enum

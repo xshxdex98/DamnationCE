@@ -132,11 +132,6 @@ enum
 	INVALID_RASTERIZER_HARDWARE_STATE = -1,
 };
 
-enum
-{
-	NUMBER_OF_RASTERIZER_STENCIL_MODES
-};
-
 
 /* the Direct3D push buffer sizes used while rasterizer_globals' are zero */
 enum

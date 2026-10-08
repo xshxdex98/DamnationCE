@@ -15,11 +15,6 @@ GAME_ENGINE_MULTIPLAYER_SOUNDS.C
 
 /* ---------- constants */
 
-enum multiplayer_information_sound
-{
-	NUMBER_OF_MULTIPLAYER_INFORMATION_SOUNDS
-};
-
 enum
 {
 	MAXIMUM_QUEUED_MULTIPLAYER_SOUNDS = 5,

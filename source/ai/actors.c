@@ -45,11 +45,6 @@ ACTORS.C
 #include "ai/ai.h"
 #include "ai/encounters.h"
 
-enum actor_default_state
-{
-	number_of_actor_default_states,
-};
-
 enum
 {
 	_rgb_color_interpolation_hsv_bit = 0,
@@ -89,11 +84,6 @@ enum
 };
 
 /* actor state.combat_status levels (actors.h does not yet declare these) */
-enum
-{
-	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS,
-};
-
 /* ai sound volumes (ai.h does not yet declare these) */
 enum
 {
@@ -115,11 +105,6 @@ enum
 };
 
 /* ai_information_packet.information_type (ai.h does not yet declare these) */
-enum
-{
-	NUMBER_OF_AI_INFORMATION_TYPES,
-};
-
 /* ---------- macros */
 
 #define prop_orphaned(prop) \
