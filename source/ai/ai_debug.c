@@ -927,8 +927,8 @@ static void ai_debug_render_actor(
 		/* Vector avoidance */
 
 		if (ai_debug.render_vector_avoidance &&
-			actor_debug_info->field_19C != NONE &&
-			actor_debug_info->field_19C + TICKS_PER_SECOND>game_time_get())
+			actor_debug_info->vector_avoidance_time != NONE &&
+			actor_debug_info->vector_avoidance_time + TICKS_PER_SECOND>game_time_get())
 		{
 			short i;
 			short j;
@@ -1003,7 +1003,7 @@ static void ai_debug_render_actor(
 					{
 						real_argb_color const *color = global_real_argb_white;
 
-						switch (actor_debug_info->field_62F8[i][j])
+						switch (actor_debug_info->avoid_ray_result[i][j])
 						{
 						case 1:
 							color = global_real_argb_aqua;
@@ -1013,22 +1013,22 @@ static void ai_debug_render_actor(
 							break;
 						}
 
-						if (actor_debug_info->field_62F8[i][j]>0)
+						if (actor_debug_info->avoid_ray_result[i][j]>0)
 						{
 							real_point3d point0;
 							real_point3d point1;
 
 							point_from_line3d(
-								&actor_debug_info->field_6358[i][j],
-								&actor_debug_info->field_6418[i][j],
+								&actor_debug_info->avoid_ray_origin[i][j],
+								&actor_debug_info->avoid_ray_direction[i][j],
 								actor_debug_info->avoid_t[i][j],
 								&point0);
 							point_from_line3d(
-								&actor_debug_info->field_6358[i][j],
-								&actor_debug_info->field_6418[i][j],
+								&actor_debug_info->avoid_ray_origin[i][j],
+								&actor_debug_info->avoid_ray_direction[i][j],
 								1.f,
 								&point1);
-							render_debug_line(TRUE, &actor_debug_info->field_6358[i][j], &point0, global_real_argb_blue);
+							render_debug_line(TRUE, &actor_debug_info->avoid_ray_origin[i][j], &point0, global_real_argb_blue);
 							render_debug_point(TRUE, &point0, 0.2f, color);
 							render_debug_line(TRUE, &point0, &point1, color);
 
@@ -1049,8 +1049,8 @@ static void ai_debug_render_actor(
 						{
 							render_debug_vector(
 								TRUE,
-								&actor_debug_info->field_6358[i][j],
-								&actor_debug_info->field_6418[i][j],
+								&actor_debug_info->avoid_ray_origin[i][j],
+								&actor_debug_info->avoid_ray_direction[i][j],
 								1.f,
 								global_real_argb_blue);
 
@@ -1058,7 +1058,7 @@ static void ai_debug_render_actor(
 							{
 								real_point3d point;
 
-								point_from_line3d(&actor_debug_info->field_6358[i][j], &actor_debug_info->field_6418[i][j], 0.1f, &point);
+								point_from_line3d(&actor_debug_info->avoid_ray_origin[i][j], &actor_debug_info->avoid_ray_direction[i][j], 0.1f, &point);
 								point_from_line3d(&point, global_up3d, 0.15f, &point);
 								render_debug_string_at_point(
 									TRUE,
@@ -1079,8 +1079,8 @@ static void ai_debug_render_actor(
 						real_point3d point;
 
 						point_from_line3d(
-							&actor_debug_info->field_6358[i][j],
-							&actor_debug_info->field_6418[i][j],
+							&actor_debug_info->avoid_ray_origin[i][j],
+							&actor_debug_info->avoid_ray_direction[i][j],
 							0.25f,
 							&point);
 						point_from_line3d(&point, global_up3d, 0.15f, &point);
@@ -1091,7 +1091,7 @@ static void ai_debug_render_actor(
 							temporary,
 							"%d: w%.2f",
 							i,
-							actor_debug_info->field_64D8[i]),
+							actor_debug_info->avoidance_weights[i]),
 							global_real_argb_green);
 					}
 				}
@@ -1103,34 +1103,34 @@ static void ai_debug_render_actor(
 			{
 				real_vector3d direction;
 
-				real_argb_color const *color = actor_debug_info->field_6550 ? global_real_argb_magenta : global_real_argb_cyan;
+				real_argb_color const *color = actor_debug_info->avoidance_direction_chosen ? global_real_argb_magenta : global_real_argb_cyan;
 
-				render_debug_vector(TRUE, &actor_debug_info->avoidance_data.origin, &actor_debug_info->field_6524, 5.f, global_real_argb_yellow);
-				render_debug_vector(TRUE, &actor_debug_info->avoidance_data.origin, &actor_debug_info->field_6530, 1.f, global_real_argb_purple);
-				actor_move_get_avoidance_direction(&actor_debug_info->avoidance_data, actor_debug_info->field_6500, &direction);
+				render_debug_vector(TRUE, &actor_debug_info->avoidance_data.origin, &actor_debug_info->avoidance_forward, 5.f, global_real_argb_yellow);
+				render_debug_vector(TRUE, &actor_debug_info->avoidance_data.origin, &actor_debug_info->movement_direction, 1.f, global_real_argb_purple);
+				actor_move_get_avoidance_direction(&actor_debug_info->avoidance_data, actor_debug_info->best_avoidance_direction, &direction);
 
 				render_debug_string_at_point(
 					TRUE,
 					ai_debug_drawstack(),
-					csprintf(temporary, "best %.2f at %d", actor_debug_info->field_64FC, actor_debug_info->field_6500),
+					csprintf(temporary, "best %.2f at %d", actor_debug_info->best_avoidance_weight, actor_debug_info->best_avoidance_direction),
 					color);
 				render_debug_vector(TRUE, &actor_debug_info->avoidance_data.origin, &direction, 2.f, color);
 
-				actor_move_get_avoidance_direction(&actor_debug_info->avoidance_data, actor_debug_info->field_6504, &direction);
+				actor_move_get_avoidance_direction(&actor_debug_info->avoidance_data, actor_debug_info->movement_direction_approximation, &direction);
 				render_debug_string_at_point(
 					TRUE,
 					ai_debug_drawstack(),
-					csprintf(temporary, "curr ~%.2f at %.2f", actor_debug_info->field_6508, actor_debug_info->field_6504),
+					csprintf(temporary, "curr ~%.2f at %.2f", actor_debug_info->movement_approximate_weight, actor_debug_info->movement_direction_approximation),
 					global_real_argb_green);
 
 				render_debug_vector(TRUE, &actor_debug_info->avoidance_data.origin, &direction, 2.0, global_real_argb_green);
 				render_debug_string_at_point(
 					TRUE,
 					ai_debug_drawstack(),
-					csprintf(temporary, "danger %.2f turncos %.2f", actor_debug_info->sign_no_danger, actor_debug_info->field_6510),
+					csprintf(temporary, "danger %.2f turncos %.2f", actor_debug_info->sign_no_danger, actor_debug_info->forward_dot),
 					global_real_argb_yellow);
 
-				if (actor_debug_info->field_6551)
+				if (actor_debug_info->velocity_valid)
 				{
 					actor_move_transform_avoidance_vector(&actor_debug_info->avoidance_data, &actor_debug_info->avoidance_vector, &direction);
 					render_debug_vector(TRUE, &actor_debug_info->avoidance_data.origin, &direction, 2.0, global_real_argb_darkgreen);
@@ -1140,9 +1140,9 @@ static void ai_debug_render_actor(
 						csprintf(
 						temporary,
 						"turn angvel %.2f danger %.2f bonus %.2f",
-						actor_debug_info->field_6558,
-						actor_debug_info->field_6568,
-						actor_debug_info->field_6554),
+						actor_debug_info->angular_speed,
+						actor_debug_info->velocity_approximate_weight,
+						actor_debug_info->velocity_weight),
 						global_real_argb_darkgreen);
 				}
 			}
@@ -1170,13 +1170,13 @@ static void ai_debug_render_actor(
 			{
 				boolean found_player = FALSE;
 
-				switch (actor_debug_info->field_653C)
+				switch (actor_debug_info->emergency_decision)
 				{
 				case 0:
 					sprintf(temporary, "clear");
 					break;
 				case 1:
-					sprintf(temporary, "sensed at %f, turn %f", actor_debug_info->field_651C, actor_debug_info->field_6520);
+					sprintf(temporary, "sensed at %f, turn %f", actor_debug_info->maximum_sense_emergency, actor_debug_info->rotation_angle);
 					found_player = TRUE;
 					break;
 				case 2:
@@ -1210,8 +1210,8 @@ static void ai_debug_render_actor(
 
 				if (found_player)
 				{
-					render_debug_vector(TRUE, &actor_debug_info->avoidance_data.origin, &actor_debug_info->field_6540, 1.f, global_real_argb_pink);
-					render_debug_string_at_point(TRUE, ai_debug_drawstack(), csprintf(temporary, "move emergency %.2f", actor_debug_info->field_654C), global_real_argb_pink);
+					render_debug_vector(TRUE, &actor_debug_info->avoidance_data.origin, &actor_debug_info->emergency_rotation, 1.f, global_real_argb_pink);
+					render_debug_string_at_point(TRUE, ai_debug_drawstack(), csprintf(temporary, "move emergency %.2f", actor_debug_info->emergency), global_real_argb_pink);
 				}
 			}
 		}
@@ -1478,7 +1478,7 @@ static void ai_debug_render_actor(
 
 		/* Cover seeking */
 
-		if (ai_debug.render_active_cover_seeking && actor_debug_info->field_B8)
+		if (ai_debug.render_active_cover_seeking && actor_debug_info->cover_seeking_valid)
 		{
 			const char *strings[8] =
 			{
@@ -1495,7 +1495,7 @@ static void ai_debug_render_actor(
 			render_debug_string_at_point(
 				TRUE,
 				ai_debug_drawstack(),
-				csprintf(temporary, "%s %d %.2f", strings[actor_debug_info->field_BA], actor_debug_info->field_BC, actor_debug_info->field_C0),
+				csprintf(temporary, "%s %d %.2f", strings[actor_debug_info->cover_seeking_decision], actor_debug_info->cover_seeking_target_hidden_ticks, actor_debug_info->cover_seeking_shield_vitality),
 				global_real_argb_yellow);
 		}
 
@@ -1587,19 +1587,19 @@ static void ai_debug_render_actor(
 
 		/* Audibility */
 
-		if (ai_debug.render_audibility && actor_debug_info->field_A4)
+		if (ai_debug.render_audibility && actor_debug_info->audibility_valid)
 		{
 			real_argb_color const *color;
 			char const *aud_type;
 			char textstring[512];
 
-			if (actor_debug_info->field_A6==0)
+			if (actor_debug_info->audibility_result==0)
 			{
 				color = global_real_argb_red;
 				aud_type = "none";
 
 			}
-			else if(actor_debug_info->field_A6==1)
+			else if(actor_debug_info->audibility_result==1)
 			{
 				color = global_real_argb_blue;
 				aud_type = "part";
@@ -1610,11 +1610,11 @@ static void ai_debug_render_actor(
 				aud_type = "full";
 			}
 
-			sprintf(textstring, "aud/%s %.1fp/%.1fd", aud_type, actor_debug_info->field_A8, actor_debug_info->field_AC);
+			sprintf(textstring, "aud/%s %.1fp/%.1fd", aud_type, actor_debug_info->audibility_maximum_distance, actor_debug_info->audibility_distance);
 
-			if (actor_debug_info->field_B0!=-1.f)
+			if (actor_debug_info->audibility_encoded_distance!=-1.f)
 			{
-				strcat(textstring, csprintf(temporary, "/%.1fs/%.1ff", actor_debug_info->field_B0, actor_debug_info->field_B4));
+				strcat(textstring, csprintf(temporary, "/%.1fs/%.1ff", actor_debug_info->audibility_encoded_distance, actor_debug_info->audibility_audible_distance));
 			}
 
 			render_debug_string_at_point(TRUE, ai_debug_drawstack(), textstring, color);
@@ -3220,13 +3220,13 @@ static void ai_debug_render_actor(
 				csstrcpy(temporary, "melee-notarget");
 				break;
 			case _charge_melee_no_animation:
-				sprintf(temporary, "melee-noanimation (%sairborne)", actor_debug_info->field_198 ? "" : "not-");
+				sprintf(temporary, "melee-noanimation (%sairborne)", actor_debug_info->charge_leap ? "" : "not-");
 				break;
 			case _charge_melee_cannot_move:
-				sprintf(temporary, "melee-cannotmove (%f)", actor_debug_info->field_194);
+				sprintf(temporary, "melee-cannotmove (%f)", actor_debug_info->charge_move_range);
 				break;
 			case _charge_melee_success:
-				sprintf(temporary, "melee-success (%sairborne)", actor_debug_info->field_198 ? "" : "not-");
+				sprintf(temporary, "melee-success (%sairborne)", actor_debug_info->charge_leap ? "" : "not-");
 				break;
 			case _charge_stalking_success:
 				csstrcpy(temporary, "stalking-success");
@@ -3248,24 +3248,24 @@ static void ai_debug_render_actor(
 			actor_debug_info->last_melee_time!=NONE &&
 			actor_debug_info->last_melee_time+TICKS_PER_SECOND >= game_time_get())
 		{
-			render_debug_vector(TRUE, &actor_debug_info->field_108, &actor_debug_info->field_114, 1.5f, global_real_argb_red);
-			render_debug_point(TRUE, &actor_debug_info->field_120, 0.2f, global_real_argb_red);
+			render_debug_vector(TRUE, &actor_debug_info->melee_body_point, &actor_debug_info->melee_facing, 1.5f, global_real_argb_red);
+			render_debug_point(TRUE, &actor_debug_info->melee_target_point, 0.2f, global_real_argb_red);
 
-			if (!actor_debug_info->field_139)
+			if (!actor_debug_info->melee_in_reach)
 			{
 				real_vector3d v;
 				real_point3d p0;
 				real_point3d p1;
 				real_point3d p2;
 
-				render_debug_line(TRUE, &actor_debug_info->field_120, &actor_debug_info->field_13C, global_real_argb_purple);
-				render_debug_sphere(TRUE, &actor_debug_info->field_13C, 0.2f, global_real_argb_purple);
+				render_debug_line(TRUE, &actor_debug_info->melee_target_point, &actor_debug_info->melee_lead_point, global_real_argb_purple);
+				render_debug_sphere(TRUE, &actor_debug_info->melee_lead_point, 0.2f, global_real_argb_purple);
 
-				point_from_line3d(&actor_debug_info->field_108, &actor_debug_info->field_12C, actor_debug_info->field_14C, &p0);
-				render_debug_line(TRUE, &actor_debug_info->field_108, &p0, global_real_argb_green);
+				point_from_line3d(&actor_debug_info->melee_body_point, &actor_debug_info->melee_direction, actor_debug_info->melee_range_upper_bound, &p0);
+				render_debug_line(TRUE, &actor_debug_info->melee_body_point, &p0, global_real_argb_green);
 
-				point_from_line3d(&actor_debug_info->field_108, &actor_debug_info->field_12C, actor_debug_info->field_148, &p1);
-				perpendicular3d(&actor_debug_info->field_12C, &v);
+				point_from_line3d(&actor_debug_info->melee_body_point, &actor_debug_info->melee_direction, actor_debug_info->melee_range_lower_bound, &p1);
+				perpendicular3d(&actor_debug_info->melee_direction, &v);
 
 				p0.x = p1.x + v.i*0.3f;
 				p0.y = p1.y + v.j*0.3f;
@@ -3278,11 +3278,11 @@ static void ai_debug_render_actor(
 
 			render_debug_vector(
 				TRUE,
-				&actor_debug_info->field_108,
-				&actor_debug_info->field_12C,
+				&actor_debug_info->melee_body_point,
+				&actor_debug_info->melee_direction,
 				2.f,
-				actor_debug_info->field_138 ?
-					(actor_debug_info->field_139 ? global_real_argb_yellow : global_real_argb_purple) :
+				actor_debug_info->melee ?
+					(actor_debug_info->melee_in_reach ? global_real_argb_yellow : global_real_argb_purple) :
 					global_real_argb_white);
 		}
 
@@ -3298,10 +3298,10 @@ static void ai_debug_render_actor(
 
 			real_vector3d v0;
 
-			render_debug_line(TRUE, &actor_debug_info->field_C8, &actor_debug_info->field_E4, global_real_argb_green);
-			render_debug_sphere(TRUE, &actor_debug_info->field_D4, actor_debug_info->field_E0, global_real_argb_yellow);
+			render_debug_line(TRUE, &actor_debug_info->vehicle_avoidance_start, &actor_debug_info->vehicle_avoidance_target, global_real_argb_green);
+			render_debug_sphere(TRUE, &actor_debug_info->vehicle_avoidance_center, actor_debug_info->vehicle_avoidance_radius, global_real_argb_yellow);
 
-			p1 = actor_debug_info->field_E4;
+			p1 = actor_debug_info->vehicle_avoidance_target;
 			p0 = p1;
 
 			p0.x = p0.x - 0.2f;
@@ -3319,8 +3319,8 @@ static void ai_debug_render_actor(
 			p0.z = p0.z - 0.2f;
 			p1.z = p1.z + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_red);
-			vector_from_points3d(&actor_debug_info->field_C8, &actor_debug_info->field_E4, &v0);
-			point_from_line3d(&actor_debug_info->field_C8, &v0, actor_debug_info->field_F0, &p2);
+			vector_from_points3d(&actor_debug_info->vehicle_avoidance_start, &actor_debug_info->vehicle_avoidance_target, &v0);
+			point_from_line3d(&actor_debug_info->vehicle_avoidance_start, &v0, actor_debug_info->vehicle_avoidance_t, &p2);
 
 			p1 = p2;
 			p0 = p2;
@@ -3341,13 +3341,13 @@ static void ai_debug_render_actor(
 			p1.z = p1.z + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_blue);
 
-			if (actor_debug_info->field_F4)
+			if (actor_debug_info->vehicle_avoidance_modified)
 			{
 
-				render_debug_line(TRUE, &actor_debug_info->field_D4, &actor_debug_info->field_F8, global_real_argb_yellow);
-				render_debug_line(TRUE, &actor_debug_info->field_C8, &actor_debug_info->field_F8, global_real_argb_red);
+				render_debug_line(TRUE, &actor_debug_info->vehicle_avoidance_center, &actor_debug_info->vehicle_avoidance_destination, global_real_argb_yellow);
+				render_debug_line(TRUE, &actor_debug_info->vehicle_avoidance_start, &actor_debug_info->vehicle_avoidance_destination, global_real_argb_red);
 
-				p1 = actor_debug_info->field_F8;
+				p1 = actor_debug_info->vehicle_avoidance_destination;
 				p0 = p1;
 
 				p0.x = p0.x - 0.2f;
@@ -3377,7 +3377,7 @@ static void ai_debug_render_actor(
 			real_point3d p0;
 			real_point3d p1;
 
-			p1 = actor_debug_info->field_64;
+			p1 = actor_debug_info->burst_origin;
 			p0 = p1;
 
 			p0.x = p0.x - 0.2f;
@@ -3398,28 +3398,28 @@ static void ai_debug_render_actor(
 
 			render_debug_vector(
 				TRUE,
-				&actor_debug_info->field_64,
-				&actor_debug_info->field_70,
+				&actor_debug_info->burst_origin,
+				&actor_debug_info->burst_vector,
 				2.f,
-				actor_debug_info->field_60 ? global_real_argb_blue : global_real_argb_red);
+				actor_debug_info->burst_aim_by_vector ? global_real_argb_blue : global_real_argb_red);
 
-			if (!actor_debug_info->field_60)
+			if (!actor_debug_info->burst_aim_by_vector)
 			{
-				render_debug_sphere(TRUE, &actor_debug_info->field_7C, 0.2f, global_real_argb_red);
+				render_debug_sphere(TRUE, &actor_debug_info->burst_target, 0.2f, global_real_argb_red);
 			}
 
-			if (actor_debug_info->field_88)
+			if (actor_debug_info->burst_weapon_vector_valid)
 			{
 				render_debug_vector(
 					TRUE,
 					&actor->input.position.head_position,
-					&actor_debug_info->field_98,
+					&actor_debug_info->burst_weapon_vector,
 					1.f,
 					global_real_argb_white);
 				render_debug_vector(
 					TRUE,
-					&actor_debug_info->field_64,
-					&actor_debug_info->field_8C,
+					&actor_debug_info->burst_origin,
+					&actor_debug_info->burst_requested_vector,
 					2.f,
 					global_real_argb_purple);
 			}
@@ -4447,9 +4447,9 @@ void ai_debug_speak_list(
 		{
 			ai_debug.render_speech = TRUE;
 			ai_debug.speak_valid = TRUE;
-			ai_debug.field_85B28 = 0;
-			ai_debug.field_85B21 = TRUE;
-			ai_debug.field_85B22 = entry->all;
+			ai_debug.speak_delay_ticks = 0;
+			ai_debug.speak_single = TRUE;
+			ai_debug.speak_all = entry->all;
 			ai_debug.speak_unit_index = actor->meta.unit_index;
 			ai_debug.speak_vocalization_type = entry->vocalization_type;
 		}
@@ -4470,8 +4470,8 @@ void ai_debug_speak(
 		{
 			ai_debug.render_speech = TRUE;
 			ai_debug.speak_valid = TRUE;
-			ai_debug.field_85B28 = 0;
-			ai_debug.field_85B21 = FALSE;
+			ai_debug.speak_delay_ticks = 0;
+			ai_debug.speak_single = FALSE;
 			ai_debug.speak_unit_index = actor->meta.unit_index;
 			ai_debug.speak_vocalization_type = vocalization_type;
 		}
@@ -4657,7 +4657,6 @@ void ai_debug_update(
 					ai_debug.path_end_valid = TRUE;
 					ai_debug.path_end_point = collision.point;
 					ai_debug.path_end_surface_index = collision.surface_index;
-					ai_debug.field_4C814 = 0.f;
 				}
 			}
 		}
@@ -4712,9 +4711,8 @@ void ai_debug_update(
 					ai_debug.path_end_surface_index, ai_debug.path_accept_radius);
 			}
 
-			path_state_build_path(&ai_debug.path_state, &ai_debug.field_608A8);
+			path_state_build_path(&ai_debug.path_state, &ai_debug.path_result);
 
-			ai_debug.field_4C818 = TRUE;
 			ai_debug.path_storage.valid = TRUE;
 			ai_debug.path_storage.path_time = game_time_get();
 			ai_debug.path_storage.actor_index = NONE;
@@ -5152,16 +5150,16 @@ static void ai_debug_render_lineofsight(
 static void ai_debug_render_aiming_validity(
 	void)
 {
-	if (ai_debug.field_859F4!=ai_debug.selected_actor_index)
+	if (ai_debug.look_test_actor_index!=ai_debug.selected_actor_index)
 	{
-		ai_debug.field_859F4 = ai_debug.selected_actor_index;
-		ai_debug.field_859F9 = FALSE;
-		ai_debug.field_859F8 = FALSE;
+		ai_debug.look_test_actor_index = ai_debug.selected_actor_index;
+		ai_debug.look_test_aiming_valid = FALSE;
+		ai_debug.look_test_looking_valid = FALSE;
 	}
 
-	if (ai_debug.field_859F4!=NONE)
+	if (ai_debug.look_test_actor_index!=NONE)
 	{
-		struct actor_datum *actor = actor_get(ai_debug.field_859F4);
+		struct actor_datum *actor = actor_get(ai_debug.look_test_actor_index);
 		struct observer_result const *camera = observer_get_camera(0);
 
 		if (camera)
@@ -5178,19 +5176,19 @@ static void ai_debug_render_aiming_validity(
 				boolean aiming_valid;
 				boolean looking_valid;
 
-				actor_looking_test_validity(ai_debug.field_859F4, &vector,
+				actor_looking_test_validity(ai_debug.look_test_actor_index, &vector,
 					&aiming_valid, &looking_valid);
 
 				if (aiming_valid)
 				{
-					ai_debug.field_859F9 = TRUE;
-					ai_debug.field_85A08 = vector;
+					ai_debug.look_test_aiming_valid = TRUE;
+					ai_debug.look_test_aiming_vector = vector;
 				}
 
 				if (looking_valid)
 				{
-					ai_debug.field_859F8 = TRUE;
-					ai_debug.field_859FC = vector;
+					ai_debug.look_test_looking_valid = TRUE;
+					ai_debug.look_test_looking_vector = vector;
 				}
 
 				render_debug_vector(TRUE, head_position, &vector, 1.f, global_real_argb_white);
@@ -5199,7 +5197,7 @@ static void ai_debug_render_aiming_validity(
 			}
 		}
 
-		if (ai_debug.field_859F9)
+		if (ai_debug.look_test_aiming_valid)
 		{
 			real_point3d point;
 
@@ -5207,16 +5205,16 @@ static void ai_debug_render_aiming_validity(
 			point.y = global_up3d->j*0.05f + actor->input.position.head_position.y;
 			point.z = global_up3d->k*0.05f + actor->input.position.head_position.z;
 
-			render_debug_vector(TRUE, &point, &ai_debug.field_85A08, 1.f, global_real_argb_green);
+			render_debug_vector(TRUE, &point, &ai_debug.look_test_aiming_vector, 1.f, global_real_argb_green);
 		}
 
-		if (ai_debug.field_859F8)
+		if (ai_debug.look_test_looking_valid)
 		{
 			real_point3d point;
 
 			point_from_line3d(&actor->input.position.head_position, global_up3d, 0.05f, &point);
 
-			render_debug_vector(TRUE, &point, &ai_debug.field_859FC, 1.f, global_real_argb_blue);
+			render_debug_vector(TRUE, &point, &ai_debug.look_test_looking_vector, 1.f, global_real_argb_blue);
 		}
 	}
 
@@ -5567,7 +5565,7 @@ static void ai_debug_render_vehicles_enterable(
 static void ai_debug_render_path(
 	void)
 {
-	if (ai_debug.path_start_valid && ai_debug.path_end_valid && !ai_debug.field_608A8)
+	if (ai_debug.path_start_valid && ai_debug.path_end_valid && !ai_debug.path_result.valid)
 	{
 		real_argb_color const *color;
 
@@ -5991,12 +5989,12 @@ static void ai_debug_speech_update(
 		return;
 	}
 
-	if (ai_debug.field_85B28>0)
+	if (ai_debug.speak_delay_ticks>0)
 	{
-		ai_debug.field_85B28--;
+		ai_debug.speak_delay_ticks--;
 	}
 
-	if (ai_debug.field_85B28!=0)
+	if (ai_debug.speak_delay_ticks!=0)
 	{
 		return;
 	}
@@ -6055,9 +6053,9 @@ static void ai_debug_speech_update(
 		console_printf(FALSE, "%s: %s",
 			dialogue_get_vocalization_name(ai_debug.speak_vocalization_type, FALSE), name);
 
-		if (ai_debug.field_85B21)
+		if (ai_debug.speak_single)
 		{
-			ai_debug.field_85B28 = 15;
+			ai_debug.speak_delay_ticks = 15;
 
 			do
 			{
@@ -6068,7 +6066,7 @@ static void ai_debug_speech_update(
 					break;
 				}
 
-				if (!ai_debug.field_85B22)
+				if (!ai_debug.speak_all)
 				{
 					ai_debug.speak_vocalization_type = NONE;
 					break;

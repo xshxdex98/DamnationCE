@@ -450,9 +450,9 @@ boolean action_charge_perform(
 		real distance;
 
 		debug_info->last_melee_time = game_time_get();
-		point_from_line3d(&actor->input.position.body_position, global_up3d, 0.05f, &debug_info->field_108);
-		debug_info->field_114 = actor->input.facing_vector;
-		point_from_line3d(&prop->body_position, global_up3d, 0.05f, &debug_info->field_120);
+		point_from_line3d(&actor->input.position.body_position, global_up3d, 0.05f, &debug_info->melee_body_point);
+		debug_info->melee_facing = actor->input.facing_vector;
+		point_from_line3d(&prop->body_position, global_up3d, 0.05f, &debug_info->melee_target_point);
 
 		match_assert(
 			"c:\\halo\\SOURCE\\ai\\action_charge.c",
@@ -461,7 +461,7 @@ boolean action_charge_perform(
 
 		if (prop->distance < 0.8f)
 		{
-			debug_info->field_139 = TRUE;
+			debug_info->melee_in_reach = TRUE;
 			direction = prop->actor_to_prop;
 			melee = TRUE;
 		}
@@ -472,7 +472,7 @@ boolean action_charge_perform(
 			real speed;
 			real_point3d target_point;
 
-			debug_info->field_139 = FALSE;
+			debug_info->melee_in_reach = FALSE;
 			lead_fraction = 0.f;
 			speed = magnitude3d(&prop->velocity);
 			if (speed > 0.f)
@@ -486,7 +486,7 @@ boolean action_charge_perform(
 				lead_fraction * state_data->melee_ticks_until_dangerous,
 				&target_point);
 			vector_from_points3d(&actor->input.position.body_position, &target_point, &direction);
-			point_from_line3d(&target_point, global_up3d, 0.05f, &debug_info->field_13C);
+			point_from_line3d(&target_point, global_up3d, 0.05f, &debug_info->melee_lead_point);
 
 			if (dot_product3d(&direction, &prop->actor_to_prop) < 0.f)
 			{
@@ -504,8 +504,8 @@ boolean action_charge_perform(
 
 			if (state_data->goal == _charge_goal_melee_leaping && !state_data->launched_leap)
 			{
-				debug_info->field_148 = definition->berserk.melee_leap_range_lower_bound;
-				debug_info->field_14C = definition->berserk.melee_leap_range_upper_bound;
+				debug_info->melee_range_lower_bound = definition->berserk.melee_leap_range_lower_bound;
+				debug_info->melee_range_upper_bound = definition->berserk.melee_leap_range_upper_bound;
 
 				if (distance < definition->berserk.melee_leap_range_lower_bound &&
 					prop->unreachable_ticks == 0 &&
@@ -559,8 +559,8 @@ boolean action_charge_perform(
 			}
 			else if (state_data->melee_suicide)
 			{
-				debug_info->field_148 = 0.f;
-				debug_info->field_14C = definition->berserk.melee_attack_range;
+				debug_info->melee_range_lower_bound = 0.f;
+				debug_info->melee_range_upper_bound = definition->berserk.melee_attack_range;
 
 				if (distance < definition->berserk.melee_attack_range)
 				{
@@ -585,8 +585,8 @@ boolean action_charge_perform(
 						state_data->melee_ticks_until_dangerous;
 				}
 
-				debug_info->field_148 = state_data->melee_danger_range;
-				debug_info->field_14C = state_data->melee_danger_range + definition->berserk.melee_attack_range;
+				debug_info->melee_range_lower_bound = state_data->melee_danger_range;
+				debug_info->melee_range_upper_bound = state_data->melee_danger_range + definition->berserk.melee_attack_range;
 				if (distance < state_data->melee_danger_range + definition->berserk.melee_attack_range)
 				{
 					melee = TRUE;
@@ -613,8 +613,8 @@ boolean action_charge_perform(
 			}
 		}
 
-		debug_info->field_12C = direction;
-		debug_info->field_138 = melee;
+		debug_info->melee_direction = direction;
+		debug_info->melee = melee;
 
 		if (melee)
 		{
@@ -893,7 +893,7 @@ boolean action_charge_setup(
 				{
 					goal = _charge_goal_melee_leaping;
 				}
-				debug_info->field_198 = leap;
+				debug_info->charge_leap = leap;
 
 				{
 					short start_tick;
@@ -957,7 +957,7 @@ boolean action_charge_setup(
 						else
 						{
 							debug_info->charge_decision = _charge_melee_cannot_move;
-							debug_info->field_194 = move_range;
+							debug_info->charge_move_range = move_range;
 						}
 					}
 					else

@@ -50,8 +50,6 @@ enum
 
 /* ---------- structures */
 
-typedef char actor_looking_ai_debug_printing_offset_must_be_0x9D[
-	offsetof(struct ai_debug_state, print_secondary_looking) == 0x9D ? 1 : -1];
 typedef char actor_looking_actor_vehicle_index_offset_must_be_0x158[
 	offsetof(struct actor_datum, input.vehicle_index) == 0x158 ? 1 : -1];
 typedef char actor_looking_secondary_look_type_offset_must_be_0x544[

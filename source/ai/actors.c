@@ -2001,7 +2001,7 @@ long actor_new(
 				actor_debug_info->grenade_eval_time = NONE;
 				actor_debug_info->danger_avoidance_time = NONE;
 				actor_debug_info->charge_last_time = NONE;
-				actor_debug_info->field_19C = NONE;
+				actor_debug_info->vector_avoidance_time = NONE;
 				actor_debug_info->vision_last_time = NONE;
 				actor_debug_info->perception_awareness_speed = NONE;
 
@@ -2723,9 +2723,9 @@ void actor_delete(
 		ai_debug.selected_actor_index = NONE;
 	}
 
-	if (ai_debug.field_859F4 == actor_index)
+	if (ai_debug.look_test_actor_index == actor_index)
 	{
-		ai_debug.field_859F4 = NONE;
+		ai_debug.look_test_actor_index = NONE;
 	}
 
 	if (actor->meta.encounterless)

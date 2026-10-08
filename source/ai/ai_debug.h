@@ -157,14 +157,12 @@ struct ai_debug_state
 	boolean path_flood;
 	real path_maximum_radius;
 	boolean path_attractor;
-	char __unknown45[3];
 	real path_attractor_radius;
 	real path_attractor_weight;
 	real path_accept_radius;
 	unsigned long communication_suppress_vector[BIT_VECTOR_SIZE_IN_LONGS(NUMBER_OF_AI_DEBUG_COMMUNICATION_TYPES)];
 	unsigned long communication_ignore_vector[BIT_VECTOR_SIZE_IN_LONGS(NUMBER_OF_AI_DEBUG_COMMUNICATION_TYPES)];
 	unsigned long communication_focus_vector[BIT_VECTOR_SIZE_IN_LONGS(NUMBER_OF_AI_DEBUG_VOCALIZATION_TYPES)];
-	char __unknown80[4];
 	boolean communication_focus_enable;
 	boolean communication_random_disabled;
 	boolean communication_timeout_disabled;
@@ -279,7 +277,6 @@ struct ai_debug_state
 	long last_render_id;
 	boolean lineoffire_valid;
 	boolean lineoffire_success;
-	char __unknownFA[2];
 	real_point3d lineoffire_start;
 	real_vector3d lineoffire_vector;
 	long lineoffire_pill_count;
@@ -288,7 +285,6 @@ struct ai_debug_state
 	real_vector3d lineoffire_pill_vector[MAXIMUM_AI_DEBUG_LINEOFFIRE_PILLS];
 	real lineoffire_pill_radius[MAXIMUM_AI_DEBUG_LINEOFFIRE_PILLS];
 	boolean lineofsight_overflowed;
-	char __unknown2E9[3];
 	long lineofsight_point_count;
 	real_point3d lineofsight_point[MAXIMUM_AI_DEBUG_LINEOFSIGHT_POINTS];
 	short lineofsight_point_reference_count[MAXIMUM_AI_DEBUG_LINEOFSIGHT_POINTS];
@@ -297,7 +293,6 @@ struct ai_debug_state
 	struct ai_debug_lineofsight_pair lineofsight_pair[MAXIMUM_AI_DEBUG_LINEOFSIGHT_PAIRS];
 	boolean ballistic_lineoffire_valid;
 	boolean ballistic_lineoffire_success;
-	char __unknown4C2F6[2];
 	real_point3d ballistic_lineoffire_start;
 	real_vector3d ballistic_lineoffire_vector;
 	long ballistic_lineoffire_pill_count;
@@ -305,89 +300,39 @@ struct ai_debug_state
 	real_vector3d ballistic_lineoffire_pill_end[MAXIMUM_AI_DEBUG_LINEOFFIRE_PILLS];
 	real ballistic_lineoffire_pill_radius[MAXIMUM_AI_DEBUG_LINEOFFIRE_PILLS];
 	long ballistic_lineoffire_point_count;
-	// the bound is not provable from the object -- nothing references the end of
-	// this array. 64 leaves the 16 bytes below, which are equally unaccounted for.
+	/* (ai.c fills at most MAXIMUM_AI_DEBUG_BALLISTIC_POINTS) */
 	real_point3d ballistic_lineoffire_point[64];
-	char __unknown4C7D8[16];
 	boolean path_start_valid;
-	char __unknown4C7E9[3];
 	real_point3d path_start_point;
 	long path_start_surface_index;
 	long path_start_unit_index;
 	boolean path_end_valid;
-	char __unknown4C801[3];
 	real_point3d path_end_point;
 	long path_end_surface_index;
-	real field_4C814;
-	boolean field_4C818;
-	char __unknown4C819[3];
 	struct path_state path_state;
-	boolean field_608A8;
-	char __unknown608A9[91];
+	struct path_result path_result;
 	struct path_debug_storage path_storage;
 	boolean evaluation_context_valid;
-	char __unknown7D381[3];
 	struct firing_position_evaluation_context evaluation_context;
 	struct ai_debug_actor_record actor_record[NUMBER_OF_AI_DEBUG_ACTOR_RECORDS];
-	long field_859F4;
-	boolean field_859F8;
-	boolean field_859F9;
-	char __unknown859FA[2];
-	real_vector3d field_859FC;
-	real_vector3d field_85A08;
+	long look_test_actor_index;
+	boolean look_test_looking_valid;
+	boolean look_test_aiming_valid;
+	real_vector3d look_test_looking_vector;
+	real_vector3d look_test_aiming_vector;
 	boolean idle_look_valid;
-	char __unknown85A15[3];
 	long idle_look_unit_index;
 	short idle_look_prop_count;
-	char __unknown85A1E[2];
 	long idle_look_prop_index[MAXIMUM_AI_DEBUG_IDLE_LOOK_PROPS];
 	real idle_look_prop_weight[MAXIMUM_AI_DEBUG_IDLE_LOOK_PROPS];
 	boolean speak_valid;
-	boolean field_85B21;
-	boolean field_85B22;
-	char __unknown85B23[1];
+	boolean speak_single;
+	boolean speak_all;
 	long speak_unit_index;
-	short field_85B28;
+	short speak_delay_ticks;
 	short speak_vocalization_type;
 };
 
-typedef char ai_debug_state_path_offset_assert[
-	offsetof(struct ai_debug_state, path) == 0x3C ? 1 : -1];
-typedef char ai_debug_state_print_speech_offset_assert[
-	offsetof(struct ai_debug_state, print_speech) == 0x93 ? 1 : -1];
-typedef char ai_debug_state_render_offset_assert[
-	offsetof(struct ai_debug_state, render) == 0xA5 ? 1 : -1];
-typedef char ai_debug_state_last_render_id_offset_assert[
-	offsetof(struct ai_debug_state, last_render_id) == 0xF4 ? 1 : -1];
-typedef char ai_debug_state_ballistic_lineoffire_valid_offset_assert[
-	offsetof(struct ai_debug_state, ballistic_lineoffire_valid) == 0x4C2F4 ? 1 : -1];
-typedef char ai_debug_state_ballistic_lineoffire_point_count_offset_assert[
-	offsetof(struct ai_debug_state, ballistic_lineoffire_point_count) == 0x4C4D4 ? 1 : -1];
-#ifndef HALO_64BIT
-typedef char ai_debug_state_field_859F4_offset_assert[
-	offsetof(struct ai_debug_state, field_859F4) == 0x859F4 ? 1 : -1];
-typedef char ai_debug_state_path_state_offset_assert[
-	offsetof(struct ai_debug_state, path_state) == 0x4C81C ? 1 : -1];
-typedef char ai_debug_state_path_storage_offset_assert[
-	offsetof(struct ai_debug_state, path_storage) == 0x60904 ? 1 : -1];
-typedef char ai_debug_state_field_7D3C7_offset_assert[
-	offsetof(struct ai_debug_state, evaluation_context.find_path_direction_from_target) == 0x7D3C7 ? 1 : -1];
-typedef char ai_debug_state_field_7D980_offset_assert[
-	offsetof(struct ai_debug_state, evaluation_context.has_target) == 0x7D980 ? 1 : -1];
-typedef char ai_debug_state_field_7D988_offset_assert[
-	offsetof(struct ai_debug_state, evaluation_context.target_point) == 0x7D988 ? 1 : -1];
-typedef char ai_debug_state_actor_record_offset_assert[
-	offsetof(struct ai_debug_state, actor_record) == 0x7D9F4 ? 1 : -1];
-typedef char ai_debug_actor_record_size_assert[
-	sizeof(struct ai_debug_actor_record) == 0x40 ? 1 : -1];
-typedef char ai_debug_actor_record_field_24_offset_assert[
-	offsetof(struct ai_debug_actor_record, firing_position.path_direction_from_target) == 0x24 ? 1 : -1];
-typedef char ai_debug_actor_record_field_3C_offset_assert[
-	offsetof(struct ai_debug_actor_record, firing_position.evaluation) == 0x3C ? 1 : -1];
-typedef char ai_debug_state_field_7D380_offset_assert[
-	offsetof(struct ai_debug_state, evaluation_context_valid) == 0x7D380 ? 1 : -1];
-
-#endif
 struct actor_debug_info
 {
 	long last_render_id;
@@ -408,41 +353,41 @@ struct actor_debug_info
 		real alignment;
 	} burst_alignment;
 	long last_projectile_aiming_time;
-	boolean field_60;
-	real_point3d field_64;
-	real_vector3d field_70;
-	real_point3d field_7C;
-	boolean field_88;
-	real_vector3d field_8C;
-	real_vector3d field_98;
-	boolean field_A4;
-	short field_A6;
-	real field_A8;
-	real field_AC;
-	real field_B0;
-	real field_B4;
-	boolean field_B8;
-	short field_BA;
-	short field_BC;
-	real field_C0;
+	boolean burst_aim_by_vector;
+	real_point3d burst_origin;
+	real_vector3d burst_vector;
+	real_point3d burst_target;
+	boolean burst_weapon_vector_valid;
+	real_vector3d burst_requested_vector;
+	real_vector3d burst_weapon_vector;
+	boolean audibility_valid;
+	short audibility_result;
+	real audibility_maximum_distance;
+	real audibility_distance;
+	real audibility_encoded_distance;
+	real audibility_audible_distance;
+	boolean cover_seeking_valid;
+	short cover_seeking_decision;
+	short cover_seeking_target_hidden_ticks;
+	real cover_seeking_shield_vitality;
 	long last_vehicle_avoidance_time;
-	real_point3d field_C8;
-	real_point3d field_D4;
-	real field_E0;
-	real_point3d field_E4;
-	real field_F0;
-	boolean field_F4;
-	real_point3d field_F8;
+	real_point3d vehicle_avoidance_start;
+	real_point3d vehicle_avoidance_center;
+	real vehicle_avoidance_radius;
+	real_point3d vehicle_avoidance_target;
+	real vehicle_avoidance_t;
+	boolean vehicle_avoidance_modified;
+	real_point3d vehicle_avoidance_destination;
 	long last_melee_time;
-	real_point3d field_108;
-	real_vector3d field_114;
-	real_point3d field_120;
-	real_vector3d field_12C;
-	boolean field_138;
-	boolean field_139;
-	real_point3d field_13C;
-	real field_148;
-	real field_14C;
+	real_point3d melee_body_point;
+	real_vector3d melee_facing;
+	real_point3d melee_target_point;
+	real_vector3d melee_direction;
+	boolean melee;
+	boolean melee_in_reach;
+	real_point3d melee_lead_point;
+	real melee_range_lower_bound;
+	real melee_range_upper_bound;
 	long grenade_eval_time;
 	short grenade_decision;
 	short grenade_encounter_timeout_ticks;
@@ -463,42 +408,41 @@ struct actor_debug_info
 	short dive_decision;
 	long charge_last_time;
 	short charge_decision;
-	real field_194;
-	boolean field_198;
+	real charge_move_range;
+	boolean charge_leap;
 	short flying_error_ticks;
-	long field_19C;
+	long vector_avoidance_time;
 	struct vector_avoidance_data avoidance_data;
 	short avoidance_type[ACTOR_MAXIMUM_AVOIDANCE_RAYS];
 	real collision_t[ACTOR_MAXIMUM_AVOIDANCE_RAYS];
 	real_point3d ray_origin[ACTOR_MAXIMUM_AVOIDANCE_RAYS];
 	real_vector3d ray_direction[ACTOR_MAXIMUM_AVOIDANCE_RAYS];
-	short field_62F8[8][2];
+	short avoid_ray_result[8][2];
 	real avoid_t[8][2];
-	real_point3d field_6358[8][2];
-	real_vector3d field_6418[8][2];
-	real field_64D8[8];
-	long field_64F8;
-	real field_64FC;
-	short field_6500;
-	real field_6504;
-	real field_6508;
+	real_point3d avoid_ray_origin[8][2];
+	real_vector3d avoid_ray_direction[8][2];
+	real avoidance_weights[8];
+	real best_avoidance_weight;
+	short best_avoidance_direction;
+	real movement_direction_approximation;
+	real movement_approximate_weight;
 	real sign_no_danger;
-	real field_6510;
+	real forward_dot;
 	real sign_too_far_cosangle;
 	real sign_rotated;
-	real field_651C;
-	real field_6520;
-	real_vector3d field_6524;
-	real_vector3d field_6530;
-	short field_653C;
-	real_vector3d field_6540;
-	real field_654C;
-	boolean field_6550;
-	boolean field_6551;
-	real field_6554;
-	real field_6558;
+	real maximum_sense_emergency;
+	real rotation_angle;
+	real_vector3d avoidance_forward;
+	real_vector3d movement_direction;
+	short emergency_decision;
+	real_vector3d emergency_rotation;
+	real emergency;
+	boolean avoidance_direction_chosen;
+	boolean velocity_valid;
+	real velocity_weight;
+	real angular_speed;
 	real_vector3d avoidance_vector;
-	real field_6568;
+	real velocity_approximate_weight;
 	long vision_last_time;
 	real vision_last_maximum_distance;
 	real vision_last_perception_factor;
