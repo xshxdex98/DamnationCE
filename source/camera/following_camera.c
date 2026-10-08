@@ -5,11 +5,11 @@ FOLLOWING_CAMERA.C
 /* ---------- headers */
 
 #include "following_camera.h"
-#include "cseries/errors.h" /* port: (error, for a short camera track) */
+#include "camera_track_definitions.h"
+#include "director.h"
 #include "observer.h"
 
-#include "static_camera.h"
-
+#include "cseries/errors.h" /* port: (error, for a short camera track) */
 #include "game/game_globals.h"
 #include "game/players.h"
 #include "objects/objects.h"
@@ -19,41 +19,6 @@ FOLLOWING_CAMERA.C
 #include "units/units.h"
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
-#include "camera/following_camera.h"
-#include "camera/bored_camera.h"
-
-/* ---------- constants */
-
-enum
-{
-	CAMERA_TRACK_DEFINITION_TAG = 'trak'
-};
-
-/* ---------- structures */
-
-struct following_camera_control
-{
-	short local_player_index;
-	boolean active;
-	byte pad3[5];
-	real_euler_angles2d facing_delta;
-};
-
-struct following_camera_result
-{
-	struct camera_command command;
-	byte parameter_flags[5];
-	byte pad51[3];
-	real parameter_timers[5];
-};
-
-typedef char camera_track_control_point_size_assert[
-	sizeof(struct camera_track_control_point) == 0x3C ? 1 : -1];
-
-typedef char camera_track_definition_control_points_offset_assert[
-	offsetof(struct camera_track_definition, control_points) == 0x4 ? 1 : -1];
-typedef char unit_camera_track_size_assert[
-	sizeof(struct unit_camera_track) == 0x1C ? 1 : -1];
 
 /* ---------- prototypes */
 
@@ -134,28 +99,26 @@ void following_camera_deterministic(
 
 void following_camera_update(
 	struct following_camera *camera,
-	struct following_camera_control const *controls,
-	struct following_camera_result *result)
+	struct camera_control const *controls,
+	struct observer_command *result)
 {
 	struct player_control_unit_camera_info camera_info;
-	struct camera_command *command;
 
 	match_assert("c:\\halo\\SOURCE\\camera\\following_camera.c", 138, camera);
 	match_assert("c:\\halo\\SOURCE\\camera\\following_camera.c", 139, result);
 
 	player_control_get_unit_camera_info(controls->local_player_index, &camera_info);
-	command = &result->command;
 
-	command->position = camera_info.position;
-	command->timer = 0.f;
-	command->flags = 0;
-	command->field_of_view = DEGREES_TO_RADIANS(70.f);
+	result->focus_position = camera_info.position;
+	result->timer = 0.f;
+	result->flags = 0;
+	result->field_of_view = DEGREES_TO_RADIANS(70.f);
 
 	if (camera->initialized &&
 		(camera_info.unit_index != camera->unit_index ||
 			camera_info.seat_index != camera->seat_index))
 	{
-		command->timer = 1.f;
+		result->timer = 1.f;
 	}
 	camera->unit_index = camera_info.unit_index;
 	camera->seat_index = camera_info.seat_index;
@@ -173,8 +136,8 @@ void following_camera_update(
 			TEST_FLAG(unit->unit.control_flags, _unit_control_jump_bit);
 		if (crouched != camera->crouched)
 		{
-			result->parameter_flags[1] = TRUE;
-			result->parameter_timers[1] = MAX(0.5f, result->parameter_timers[1]);
+			result->parameter_flags[_observer_command_parameter_focus_offset] = FLAG(_observer_time_valid_bit);
+			result->parameter_timers[_observer_command_parameter_focus_offset] = MAX(0.5f, result->parameter_timers[_observer_command_parameter_focus_offset]);
 			camera->crouched = crouched;
 		}
 
@@ -182,8 +145,8 @@ void following_camera_update(
 		{
 			camera->facing_offset.yaw += controls->facing_delta.yaw;
 			camera->facing_offset.pitch += controls->facing_delta.pitch;
-			result->parameter_flags[4] = TRUE;
-			result->parameter_timers[4] = MAX(0.4f, result->parameter_timers[4]);
+			result->parameter_flags[_observer_command_parameter_orientation] = FLAG(_observer_time_valid_bit);
+			result->parameter_timers[_observer_command_parameter_orientation] = MAX(0.4f, result->parameter_timers[_observer_command_parameter_orientation]);
 		}
 		else if (camera->facing_offset.yaw != 0.f || camera->facing_offset.pitch != 0.f)
 		{
@@ -197,69 +160,33 @@ void following_camera_update(
 			facing.pitch + camera->facing_offset.pitch,
 			-_pi / 2.f,
 			_pi / 2.f);
-		vector3d_from_euler_angles2d(&command->forward, &facing);
+		vector3d_from_euler_angles2d(&result->forward, &facing);
 
 		match_vassert(
 			"c:\\halo\\SOURCE\\camera\\following_camera.c",
 			212,
-			magnitude3d(&command->forward) > 0.9999f &&
-			magnitude3d(&command->forward) < 1.0001f,
+			magnitude3d(&result->forward) > 0.9999f &&
+			magnitude3d(&result->forward) < 1.0001f,
 			"magnitude3d(&result->forward) > 0.9999f && magnitude3d(&result->forward) < 1.0001f");
 
 		camera_track_splut(camera_info.camera, facing.pitch, &track_offset);
-		command->depth = magnitude3d(&track_offset);
-		command->offset.i =
-			(command->depth * cosine(facing.pitch) + track_offset.i) * camera->distance_scale;
-		command->offset.j = -track_offset.j * camera->distance_scale;
-		command->offset.k =
-			(command->depth * sine(facing.pitch) + track_offset.k) * camera->distance_scale;
-		command->depth = MAX(
-			(command->depth - 0.6f) * camera->distance_scale + 0.6f,
+		result->focus_distance = magnitude3d(&track_offset);
+		result->focus_offset.i =
+			(result->focus_distance * cosine(facing.pitch) + track_offset.i) * camera->distance_scale;
+		result->focus_offset.j = -track_offset.j * camera->distance_scale;
+		result->focus_offset.k =
+			(result->focus_distance * sine(facing.pitch) + track_offset.k) * camera->distance_scale;
+		result->focus_distance = MAX(
+			(result->focus_distance - 0.6f) * camera->distance_scale + 0.6f,
 			0.6f);
 
-		object_get_velocities(camera_info.unit_index, &command->velocity, NULL);
-		SET_FLAG(command->flags, 0, TRUE);
+		object_get_velocities(camera_info.unit_index, &result->focus_velocity, NULL);
+		SET_FLAG(result->flags, _observer_command_valid_bit, TRUE);
 	}
 
-	observer_up_from_forward(&command->forward, &command->up);
+	observer_up_from_forward(&result->forward, &result->up);
 
-	match_vassert(
-		"c:\\halo\\SOURCE\\camera\\following_camera.c",
-		238,
-		!(command->flags & FLAG(0)) ||
-		(valid_real_vector3d_axes2(&command->forward, &command->up) &&
-			valid_real(command->position.x) && command->position.x>=-5000.f && command->position.x<=5000.f &&
-			valid_real(command->position.y) && command->position.y>=-5000.f && command->position.y<=5000.f &&
-			valid_real(command->position.z) && command->position.z>=-5000.f && command->position.z<=5000.f &&
-			valid_real(command->offset.i) && command->offset.i>=-5000.f && command->offset.i<=5000.f &&
-			valid_real(command->offset.j) && command->offset.j>=-5000.f && command->offset.j<=5000.f &&
-			valid_real(command->offset.k) && command->offset.k>=-5000.f && command->offset.k<=5000.f &&
-			valid_real_vector3d(&command->velocity) &&
-			valid_real(command->depth) && command->depth>=0.f && command->depth<=5000.f &&
-			valid_real(command->field_of_view) && command->field_of_view>=0.001f && command->field_of_view<=_pi / 2.f &&
-			valid_real(command->timer) && command->timer>=0.f && command->timer<=3600.f),
-		csprintf(
-			temporary,
-			"Invalid camera command.\nF: (%f, %f, %f) U: (%f, %f, %f)\nP: (%f, %f, %f) O: (%f, %f, %f)\nD: %f V: (%f, %f, %f), FOV: %f, T: %f, FL: %ld",
-			command->forward.i,
-			command->forward.j,
-			command->forward.k,
-			command->up.i,
-			command->up.j,
-			command->up.k,
-			command->position.x,
-			command->position.y,
-			command->position.z,
-			command->offset.i,
-			command->offset.j,
-			command->offset.k,
-			command->depth,
-			command->velocity.i,
-			command->velocity.j,
-			command->velocity.k,
-			command->field_of_view,
-			command->timer,
-			command->flags));
+	match_assert_valid_observer_command("c:\\halo\\SOURCE\\camera\\following_camera.c", 238, result);
 
 	camera->initialized = TRUE;
 	return;

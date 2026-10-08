@@ -31,17 +31,6 @@ boolean network_game_distributed_client(void);
 
 /* ---------- structures */
 
-struct camera_control
-{
-	short local_player_index;
-	boolean active;
-	byte pad3;
-	real seconds_elapsed;
-	real_euler_angles3d facing_delta;
-	real_vector3d position_delta;
-	real wheel_delta;
-};
-
 struct mouse_state
 {
 	long x;
@@ -188,12 +177,12 @@ director_perspective director_get_perspective(
 
 	camera = director_get(local_player_index);
 
-	if (camera->camera_proc == first_person_camera_update)
+	if (camera->camera_proc == (director_camera_update_proc)first_person_camera_update)
 	{
 		if (camera->camera_change_pause == 0.f)
 			camera->perspective = 0;
 	}
-	else if (camera->camera_proc == following_camera_update)
+	else if (camera->camera_proc == (director_camera_update_proc)following_camera_update)
 	{
 		camera->perspective = 1;
 	}
@@ -919,12 +908,12 @@ void director_update(
 							(director_camera_update_proc)first_person_camera_update)
 					{
 						director->camera_change_pause = 0.f;
-						command.parameter_timers[0] = 0.f;
-						command.parameter_flags[0] =
+						command.parameter_timers[_observer_command_parameter_focus_position] = 0.f;
+						command.parameter_flags[_observer_command_parameter_focus_position] =
 							FLAG(_observer_time_valid_bit) |
 							FLAG(_observer_time_force_bit);
-						command.parameter_timers[2] = 0.f;
-						command.parameter_flags[2] =
+						command.parameter_timers[_observer_command_parameter_focus_distance] = 0.f;
+						command.parameter_flags[_observer_command_parameter_focus_distance] =
 							FLAG(_observer_time_valid_bit) |
 							FLAG(_observer_time_force_bit);
 					}

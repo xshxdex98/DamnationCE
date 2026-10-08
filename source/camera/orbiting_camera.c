@@ -5,53 +5,26 @@ ORBITING_CAMERA.C
 /* ---------- headers */
 
 #include "orbiting_camera.h"
+#include "director.h"
 #include "observer.h"
-#include "static_camera.h"
-#include "camera/director.h"
+
+#include "game/players.h"
 #include "objects/objects.h"
 
 /* ---------- structures */
 
-struct camera_action
-{
-	short local_player_index;
-	boolean inhibit_input;
-	byte pad3[5];
-	real yaw_delta;
-	real pitch_delta;
-	byte pad10[0x10];
-	real zoom_delta;
-};
-
-struct unit_camera_info
-{
-	long unit_index;
-	byte pad4[8];
-	real_point3d position;
-};
-
 struct orbiting_camera_constants
 {
 	real field_of_view;
-	real unknown4;
-	real unknown8;
 	real timer;
 	real vertical_offset;
 };
 
-/* ---------- prototypes */
-
-void player_control_get_unit_camera_info(
-	short local_player_index,
-	struct unit_camera_info *camera_info);
-
 /* ---------- globals */
 
-static struct orbiting_camera_constants const rdata_0025724c =
+static struct orbiting_camera_constants const orbiting_camera_constants =
 {
 	DEGREES_TO_RADIANS(50.f),
-	1.f,
-	0.5f,
 	0.5f,
 	0.52f
 };
@@ -70,77 +43,41 @@ void orbiting_camera_new(
 
 void orbiting_camera_update(
 	struct orbiting_camera *camera,
-	struct camera_action const *action,
-	struct camera_command *result)
+	struct camera_control const *controls,
+	struct observer_command *result)
 {
-	struct unit_camera_info camera_info;
+	struct player_control_unit_camera_info camera_info;
 
-	player_control_get_unit_camera_info(action->local_player_index, &camera_info);
-	result->position = camera_info.position;
+	player_control_get_unit_camera_info(controls->local_player_index, &camera_info);
+	result->focus_position = camera_info.position;
 
-	if (action->inhibit_input)
+	if (controls->active)
 	{
-		camera->facing.yaw -= action->yaw_delta;
+		camera->facing.yaw -= controls->facing_delta.yaw;
 		camera->facing.pitch = PIN(
-			camera->facing.pitch - action->pitch_delta,
+			camera->facing.pitch - controls->facing_delta.pitch,
 			-DEGREES_TO_RADIANS(72.f),
 			DEGREES_TO_RADIANS(72.f));
-		director_inhibit_input(action->local_player_index);
+		director_inhibit_input(controls->local_player_index);
 	}
 
-	camera->distance = MAX(camera->distance - action->zoom_delta / 3.f, 0.6f);
+	camera->distance = MAX(camera->distance - controls->wheel_delta / 3.f, 0.6f);
 
 	if (camera_info.unit_index != NONE)
 	{
 		vector3d_from_euler_angles2d(&result->forward, &camera->facing);
 		observer_up_from_forward(&result->forward, &result->up);
-		object_get_velocities(camera_info.unit_index, &result->velocity, NULL);
-		result->position.z += rdata_0025724c.vertical_offset;
-		result->flags = FLAG(0);
+		object_get_velocities(camera_info.unit_index, &result->focus_velocity, NULL);
+		result->focus_position.z += orbiting_camera_constants.vertical_offset;
+		result->flags = FLAG(_observer_command_valid_bit);
 	}
 
-	result->offset = *global_zero_vector3d;
-	result->depth = camera->distance;
-	result->field_of_view = rdata_0025724c.field_of_view;
-	result->timer = rdata_0025724c.timer;
+	result->focus_offset = *global_zero_vector3d;
+	result->focus_distance = camera->distance;
+	result->field_of_view = orbiting_camera_constants.field_of_view;
+	result->timer = orbiting_camera_constants.timer;
 
-	match_vassert(
-		"c:\\halo\\SOURCE\\camera\\orbiting_camera.c",
-		71,
-		!(result->flags & FLAG(0)) ||
-		(valid_real_vector3d_axes2(&result->forward, &result->up) &&
-			valid_real(result->position.x) && result->position.x>=-5000.f && result->position.x<=5000.f &&
-			valid_real(result->position.y) && result->position.y>=-5000.f && result->position.y<=5000.f &&
-			valid_real(result->position.z) && result->position.z>=-5000.f && result->position.z<=5000.f &&
-			valid_real(result->offset.i) && result->offset.i>=-5000.f && result->offset.i<=5000.f &&
-			valid_real(result->offset.j) && result->offset.j>=-5000.f && result->offset.j<=5000.f &&
-			valid_real(result->offset.k) && result->offset.k>=-5000.f && result->offset.k<=5000.f &&
-			valid_real_vector3d(&result->velocity) &&
-			valid_real(result->depth) && result->depth>=0.f && result->depth<=5000.f &&
-			valid_real(rdata_0025724c.field_of_view) && rdata_0025724c.field_of_view>=0.001f && rdata_0025724c.field_of_view<=_pi / 2.f &&
-			valid_real(rdata_0025724c.timer) && rdata_0025724c.timer>=0.f && rdata_0025724c.timer<=3600.f),
-		csprintf(
-			temporary,
-			"Invalid camera command.\nF: (%f, %f, %f) U: (%f, %f, %f)\nP: (%f, %f, %f) O: (%f, %f, %f)\nD: %f V: (%f, %f, %f), FOV: %f, T: %f, FL: %ld",
-			result->forward.i,
-			result->forward.j,
-			result->forward.k,
-			result->up.i,
-			result->up.j,
-			result->up.k,
-			result->position.x,
-			result->position.y,
-			result->position.z,
-			result->offset.i,
-			result->offset.j,
-			result->offset.k,
-			result->depth,
-			result->velocity.i,
-			result->velocity.j,
-			result->velocity.k,
-			rdata_0025724c.field_of_view,
-			rdata_0025724c.timer,
-			result->flags));
+	match_assert_valid_observer_command("c:\\halo\\SOURCE\\camera\\orbiting_camera.c", 71, result);
 
 	return;
 }

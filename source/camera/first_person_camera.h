@@ -18,9 +18,8 @@ struct first_person_camera
 	real field_of_view;
 };
 
-struct camera_command;
-struct first_person_camera_action;
-struct first_person_camera_result;
+struct camera_control;
+struct observer_command;
 
 /* ---------- prototypes/FIRST_PERSON_CAMERA.C */
 
@@ -32,10 +31,10 @@ void first_person_camera_deterministic(
 	real_vector3d *forward);
 void first_person_camera_fake(
 	long unit_index,
-	struct camera_command *result);
+	struct observer_command *result);
 void first_person_camera_update(
 	struct first_person_camera *camera,
-	struct first_person_camera_action const *action,
-	struct first_person_camera_result *result);
+	struct camera_control const *controls,
+	struct observer_command *result);
 
 #endif // __FIRST_PERSON_CAMERA_H

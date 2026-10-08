@@ -83,6 +83,48 @@ typedef char observer_command_parameter_flags_offset_assert[
 typedef char observer_command_parameter_timers_offset_assert[
 	offsetof(struct observer_command, parameter_timers) == 0x54 ? 1 : -1];
 
+/* ---------- macros */
+
+#define match_assert_valid_observer_command(file, line, command) \
+	match_vassert( \
+		file, \
+		line, \
+		(command) && \
+		(!TEST_FLAG((command)->flags, _observer_command_valid_bit) || \
+		(valid_real_vector3d_axes2(&(command)->forward, &(command)->up) && \
+			valid_real((command)->focus_position.x) && (command)->focus_position.x>=-5000.f && (command)->focus_position.x<=5000.f && \
+			valid_real((command)->focus_position.y) && (command)->focus_position.y>=-5000.f && (command)->focus_position.y<=5000.f && \
+			valid_real((command)->focus_position.z) && (command)->focus_position.z>=-5000.f && (command)->focus_position.z<=5000.f && \
+			valid_real((command)->focus_offset.i) && (command)->focus_offset.i>=-5000.f && (command)->focus_offset.i<=5000.f && \
+			valid_real((command)->focus_offset.j) && (command)->focus_offset.j>=-5000.f && (command)->focus_offset.j<=5000.f && \
+			valid_real((command)->focus_offset.k) && (command)->focus_offset.k>=-5000.f && (command)->focus_offset.k<=5000.f && \
+			valid_real_vector3d(&(command)->focus_velocity) && \
+			valid_real((command)->focus_distance) && (command)->focus_distance>=0.f && (command)->focus_distance<=5000.f && \
+			valid_real((command)->field_of_view) && (command)->field_of_view>=0.001f && (command)->field_of_view<=_pi / 2.f && \
+			valid_real((command)->timer) && (command)->timer>=0.f && (command)->timer<=3600.f)), \
+		csprintf( \
+			temporary, \
+			"Invalid camera command.\nF: (%f, %f, %f) U: (%f, %f, %f)\nP: (%f, %f, %f) O: (%f, %f, %f)\nD: %f V: (%f, %f, %f), FOV: %f, T: %f, FL: %ld", \
+			(command)->forward.i, \
+			(command)->forward.j, \
+			(command)->forward.k, \
+			(command)->up.i, \
+			(command)->up.j, \
+			(command)->up.k, \
+			(command)->focus_position.x, \
+			(command)->focus_position.y, \
+			(command)->focus_position.z, \
+			(command)->focus_offset.i, \
+			(command)->focus_offset.j, \
+			(command)->focus_offset.k, \
+			(command)->focus_distance, \
+			(command)->focus_velocity.i, \
+			(command)->focus_velocity.j, \
+			(command)->focus_velocity.k, \
+			(command)->field_of_view, \
+			(command)->timer, \
+			(command)->flags))
+
 /* ---------- prototypes/OBSERVER.C */
 
 void observer_obsolete_position(

@@ -5,20 +5,17 @@ EDITOR_FLYING_CAMERA.C
 /* ---------- headers */
 
 #include "editor_flying_camera.h"
-#include "flying_camera.h"
 #include "camera_scripting.h"
 #include "director.h"
+#include "flying_camera.h"
+#include "observer.h"
+
 #include "game/players.h"
 #include "interface/terminal.h"
 #include "main/console.h"
-#include "observer.h"
-#include "static_camera.h"
 #include "render/render.h"
 #include "scenario/scenario.h"
 #include "scenario/scenario_definitions.h"
-#ifdef HALO_64BIT
-#include "interface/terminal.h"
-#endif
 
 /* ---------- constants */
 
@@ -76,8 +73,8 @@ typedef char editor_camera_player_starting_location_size_assert[
 
 typedef void (*editor_camera_update_function)(
 	struct flying_camera *camera,
-	struct flying_camera_action const *controls,
-	struct camera_command *result);
+	struct camera_control const *controls,
+	struct observer_command *result);
 typedef void (*editor_camera_translate_function)(
 	struct flying_camera *camera);
 
@@ -85,12 +82,12 @@ typedef void (*editor_camera_translate_function)(
 
 static void editor_camera_flying_update(
 	struct flying_camera *camera,
-	struct flying_camera_action const *controls,
-	struct camera_command *result);
+	struct camera_control const *controls,
+	struct observer_command *result);
 static void editor_camera_orbiting_update(
 	struct flying_camera *camera,
-	struct flying_camera_action const *controls,
-	struct camera_command *result);
+	struct camera_control const *controls,
+	struct observer_command *result);
 static void translate_flying_to_orbiting(
 	struct flying_camera *camera);
 static void translate_orbiting_to_flying(
@@ -453,8 +450,8 @@ void editor_camera_set_mode(
 
 void editor_camera_update(
 	struct flying_camera *camera,
-	struct flying_camera_action const *controls,
-	struct camera_command *result)
+	struct camera_control const *controls,
+	struct observer_command *result)
 {
 	match_dassert(
 		"c:\\halo\\SOURCE\\camera\\editor_flying_camera.c",
@@ -580,8 +577,8 @@ void editor_camera_set_scripted(
 
 static void editor_camera_flying_update(
 	struct flying_camera *camera,
-	struct flying_camera_action const *controls,
-	struct camera_command *result)
+	struct camera_control const *controls,
+	struct observer_command *result)
 {
 	real_vector3d right;
 	real_vector3d translation;
@@ -627,9 +624,9 @@ static void editor_camera_flying_update(
 
 		set_real_vector3d(
 			&translation,
-			cosine_yaw*controls->translation.i - sine_yaw*controls->translation.j,
-			cosine_yaw*controls->translation.j + sine_yaw*controls->translation.i,
-			controls->translation.k);
+			cosine_yaw*controls->position_delta.i - sine_yaw*controls->position_delta.j,
+			cosine_yaw*controls->position_delta.j + sine_yaw*controls->position_delta.i,
+			controls->position_delta.k);
 		scale_vector3d(&translation, editor_camera_speed, &translation);
 	}
 
@@ -656,64 +653,28 @@ static void editor_camera_flying_update(
 			&position);
 	}
 	camera->position = position;
-	result->position = position;
-	result->offset = *global_zero_vector3d;
-	result->depth = 0.f;
+	result->focus_position = position;
+	result->focus_offset = *global_zero_vector3d;
+	result->focus_distance = 0.f;
 	result->field_of_view = 1.2217305f;
 	result->flags = FLAG(_observer_command_valid_bit);
 
-	match_vassert(
-		"c:\\halo\\SOURCE\\camera\\editor_flying_camera.c",
-		518,
-		!TEST_FLAG(result->flags, _observer_command_valid_bit) ||
-		(valid_real_vector3d_axes2(&result->forward, &result->up) &&
-			valid_real(result->position.x) && result->position.x>=-5000.f && result->position.x<=5000.f &&
-			valid_real(result->position.y) && result->position.y>=-5000.f && result->position.y<=5000.f &&
-			valid_real(result->position.z) && result->position.z>=-5000.f && result->position.z<=5000.f &&
-			valid_real(result->offset.i) && result->offset.i>=-5000.f && result->offset.i<=5000.f &&
-			valid_real(result->offset.j) && result->offset.j>=-5000.f && result->offset.j<=5000.f &&
-			valid_real(result->offset.k) && result->offset.k>=-5000.f && result->offset.k<=5000.f &&
-			valid_real_vector3d(&result->velocity) &&
-			valid_real(result->depth) && result->depth>=0.f && result->depth<=5000.f &&
-			valid_real(result->field_of_view) && result->field_of_view>=0.001f && result->field_of_view<=_pi / 2.f &&
-			valid_real(result->timer) && result->timer>=0.f && result->timer<=3600.f),
-		csprintf(
-			temporary,
-			"Invalid camera command.\nF: (%f, %f, %f) U: (%f, %f, %f)\nP: (%f, %f, %f) O: (%f, %f, %f)\nD: %f V: (%f, %f, %f), FOV: %f, T: %f, FL: %ld",
-			result->forward.i,
-			result->forward.j,
-			result->forward.k,
-			result->up.i,
-			result->up.j,
-			result->up.k,
-			result->position.x,
-			result->position.y,
-			result->position.z,
-			result->offset.i,
-			result->offset.j,
-			result->offset.k,
-			result->depth,
-			result->velocity.i,
-			result->velocity.j,
-			result->velocity.k,
-			result->field_of_view,
-			result->timer,
-			result->flags));
+	match_assert_valid_observer_command("c:\\halo\\SOURCE\\camera\\editor_flying_camera.c", 518, result);
 
 	return;
 }
 
 static void editor_camera_orbiting_update(
 	struct flying_camera *camera,
-	struct flying_camera_action const *controls,
-	struct camera_command *result)
+	struct camera_control const *controls,
+	struct observer_command *result)
 {
 	struct player_control_unit_camera_info camera_info;
 
 	player_control_get_unit_camera_info(
 		controls->local_player_index,
 		&camera_info);
-	result->position = camera_info.position;
+	result->focus_position = camera_info.position;
 
 	if (controls->active)
 	{
@@ -737,53 +698,17 @@ static void editor_camera_orbiting_update(
 		observer_up_from_forward(&result->forward, &result->up);
 		object_get_velocities(
 			camera_info.unit_index,
-			&result->velocity,
+			&result->focus_velocity,
 			NULL);
 		result->flags = FLAG(_observer_command_valid_bit);
 	}
 
-	result->offset = *global_zero_vector3d;
-	result->depth = camera->position.y;
+	result->focus_offset = *global_zero_vector3d;
+	result->focus_distance = camera->position.y;
 	result->field_of_view = orbiting_camera_field_of_view;
 	result->timer = orbiting_camera_timer;
 
-	match_vassert(
-		"c:\\halo\\SOURCE\\camera\\editor_flying_camera.c",
-		571,
-		!TEST_FLAG(result->flags, _observer_command_valid_bit) ||
-		(valid_real_vector3d_axes2(&result->forward, &result->up) &&
-			valid_real(result->position.x) && result->position.x>=-5000.f && result->position.x<=5000.f &&
-			valid_real(result->position.y) && result->position.y>=-5000.f && result->position.y<=5000.f &&
-			valid_real(result->position.z) && result->position.z>=-5000.f && result->position.z<=5000.f &&
-			valid_real(result->offset.i) && result->offset.i>=-5000.f && result->offset.i<=5000.f &&
-			valid_real(result->offset.j) && result->offset.j>=-5000.f && result->offset.j<=5000.f &&
-			valid_real(result->offset.k) && result->offset.k>=-5000.f && result->offset.k<=5000.f &&
-			valid_real_vector3d(&result->velocity) &&
-			valid_real(result->depth) && result->depth>=0.f && result->depth<=5000.f &&
-			valid_real(result->field_of_view) && result->field_of_view>=0.001f && result->field_of_view<=_pi / 2.f &&
-			valid_real(result->timer) && result->timer>=0.f && result->timer<=3600.f),
-		csprintf(
-			temporary,
-			"Invalid camera command.\nF: (%f, %f, %f) U: (%f, %f, %f)\nP: (%f, %f, %f) O: (%f, %f, %f)\nD: %f V: (%f, %f, %f), FOV: %f, T: %f, FL: %ld",
-			result->forward.i,
-			result->forward.j,
-			result->forward.k,
-			result->up.i,
-			result->up.j,
-			result->up.k,
-			result->position.x,
-			result->position.y,
-			result->position.z,
-			result->offset.i,
-			result->offset.j,
-			result->offset.k,
-			result->depth,
-			result->velocity.i,
-			result->velocity.j,
-			result->velocity.k,
-			result->field_of_view,
-			result->timer,
-			result->flags));
+	match_assert_valid_observer_command("c:\\halo\\SOURCE\\camera\\editor_flying_camera.c", 571, result);
 
 	return;
 }

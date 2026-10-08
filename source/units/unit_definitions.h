@@ -74,6 +74,15 @@ struct unit_dialogue_variant
 
 /* ---------- structures */
 
+struct unit_camera_track
+{
+	struct tag_reference track;
+	long unused[3];
+};
+
+typedef char unit_camera_track_size_assert[
+	sizeof(struct unit_camera_track) == 0x1C ? 1 : -1];
+
 struct unit_camera
 {
 	char marker_name[TAG_STRING_LENGTH+1];

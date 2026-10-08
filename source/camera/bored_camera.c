@@ -5,24 +5,14 @@ BORED_CAMERA.C
 /* ---------- headers */
 
 #include "bored_camera.h"
-#include "camera/static_camera.h"
+#include "director.h"
+#include "observer.h"
+
 #include "cseries/cseries_windows.h"
 #include "game/players.h"
 #include "math/real_math.h"
 #include "units/unit_definitions.h"
 #include "units/units.h"
-#include "observer.h"
-#include "camera/bored_camera.h"
-
-/* ---------- structures */
-
-struct camera_action
-{
-	short local_player_index;
-};
-
-typedef char unit_camera_track_size_assert[
-	sizeof(struct unit_camera_track) == 0x1C ? 1 : -1];
 
 /* ---------- prototypes */
 
@@ -44,8 +34,8 @@ void bored_camera_new(
 
 void bored_camera_update(
 	struct bored_camera *camera,
-	struct camera_action const *action,
-	struct camera_command *result)
+	struct camera_control const *controls,
+	struct observer_command *result)
 {
 	unsigned long now;
 
@@ -61,11 +51,11 @@ void bored_camera_update(
 		long aiming_unit_index;
 
 		aiming_unit_index = player_control_get_aiming_unit_index(
-			action->local_player_index);
+			controls->local_player_index);
 		player_control_get_unit_camera_info(
-			action->local_player_index,
+			controls->local_player_index,
 			&camera_info);
-		result->position = camera_info.position;
+		result->focus_position = camera_info.position;
 
 		if (aiming_unit_index != NONE)
 		{
@@ -83,7 +73,7 @@ void bored_camera_update(
 			}
 
 			angles = *player_control_get_facing_angles(
-				action->local_player_index);
+				controls->local_player_index);
 			unit_get_camera_position(aiming_unit_index, &camera_position);
 			angles.pitch = real_local_random_range(
 				-DEGREES_TO_RADIANS(63.f),
@@ -97,61 +87,18 @@ void bored_camera_update(
 				DEGREES_TO_RADIANS(30.f),
 				DEGREES_TO_RADIANS(80.f));
 			result->field_of_view = field_of_view;
-			result->depth = real_local_random_range(1.f, 6.f);
-			result->velocity = *global_zero_vector3d;
+			result->focus_distance = real_local_random_range(1.f, 6.f);
+			result->focus_velocity = *global_zero_vector3d;
 
 			timer_milliseconds = bored_camera_shot_duration_milliseconds(camera->boredom_count);
 			camera->timer_milliseconds = timer_milliseconds;
-			result->flags = FLAG(0);
+			result->flags = FLAG(_observer_command_valid_bit);
 			result->timer = (real)timer_milliseconds;
 			camera->boredom_count++;
 
 			/* (as the original: the timer can be set to 10000..30000 here, where the check below
 			 * allows 3600 at most) */
-			if (!(
-				!(result->flags & FLAG(0)) ||
-				(valid_real_vector3d_axes2(&result->forward, &result->up) &&
-					valid_real(result->position.x) && result->position.x>=-5000.f && result->position.x<=5000.f &&
-					valid_real(result->position.y) && result->position.y>=-5000.f && result->position.y<=5000.f &&
-					valid_real(result->position.z) && result->position.z>=-5000.f && result->position.z<=5000.f &&
-					valid_real(result->offset.i) && result->offset.i>=-5000.f && result->offset.i<=5000.f &&
-					valid_real(result->offset.j) && result->offset.j>=-5000.f && result->offset.j<=5000.f &&
-					valid_real(result->offset.k) && result->offset.k>=-5000.f && result->offset.k<=5000.f &&
-					valid_real_vector3d(&result->velocity) &&
-					valid_real(result->depth) && result->depth>=0.f && result->depth<=5000.f &&
-					valid_real(result->field_of_view) && result->field_of_view>=0.001f && result->field_of_view<=_pi / 2.f &&
-					valid_real(result->timer) && result->timer>=0.f && result->timer<=3600.f)))
-			{
-				long flags = result->flags;
-
-				display_assert(
-					csprintf(
-						temporary,
-						"Invalid camera command.\nF: (%f, %f, %f) U: (%f, %f, %f)\nP: (%f, %f, %f) O: (%f, %f, %f)\nD: %f V: (%f, %f, %f), FOV: %f, T: %f, FL: %ld",
-						result->forward.i,
-						result->forward.j,
-						result->forward.k,
-						result->up.i,
-						result->up.j,
-						result->up.k,
-						result->position.x,
-						result->position.y,
-						result->position.z,
-						result->offset.i,
-						result->offset.j,
-						result->offset.k,
-						result->depth,
-						result->velocity.i,
-						result->velocity.j,
-						result->velocity.k,
-						result->field_of_view,
-						result->timer,
-						flags),
-					"c:\\halo\\SOURCE\\camera\\bored_camera.c",
-					95,
-					TRUE);
-				system_exit(-1);
-			}
+			match_assert_valid_observer_command("c:\\halo\\SOURCE\\camera\\bored_camera.c", 95, result);
 		}
 	}
 	return;

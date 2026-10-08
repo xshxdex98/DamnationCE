@@ -5,47 +5,15 @@ DEAD_CAMERA.C
 /* ---------- headers */
 
 #include "dead_camera.h"
+#include "director.h"
 #include "observer.h"
-#include "static_camera.h"
+
 #include "game/game_engine.h"
 #include "game/players.h"
 #include "memory/data.h"
 #include "objects/objects.h"
 
 /* ---------- structures */
-
-struct camera_control
-{
-	long local_player_index;
-	real seconds_elapsed;
-};
-
-struct dead_camera_command
-{
-	long flags;
-	real_point3d position;
-	real_vector3d offset;
-	real depth;
-	real field_of_view;
-	real_vector3d forward;
-	real_vector3d up;
-	real_vector3d velocity;
-	real timer;
-	byte position_flags;
-	byte offset_flags;
-	byte distance_flags;
-	byte field_of_view_flags;
-	byte orientation_flags;
-	byte pad51[3];
-	real position_timer;
-	real offset_timer;
-	real distance_timer;
-	real field_of_view_timer;
-	real orientation_timer;
-};
-
-typedef char dead_camera_command_size_assert[
-	sizeof(struct dead_camera_command) == 0x68 ? 1 : -1];
 
 struct dead_camera_constants
 {
@@ -114,7 +82,7 @@ void dead_camera_new(
 void dead_camera_update(
 	struct dead_camera *camera,
 	struct camera_control const *controls,
-	struct dead_camera_command *result)
+	struct observer_command *result)
 {
 	struct object_datum *unit;
 
@@ -123,29 +91,29 @@ void dead_camera_update(
 		: object_try_and_get(camera->unit_index);
 	if (unit)
 	{
-		result->position = unit->object.bounding_sphere_center;
+		result->focus_position = unit->object.bounding_sphere_center;
 	}
 	else
 	{
-		result->position = camera->position;
+		result->focus_position = camera->position;
 	}
 
-	result->depth = camera->distance;
+	result->focus_distance = camera->distance;
 	vector3d_from_euler_angles2d(&result->forward, &camera->facing);
 	observer_up_from_forward(&result->forward, &result->up);
 	result->field_of_view = camera->field_of_view;
-	result->offset = *global_zero_vector3d;
-	result->velocity = *global_zero_vector3d;
-	result->flags = FLAG(0);
+	result->focus_offset = *global_zero_vector3d;
+	result->focus_velocity = *global_zero_vector3d;
+	result->flags = FLAG(_observer_command_valid_bit);
 	result->timer = MAX(0.f, camera->timer);
-	result->position_timer = 0.f;
-	result->position_flags = 3;
+	result->parameter_timers[_observer_command_parameter_focus_position] = 0.f;
+	result->parameter_flags[_observer_command_parameter_focus_position] = FLAG(_observer_time_valid_bit) | FLAG(_observer_time_force_bit);
 
 	if (camera->timer == dead_camera_constants.dead_timer)
 	{
-		result->depth = 0.5f;
-		result->distance_timer = 0.f;
-		result->distance_flags = 3;
+		result->focus_distance = 0.5f;
+		result->parameter_timers[_observer_command_parameter_focus_distance] = 0.f;
+		result->parameter_flags[_observer_command_parameter_focus_distance] = FLAG(_observer_time_valid_bit) | FLAG(_observer_time_force_bit);
 	}
 
 	camera->timer -= controls->seconds_elapsed;
@@ -187,43 +155,7 @@ void dead_camera_update(
 			: dead_camera_constants.singleplayer_switch_timer;
 	}
 
-	match_vassert(
-		"c:\\halo\\SOURCE\\camera\\dead_camera.c",
-		158,
-		!(result->flags & FLAG(0)) ||
-		(valid_real_vector3d_axes2(&result->forward, &result->up) &&
-			valid_real(result->position.x) && result->position.x>=-5000.f && result->position.x<=5000.f &&
-			valid_real(result->position.y) && result->position.y>=-5000.f && result->position.y<=5000.f &&
-			valid_real(result->position.z) && result->position.z>=-5000.f && result->position.z<=5000.f &&
-			valid_real(result->offset.i) && result->offset.i>=-5000.f && result->offset.i<=5000.f &&
-			valid_real(result->offset.j) && result->offset.j>=-5000.f && result->offset.j<=5000.f &&
-			valid_real(result->offset.k) && result->offset.k>=-5000.f && result->offset.k<=5000.f &&
-			valid_real_vector3d(&result->velocity) &&
-			valid_real(result->depth) && result->depth>=0.f && result->depth<=5000.f &&
-			valid_real(result->field_of_view) && result->field_of_view>=0.001f && result->field_of_view<=_pi / 2.f &&
-			valid_real(result->timer) && result->timer>=0.f && result->timer<=3600.f),
-		csprintf(
-			temporary,
-			"Invalid camera command.\nF: (%f, %f, %f) U: (%f, %f, %f)\nP: (%f, %f, %f) O: (%f, %f, %f)\nD: %f V: (%f, %f, %f), FOV: %f, T: %f, FL: %ld",
-			result->forward.i,
-			result->forward.j,
-			result->forward.k,
-			result->up.i,
-			result->up.j,
-			result->up.k,
-			result->position.x,
-			result->position.y,
-			result->position.z,
-			result->offset.i,
-			result->offset.j,
-			result->offset.k,
-			result->depth,
-			result->velocity.i,
-			result->velocity.j,
-			result->velocity.k,
-			result->field_of_view,
-			result->timer,
-			result->flags));
+	match_assert_valid_observer_command("c:\\halo\\SOURCE\\camera\\dead_camera.c", 158, result);
 
 	return;
 }

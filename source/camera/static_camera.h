@@ -25,18 +25,8 @@ struct static_camera
 	boolean initialized;
 };
 
-struct camera_command
-{
-	long flags;
-	real_point3d position;
-	real_vector3d offset;
-	real depth;
-	real field_of_view;
-	real_vector3d forward;
-	real_vector3d up;
-	real_vector3d velocity;
-	real timer;
-};
+struct camera_control;
+struct observer_command;
 
 /* ---------- prototypes/STATIC_CAMERA.C */
 
@@ -51,7 +41,7 @@ void static_camera_new(
 	long flags);
 void static_camera_update(
 	struct static_camera *camera,
-	void const *action,
-	struct camera_command *result);
+	struct camera_control const *controls,
+	struct observer_command *result);
 
 #endif // __STATIC_CAMERA_H

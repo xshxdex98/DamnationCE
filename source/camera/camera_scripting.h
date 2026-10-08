@@ -14,7 +14,7 @@ CAMERA_SCRIPTING.H
 
 struct camera_control;
 struct dead_camera;
-struct scripted_camera_command;
+struct observer_command;
 union real_point3d;
 union real_vector3d;
 
@@ -52,6 +52,6 @@ long scripted_camera_object_relative_to(
 void scripted_camera_update(
 	struct dead_camera *camera,
 	struct camera_control const *controls,
-	struct scripted_camera_command *result);
+	struct observer_command *result);
 
 #endif // __CAMERA_SCRIPTING_H

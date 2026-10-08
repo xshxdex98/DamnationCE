@@ -14,8 +14,8 @@ EDITOR_FLYING_CAMERA.H
 /* ---------- structures */
 
 struct flying_camera;
-struct flying_camera_action;
-struct camera_command;
+struct camera_control;
+struct observer_command;
 
 /* ---------- prototypes/EDITOR_FLYING_CAMERA.C */
 
@@ -24,8 +24,8 @@ void editor_camera_new(
 	short local_player_index);
 void editor_camera_update(
 	struct flying_camera *camera,
-	struct flying_camera_action const *controls,
-	struct camera_command *result);
+	struct camera_control const *controls,
+	struct observer_command *result);
 
 void editor_camera_get_focus(
 	real_point3d *position,

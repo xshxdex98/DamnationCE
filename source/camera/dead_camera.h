@@ -30,7 +30,7 @@ typedef char dead_camera_size_assert[
 	sizeof(struct dead_camera) == 0x30 ? 1 : -1];
 
 struct camera_control;
-struct dead_camera_command;
+struct observer_command;
 
 /* ---------- prototypes/DEAD_CAMERA.C */
 
@@ -41,6 +41,6 @@ void dead_camera_new(
 void dead_camera_update(
 	struct dead_camera *camera,
 	struct camera_control const *controls,
-	struct dead_camera_command *result);
+	struct observer_command *result);
 
 #endif // __DEAD_CAMERA_H
