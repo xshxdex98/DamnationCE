@@ -59,13 +59,13 @@ typedef char material_effects_definition_effects_offset_assert[
 
 struct breakable_surface
 {
-	real maximum_vitality; 
-	long unused1[2]; 
-	unsigned long flags; 
-	struct tag_reference effect; 
-	struct tag_reference sound; 
-	long unused2[6]; 
-	struct tag_block particle_effects; 
+	real maximum_vitality;
+	long unused1[2];
+	unsigned long flags;
+	struct tag_reference effect;
+	struct tag_reference sound;
+	long unused2[6];
+	struct tag_block particle_effects;
 };
 
 struct material_definition

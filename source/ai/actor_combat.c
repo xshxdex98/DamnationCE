@@ -44,23 +44,20 @@ ACTOR_COMBAT.C
 #undef normalize3d
 
 #include "math/real_math_declarations.h"
+#include "ai/actors.h"
 
 /* ---------- constants */
 
 enum
 {
-	_actor_fire_target_none = 0,
-	_actor_fire_target_prop,
-	_actor_fire_target_manual_point,
 
 	_vehicle_ai_weapon_cannot_rotate_bit = 8,
 
 	MAXIMUM_COLLATERAL_DAMAGE_ACTORS = 32,
 };
 
-/* actor_definition.flags2 has no owner enumeration in actor_definitions.h yet;
- * actor_firing_position.c, actor_moving.c, actor_stimulus.c and encounters.c
- * carry partial TU-local copies of the same bit names. */
+/* actor_definition.flags2 (no header declares it yet; other files keep
+ * partial copies) */
 enum
 {
 	_actor_definition_flags2_avoid_all_enemy_attack_vectors_bit = 0,
@@ -95,14 +92,6 @@ enum
 
 enum
 {
-	_actor_combat_status_none = 0,
-	_actor_combat_status_wary,
-	_actor_combat_status_investigate,
-	_actor_combat_status_definite,
-	_actor_combat_status_certain,
-	_actor_combat_status_clear_los,
-	_actor_combat_status_dangerous,
-	_actor_combat_status_visible,
 	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS,
 };
 
@@ -403,8 +392,6 @@ static void actor_combat_find_nearby_target(
 	real_vector3d direction;
 	struct collision_result collision;
 
-	/* Keep January's inlined real-math schedule without materializing the
-	 * header helpers as actor_combat-owned COMDATs. */
 	above.x = global_up3d->i*1.5f + target_point->x;
 	above.y = global_up3d->j*1.5f + target_point->y;
 	above.z = global_up3d->k*1.5f + target_point->z;

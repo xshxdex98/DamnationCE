@@ -1,9 +1,7 @@
 /*
 NETWORK_SERVER_MANAGER_INTERNAL.H
 
-Private networking declarations shared by the server manager and its message
-handler.  Keep these out of the widely included public manager header: the
-January compiler is sensitive to declaration position even in unrelated code.
+Declarations shared by the server manager and its message handler.
 */
 
 #ifndef __NETWORK_SERVER_MANAGER_INTERNAL_H
@@ -16,6 +14,16 @@ January compiler is sensitive to declaration position even in unrelated code.
 #include "networking/network_server_manager.h"
 
 /* ---------- constants */
+
+/* server countdown events */
+enum
+{
+	_network_game_server_countdown_event_player_left,
+	_network_game_server_countdown_event_player_joined,
+	_network_game_server_countdown_event_stop,
+	_network_game_server_countdown_event_start_immediately,
+	NUMBER_OF_NETWORK_GAME_SERVER_COUNTDOWN_EVENTS
+};
 
 /* ---------- macros */
 

@@ -117,8 +117,8 @@ void bored_camera_update(
 			result->timer = (real)timer_milliseconds;
 			camera->boredom_count++;
 
-			/* January can set timer to 10000..30000 here, while the
-			 * validation below accepts at most 3600. Preserve that bug. */
+			/* (as the original: the timer can be set to 10000..30000 here, where the check below
+			 * allows 3600 at most) */
 			if (!(
 				!(result->flags & FLAG(0)) ||
 				(valid_real_vector3d_axes2(&result->forward, &result->up) &&

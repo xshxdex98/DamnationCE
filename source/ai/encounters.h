@@ -14,6 +14,16 @@ file has inline function assertions.
 
 /* ---------- constants */
 
+/* encounter follow targets */
+enum
+{
+	_follow_target_none,
+	_follow_target_players,
+	_follow_target_unit,
+	_follow_target_ai,
+	NUMBER_OF_FOLLOW_TARGET_TYPES
+};
+
 #define MAXIMUM_SQUADS_PER_ENCOUNTER 64
 #define MAXIMUM_SQUADS_PER_MAP 1024
 
@@ -77,7 +87,7 @@ struct encounter_datum
 	long last_grenade_throw_time;
 	boolean playfighting;
 	short follow_target_type;
-	
+
 	union
 	{
 		long follow_target_unit_index;

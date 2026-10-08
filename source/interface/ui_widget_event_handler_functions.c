@@ -69,7 +69,7 @@ struct game_variant_data
 	byte data[0x68];
 };
 
-#ifndef HALO_64BIT /* (the Xbox's packing matches January's .data; natural alignment on 64-bit) */
+#ifndef HALO_64BIT /* (packed on the Xbox; natural alignment on 64-bit) */
 #pragma pack(push, 2)
 #endif
 struct event_handler_globals

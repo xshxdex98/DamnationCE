@@ -132,7 +132,7 @@ enum
 	_ai_atom_loop_modifier_until_told_to_advance = 1,
 };
 
-/* Descriptive names for January's four movement-facing modifier values. */
+/* movement facing modifiers */
 enum
 {
 	_ai_atom_move_facing_forwards = 0,
@@ -141,8 +141,7 @@ enum
 	_ai_atom_move_facing_right,
 };
 
-/* command-list atom modifiers (HCEX PDB enumerator names; values match
-   January's action_obey command dispatch) */
+/* command list atom modifiers */
 enum
 {
 	_ai_atom_go_to_modifier_stop_at_point = 0,
@@ -254,8 +253,7 @@ enum
 
 /* ---------- structures */
 
-/* scenario ai animation/script/recording references; element sizes 0x3C,
-   0x28 and 0x28 are pushed by January's action_obey command code */
+/* scenario AI animation, script and recording references */
 struct ai_animation_reference_definition
 {
 	char animation_name[TAG_STRING_LENGTH + 1];

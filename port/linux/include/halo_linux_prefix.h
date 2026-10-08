@@ -1,10 +1,9 @@
 /*
 HALO_LINUX_PREFIX.H
 
-Force-included ahead of every translation unit in the native Linux build
-(clang -include). It reproduces the handful of MSVC/XDK environment
-assumptions that the game source relies on, so the source itself can stay
-byte-for-byte identical to what the matching MSVC build compiles.
+Force-included ahead of every translation unit in the native builds
+(clang -include): the MSVC and Xbox SDK environment the game's sources
+assume.
 */
 
 #ifndef __HALO_LINUX_PREFIX_H

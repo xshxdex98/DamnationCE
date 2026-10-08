@@ -42,14 +42,6 @@ int rasterizer_frame_statistics_count_static_vertices(
 
 enum
 {
-	_rasterizer_geometry_no_sort_bit = 0,
-	_rasterizer_geometry_no_queue_bit = 1,
-	_rasterizer_geometry_no_fog_bit = 2,
-	_rasterizer_geometry_no_zbuffer_bit = 3,
-	_rasterizer_geometry_atmospheric_fog_but_no_planar_fog_bit = 6,
-	_rasterizer_geometry_first_person_bit = 7,
-	RASTERIZER_STENCIL_MODE_WRITE = 1,
-	RASTERIZER_STENCIL_MODE_REJECT = 2,
 	_render_model_effect_type_none = 0,
 	_render_model_effect_type_active_camouflage,
 	_render_model_effect_type_modifier,
@@ -83,11 +75,6 @@ enum
 
 enum
 {
-	_shader_model_self_illumination_no_random_phase_bit = 0,
-};
-
-enum
-{
 	_shader_detail_mask_none = 0,
 };
 
@@ -96,16 +83,6 @@ enum
 	_shader_environment_alpha_tested_bit = 0,
 	_shader_environment_bump_map_is_specular_mask_bit,
 	_shader_environment_true_atmospheric_fog_bit,
-};
-
-enum
-{
-	_shader_model_detail_after_reflection_bit = 0,
-	_shader_model_two_sided_bit,
-	_shader_model_not_alpha_tested_bit,
-	_shader_model_alpha_blended_decal_bit,
-	_shader_model_true_atmospheric_fog_bit,
-	_shader_model_nocull_two_sided_bit,
 };
 
 enum

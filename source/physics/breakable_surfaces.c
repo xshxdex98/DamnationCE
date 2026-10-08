@@ -54,8 +54,6 @@ static struct damage_breaking_effect_definition const *breakable_surface_breakin
 	return &none;
 }
 
-/* January evaluates the j/k terms as one group in this translation unit.
-   The shared helper must remain flat for its other exact consumers. */
 static __inline real breakable_surface_plane_distance(
 	real_plane3d const *plane,
 	real_point3d const *point)
@@ -109,7 +107,7 @@ void breakable_surfaces_initialize(
 	void)
 {
 	match_assert("c:\\halo\\SOURCE\\physics\\breakable_surfaces.c", 73, !globals);
-	
+
 	globals = (struct breakable_surface_globals *)game_state_malloc("breakable surface globals", 0, sizeof(struct breakable_surface_globals));
 	return;
 }
@@ -154,7 +152,7 @@ void breakable_surfaces_enable(
 	boolean state)
 {
 	match_assert("c:\\halo\\SOURCE\\physics\\breakable_surfaces.c", 120, globals);
-	
+
 	globals->enabled = state;
 	return;
 }
@@ -299,7 +297,7 @@ void breakable_surface_damage_area_of_effect(
 			}
 		}
 	}
-	
+
 	return;
 }
 
@@ -380,7 +378,7 @@ static void breakable_surface_effect(
 	real_point3d surface_vertices3d[MAXIMUM_VERTICES_PER_COLLISION_SURFACE];
 	real_point3d position;
 	real_vector3d velocity;
-	
+
 	struct structure_bsp *structure_bsp = global_structure_bsp_get();
 	struct collision_bsp *collision_bsp = global_collision_bsp_get();
 
@@ -462,7 +460,7 @@ static void breakable_surface_effect(
 			bsp3d_get_plane_from_designator(&collision_bsp->bsp3d, surface->plane_designator, &surface_plane);
 			projection_axis = projection_from_vector3d(&surface_plane.n);
 			projection_sign = projection_sign_from_vector3d(&surface_plane.n, projection_axis);
-			
+
 			do
 			{
 				struct collision_edge const *collision_edge = TAG_BLOCK_GET_ELEMENT(&collision_bsp->edges, edge_index, struct collision_edge);
@@ -510,7 +508,7 @@ static void breakable_surface_effect(
 					surface_bounds.x1 = MAX(s, surface_bounds.x1);
 					surface_bounds.y1 = MAX(t, surface_bounds.y1);
 				}
-				
+
 				match_assert("c:\\halo\\SOURCE\\physics\\breakable_surfaces.c", 348, surface_vertex_index<MAXIMUM_VERTICES_PER_COLLISION_SURFACE);
 
 				surface_vertices3d[surface_vertex_index] = *vertex_point;
@@ -572,7 +570,7 @@ static void breakable_surface_effect(
 			for (particle_index = 0; particle_index < particle_effect_count; ++particle_index)
 			{
 				struct breakable_surface_particle_effect const *particle_effect = TAG_BLOCK_GET_ELEMENT(&breakable_surface->particle_effects, particle_index, struct breakable_surface_particle_effect);
-				
+
 				if (particle_effect->particle.index!=NONE)
 				{
 					rectangle2d bounds;

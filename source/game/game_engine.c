@@ -84,11 +84,11 @@ enum
 	NUMBER_OF_PLACE_STRINGS = 16,
 };
 
-/* scenario_starting_equipment.flags (HCEX names) */
+/* scenario_starting_equipment.flags */
 enum
 {
 	_netgame_starting_equipment_flag_no_grenades_bit = 0,
-	_netgame_starting_equipment_flag_plasma_greandes_bit, /* (sic) HCEX spelling */
+	_netgame_starting_equipment_flag_plasma_greandes_bit, /* (sic) */
 };
 
 /* game_engine_globals.flags and universal_variant.flags bits used only by this file
@@ -104,19 +104,6 @@ enum
 	_game_engine_all = 12,
 	_game_engine_all_non_team,
 	_game_engine_all_normal,
-};
-
-enum
-{
-	_multiplayer_sound_game_over = 0x1,
-	_multiplayer_sound_double_kill = 0xE,
-	_multiplayer_sound_triple_kill,
-	_multiplayer_sound_killtacular_kill,
-	_multiplayer_sound_running_riot,
-	_multiplayer_sound_killing_spree,
-	_multiplayer_sound_teleporter_activate = 0x1B,
-	_multiplayer_sound_countdown_for_respawn = 0x1D,
-	_multiplayer_sound_respawn = 0x1F,
 };
 
 enum game_engine_mode
@@ -162,16 +149,6 @@ enum goal_radar
 	_radar_motion_tracker = 0,
 	_radar_nav_point,
 	_radar_none,
-};
-
-enum game_engine_vehicles
-{
-	_game_engine_vehicles_default = 0,
-	_game_engine_vehicles_none,
-	_game_engine_vehicles_warthog,
-	_game_engine_vehicles_ghost,
-	_game_engine_vehicles_tank,
-	NUMBER_OF_GAME_ENGINE_VEHICLE_SETS,
 };
 
 enum
@@ -8040,7 +8017,7 @@ static void handle_custom_starting_equipment(
 			boolean first_weapon = TRUE;
 			long item_collection_index;
 
-			/* January visits the first five of the six item collections */
+			/* (the first five of the six item collections) */
 			for (item_collection_index = 0;
 				item_collection_index < 5;
 				item_collection_index++)

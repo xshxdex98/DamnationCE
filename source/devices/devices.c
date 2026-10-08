@@ -597,7 +597,6 @@ void device_render_debug(
 		}
 
 		object_get_origin(device_index, &origin);
-		/* Preserve January's inline schedule without owning point_from_line3d here. */
 		origin.x = global_up3d->i*0.4f + origin.x;
 		origin.y = global_up3d->j*0.4f + origin.y;
 		origin.z = global_up3d->k*0.4f + origin.z;
@@ -982,7 +981,7 @@ void device_add_scenario_information(
 		device->device.position = group->actual_value;
 	}
 
-	/* January revalidates both assigned groups after copying their values. */
+	/* (both groups are checked again after their values are copied) */
 	datum_get(device_groups_data, device->device.power_group_index);
 	datum_get(device_groups_data, device->device.position_group_index);
 

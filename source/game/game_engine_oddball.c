@@ -78,21 +78,6 @@ enum oddball_message
 	_oddball_message_you_have_the_ball_tick,
 };
 
-enum multiplayer_information_sound
-{
-	_multiplayer_sound_play_ball = 0,
-	_multiplayer_sound_one_minute_to_win = 2,
-	_multiplayer_sound_30_seconds_to_win = 3,
-	_multiplayer_sound_red_team_minute_to_win = 4,
-	_multiplayer_sound_red_team_30_seconds_to_win = 5,
-	_multiplayer_sound_blue_team_minute_to_win = 6,
-	_multiplayer_sound_blue_team_30_seconds_to_win = 7,
-	_multiplayer_sound_oddball = 0x13,
-	_multiplayer_sound_hill_move = 0x1E,
-	_multiplayer_sound_team_oddball = 0x21,
-	_multiplayer_sound_countdown_timer_end = 0x2A,
-};
-
 /* ui\multiplayer_game_text string indices */
 enum multiplayer_game_text
 {
@@ -111,7 +96,6 @@ enum multiplayer_game_text
 
 /* ---------- macros */
 
-
 /* ---------- structures */
 
 struct oddball_globals
@@ -125,7 +109,7 @@ struct oddball_globals
 	long current_ball_owner[MAXIMUM_ODDBALLS];
 };
 
-/* January's layout; the port's score arrays are larger */
+/* (the port's score arrays are larger than the Xbox's) */
 
 typedef char verify_scenario_netgame_flag_size[
 	sizeof(struct scenario_netgame_flag) == 0x94 ? 1 : -1];
@@ -589,10 +573,6 @@ static boolean oddball_engine_initialize_for_new_map(
 {
 	long ball_index;
 
-	/* January performs this scenario touch even though the returned pointer is
-	 * not consumed here; its call and relocation are present in the target.
-	 */
-	global_scenario_get();
 	csmemset(&oddball_globals, 0, sizeof(oddball_globals));
 
 	csmemset(&oddball_events, 0, sizeof(oddball_events));
@@ -1000,9 +980,6 @@ static void oddball_engine_player_killed_player(
 
 				if (capture_index != NONE)
 				{
-					/* January and HCEA both retain this mode re-query inside
-					 * the already transfer-only arm.
-					 */
 					/* (port: a client shows the host's, whose state may come
 					before this copy of the kill: game_engine_oddball_read_network_state) */
 					if (!network_game_distributed_client())

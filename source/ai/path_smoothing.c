@@ -19,7 +19,6 @@ PATH_SMOOTHING.C
 
 enum
 {
-	_collision_surface_breakable_bit = 3,
 	_pathfinding_surface_walkable_bit = 6,
 	_pathfinding_surface_breakable_bit = 7,
 	_path_test_pill_endpoint_near_wall_ok_bit = 0,

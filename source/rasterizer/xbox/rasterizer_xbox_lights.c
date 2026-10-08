@@ -13,24 +13,11 @@ RASTERIZER_XBOX_LIGHTS.C
 
 #include <math.h>
 
-/* The January translation unit retains the XDK's out-of-line D3D wrappers.
- * Keep the stock D3DINLINE definition: the real calls below make VC7 emit
- * the target's complete wrapper bodies. */
 #include "rasterizer/rasterizer.h"
 #include <xtl.h>
 
 #include "rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
-
-/* ---------- constants */
-
-enum
-{
-	_rasterizer_target_sun_glow_primary = 4,
-	_rasterizer_target_sun_glow_secondary,
-
-	NUMBER_OF_RASTERIZER_TARGETS = 8
-};
 
 enum
 {

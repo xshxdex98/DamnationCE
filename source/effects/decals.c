@@ -35,29 +35,9 @@ DECALS.C
 
 enum
 {
-	NUMBER_OF_DECAL_LAYERS = 5,
 	MAXIMUM_DECALS_PER_MAP = 2048,
 	MAXIMUM_DECAL_VERTICES = 1024,
 	MAXIMUM_DECAL_SURFACE_QUEUE_SIZE = 1024
-};
-
-enum
-{
-	_decal_locked_bit,
-	_decal_permanent_bit
-};
-
-enum
-{
-	_bitmap_group_type_sprites = 3
-};
-
-enum
-{
-	_collision_surface_two_sided_bit,
-	_collision_surface_invisible_bit,
-	_collision_surface_climbable_bit,
-	_collision_surface_breakable_bit
 };
 
 /* ---------- macros */
@@ -229,7 +209,6 @@ static void decal_sprite_get_bounds(
 	real radius,
 	real_rectangle2d *sprite_bounds,
 	real_rectangle2d *extent);
-/* These January-private callees belong to this translation unit. */
 static void decal_projection_create(
 	real_matrix4x3 const *basis,
 	real_rectangle2d const *extent,
@@ -280,7 +259,6 @@ struct decal_wrap_parameters const decal_wrap_parameters[NUMBER_OF_DECAL_TYPES] 
 	{ 10.0f,  10.0f, 1.5f, FALSE }
 };
 
-/* SECONDS_PER_TICK: name from the 2003 PC demo PDB and the HCEX PDB (decals file static const float) */
 static real const SECONDS_PER_TICK = 1.0f / TICKS_PER_SECOND;
 boolean debug_decals;
 

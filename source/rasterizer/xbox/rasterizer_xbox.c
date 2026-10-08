@@ -28,52 +28,17 @@ RASTERIZER_XBOX.C
 #include "render/render_cameras.h"
 #include "models/model_definitions.h" /* port: MAXIMUM_NODES_PER_MODEL */
 
-/* The January object retains out-of-line copies of the D3D inline wrappers.
- * The stock XDK definition of D3DINLINE (static __forceinline) reproduces
- * them; do not replace them with handwritten Microsoft dispatchers or
- * override the XDK's inline policy: taking an address or weakening
- * __forceinline changes their emitted ABI and code shape. */
 #include <xtl.h>
 
 #include "rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "rasterizer_xbox_internal.h"
 #include "rasterizer_xbox_vertex_shaders.h"
-
-/* ---------- constants */
-
-enum
-{
-	_shader_framebuffer_blend_function_alpha_blend = 0,
-	_shader_framebuffer_blend_function_multiply,
-	_shader_framebuffer_blend_function_double_multiply,
-	_shader_framebuffer_blend_function_add,
-	_shader_framebuffer_blend_function_subtract,
-	_shader_framebuffer_blend_function_component_min,
-	_shader_framebuffer_blend_function_component_max,
-	_shader_framebuffer_blend_function_alpha_multiply_add,
-	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS
-};
+#include "shaders/shader_definitions.h"
 
 enum
 {
 	RASTERIZER_MAXIMUM_TEXTURE_STAGES = 4,
-};
-
-enum
-{
-	_rasterizer_target_render_primary = 0,
-	_rasterizer_target_render_secondary,
-	_rasterizer_target_shadow_primary,
-	_rasterizer_target_shadow_secondary,
-	_rasterizer_target_sun_glow_primary,
-	_rasterizer_target_sun_glow_secondary,
-	_rasterizer_target_water_bumpmap,
-	/* the eighth target has no first-party name in this object; it is the
-	 * second render-primary surface/texture pair */
-	_rasterizer_target_render_primary_copy,
-
-	NUMBER_OF_RASTERIZER_TARGETS
 };
 
 /* mode 1 makes the window clear to black instead of to the atmospheric fog
@@ -108,11 +73,6 @@ enum
 	NUMBER_OF_BITMAP_USAGES = 4
 };
 
-enum
-{
-	NUMBER_OF_BITMAP_TYPES = 3
-};
-
 /* render_fog.planar_mode and fog_definition.flags; both enumerations belong in
  * render/render_cameras.h, which this worker may not edit. */
 enum
@@ -131,13 +91,6 @@ enum
 	_fog_definition_screen_effect_only_bit,
 
 	NUMBER_OF_FOG_DEFINITION_FLAGS
-};
-
-/* the only two bitmap formats a screenshot capture accepts */
-enum
-{
-	_bitmap_format_x8r8g8b8 = 10,
-	_bitmap_format_a8r8g8b8 = 11
 };
 
 /* combiner_count register layout: the active combiner count in the low
@@ -181,18 +134,11 @@ enum
 
 enum
 {
-	RASTERIZER_STENCIL_MODE_NONE = 0,
-	RASTERIZER_STENCIL_MODE_WRITE,
-	RASTERIZER_STENCIL_MODE_REJECT,
-	RASTERIZER_STENCIL_MODE_ACCEPT,
-	RASTERIZER_STENCIL_MODE_WRITE_ALPHA_TESTED_DECAL,
-	RASTERIZER_STENCIL_MODE_REJECT_ALPHA_TESTED_DECAL,
 	NUMBER_OF_RASTERIZER_STENCIL_MODES
 };
 
 
-/* the Direct3D push-buffer sizes January defaults to when the corresponding
- * rasterizer_globals fields are still zero */
+/* the Direct3D push buffer sizes used while rasterizer_globals' are zero */
 enum
 {
 	RASTERIZER_DEFAULT_PUSH_BUFFER_SIZE = 512,
@@ -209,9 +155,7 @@ enum
 	RASTERIZER_FRAME_BOUNDS_Y1 = 444
 };
 
-/* the render-target dimensions; the four names are first-party (they appear
- * verbatim in this object's IDirect3DDevice8_CreateTexture error strings), the
- * values are read off January's own argument pushes. */
+/* render target dimensions */
 enum
 {
 	RASTERIZER_TARGET_WATER_SIZE = 128,
@@ -233,16 +177,6 @@ enum
 	RASTERIZER_TARGET_RENDER_PRIMARY_COMMON = 0x00040001,
 	RASTERIZER_TARGET_RENDER_PRIMARY_FORMAT = 0x00011229,
 	RASTERIZER_TARGET_RENDER_PRIMARY_SIZE = 0x271df27f
-};
-
-/* bitmap_group.h does not name the bitmap types; these three spellings come
- * from source/bitmaps/bitmap_utilities.c's own assert strings
- * ("bitmap->type==_bitmap_type_2d" and friends). */
-enum
-{
-	_bitmap_type_2d = 0,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map
 };
 
 /* the default 4x4 A4R4G4B4 checkerboard every unbound texture stage falls back
@@ -319,10 +253,7 @@ struct point_light_definition
 };
 
 
-/* the shell's window globals (HCEX `struct window_data`, 0x94 bytes, the size
- * of January's pooled window_globals record); this object only reads
- * hWndPresentTarget (+8), the name its own IDirect3DDevice8_Present() error
- * string spells. */
+/* the shell's window globals; only hWndPresentTarget is read here */
 struct window_data
 {
 	HINSTANCE hInstance;
@@ -344,13 +275,11 @@ void SetupSmartStates(
 
 /* ---------- globals */
 
-/* January keeps this object's private Direct3D state in one contiguous owner.
- * The aggregate name follows the subsystem convention; member names come from
- * the object's own IDirect3D*() error strings and their relocation offsets. */
+/* this file's Direct3D state */
 struct rasterizer_xbox_d3d_globals
 {
 	real vsh_constants__nodematrices
-		[RASTERIZER_MAXIMUM_NODES_PER_MODEL][3][4];         /* +0; name inferred from the PC demo/HCEX PDBs and /Od, not attested in January */
+		[RASTERIZER_MAXIMUM_NODES_PER_MODEL][3][4];
 	point2d bitmap_dimensions_non_blocking;             /* +2112 */
 	point2d bitmap_dimensions;                          /* +2116 */
 	Direct3D *d3d;                                      /* +2120 */
@@ -408,19 +337,13 @@ static struct rasterizer_xbox_d3d_globals rasterizer_xbox_d3d_globals = { 0 };
 
 D3DDevice *global_d3d_device = NULL;
 
-/* the shared 256-entry palette; January's own
- * IDirect3DDevice8_CreatePalette(global_d3d_device, D3DPALETTE_256,
- * &d3d_palette) error string names it. */
+/* the shared 256-entry palette */
 static D3DPalette *d3d_palette = NULL;
 
 /* owned by another object; named by this object's own
  * D3DDevice_GetDeviceCaps() call site. */
 extern D3DCAPS8 global_d3d_caps;
 
-/* These two sit immediately behind global_d3d_device in January's .bss, which
- * is the only symbol csplit knows there, so the split still anchors their
- * relocations on `_global_d3d_device + 8` / `+ 12` (image 0x0045E8D8 and
- * 0x0045E8DC).  symbols.json names for those two addresses close the gap. */
 static boolean suppress_window_begin_end = FALSE;
 static short previous_window_index = 0;
 
@@ -1752,9 +1675,7 @@ union point2d *rasterizer_set_texture(
 void rasterizer_set_framebuffer_blend_function(
 	short framebuffer_blend_function)
 {
-	/* three separate NONE-terminated tables (January .rdata is 4-byte aligned, so
-	 * no single 108-byte array); names, scope and type follow HCEX.pdb's static
-	 * locals of this function (const unsigned long srcblend_table[9], ...). */
+	/* framebuffer blend tables, each NONE-terminated */
 	static const unsigned long srcblend_table[NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS + 1] =
 	{
 		D3DBLEND_SRCALPHA,

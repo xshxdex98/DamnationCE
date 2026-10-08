@@ -58,50 +58,6 @@ typedef char verify_xbox_texture_cache_size[
 
 enum
 {
-	_bitmap_type_2d,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-	NUMBER_OF_BITMAP_TYPES,
-};
-
-enum
-{
-	_bitmap_format_a8,
-	_bitmap_format_y8,
-	_bitmap_format_ay8,
-	_bitmap_format_a8y8,
-	_bitmap_format_unused1,
-	_bitmap_format_unused2,
-	_bitmap_format_r5g6b5,
-	_bitmap_format_unused3,
-	_bitmap_format_a1r5g5b5,
-	_bitmap_format_a4r4g4b4,
-	_bitmap_format_x8r8g8b8,
-	_bitmap_format_a8r8g8b8,
-	_bitmap_format_unused4,
-	_bitmap_format_unused5,
-	_bitmap_format_dxt1,
-	_bitmap_format_dxt3,
-	_bitmap_format_dxt5,
-	_bitmap_format_p8_bump,
-	NUMBER_OF_BITMAP_FORMATS,
-};
-
-enum
-{
-	_bitmap_has_power_of_two_dimensions_bit,
-	_bitmap_compressed_bit,
-	_bitmap_palettized_bit,
-	_bitmap_swizzled_bit,
-	_bitmap_linear_bit,
-	_bitmap_v16u16_bit,
-	_bitmap_allocated_bit,
-	_bitmap_cached_bit,
-	NUMBER_OF_BITMAP_FLAGS,
-};
-
-enum
-{
 	_bitmap_d3d_format_table_regular,
 	_bitmap_d3d_format_table_linear,
 	NUMBER_OF_BITMAP_D3D_FORMAT_TABLES,
@@ -251,8 +207,7 @@ static const long bitmap_d3d_format_tables
 		NONE,
 	},
 };
-/* provisional name: the January map leaves this .bss array unnamed; it holds the debug
- * listing's cached bitmaps */
+/* the debug listing's cached bitmaps */
 static struct bitmap_data *texture_cache_debug_bitmaps[XBOX_TEXTURE_CACHE_PAGE_COUNT];
 static struct xbox_texture_cache_globals xbox_texture_cache_globals;
 struct texture_cache_debug_options texture_cache_debug_options = {0};

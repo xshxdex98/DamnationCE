@@ -83,19 +83,6 @@ MAIN.C
 #endif
 #endif
 
-/* ---------- constants */
-
-enum
-{
-	_bitmap_format_x8r8g8b8 = 10,
-};
-
-enum
-{
-	_text_justification_left = 0,
-	_text_justification_right,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */
@@ -1370,9 +1357,7 @@ void main_movie_stop(
 void main_crash(
 	char const *str)
 {
-	/* BUG (original, deliberate): the "crash" script command ("crashes (for debugging).")
-	 * faults on purpose by storing this literal through the null pointer; the August and
-	 * September 2001 builds (debug and retail) and January all emit this one store. */
+	/* the "crash" script command ("crashes (for debugging).") faults on purpose */
 	*(char **)NULL = "chucky was here!  NULL belongs to me!!!!!";
 	return;
 }
@@ -1597,10 +1582,6 @@ void main_roll_credits(
 void main_pregame_render(
 	void)
 {
-	/* Name, type and function scope from the 2003 PC demo PDB and the HCEX PDB (static local
-	   struct render_window window of main_pregame_render). Neither PDB records the block: placing it
-	   at the top of the function is unattested. January corroborates: .bss +0, the 0xAC-byte window
-	   padded to 0xB0 before main_globals, referenced only by this function. */
 	static struct render_window window;
 
 	collision_log_continue_period(TRUE);

@@ -309,9 +309,7 @@ static struct players_static_data players_static_data =
 	},
 };
 
-/* January owns this nine-point co-op teleport search table in Players.obj
-   .rdata (0x6C bytes, no relocations); HCEA independently authenticates the
-   name, element type, and values. */
+/* the co-op teleport search's nine offsets */
 static real_point3d const adjustment_weights[9] =
 {
 	{ { 1.f, 0.f, 0.f } },
@@ -1524,8 +1522,6 @@ void network_player_detach_unit(
 		player_control_new_unit(player->local_player_index, NONE);
 }
 
-/* Exact: January emits this private dead-unit replacement helper from the
-   reconstructed player_teleport_internal caller below. */
 static void player_pseudo_kill(
 	long player_index,
 	long replacement_dead_unit_index)
@@ -3500,8 +3496,6 @@ static void player_health_pack_screen_effect(
 	return;
 }
 
-/* HCEA authenticates this helper and both callers. Keep the ordinary call
-   topology even when VC7 chooses to inline one call site. */
 static void player_powerup_on(
 	long player_index,
 	short powerup_type)
@@ -3522,7 +3516,6 @@ static void player_powerup_on(
 	return;
 }
 
-/* HCEA authenticates the additional/off helpers and their call topology. */
 static void player_powerup_additional(
 	long player_index,
 	short powerup_type)
@@ -3780,11 +3773,8 @@ static void player_examine_nearby_item(
 			}
 			else
 			{
-				/* BUG (original): January code and the HCEA disassembly both
-				 * re-fetch the current equipment but then use the nearby
-				 * equipment's definition again. A corrected build should pass
-				 * equipment_get(current_equipment_index)->definition_index to
-				 * equipment_definition_get below. */
+				/* (as the original: the current equipment is fetched, but the nearby
+				 * equipment's definition is used again) */
 				equipment_get(current_equipment_index);
 				current_equipment_definition =
 					equipment_definition_get(equipment->definition_index);

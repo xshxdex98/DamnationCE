@@ -2761,11 +2761,6 @@ long const _hs_type_weapon_default= NONE;
 long const _hs_type_device_default= NONE;
 long const _hs_type_scenery_default= NONE;
 
-/* the <script>_definition names below are recovered from the 2003 PC demo PDB and the HCEX PDB (file
- * statics in hs.obj): each demo struct has January's script-name string, return type and parameter
- * list, in the same table order. four stems differ from the script names (add, subtract, multiply,
- * object_to_unit); xbox_set_machine_name_definition is HCEX-only; the eight hs_*_definition names that
- * neither PDB attests keep their descriptive hs_ prefix. */
 static struct hs_function_definition const begin_definition=
 {
 	_hs_passthrough,
@@ -11187,20 +11182,17 @@ void hs_hack(
 	return;
 }
 
-/* January expands this helper inline in hs_compile_and_evaluate (its source-file
- * branch folds away there but leaves the dead loop's alignment pad before the
- * error call) and keeps an out-of-line private-ABI copy for hs_compile_source. */
 static void hs_compile_source_error(
-	char const *error_source,
-	char *error_message,
+	char const *message,
+	char *source_line,
 	struct hs_source_file const *source_file,
 	char const *source)
 {
 	char *newline = NULL;
 
-	if (error_message)
+	if (source_line)
 	{
-		newline = strchr(error_message, '\n');
+		newline = strchr(source_line, '\n');
 		if (newline)
 			*newline = 0;
 	}
@@ -11215,11 +11207,11 @@ static void hs_compile_source_error(
 				line++;
 			newline--;
 		}
-		error(2, "[%s line %d] %s: %s", source_file->name, line, error_source, error_message);
+		error(2, "[%s line %d] %s: %s", source_file->name, line, message, source_line);
 	}
 	else
 	{
-		error(2, "%s: %s", error_source, error_message);
+		error(2, "%s: %s", message, source_line);
 	}
 	return;
 }
@@ -11248,27 +11240,23 @@ static boolean hs_compile_source(
 			source_files,
 			source_file_index,
 			struct hs_source_file);
-		/*
-		 * BUG (original): January and HCEA pass these outputs in reverse.
-		 * A corrected build should pass &error_message, &error_source.
-		 */
 		hs_compile(
 			source_file->source.size,
 			tag_data_get_pointer(
 				&source_file->source,
 				0,
 				source_file->source.size),
-			&error_source,
-			&error_message);
-		if (error_source)
+			&error_message,
+			&error_source);
+		if (error_message)
 		{
 			source = tag_data_get_pointer(
 				&source_file->source,
 				0,
 				source_file->source.size);
 			hs_compile_source_error(
-				error_source,
-				(char *)error_message,
+				error_message,
+				(char *)error_source,
 				source_file,
 				source);
 			success = FALSE;
@@ -13322,19 +13310,17 @@ static boolean hs_compile_and_evaluate_command(
 					system_exit(-1);
 					break;
 				}
-				/* BUG (original): January and HCEA pass the message/source outputs
-				 * in reverse. Keep the authentic target behavior explicit. */
-				expression_index = hs_compile_expression(csstrlen(expression), expression, &error_source, &error_message);
+				expression_index = hs_compile_expression(csstrlen(expression), expression, &error_message, &error_source);
 				if (expression_index != NONE)
 				{
 					success = TRUE;
 					hs_runtime_evaluate(expression_index);
 				}
-				else if (error_source)
+				else if (error_message)
 				{
 					hs_compile_source_error(
-						error_source,
-						(char *)error_message,
+						error_message,
+						(char *)error_source,
 						NULL,
 						expression);
 				}

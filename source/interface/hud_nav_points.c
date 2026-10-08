@@ -30,6 +30,7 @@ HUD_NAV_POINTS.C
 #include "scenario/scenario_definitions.h"
 #include "units/units.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
+#include "interface/hud_messaging.h"
 #ifdef HALO_64BIT
 #include "cseries/errors.h"
 #endif
@@ -60,14 +61,6 @@ enum hud_waypoint_arrow_flags
 {
 	_hud_waypoint_dont_rotate_offscreen_bit,
 	NUMBER_OF_HUD_WAYPOINT_ARROW_FLAGS
-};
-
-enum hud_number_show_flags
-{
-	_hud_number_show_all_leading_zeros_bit,
-	_hud_number_show_only_when_zoomed_bit,
-	_hud_number_show_trailing_m_bit,
-	NUMBER_OF_HUD_NUMBER_SHOW_FLAGS
 };
 
 /* ---------- structures */

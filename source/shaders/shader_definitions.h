@@ -16,6 +16,36 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* shader model flags */
+enum
+{
+	_shader_model_detail_after_reflection_bit,
+	_shader_model_self_illumination_no_random_phase_bit = 0,
+	_shader_model_two_sided_bit,
+	_shader_model_not_alpha_tested_bit,
+	_shader_model_alpha_blended_decal_bit,
+	_shader_model_true_atmospheric_fog_bit,
+	_shader_model_nocull_two_sided_bit,
+	NUMBER_OF_SHADER_MODEL_FLAGS
+};
+
+/* framebuffer blend functions */
+enum
+{
+	_shader_framebuffer_blend_function_alpha_blend,
+	_shader_framebuffer_blend_function_multiply,
+	_shader_framebuffer_blend_function_double_multiply,
+	_shader_framebuffer_blend_function_add,
+	_shader_framebuffer_blend_function_reverse_subtract,
+	_shader_framebuffer_blend_function_subtract = 4,
+	_shader_framebuffer_blend_function_min,
+	_shader_framebuffer_blend_function_component_min = 5,
+	_shader_framebuffer_blend_function_max,
+	_shader_framebuffer_blend_function_component_max = 6,
+	_shader_framebuffer_blend_function_alpha_multiply_add,
+	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS
+};
+
 /* ---------- macros */
 
 #define SHADER_DEFINITION_TAG 'shdr'

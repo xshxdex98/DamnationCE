@@ -31,20 +31,12 @@ ACTOR_PERCEPTION.C
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
 #include "units/biped_definitions.h"
+#include "ai/actors.h"
+#include "ai/ai.h"
 
 /* ---------- constants */
 
-enum
-{
-	_actor_mode_asleep = 1,
-	_actor_mode_combat = 3,
-};
-
-/*
- * TU-local copy: no shared header owns the actor knowledge domain. January's
- * actor_perception_update prints the names "noncombat", "guard", "searching"
- * and "definite" and asserts NUMBER_OF_ACTOR_KNOWLEDGE_TYPES.
- */
+/* actor knowledge (no header declares it yet) */
 enum
 {
 	_actor_knowledge_noncombat = 0,
@@ -54,40 +46,7 @@ enum
 	NUMBER_OF_ACTOR_KNOWLEDGE_TYPES,
 };
 
-/* TU-local copy: complete copies also exist in actors.c, ai.c and ai_script.c. */
-enum
-{
-	_ai_unit_effect_bump = 0,
-	_ai_unit_effect_shooting,
-	_ai_unit_effect_death_scream,
-	_ai_unit_effect_magic_sight,
-	NUMBER_OF_AI_UNIT_EFFECTS,
-};
-
-/* TU-local copy of actor_external_orders.desired_target_type; also in ai_script.c. */
-enum
-{
-	_desired_target_none = 0,
-	_desired_target_ai,
-	_desired_target_player,
-};
-
-/*
- * TU-local copy of the ai reference scope stored in the top two bits of an ai
- * reference; also in ai_script.c (enum ai_reference_type) and actions.c.
- */
-enum
-{
-	_ai_reference_type_encounter = 0,
-	_ai_reference_type_platoon,
-	_ai_reference_type_squad,
-	NUMBER_OF_AI_REFERENCE_TYPES,
-};
-
-/*
- * January's acknowledgement speed classes, indexed from
- * global_acknowledgement_speeds; actor_perception_update prints their names.
- */
+/* acknowledgement speeds, indexed from global_acknowledgement_speeds */
 enum
 {
 	_awareness_speed_never = 0,
@@ -95,34 +54,6 @@ enum
 	_awareness_speed_guard,
 	_awareness_speed_combat,
 	_awareness_speed_instant,
-};
-
-/* TU-local copy: also in actors.c, action_obey.c and actor_combat.c. */
-enum
-{
-	_actor_fire_target_none = 0,
-	_actor_fire_target_prop,
-};
-
-/*
- * TU-local copy of the ai_information_data union selector (ai.h owns the
- * union); ai_communication.c carries a partial copy.
- */
-enum
-{
-	_ai_information_none = 0,
-	_ai_information_allegiance,
-	_ai_information_combat_stimulus,
-	_ai_information_target_knowledge,
-};
-
-enum
-{
-	_actor_combat_status_none = 0,
-	_actor_combat_status_investigate = 2,
-	_actor_combat_status_definite = 3,
-	_actor_combat_status_certain = 4,
-	_actor_combat_status_visible = 7,
 };
 
 enum
@@ -137,11 +68,7 @@ enum
 
 /* ---------- macros */
 
-/*
- * January's Actor Perception names these shared HCEX actor slots
- * differently.  Keep the aliases typed through actor_datum rather than
- * overlaying the datum with an incompatible structure type.
- */
+/* this file's names for these actor fields */
 #define actor_perception_preferred_target_prop_index(actor) \
 	((actor)->meta.interesting_orphan_index)
 
@@ -151,41 +78,7 @@ enum
 #define actor_perception_audibility_combat_status(actor) \
 	((actor)->state.mode)
 
-/* INFERRED FROM JANUARY'S BYTES. This macro is not attested in any surviving
- * header or source; it is reconstructed because January's object requires the
- * canonical macro expansion ((a) * (a)) at the actor_perception_refresh call
- * site, and no simpler spelling of the square reaches it. Measured, with the
- * rest of the function held constant:
- *
- *     prop->distance * prop->distance          residual
- *     (prop->distance) * (prop->distance)      residual
- *     (prop->distance * prop->distance)        residual
- *     bind a local first, (distance * distance)  residual
- *     ((prop->distance) * (prop->distance))    EXACT
- *
- * A hand-written expression does not produce the doubly-parenthesised form;
- * a correctly written macro produces it inevitably, so the byte evidence is
- * itself the argument that a macro stood here. It is kept translation-unit
- * private and named to match its sibling below.
- *
- * actor_emotion_unopposable_retreat's friend-target square is a second use,
- * and its evidence is WEAKER than at the site above. Measured with the rest
- * of that function held constant, d being friend_target_prop->distance:
- *
- *     d * d                                    residual (size 1280)
- *     (d * d)                                  residual (size 1280)
- *     (d) * (d)                                EXACT
- *     ((d) * (d))   this macro's expansion     EXACT
- *
- * Parenthesised operands are what January requires. Unlike the site above,
- * the hand-written single-parenthesis form ALSO matches here, so this site on
- * its own does not prove that a macro stood there. The macro is used here by
- * owner ruling (2026-09-20) because it is the admitted spelling of this
- * square. Mechanism: written as d * d, VC7 computes the product ahead of the
- * target->count increment and folds the minimum-distance compare into an
- * indexed operand; with parenthesised operands it places the increment first
- * and compares through the bound target pointer, as January does.
- */
+/* a distance squared */
 #define actor_perception_distance_squared(distance) \
 	((distance) * (distance))
 
@@ -200,11 +93,8 @@ enum
 	((struct object_datum *)object_get_and_verify_type( \
 		(index), _object_mask_all))
 
-/*
- * January actor/prop fields whose HCEX-derived shared structure positions do
- * not agree with this executable. Keep the executable-specific view local
- * until the complete January layouts are recovered.
- */
+/* fields this file reads by offset: the shared actor and prop structures
+ * don't place them yet */
 struct actor_danger_zone_view
 {
 	short danger_type;
@@ -788,10 +678,8 @@ typedef char actor_perception_refresh_list_entries_offset_assert[
 typedef char actor_perception_refresh_list_size_assert[
 	sizeof(struct actor_perception_refresh_list) == 0x604 ? 1 : -1];
 
-/*
- * Runtime perception values in the January actor definition. The shared
- * HCEX-derived definition still labels two of these slots as unused.
- */
+/* the actor definition's perception values (the shared definition
+ * still calls two of them unused) */
 struct actor_perception_definition_view
 {
 	unsigned long flags;
@@ -839,7 +727,7 @@ static boolean actor_perception_assess_suicide_danger(
 	boolean enemy,
 	boolean visible);
 
-/* TU-local copy: the same macro exists in actor_stimulus.c. */
+/* (actor_stimulus.c has the same macro) */
 #define prop_acknowledged(prop) \
 	((prop)->state >= _prop_state_becoming_unacknowledged && \
 		(prop)->state <= _prop_state_acknowledged)
@@ -987,13 +875,6 @@ boolean actor_perception_desire_prop(
 			if (!enemy && actor->state.mode < 3)
 				maximum_distance_squared = 64.0f;
 
-			/* INFERRED FROM JANUARY'S BYTES: the explicit branch, not
-			 * `desire = distance_squared < maximum_distance_squared;`, is what
-			 * gives this else-if arm its own cross-jump resolution. It also
-			 * matches the three sibling arms above, which assign TRUE/FALSE
-			 * literals, and the branchy form used on this same variable in the
-			 * inactive-encounter block. Required jointly with the squared-distance
-			 * macro; neither reaches January alone. */
 			if (distance_squared < maximum_distance_squared)
 				desire = TRUE;
 			else
@@ -1924,7 +1805,6 @@ range_weight_done:
 			{
 				knowledge_weight = 3;
 			}
-			/* Preserve January's quantized-facing read at +0x122. */
 			else if (prop->shooting &&
 				prop->quantized_facing <= 1)
 			{
@@ -1978,7 +1858,6 @@ range_weight_done:
 			(short)weights.preferred_weight) +
 		(knowledge_weight + range_weight);
 
-	/* Preserve January's swapped target/distance scale constants. */
 	return
 		weights.target_weight * 10.0f +
 		(5.0f / (prop->distance * 0.1f + 1.0f) +
@@ -4935,11 +4814,6 @@ static void actor_perception_refresh_danger_zone(
 }
 
 
-/*
- * January caller skeleton used while reconstructing the full status refresh.
- * Keep the real call expression active so VC7 can derive code_00020780's
- * private EAX argument from its actual translation-unit context.
- */
 
 
 

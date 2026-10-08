@@ -71,12 +71,6 @@ typedef enum {
 typedef block_state (*compress_func) OF((deflate_state *s, int flush));
 /* Compression function. Returns the block state after the call. */
 
-/* January-build private symbols, with their upstream zlib 1.1.3 identities:
- * 00100660 putShortMSB, 00100690 flush_pending, 00100be0 read_buf,
- * 00100c40 lm_init, 00100cc0 longest_match, 00100ed0 check_match,
- * 00100f90 fill_window, 00101130 deflate_stored, 001013c0 deflate_fast,
- * and 001016c0 deflate_slow.
- */
 
 local void fill_window    OF((deflate_state *s));
 local block_state deflate_stored OF((deflate_state *s, int flush));

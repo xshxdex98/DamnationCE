@@ -15,6 +15,25 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* ui audio feedback */
+enum
+{
+	_ui_audio_feedback_none,
+	_ui_audio_feedback_cursor,
+	_ui_audio_feedback_forward,
+	_ui_audio_feedback_back,
+	_ui_audio_feedback_flag_failure
+};
+
+/* ui event types */
+enum
+{
+	_event_type_null,
+	_event_type_left_stick,
+	_event_type_right_stick,
+	_event_type_button
+};
+
 enum
 {
 	_error_unknown,

@@ -38,7 +38,6 @@ itmc).
 enum
 {
 	/* periodic_functions.c */
-	NUMBER_OF_PERIODIC_FUNCTIONS = 12,
 	/* weapons.c */
 	MAXIMUM_NUMBER_OF_TRIGGERS_PER_WEAPON = 2,
 	MAXIMUM_NUMBER_OF_MAGAZINES_PER_WEAPON = 2,

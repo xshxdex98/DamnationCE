@@ -18,6 +18,63 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* actor_external_orders.desired_target_type */
+enum
+{
+	_desired_target_none,
+	_desired_target_ai,
+	_desired_target_player
+};
+
+/* actor fire targets */
+enum
+{
+	_actor_fire_target_none,
+	_actor_fire_target_prop,
+	_actor_fire_target_manual_point
+};
+
+/* actor default states */
+enum
+{
+	actor_default_state_none,
+	actor_default_state_asleep,
+	actor_default_state_alert,
+	actor_default_state_moving_repeat_position,
+	actor_default_state_moving_loop,
+	actor_default_state_moving_loop_back_and_forth,
+	actor_default_state_moving_loop_randomly,
+	actor_default_state_moving_randomly,
+	actor_default_state_guarding,
+	actor_default_state_guarding_at_guard_point,
+	actor_default_state_searching,
+	actor_default_state_fleeing,
+	NUMBER_OF_ACTOR_DEFAULT_STATES
+};
+
+/* actor combat status (actor_state_data.combat_status) */
+enum
+{
+	_actor_combat_status_none,
+	_actor_combat_status_wary,
+	_actor_combat_status_investigate,
+	_actor_combat_status_definite,
+	_actor_combat_status_certain,
+	_actor_combat_status_clear_los,
+	_actor_combat_status_dangerous,
+	_actor_combat_status_visible
+};
+
+/* actor modes (actor_state_data.mode) */
+enum
+{
+	_actor_mode_braindead,
+	_actor_mode_asleep,
+	_actor_mode_alert,
+	_actor_mode_combat,
+	NUMBER_OF_ACTOR_MODES
+};
+
 enum
 {
 	NUMBER_OF_DISCARDED_FIRING_POSITIONS_PER_ACTOR = 4,
@@ -246,7 +303,6 @@ enum
 	NUMBER_OF_ACTOR_MOVEMENT_TYPES,
 };
 
-
 enum
 {
 	_actor_perception_none = 0,
@@ -336,7 +392,7 @@ union firing_position_evaluation_data
 	} cover;
 };
 
-/* January query/scoring context; the last six debug counters are absent in HCEA. */
+/* a firing position query's context and scores */
 struct firing_position_evaluation_context
 {
 	unsigned long allowed_position_mask;
@@ -413,7 +469,6 @@ struct firing_position
 	real pre_evaluation;
 	real evaluation;
 };
-
 
 struct actor_meta_data
 {
@@ -725,7 +780,7 @@ struct actor_destination_orders
 	short destination_type;
 	boolean keep_moving;
 	byte pad;
-	
+
 	union
 	{
 		struct
@@ -733,10 +788,10 @@ struct actor_destination_orders
 			real_point3d point;
 			long surface_index;
 		} raw;
-		
+
 		short firing_position_index;
 		short move_position_index;
-		
+
 		struct
 		{
 			int prop_index;
@@ -866,13 +921,13 @@ struct actor_control_data
 	boolean next_burst_secondary;
 	real weapon_maximum_range;
 	short current_fire_target_type;
-	
+
 	union
 	{
 		real_point3d current_fire_target_manual_point;
 		long current_fire_target_prop_index;
 	};
-	
+
 	long current_fire_target_timer;
 	boolean current_fire_target_visible;
 	boolean current_fire_target_underwater;

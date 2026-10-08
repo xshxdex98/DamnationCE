@@ -15,7 +15,6 @@ BITMAP_DRAWING.C
 
 enum
 {
-	NUMBER_OF_BITMAP_FORMATS = 18,
 	NUMBER_OF_BITMAP_COPY_FLAG_COMBINATIONS = 4,
 };
 
@@ -41,15 +40,6 @@ enum
 	_bitmap_copy_a8r8g8b8_modulate,
 	_bitmap_copy_a4r4g4b4_to_a8r8g8b8_modulate_blend,
 	_bitmap_copy_a8r8g8b8_modulate_blend,
-};
-
-enum
-{
-	_bitmap_format_a8 = 0,
-	_bitmap_format_y8,
-	_bitmap_format_ay8,
-	_bitmap_format_r5g6b5 = 6,
-	_bitmap_format_a8r8g8b8 = 11,
 };
 
 enum

@@ -1644,8 +1644,8 @@ HRESULT WINAPI IDirectSound_CreateSoundStream(LPDIRECTSOUND sound, LPCDSSTREAMDE
 	return DS_OK;
 }
 
-/* January-era DirectSound exports the game declares itself
-(sound_dsound_xbox.c); the XDK 3911 headers no longer carry them */
+/* DirectSound exports the game declares itself (sound_dsound_xbox.c),
+which the XDK 3911 headers no longer carry */
 
 void __stdcall DirectSoundStopStream(LPDIRECTSOUNDSTREAM stream)
 {

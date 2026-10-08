@@ -293,7 +293,6 @@ void render_particles(
 						{
 							position = particle->position;
 							direction = particle->direction;
-							/* January explicitly reasserts the detached sentinel here. */
 							particle->object_index = NONE;
 						}
 

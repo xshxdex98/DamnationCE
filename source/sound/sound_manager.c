@@ -51,14 +51,6 @@ enum sound_promotion_result
 	_sound_promotion_dont_play,
 };
 
-enum sound_spatialization_mode
-{
-	_sound_spatialization_mode_none,
-	_sound_spatialization_mode_absolute,
-	_sound_spatialization_mode_relative,
-	NUMBER_OF_SOUND_SPATIALIZATION_MODES,
-};
-
 enum sound_type
 {
 	_sound_impulse = 0,
@@ -1844,9 +1836,6 @@ static real source_distance(
 		break;
 
 	default:
-		/* BUG (original): January returns the uninitialized distance after
-		 * reporting an invalid spatialization mode. The HCEA binary preserves
-		 * the same invalid-mode stack read; valid enum values never take it. */
 		match_vassert(
 			"c:\\halo\\SOURCE\\sound\\sound_manager.c",
 			0x593,

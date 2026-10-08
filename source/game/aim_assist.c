@@ -99,7 +99,7 @@ static short find_aim_assist_targets(
 
 /* ---------- globals */
 
-/* ---------- code (definitions in January object order) */
+/* ---------- code */
 
 __inline real compute_attenuation(
 	real variable,

@@ -56,23 +56,7 @@ enum
 
 enum
 {
-	_actor_evade_left = 0,
-	_actor_evade_right,
-	_actor_evade_forward,
-	_actor_evade_back,
-	_actor_evade_random_side,
-};
-
-enum
-{
 	_actor_definition_flags2_pathfinding_ignores_danger_bit = 4,
-};
-
-enum
-{
-	_actor_mode_asleep = 1,
-	_actor_mode_alert,
-	_actor_mode_combat,
 };
 
 /* ---------- macros */
@@ -81,9 +65,8 @@ enum
 
 /* ---------- structures */
 
-/* The shared vehicle tag layout remains opaque in the public header. Actor
- * movement reads this January-authenticated speed and AI-driving fragment, so
- * keep that layout fragment local to this translation unit. */
+/* the speed and AI driving values of a vehicle definition, which
+ * vehicle_definitions.h leaves opaque */
 struct vehicle_definition
 {
 	byte __unknown0[0x2F8];
@@ -1594,9 +1577,8 @@ static void actor_move_vector_avoidance(
 
 				emergency = emergency_scale;
 
-				/* perpendicular has no forward component, so only its left and up
-				   components are accumulated (January has no forward-axis term and no
-				   call to actor_move_transform_avoidance_vector at this site) */
+				/* perpendicular has no forward component: only its left and up
+				   components are added */
 				rotation = *global_zero_vector3d;
 				perpendicular.j = -avoidance_directions[best_avoidance_direction].k;
 				rotation.i += perpendicular.j*avoidance_data.left.i;

@@ -18,6 +18,7 @@ RENDER_SPRITE.C
 #include "cache/texture_cache.h"
 #include "tag_files/tag_files.h"
 #include "tag_files/tag_groups.h"
+#include "rasterizer/rasterizer_geometry.h"
 
 /* ---------- constants */
 
@@ -34,20 +35,6 @@ enum
 enum
 {
 	_shader_effect_uses_nonlinear_tint_bit = 1,
-};
-
-enum
-{
-	_rasterizer_geometry_no_sort_bit = 0,
-	_rasterizer_geometry_no_queue_bit,
-	_rasterizer_geometry_no_fog_bit,
-	_rasterizer_geometry_no_zbuffer_bit,
-	_rasterizer_geometry_sky_bit,
-	_rasterizer_geometry_viewspace_bit,
-	_rasterizer_geometry_atmospheric_fog_but_no_planar_fog_bit,
-	_rasterizer_geometry_first_person_bit,
-	_rasterizer_geometry_parts_define_local_nodes_bit,
-	NUMBER_OF_RASTERIZER_GEOMETRY_FLAGS
 };
 
 /* ---------- macros */
@@ -108,8 +95,6 @@ struct
 typedef char build_sprite_globals_data_size_assert[
 	sizeof(build_sprite_globals) == 0x28 ? 1 : -1];
 
-/* name from the 2003 PC demo PDB and the HCEX PDB (file static char *[3]); January's three pointers
- * name the same strings in the same order, followed by the enum definition at +0xC as in the demo */
 static char *global_sprite_render_orientations_enum_strings[NUMBER_OF_BUILD_SPRITE_ORIENTATIONS] =
 {
 	"screen facing",
@@ -694,9 +679,6 @@ static short build_sprite_get_group(
 	struct build_sprite_data *data,
 	struct bitmap_data *bitmap)
 {
-	/* Name, type and function scope from the 2003 PC demo PDB and the HCEX PDB (static local
-	   unsigned char warned). Neither PDB records the block: placing it at the top of the function
-	   is unattested. January corroborates: its one-byte .bss is referenced only here. */
 	static boolean warned;
 	short group_index;
 

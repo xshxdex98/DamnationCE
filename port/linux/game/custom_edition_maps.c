@@ -93,12 +93,6 @@ the lobby's is 139x113), and the unknown level's frame
 #define MAXIMUM_DESCRIPTION_FILE_BYTES 1024
 #define MAXIMUM_DESCRIPTION_LENGTH 127
 
-/* bitmaps.c's format of 32-bit color with alpha */
-enum
-{
-	_bitmap_format_a8r8g8b8 = 11,
-};
-
 /* (the multiplayer maps', custom campaigns' and spinner descriptions'
 display indices do not meet) */
 typedef char verify_multiplayer_display_indices[

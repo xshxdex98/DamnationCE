@@ -474,8 +474,8 @@ boolean effects_corpse_nonviolent = TRUE;
 
 boolean debug_effects_nonviolent = FALSE;
 
-/* the effect marker list the effect_new_*_from_markers entry points hand to
-effect_marker_list_get_markers_by_name (January's own name for this static is unrecovered) */
+/* the marker list the effect_new_*_from_markers entry points pass to
+effect_marker_list_get_markers_by_name */
 static struct effect_marker_list const *global_effect_marker_list;
 
 static struct profile_section effects_update_section = {"effects_update", NONE, TRUE};
@@ -546,8 +546,8 @@ void effect_delete(
 			struct effect_location_datum *location;
 			long location_datum_index;
 
-			/* datum_delete only clears the header identifier in the fixed data array;
-			January therefore reads the still-backed link while advancing the loop. */
+			/* (datum_delete only clears the header, so the link can still be read
+			while advancing) */
 			for (location_datum_index = effect->location_datum_indices[location_index];
 				location_datum_index != NONE;
 				location_datum_index = location->next_instance_location_index)

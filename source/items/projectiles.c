@@ -31,6 +31,7 @@ PROJECTILES.C
 #include "sound/sound_definitions.h"
 #include "units/bipeds.h"
 #include "units/units.h"
+#include "physics/collision_bsp.h"
 
 /* ---------- constants */
 
@@ -90,18 +91,10 @@ enum projectile_potential_response_flags
 	NUMBER_OF_PROJECTILE_POTENTIAL_RESPONSE_FLAGS,
 };
 
-/* TU-local copies: no shared header declares these yet.  The effect vector
- * enum duplicates objects/damage.c, the spatial effect enum duplicates
- * ai/actors.c and ai/ai.c, the surface flag duplicates ai/path.c and
- * ai/path_smoothing.c, and the periodic function enum duplicates
- * math/periodic_functions.c. */
+/* effect vectors, spatial effects, surface flags and periodic functions (no
+ * header declares them yet; other files keep copies) */
 enum
 {
-	_effect_vector_normal = 0,
-	_effect_vector_incident,
-	_effect_vector_negative_incident,
-	_effect_vector_reflected,
-	_effect_vector_gravity,
 	NUMBER_OF_EFFECT_MARKERS,
 };
 
@@ -111,28 +104,6 @@ enum
 	_ai_spatial_effect_weapon_impact,
 	_ai_spatial_effect_weapon_detonation,
 	NUMBER_OF_AI_SPATIAL_EFFECTS,
-};
-
-enum
-{
-	_collision_surface_breakable_bit = 3,
-};
-
-enum
-{
-	_periodic_function_one = 0,
-	_periodic_function_zero,
-	_periodic_function_cosine,
-	_periodic_function_cosine_variable_period,
-	_periodic_function_diagonal_wave,
-	_periodic_function_diagonal_wave_variable_period,
-	_periodic_function_slide,
-	_periodic_function_slide_variable_period,
-	_periodic_function_noise,
-	_periodic_function_jitter,
-	_periodic_function_wander,
-	_periodic_function_spark,
-	NUMBER_OF_PERIODIC_FUNCTIONS,
 };
 
 enum

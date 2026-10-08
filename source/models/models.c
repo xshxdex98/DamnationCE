@@ -42,20 +42,6 @@ enum
 
 enum
 {
-	_rasterizer_geometry_no_sort_bit = 0,
-	_rasterizer_geometry_no_queue_bit,
-	_rasterizer_geometry_no_fog_bit,
-	_rasterizer_geometry_no_zbuffer_bit,
-	_rasterizer_geometry_sky_bit,
-	_rasterizer_geometry_viewspace_bit,
-	_rasterizer_geometry_atmospheric_fog_but_no_planar_fog_bit,
-	_rasterizer_geometry_first_person_bit,
-	_rasterizer_geometry_parts_define_local_nodes_bit,
-	NUMBER_OF_RASTERIZER_GEOMETRY_FLAGS
-};
-
-enum
-{
 	_render_model_immediate_bit = 0,
 	_render_model_shadow_bit,
 	_render_model_no_planar_fog_bit,
@@ -92,17 +78,6 @@ enum
 	_shader_type_transparent_meter,
 	_shader_type_transparent_plasma,
 	NUMBER_OF_SHADER_TYPES
-};
-
-enum
-{
-	_shader_model_detail_after_reflection_bit = 0,
-	_shader_model_two_sided_bit,
-	_shader_model_not_alpha_tested_bit,
-	_shader_model_alpha_blended_decal_bit,
-	_shader_model_true_atmospheric_fog_bit,
-	_shader_model_nocull_two_sided_bit,
-	NUMBER_OF_SHADER_MODEL_FLAGS
 };
 
 /* ---------- macros */
@@ -753,7 +728,7 @@ short model_get_marker_by_name(
 					"c:\\halo\\SOURCE\\models\\models.c",
 					785,
 					object_marker->node_index>=0 && object_marker->node_index<(node_remapping_table ? node_count : model->nodes.count));
-				
+
 				matrix4x3_multiply(&node_matrices[object_marker->node_index], &object_marker->node_matrix, &object_marker->matrix);
 				if (mirrored_flag)
 				{

@@ -89,9 +89,6 @@ static word *build_finalize_key_agreement_message(
 
 /* ---------- globals */
 
-/* Names and types of these six file statics are attested by a later first-party build (the 2003 PC demo PDB's
-key_agreement.obj; its packet-array tag is data_packet_group_packet, our data_packet_entry); January's own PDB has
-no static names. Their offsets and January's single 4-byte-aligned .data contribution agree with that build. */
 
 static struct data_packet_field message_initiate_key_agreement_packet_fields[4] =
 {

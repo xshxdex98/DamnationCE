@@ -31,8 +31,6 @@ RASTERIZER_XBOX_TRANSPARENT_GEOMETRY.C
 #include "math/periodic_functions.h"
 #include "tag_files/tag_groups.h"
 
-/* January retains the stock XDK D3DINLINE out-of-line wrappers emitted by
- * the real device calls below. Keep the stock definitions intact. */
 #include <xtl.h>
 #include "interface/progress_bar_internal.h"
 #include "rasterizer/xbox/rasterizer_xbox.h"
@@ -49,20 +47,6 @@ enum
 	RASTERIZER_STATIC_BUFFER_USAGE = D3DUSAGE_WRITEONLY,
 	RASTERIZER_STATIC_BUFFER_POOL = D3DPOOL_MANAGED,
 	RASTERIZER_TRANSPARENT_GEOMETRY_VISIBILITY_TEST_INDEX = 0xfff,
-};
-
-enum
-{
-	_rasterizer_geometry_no_sort_bit = 0,
-	_rasterizer_geometry_no_queue_bit,
-	_rasterizer_geometry_no_fog_bit,
-	_rasterizer_geometry_no_zbuffer_bit,
-	_rasterizer_geometry_sky_bit,
-	_rasterizer_geometry_viewspace_bit,
-	_rasterizer_geometry_atmospheric_fog_but_no_planar_fog_bit,
-	_rasterizer_geometry_first_person_bit,
-	_rasterizer_geometry_parts_define_local_nodes_bit,
-	NUMBER_OF_RASTERIZER_GEOMETRY_FLAGS
 };
 
 enum
@@ -105,13 +89,6 @@ enum
 	_render_model_effect_type_active_camouflage,
 	_render_model_effect_type_cortana,
 	NUMBER_OF_RENDER_MODEL_EFFECT_TYPES
-};
-
-enum
-{
-	RASTERIZER_STENCIL_MODE_NONE = 0,
-	RASTERIZER_STENCIL_MODE_REJECT = 2,
-	RASTERIZER_STENCIL_MODE_ACCEPT = 3,
 };
 
 enum
@@ -268,10 +245,8 @@ enum
 
 /* ---------- structures */
 
-/* the transparent shader tag layouts January reads here; the same file-local
- * form SHADER_TRANSPARENT_GENERIC_PREPROCESSOR.C and
- * SHADER_TRANSPARENT_CHICAGO_PREPROCESSOR.C use, extended with the fields this
- * file touches */
+/* the transparent shader fields read here (as the shader preprocessors
+ * declare them, with this file's extra fields) */
 
 struct shader_transparent_generic_map
 {
@@ -2239,7 +2214,7 @@ void rasterizer_transparent_geometry_group_draw(
 							short map_index;
 							long result;
 
-							/* port: the next layer each time: January never advanced
+							/* port: the next layer each time: the original never advanced
 							layer_index, so the loop never ended on a chicago shader with
 							a layer (retail's have none) */
 							for (layer_index = 0;

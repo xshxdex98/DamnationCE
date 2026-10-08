@@ -34,8 +34,6 @@ boolean object_bounds_cache_out_of_reach(long object_index, real_point3d const *
 
 /* ---------- macros */
 
-/* Preserve January's in-TU scalar expansion without selecting the external
- * point_from_line3d COMDAT for this object. */
 #define COLLISION_POINT_FROM_LINE3D(point, vector, distance, result) \
 	do \
 	{ \
@@ -904,10 +902,6 @@ boolean collision_fix_pill(
 	long ignore_object_index,
 	real_point3d *new_position)
 {
-	/* Name, type and function scope: PC demo and HCEX PDBs.
-	 * January confirms the 204-byte array and this function as its sole user.
-	 * The declaration's precise block position is not independently attested.
-	 */
 	static real_vector3d offsets[17] =
 	{
 		{ { -1.0f, 0.0f, 0.0f } },

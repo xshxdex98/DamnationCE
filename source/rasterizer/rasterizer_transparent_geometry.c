@@ -14,6 +14,8 @@ RASTERIZER_TRANSPARENT_GEOMETRY.C
 #include "rasterizer/xbox/rasterizer_xbox_state.h"
 #include "shaders/shader_definitions.h"
 #include "shaders/shaders.h"
+#include "rasterizer/rasterizer_geometry.h"
+#include "rasterizer/rasterizer.h"
 #ifdef HALO_64BIT
 #include "rasterizer/rasterizer_transparent_geometry.h"
 #endif
@@ -23,16 +25,12 @@ RASTERIZER_TRANSPARENT_GEOMETRY.C
 enum
 {
 	_shader_type_transparent_water = 7,
-	_rasterizer_geometry_first_person_bit = 7,
-	_rasterizer_target_render_primary = 0,
 };
 
 /* ---------- macros */
 
 /* ---------- structures */
 
-/* January's assert strings name this type and its sorted_index field, and pin
-the stride: the group array is walked with a 0xA0 element size. */
 #ifndef HALO_64BIT
 struct transparent_geometry_group
 {

@@ -147,12 +147,6 @@ static static_tree_desc data_00308b54[3] =
  * Local (static) routines in this file.
  */
 
-/* January-build private symbols, with their upstream zlib 1.1.3 identities:
- * 00105bb0 send_bits, 00105c70 tr_static_init, 00105c80 init_block,
- * 00105cf0 pqdownheap, 00106010 scan_tree, 00106100 send_tree,
- * 00106820 set_data_type, 001068b0 bi_reverse, 001068d0 bi_flush,
- * and 00106950 bi_windup.
- */
 
 local void tr_static_init(
     void);

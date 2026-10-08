@@ -165,7 +165,7 @@ boolean structure_bsp_find_material_for_surface(
 			i = *material_index+1;
 			*material_index = i;
 		}
-		
+
 	}
 
 	/* port: and before or after the lightmap's materials if the surface is
@@ -200,7 +200,7 @@ void vertex_type_from_shader_tag(
 		*vertex_type = _rasterizer_vertex_type_environment_uncompressed;
 		*lightmap_vertex_type = _rasterizer_vertex_type_environment_lightmap_uncompressed;
 	}
-	
+
 	return;
 }
 

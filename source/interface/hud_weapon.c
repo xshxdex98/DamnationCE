@@ -92,19 +92,6 @@ enum hud_crosshair_flags
 	_hud_crosshair_runtime_invalid_bit,
 };
 
-/* TU-local copy: bitmap_group.h does not own the bitmap group type enum; the existing
-   copies are in bitmaps/bitmap_extract.c (complete), bitmaps/bitmap_group.c and
-   interface/hud_draw.c. */
-enum bitmap_group_type
-{
-	_bitmap_group_type_2d_textures = 0,
-	_bitmap_group_type_3d_textures,
-	_bitmap_group_type_cube_maps,
-	_bitmap_group_type_sprites,
-	_bitmap_group_type_interface_bitmaps,
-	NUMBER_OF_BITMAP_GROUP_TYPES
-};
-
 enum weapon_overlay_on_flags
 {
 	_weapon_overlay_on_flashing_bit = 0,
@@ -743,9 +730,6 @@ static void hud_update_weapon_local_player(
 					break;
 
 				case _crosshair_state_flash_ammo:
-					/* The redundant (remaining || loaded) && remaining tests of the four ammo states are first-party:
-					   January tests rounds_remaining twice (T+0x205..0x21b) and the later /Od build spells them the
-					   same way (0x638534..0x638599). */
 					result = (weapon_state->magazines[0].rounds_remaining || weapon_state->magazines[0].rounds_loaded) &&
 						weapon_state->magazines[0].rounds_remaining &&
 						weapon_state->magazines[0].rounds_loaded <= root_definition->flash_cutoffs.loaded_ammo;
@@ -827,8 +811,7 @@ static void hud_update_weapon_local_player(
 					break;
 
 				case _crosshair_state_fired_secondary_with_no_ammo:
-					/* January (T+0x3b7 shared tail `test ch,8`) and the later /Od build (0x638a07
-					   `and edx,0x800`) both test the primary trigger for this secondary state. */
+					/* (the original tests the primary trigger for this secondary state) */
 					result = weapon_state->magazine_count > 1 &&
 						((!weapon_state->magazines[1].rounds_loaded &&
 							!weapon_state->magazines[1].rounds_remaining &&

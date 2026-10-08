@@ -81,11 +81,8 @@ struct structure_cluster_runtime_decals
 	byte unused2[0x58];
 };
 
-/*
- * The January scenario code indexes this block with a 0x68-byte stride and
- * reads the background-sound palette index at +0x4.  The surrounding fields
- * remain unnamed until independently evidenced.
- */
+/* a structure cluster: only its background sound palette index (at 0x4) is
+ * named so far */
 struct structure_cluster
 {
 	short sky_index;
@@ -109,10 +106,7 @@ typedef char structure_cluster_weather_offset_assert[
 typedef char structure_cluster_predicted_resources_offset_assert[
 	offsetof(struct structure_cluster, predicted_resources) == 0x28 ? 1 : -1];
 
-/*
- * The January scenario code indexes this palette with a 0x74-byte stride and
- * resolves the looping-sound reference at +0x20.
- */
+/* a background sound palette entry: its looping sound is at 0x20 */
 struct structure_background_sound_palette_entry
 {
 	byte unused0[0x20];

@@ -686,7 +686,7 @@ char const *unit_describe_speech(
 void unit_get_camera_position(long unit_index, real_point3d *camera_position);
 void unit_estimate_position(
 	long unit_index,
-	short estimate_mode, 
+	short estimate_mode,
 	real_point3d const *body_position,
 	real_vector3d *desired_facing,
 	real_vector3d *desired_gun_offset,

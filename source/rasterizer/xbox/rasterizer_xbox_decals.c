@@ -13,49 +13,11 @@ RASTERIZER_XBOX_DECALS.C
 #include "memory/lruv_cache.h"
 #include "rasterizer/rasterizer.h"
 #include "rasterizer/rasterizer_console_vars.h"
-/* The XDK's stock D3DINLINE (static __forceinline) definitions supply both the
- * inline expansions used below and the out-of-line wrapper bodies January
- * retains in this object. Do not redefine D3DINLINE, take a wrapper's address
- * or hand-write a wrapper body: any of those changes the emitted ABI. */
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "saved games/game_state.h"
-
-/* ---------- constants */
-
-enum
-{
-	NUMBER_OF_DECAL_LAYERS = 5
-};
-
-enum
-{
-	_decal_layer_primary = 0,
-	_decal_layer_secondary,
-	_decal_layer_light,
-	_decal_layer_alpha_tested,
-	_decal_layer_water
-};
-
-enum
-{
-	_decal_locked_bit,
-	_decal_permanent_bit
-};
-
-enum
-{
-	_shader_framebuffer_blend_function_alpha_blend = 0,
-	_shader_framebuffer_blend_function_multiply,
-	_shader_framebuffer_blend_function_double_multiply,
-	_shader_framebuffer_blend_function_add,
-	_shader_framebuffer_blend_function_reverse_subtract,
-	_shader_framebuffer_blend_function_min,
-	_shader_framebuffer_blend_function_max,
-	_shader_framebuffer_blend_function_alpha_multiply_add,
-	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS
-};
+#include "shaders/shader_definitions.h"
 
 enum
 {
@@ -70,12 +32,6 @@ enum
 enum
 {
 	PIXEL32_COMPONENT_MASK = 0xff
-};
-
-enum
-{
-	RASTERIZER_STENCIL_MODE_REJECT = 2,
-	RASTERIZER_STENCIL_MODE_WRITE_ALPHA_TESTED_DECAL = 4
 };
 
 enum
@@ -124,8 +80,7 @@ struct decal_datum
 typedef char verify_decal_datum_size[
 	sizeof(struct decal_datum) == 0x38 ? 1 : -1];
 
-/* Only the fields the rasterizer touches are recovered; the complete decal
-   tag definition is not yet authenticated. */
+/* the decal shader fields the rasterizer reads */
 struct decal_shader_definition
 {
 	byte reserved0000[4];

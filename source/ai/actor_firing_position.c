@@ -23,6 +23,7 @@ ACTOR_FIRING_POSITION.C
 #include "units/vehicles.h"
 #include "scenario/scenario.h"
 #include "scenario/scenario_definitions.h"
+#include "ai/actors.h"
 #ifdef HALO_64BIT
 #include "cseries/sort.h"
 #endif
@@ -45,16 +46,10 @@ enum
 
 enum
 {
-	_actor_combat_status_definite = 3,
-};
-
-enum
-{
 	MAXIMUM_NUMBER_OF_FIRING_POSITIONS_PER_ENCOUNTER = 512,
 };
 
-/* debug evaluation categories reported through firing_position_store_evaluation_debug;
-the values passed by January's out-of-line calls are pinned, the inlined sites carry none */
+/* debug evaluation categories (firing_position_store_evaluation_debug) */
 enum
 {
 	_firing_position_evaluation_guard_range = 0,
@@ -997,10 +992,9 @@ boolean actor_firing_position_discarded(
 	return result;
 }
 
-/* ---------- private code (evaluators defined after the public interface, as in January) */
+/* ---------- private code */
 
-/* January's two always-owned pre-evaluator table entries. HCEA corroborates
- * the algorithm; January supplies diagnostics, typed object mask and scores. */
+/* the two evaluators every table starts with */
 static void pre_evaluator_global(
 	long actor_index,
 	struct firing_position_evaluation_context *evaluation_context,

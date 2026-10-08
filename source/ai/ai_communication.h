@@ -14,6 +14,15 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* conversation stop conditions */
+enum
+{
+	_ai_conversation_stop_if_anyone_dies_bit,
+	_ai_conversation_stop_if_damaged_bit,
+	_ai_conversation_stop_if_visible_enemy_bit,
+	_ai_conversation_stop_if_alerted_to_enemy_bit
+};
+
 enum ai_communication_type
 {
 	_ai_communication_death = 0,

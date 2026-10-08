@@ -104,13 +104,7 @@ static void RGBToColor(
 	struct s3tc_color *pcolor)
 {
 	word rgb = *prgb;
-	/* color.rgba[S3TC_ALPHA] is deliberately left unwritten, as January leaves
-	   it: January stores only three bytes of this local and copies all four out.
-	   Both callers, DecodeBlockRGB and DecodeBlockRGB__single_pixel, assign the
-	   alpha of every colour on the line immediately after calling this, so the
-	   indeterminate byte is never read. Initialising it - either with = { 0 } or
-	   with an explicit store before or after the channels - returns both this
-	   function and DecodeBlockRGB to residual. */
+	/* (alpha is left unset: both callers set it right after) */
 	struct s3tc_color color;
 
 	color.rgba[0] = (byte)rgb;

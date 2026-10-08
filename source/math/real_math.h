@@ -967,12 +967,12 @@ __inline real signed_angular_difference(
 	real angle2)
 {
 	real result = angle2-angle1;
-	
+
 	if (result>=_pi)
 	{
 		result-= (_pi*2.f);
 	}
-	
+
 	if (result<=(-_pi))
 	{
 		result+= (_pi*2.f);
@@ -1000,14 +1000,14 @@ __inline real reciprocal_square_root(
 }
 
 __inline real power(
-	real a, 
+	real a,
 	real b)
 {
 	return pow(a, b);
 }
 
 __inline real_point2d *set_real_point2d(
-	real_point2d *p, 
+	real_point2d *p,
 	real x,
 	real y)
 {
@@ -1027,9 +1027,9 @@ __inline real_vector2d *set_real_vector2d(
 }
 
 __inline real_point2d *point_from_line2d(
-	real_point2d const *p, 
+	real_point2d const *p,
 	real_vector2d const *v,
-	real t, 
+	real t,
 	real_point2d *result)
 {
 	result->x = t*v->i + p->x;
@@ -1039,7 +1039,7 @@ __inline real_point2d *point_from_line2d(
 
 __inline real_vector2d *vector_from_points2d(
 	real_point2d const *a,
-	real_point2d const *b, 
+	real_point2d const *b,
 	real_vector2d *result)
 {
 	result->i = b->x-a->x;
@@ -1059,7 +1059,7 @@ __inline real_vector2d *scale_vector2d(
 
 __inline real_vector2d *rotate_vector2d(
 	real_vector2d const *v,
-	real sine, 
+	real sine,
 	real cosine,
 	real_vector2d *result)
 {
@@ -1100,7 +1100,7 @@ __inline real normalize2d(
 }
 
 __inline boolean limit2d(
-	real_vector2d *vector, 
+	real_vector2d *vector,
 	real length)
 {
 	real dot = vector->i*vector->i + vector->j*vector->j;
@@ -1141,7 +1141,7 @@ __inline real cross_product2d(
 }
 
 __inline real_vector2d *negate_vector2d(
-	real_vector2d const *a, 
+	real_vector2d const *a,
 	real_vector2d *result)
 {
 	result->i = -a->i;
@@ -1171,7 +1171,7 @@ __inline short projection_from_vector3d(
 }
 
 __inline boolean projection_sign_from_vector3d(
-	real_vector3d const *n, 
+	real_vector3d const *n,
 	short projection)
 {
 	match_assert("..\\math\\real_math.h", 848, projection>=_x && projection<=_z);
@@ -1186,8 +1186,8 @@ real_point2d *project_point3d(
 	real_point2d *p2d);
 #else
 __inline real_point2d *project_point3d(
-	real_point3d const *p3d, 
-	short projection, 
+	real_point3d const *p3d,
+	short projection,
 	boolean sign,
 	real_point2d *p2d)
 {
@@ -1205,7 +1205,7 @@ __inline real_point2d *project_point3d(
 __inline real_point3d *project_point2d(
 	real_point2d const *p2d,
 	real_plane3d const *plane,
-	short projection, 
+	short projection,
 	boolean sign,
 	real_point3d *p3d)
 {
@@ -1258,8 +1258,8 @@ real_point3d *point_from_line3d(
 	real_point3d *result);
 #else
 __inline real_point3d *point_from_line3d(
-	real_point3d const *p, 
-	real_vector3d const *v, 
+	real_point3d const *p,
+	real_vector3d const *v,
 	real t,
 	real_point3d *result)
 {
@@ -1455,7 +1455,7 @@ __inline real_vector3d *negate_vector3d(
 }
 
 __inline real dot_product4d(
-	real_vector4d const *a, 
+	real_vector4d const *a,
 	real_vector4d const *b)
 {
 	return a->i*b->i + a->j*b->j + a->k*b->k + a->l*b->l;
@@ -1492,10 +1492,10 @@ __inline real plane2d_distance_to_point(
 {
 	return (plane->n.i*point->x + plane->n.j*point->y) - plane->d;
 }
-	
+
 __inline real point_to_line_distance3d(
 	real_point3d const *point,
-	real_point3d const *base, 
+	real_point3d const *base,
 	real_vector3d const *height)
 {
 	return square_root(point_to_line_distance_squared3d(point, base, height));
@@ -1565,14 +1565,13 @@ __inline real vector_intersect_plane3d(
 	real_vector3d const *vector,
 	real_plane3d const *plane)
 {
-	// TODO: might not be correct
-	return (dot_product3d((real_vector3d *)point, &plane->n) - plane->d) 
+	return (dot_product3d((real_vector3d *)point, &plane->n) - plane->d)
 		/ -dot_product3d(vector, &plane->n);
 }
 
 __inline boolean point_in_circle(
 	real_point2d const *point,
-	real_point2d const *center, 
+	real_point2d const *center,
 	real radius)
 {
 	return distance_squared2d(point, center) <= (radius*radius);
@@ -1723,12 +1722,12 @@ __inline real_vector3d *local_random_vector_in_cone3d(
 }
 
 __inline real uniform_cubic_spline(
-	real f0, 
-	real f1, 
-	real f2, 
-	real f3, 
-	real t0, 
-	real h, 
+	real f0,
+	real f1,
+	real f2,
+	real f3,
+	real t0,
+	real h,
 	real t)
 {
 	match_assert("..\\math\\real_math.h", 1508, h > 0.0f);
@@ -1769,10 +1768,10 @@ __inline real nonuniform_cubic_spline(
 }
 
 __inline void uniform_cubic_spline_vector3d(
-	real_vector3d *result, 
+	real_vector3d *result,
 	real_vector3d const *f0,
-	real_vector3d const *f1, 
-	real_vector3d const *f2, 
+	real_vector3d const *f1,
+	real_vector3d const *f2,
 	real_vector3d const *f3,
 	real t0,
 	real h,
@@ -1806,15 +1805,14 @@ __inline void uniform_cubic_spline_vector3d(
 	return;
 }
 
-// TODO: doesn't match, needs cleanup. uses above inlines
 __inline void nonuniform_cubic_spline_vector3d(
 	real_vector3d *result,
-	real_vector3d const *f0, 
+	real_vector3d const *f0,
 	real_vector3d const *f1,
 	real_vector3d const *f2,
-	real_vector3d const *f3, 
-	real t0, 
-	real t1, 
+	real_vector3d const *f3,
+	real t0,
+	real t1,
 	real t2,
 	real t3,
 	real t)
@@ -1937,24 +1935,8 @@ __inline boolean valid_real_matrix4x3(
 		valid_real_point3d(&matrix->position);
 }
 
-// TODO: depends on byte_rectangle3d, need to include integer_math?
-/*
-__inline real_rectangle3d *dequantize_byte_to_real_rectangle3d(
-	real_rectangle3d const *parent,
-	byte_rectangle3d const *compressed_rectangle,
-	real_rectangle3d *result)
-{
-	result->x0 = dequantize_byte_to_real(parent->x0, parent->x1, compressed_rectangle->x0);
-	result->x1 = dequantize_byte_to_real(parent->x0, parent->x1, compressed_rectangle->x1);
-	result->y0 = dequantize_byte_to_real(parent->y0, parent->y1, compressed_rectangle->y0);
-	result->y1 = dequantize_byte_to_real(parent->y0, parent->y1, compressed_rectangle->y1);
-	result->z0 = dequantize_byte_to_real(parent->z0, parent->z1, compressed_rectangle->z0);
-	result->z1 = dequantize_byte_to_real(parent->z0, parent->z1, compressed_rectangle->z1);
-}
-*/
-
 __inline void interpolate_scalar(
-	real *current, 
+	real *current,
 	real desired,
 	real maximum_speed)
 {

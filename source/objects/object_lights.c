@@ -4,8 +4,7 @@ OBJECT_LIGHTS.C
 
 /* ---------- headers */
 
-/* objects.h lies in this unit's own directory, so January's __FILE__ for it was the absolute
-   path (see OBJECTS_H_FILE in objects.h) */
+/* (this file's name for objects.h, in its assertions) */
 #define OBJECTS_H_FILE "c:\\halo\\source\\objects\\objects.h"
 
 #include "cseries/cseries.h"

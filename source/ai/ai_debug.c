@@ -52,21 +52,7 @@ AI_DEBUG.C
 
 /* ---------- macros */
 
-/* INFERRED FROM JANUARY'S BYTES - not attested in any surviving source.
- * The label for an attractor node is drawn 0.15 world units above the node's
- * point.  January's bytes require the offset to be a parenthesised group at
- * the call, which a bare `point_height+0.15f` argument does not produce; a
- * whole-argument parenthesised SUM occurs nowhere else in the tree, so the
- * group is expressed here as a named macro rather than as loose parentheses.
- * Measured on _ai_debug_render_path_node with everything else held constant:
- *
- *     point_height+0.15f                    residual [sha]
- *     (point_height+0.15f)                  EXACT
- *     ((point_height)+(0.15f))              EXACT
- *     ai_debug_attractor_label_height(...)  EXACT   <- this spelling
- *
- * The macro also names what the 0.15f is, which the bare sum did not.
- */
+/* labels are drawn 0.15 world units above an attractor node */
 #define ai_debug_attractor_label_height(height)		\
 	((height)+0.15f)
 
@@ -266,7 +252,7 @@ void ai_debug_initialize(
 	void)
 {
 	memset(&ai_debug, 0, sizeof(ai_debug));
-	
+
 	ai_debug.selected_actor_index = NONE;
 	ai_debug.selected_squad_index = NONE;
 	ai_debug.last_render_id = 1;
@@ -309,7 +295,7 @@ void ai_debug_dispose_from_old_map(
 			&scenario->ai_encounters,
 			DATUM_INDEX_TO_ABSOLUTE_INDEX(ai_debug.selected_squad_index),
 			struct encounter_definition);
-		
+
 		strncpy(ai_debug.selected_squad_name, encounter->name, NUMBEROF(ai_debug.selected_squad_name));
 		ai_debug.selected_squad_name[NUMBEROF(ai_debug.selected_squad_name)-1] = '\0';
 	}
@@ -366,7 +352,7 @@ struct path_debug_storage *ai_debug_get_last_path(
 	for (path_index = 0; path_index<MAXIMUM_NUMBER_OF_ACTOR_PATHS; ++path_index)
 	{
 		struct path_debug_storage const *path = &actor_path_debug_array[path_index];
-	
+
 		if (path->valid && path->actor_index==actor_index && path->path_time>found_path_time)
 		{
 			found_path_index = path_index;
@@ -399,7 +385,7 @@ boolean ai_debug_highlight_cluster(
 		}
 
 		match_assert("c:\\halo\\SOURCE\\ai\\ai_debug.c", 4133, highlight_color);
-	
+
 		if (BIT_VECTOR_TEST_FLAG(global_ai_debug_activation_cluster_bit_vector, index))
 		{
 			if (encounter_get(ai_debug.selected_squad_index)->active)
@@ -1614,7 +1600,7 @@ static void ai_debug_render_actor(
 			{
 				color = global_real_argb_red;
 				aud_type = "none";
-				
+
 			}
 			else if(actor_debug_info->field_A6==1)
 			{
@@ -1715,7 +1701,7 @@ static void ai_debug_render_actor(
 					case 5:
 						color = iterator.index==actor->meta.interesting_orphan_index ? global_real_argb_purple : global_real_argb_blue;
 						render_debug_line(TRUE, &prop_start_point, &prop->head_position, color);
-						
+
 						if (!prop->definitely_located)
 						{
 							real_vector3d hint_vector;
@@ -1751,7 +1737,7 @@ static void ai_debug_render_actor(
 							strcpy(temp, temporary);
 							sprintf(temporary, "%so%d ", temp, prop->orphan_lifespan_ticks);
 						}
-						
+
 						if (prop->state==_prop_state_uninspected_orphan)
 						{
 							char temp[256];
@@ -1778,7 +1764,7 @@ static void ai_debug_render_actor(
 
 						render_debug_string_at_point(TRUE, &string_point, csprintf(temporary, "%.2f", prop->target_weight), color);
 						point_from_line3d(&string_point, global_up3d, 0.05f, &string_point);
-						
+
 						if (iterator.index==actor->target.target_prop_index)
 						{
 							render_debug_string_at_point(TRUE, &string_point, "target", global_real_argb_white);
@@ -1826,7 +1812,7 @@ static void ai_debug_render_actor(
 			{
 				real_point3d p0;
 				struct prop_datum const *retreating_prop = prop_get(actor->emotions.unopposable_retreat_prop_index);
-				
+
 				point_from_line3d(&actor->input.position.head_position, global_up3d, 0.03f, &p0);
 				render_debug_string_at_point(
 					TRUE,
@@ -1844,7 +1830,7 @@ static void ai_debug_render_actor(
 			{
 				sprintf(temporary, "%d", total_count);
 			}
-			
+
 			render_debug_string_at_point(TRUE, ai_debug_drawstack(), temporary, global_real_argb_green);
 		}
 
@@ -1931,7 +1917,7 @@ static void ai_debug_render_actor(
 				break;
 			case _direction_specification_point:
 				render_debug_line(
-					TRUE, 
+					TRUE,
 					&actor->input.position.head_position,
 					&actor->control.secondary_look_direction.point,
 					global_real_argb_magenta);
@@ -1939,7 +1925,7 @@ static void ai_debug_render_actor(
 			case _direction_specification_vector:
 			{
 				real_point3d aim_pos;
-				
+
 				point_from_line3d(
 					&actor->input.position.head_position,
 					&actor->control.secondary_look_direction.vector,
@@ -1978,7 +1964,7 @@ static void ai_debug_render_actor(
 					}
 				}
 			}
-			
+
 		}
 
 		/* Aiming vectors */
@@ -1996,20 +1982,20 @@ static void ai_debug_render_actor(
 				point_from_line3d(&actor->input.position.head_position, &actor->control.desired_facing_vector, 1.5f, &p1);
 				point_from_line3d(&p1, global_up3d, 0.01f, &p1);
 				render_debug_line(TRUE, &p0, &p1, global_real_argb_orange);
-				
+
 				point_from_line3d(&actor->input.position.head_position, &actor->control.desired_aiming_vector, 1.4f, &p1);
 				point_from_line3d(&p1, global_up3d, 0.02f, &p1);
 				render_debug_line(TRUE, &p0, &p1, global_real_argb_green);
-				
+
 				point_from_line3d(&actor->input.position.head_position, &actor->control.desired_looking_vector, 1.3f, &p1);
 				point_from_line3d(&p1, global_up3d, 0.03f, &p1);
 				render_debug_line(TRUE, &p0, &p1, global_real_argb_cyan);
-				
+
 				p0.x = head_position->x-global_up3d->i*0.04f;
 				p0.y = head_position->y-global_up3d->j*0.04f;
 				p0.z = head_position->z-global_up3d->k*0.04f;
 				unit_get_facing_vector(actor->meta.unit_index, &forward);
-				
+
 				render_debug_vector(TRUE, &p0, &forward, 1.f, global_real_argb_red);
 				render_debug_vector(TRUE, &p0, &unit->unit.aiming_vector, 1.f, global_real_argb_darkgreen);
 				render_debug_vector(TRUE, &p0, &unit->unit.looking_vector, 1.f, global_real_argb_blue);
@@ -2020,7 +2006,7 @@ static void ai_debug_render_actor(
 					real_vector3d throttle_vector;
 
 					struct biped_definition *biped_definition = biped_definition_get(unit->definition_index);
-					
+
 					unit_get_facing_vector(actor->meta.unit_index, &forward);
 
 					if (TEST_FLAG(biped_definition->biped.flags, _biped_flying_bit))
@@ -2049,7 +2035,7 @@ static void ai_debug_render_actor(
 		}
 
 		/* Gun positions */
-		
+
 		if (ai_debug.render_gun_positions && actor->meta.unit_index!=NONE)
 		{
 			real_point3d estimated_position;
@@ -2177,7 +2163,7 @@ static void ai_debug_render_actor(
 			{
 				render_debug_sphere(TRUE, &prop->last_visible_head_position, 0.2f, target_color);
 			}
-			
+
 			if (prop->unreachable_ticks>0 && (!ai_debug.render_props || !ai_debug.render_props_unopposable))
 			{
 				long time = prop->last_unreachable_time!=NONE ? game_time_get()-prop->last_unreachable_time : NONE;
@@ -2253,7 +2239,7 @@ static void ai_debug_render_actor(
 				{
 					render_debug_sphere(TRUE, &actor->state.action_data.flee.approach_point, 0.25f, actor_action_debug_color(actor_index));
 				}
-				break;	
+				break;
 			case _actor_action_fight:
 				if (actor->state.action_data.alert.move_position_order>0)
 				{
@@ -2377,7 +2363,7 @@ static void ai_debug_render_actor(
 					{
 						strcat(textbuffer, "facing-ok ");
 					}
-					
+
 					if (actor->state.action_data.vehicle.currently_within_range)
 					{
 						strcat(textbuffer, "range-ok ");
@@ -2467,7 +2453,7 @@ static void ai_debug_render_actor(
 						&global_scenario_get()->ai_command_lists,
 						actor->state.action_data.obey.command_list_index,
 						struct ai_command_list_definition);
-					
+
 					if (!actor->meta.swarm)
 					{
 						render_debug_string_at_point(
@@ -2480,7 +2466,7 @@ static void ai_debug_render_actor(
 								actor->state.action_data.obey.simple_control.current_command_index+1,
 								command_list->commands.count),
 							global_real_argb_purple);
-						
+
 						if (actor->state.action_data.obey.simple_control.current_command_index<command_list->commands.count)
 						{
 							command = TAG_BLOCK_GET_ELEMENT(
@@ -2532,7 +2518,7 @@ static void ai_debug_render_actor(
 									render_debug_sphere(
 										TRUE,
 										&actor->state.action_data.obey.complex_control.destination_point,
-										actor->state.action_data.obey.complex_control.destination_radius_valid ? 
+										actor->state.action_data.obey.complex_control.destination_radius_valid ?
 										actor->state.action_data.obey.complex_control.destination_radius :
 										0.5f,
 										global_real_argb_purple);
@@ -2636,10 +2622,10 @@ static void ai_debug_render_actor(
 			if (actor_debug_info->firing_decision!=_firing_no_target)
 			{
 				char const *string = actor_move_animation_busy(actor_index) ? "busy " : "";
-				
+
 				render_debug_string_at_point(
 					TRUE,
-					ai_debug_drawstack(), 
+					ai_debug_drawstack(),
 					csprintf(
 						temporary,
 						"%srof %.1f err %.1f dmg %.1f blk %d",
@@ -2707,7 +2693,7 @@ static void ai_debug_render_actor(
 					render_debug_string_at_point(
 						TRUE,
 						ai_debug_drawstack(),
-						csprintf(temporary, "wildfire %d", actor->control.fire_state_timer), 
+						csprintf(temporary, "wildfire %d", actor->control.fire_state_timer),
 						global_real_argb_red);
 					break;
 				default:
@@ -3058,7 +3044,7 @@ static void ai_debug_render_actor(
 					++count;
 				}
 			}
-			
+
 			if (count>0)
 			{
 				render_debug_string_at_point(TRUE, ai_debug_drawstack(), temporary, global_real_argb_yellow);
@@ -3099,7 +3085,7 @@ static void ai_debug_render_actor(
 
 				sprintf(tempbuf, ": persistent %d", actor->output.persistent_control_ticks);
 				strcat(temporary, tempbuf);
-	
+
 				render_debug_string_at_point(TRUE, ai_debug_drawstack(), temporary, global_real_argb_orange);
 			}
 
@@ -3118,7 +3104,7 @@ static void ai_debug_render_actor(
 					"alert",
 					"casual"
 				};
-				
+
 				render_debug_string_at_point(
 					TRUE,
 					ai_debug_drawstack(), csprintf(
@@ -3134,7 +3120,7 @@ static void ai_debug_render_actor(
 				render_debug_string_at_point(
 					TRUE,
 					ai_debug_drawstack(),
-					csprintf(temporary, "analog %.2f", actor->output.analog_primary_trigger), 
+					csprintf(temporary, "analog %.2f", actor->output.analog_primary_trigger),
 					global_real_argb_cyan);
 			}
 
@@ -3144,14 +3130,14 @@ static void ai_debug_render_actor(
 				real_vector3d alignment_vector_3d;
 
 				point_from_line3d(&actor->input.position.body_position, global_up3d, 0.2f, &base_point);
-				
+
 				alignment_vector_3d.i = actor->output.animation.alignment_vector.i;
 				alignment_vector_3d.j = actor->output.animation.alignment_vector.j;
 				alignment_vector_3d.k = 0.f;
 
 				render_debug_string_at_point(
 					TRUE,
-					ai_debug_drawstack(), 
+					ai_debug_drawstack(),
 					csprintf(temporary, "animation %d", actor->output.animation.impulse),
 					global_real_argb_pink);
 				render_debug_vector(
@@ -3169,14 +3155,14 @@ static void ai_debug_render_actor(
 				point_from_line3d(&actor->input.position.head_position, global_up3d, 0.01f, &p0);
 				point_from_line3d(&actor->input.position.head_position, &actor->output.facing_vector, 1.3f, &p1);
 				point_from_line3d(&p1, global_up3d, 0.01f, &p1);
-				
+
 				render_debug_line(TRUE, &p0, &p1, global_real_argb_red);
-				
+
 				point_from_line3d(&actor->input.position.head_position, &actor->output.aiming_vector, 1.2f, &p1);
 				point_from_line3d(&p1, global_up3d, 0.02f, &p1);
-				
+
 				render_debug_line(TRUE, &p0, &p1, global_real_argb_green);
-				
+
 				point_from_line3d(&actor->input.position.head_position, &actor->output.looking_vector, 1.1f, &p1);
 				point_from_line3d(&p1, global_up3d, 0.03f, &p1);
 
@@ -3214,7 +3200,7 @@ static void ai_debug_render_actor(
 				}
 			}
 		}
-		
+
 		/* Charge decisions */
 
 		if (ai_debug.render_charge_decisions &&
@@ -3260,7 +3246,7 @@ static void ai_debug_render_actor(
 
 			render_debug_string_at_point(TRUE, ai_debug_drawstack(), temporary, global_real_argb_red);
 		}
-		
+
 		/* Melee check */
 
 		if (ai_debug.render_melee_check &&
@@ -3269,7 +3255,7 @@ static void ai_debug_render_actor(
 		{
 			render_debug_vector(TRUE, &actor_debug_info->field_108, &actor_debug_info->field_114, 1.5f, global_real_argb_red);
 			render_debug_point(TRUE, &actor_debug_info->field_120, 0.2f, global_real_argb_red);
-		
+
 			if (!actor_debug_info->field_139)
 			{
 				real_vector3d v;
@@ -3279,13 +3265,13 @@ static void ai_debug_render_actor(
 
 				render_debug_line(TRUE, &actor_debug_info->field_120, &actor_debug_info->field_13C, global_real_argb_purple);
 				render_debug_sphere(TRUE, &actor_debug_info->field_13C, 0.2f, global_real_argb_purple);
-				
+
 				point_from_line3d(&actor_debug_info->field_108, &actor_debug_info->field_12C, actor_debug_info->field_14C, &p0);
 				render_debug_line(TRUE, &actor_debug_info->field_108, &p0, global_real_argb_green);
-				
+
 				point_from_line3d(&actor_debug_info->field_108, &actor_debug_info->field_12C, actor_debug_info->field_148, &p1);
 				perpendicular3d(&actor_debug_info->field_12C, &v);
-				
+
 				p0.x = p1.x + v.i*0.3f;
 				p0.y = p1.y + v.j*0.3f;
 				p0.z = p1.z + v.k*0.3f;
@@ -3319,20 +3305,20 @@ static void ai_debug_render_actor(
 
 			render_debug_line(TRUE, &actor_debug_info->field_C8, &actor_debug_info->field_E4, global_real_argb_green);
 			render_debug_sphere(TRUE, &actor_debug_info->field_D4, actor_debug_info->field_E0, global_real_argb_yellow);
-		
+
 			p1 = actor_debug_info->field_E4;
 			p0 = p1;
 
 			p0.x = p0.x - 0.2f;
 			p1.x = p1.x + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_red);
-			
+
 			p0.x = p0.x + 0.2f;
 			p1.x = p1.x - 0.2f;
 			p0.y = p0.y - 0.2f;
 			p1.y = p1.y + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_red);
-			
+
 			p0.y = p0.y + 0.2f;
 			p1.y = p1.y - 0.2f;
 			p0.z = p0.z - 0.2f;
@@ -3340,20 +3326,20 @@ static void ai_debug_render_actor(
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_red);
 			vector_from_points3d(&actor_debug_info->field_C8, &actor_debug_info->field_E4, &v0);
 			point_from_line3d(&actor_debug_info->field_C8, &v0, actor_debug_info->field_F0, &p2);
-			
+
 			p1 = p2;
 			p0 = p2;
 
 			p0.x = p2.x - 0.2f;
 			p1.x = p2.x + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_blue);
-			
+
 			p0.x = p0.x + 0.2f;
 			p1.x = p1.x - 0.2f;
 			p0.y = p0.y - 0.2f;
 			p1.y = p1.y + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_blue);
-			
+
 			p0.y = p0.y + 0.2f;
 			p1.y = p1.y - 0.2f;
 			p0.z = p0.z - 0.2f;
@@ -3365,20 +3351,20 @@ static void ai_debug_render_actor(
 
 				render_debug_line(TRUE, &actor_debug_info->field_D4, &actor_debug_info->field_F8, global_real_argb_yellow);
 				render_debug_line(TRUE, &actor_debug_info->field_C8, &actor_debug_info->field_F8, global_real_argb_red);
-				
+
 				p1 = actor_debug_info->field_F8;
 				p0 = p1;
-				
+
 				p0.x = p0.x - 0.2f;
 				p1.x = p1.x + 0.2f;
 				render_debug_line(TRUE, &p0, &p1, global_real_argb_blue);
-				
+
 				p0.x = p0.x + 0.2f;
 				p1.x = p1.x - 0.2f;
 				p0.y = p0.y - 0.2f;
 				p1.y = p1.y + 0.2f;
 				render_debug_line(TRUE, &p0, &p1, global_real_argb_blue);
-				
+
 				p0.y = p0.y + 0.2f;
 				p1.y = p1.y - 0.2f;
 				p0.z = p0.z - 0.2f;
@@ -3398,30 +3384,30 @@ static void ai_debug_render_actor(
 
 			p1 = actor_debug_info->field_64;
 			p0 = p1;
-			
+
 			p0.x = p0.x - 0.2f;
 			p1.x = p1.x + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_blue);
-			
+
 			p0.x = p0.x + 0.2f;
 			p1.x = p1.x - 0.2f;
 			p0.y = p0.y - 0.2f;
 			p1.y = p1.y + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_blue);
-			
+
 			p0.y = p0.y + 0.2f;
 			p1.y = p1.y - 0.2f;
 			p0.z = p0.z - 0.2f;
 			p1.z = p1.z + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_blue);
-			
+
 			render_debug_vector(
 				TRUE,
 				&actor_debug_info->field_64,
 				&actor_debug_info->field_70,
 				2.f,
 				actor_debug_info->field_60 ? global_real_argb_blue : global_real_argb_red);
-			
+
 			if (!actor_debug_info->field_60)
 			{
 				render_debug_sphere(TRUE, &actor_debug_info->field_7C, 0.2f, global_real_argb_red);
@@ -3452,7 +3438,7 @@ static void ai_debug_render_actor(
 			real_point3d p1;
 
 			render_debug_line(TRUE, &actor->control.burst_initial_position, &actor_debug_info->burst_last_known_position, global_real_argb_green);
-			
+
 			if (magnitude_squared3d(&actor_debug_info->burst_lead_vector)>_real_epsilon)
 			{
 				render_debug_vector(
@@ -3469,7 +3455,7 @@ static void ai_debug_render_actor(
 			p0.x = p0.x - 0.2f;
 			p1.x = p1.x + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_blue);
-			
+
 			p0.x = p0.x + 0.2f;
 			p1.x = p1.x - 0.2f;
 			p0.y = p0.y - 0.2f;
@@ -3481,7 +3467,7 @@ static void ai_debug_render_actor(
 			p0.z = p0.z - 0.2f;
 			p1.z = p1.z + 0.2f;
 			render_debug_line(TRUE, &p0, &p1, global_real_argb_blue);
-			
+
 			render_debug_sphere(TRUE, &actor->control.burst_target, 0.1f, global_real_argb_red);
 			render_debug_vector(TRUE, &actor->control.burst_target, &actor->control.burst_adjustment, 5.f, global_real_argb_red);
 		}
@@ -3503,7 +3489,7 @@ static void ai_debug_render_actor(
 				&global_real_argb_red,
 				&global_real_argb_blue
 			};
-			
+
 			if (actor_debug_info->vision_last_time!=NONE &&
 				actor_debug_info->vision_last_time+15 >= game_time_get())
 			{
@@ -3539,7 +3525,7 @@ static void ai_debug_render_actor(
 				real horizontal_angle = angle_itr>actor_definition->perception.peripheral_vision_angle ? actor_definition->perception.peripheral_vision_angle : angle_itr;
 				real cosine_horizontal_angle = cosine(horizontal_angle);
 				real sine_horizontal_angle = sine(horizontal_angle);
-				
+
 				cosine_vertical_angle[0] = cosine(DEGREES_TO_RADIANS(30));
 				sine_vertical_angle[0] = sine(DEGREES_TO_RADIANS(30));
 				cosine_vertical_angle[1] = cosine(DEGREES_TO_RADIANS(45));
@@ -3562,7 +3548,7 @@ static void ai_debug_render_actor(
 				}
 
 				actor_get_vision_distances(actor_index, max_distance, perception_factor, horizontal_angle, &distance_references[0], &distance_references[1]);
-			
+
 				for (side_index = 0; side_index < 2; ++side_index)
 				{
 					for (ring_index = 0; ring_index < 2; ++ring_index)
@@ -3738,7 +3724,7 @@ static void ai_debug_render_actor(
 							color,
 							0.1f);
 					}
-						
+
 					point_from_line3d(&actor->control.path.path.steps[step_index].point, global_up3d, 0.1f, &offset_point);
 					render_debug_tick(TRUE, &offset_point, global_up3d, 0.02, color);
 				}
@@ -3767,7 +3753,7 @@ static void ai_debug_render_actor(
 			}
 
 			render_debug_string_at_point(TRUE, ai_debug_drawstack(), temporary, global_real_argb_orange);
-			
+
 			if (actor_debug_info->last_path_refresh==NONE || actor_debug_info->last_path_refresh+150 < game_time_get())
 			{
 				render_debug_string_at_point(TRUE, ai_debug_drawstack(), "not refreshing path", global_real_argb_blue);
@@ -3779,7 +3765,7 @@ static void ai_debug_render_actor(
 					ai_debug_drawstack(),
 					csprintf(temporary, "path refreshed (%d)", game_time_get()-actor_debug_info->last_path_refresh),
 					global_real_argb_blue);
-				
+
 				if (path && path->valid)
 				{
 					ai_debug_render_path_storage(path);
@@ -3796,11 +3782,11 @@ static void ai_debug_render_actor(
 		if (ai_debug.render_postcombat && actor->external_orders.postcombat_type>0)
 		{
 			render_debug_string_at_point(TRUE, ai_debug_drawstack(), postcombat_type_strings[actor->external_orders.postcombat_type], global_real_argb_green);
-			
+
 			if (actor->external_orders.postcombat_prop_index!=NONE)
 			{
 				struct prop_datum *prop = prop_get(actor->external_orders.postcombat_prop_index);
-				
+
 				render_debug_line(TRUE, &actor->input.position.head_position, &prop->head_position, global_real_argb_green);
 			}
 		}

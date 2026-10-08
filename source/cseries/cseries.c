@@ -122,7 +122,7 @@ tag string_to_tag(
 	const char *s)
 {
 	tag t = *(tag*)s;
-	
+
 	return SWAP4(t);
 }
 
@@ -164,12 +164,12 @@ char *strnupr(
 	long n)
 {
 	unsigned char *p;
-	
+
 	for (p = (unsigned char *)string; *p && n-->0; p++)
 	{
 		*p = toupper(*p);
 	}
-	
+
 	return string;
 }
 
@@ -178,12 +178,12 @@ char *strnlwr(
 	long n)
 {
 	unsigned char *p;
-	
+
 	for (p = (unsigned char *)string; *p && n-->0; p++)
 	{
 		*p = tolower(*p);
 	}
-	
+
 	return string;
 }
 
@@ -191,12 +191,12 @@ char *strupr(
 	char *string)
 {
 	unsigned char *p;
-	
+
 	for (p = (unsigned char *)string; *p; p++)
 	{
 		*p = toupper(*p);
 	}
-	
+
 	return string;
 }
 
@@ -204,12 +204,12 @@ char *strlwr(
 	char *string)
 {
 	unsigned char *p;
-	
+
 	for (p = (unsigned char *)string; *p; p++)
 	{
 		*p = tolower(*p);
 	}
-	
+
 	return string;
 }
 
@@ -219,13 +219,13 @@ char *csprintf(
 	...)
 {
 	va_list arglist;
-	
+
 	va_start(arglist, format);
 	/* port: no longer than the longest a string is (MAXIMUM_STRING_SIZE,
 	as csstrlen asserts): the caller's buffer's size isn't passed */
 	vsnprintf(buffer, MAXIMUM_STRING_SIZE, format, arglist);
 	va_end(arglist);
-	
+
 	return buffer;
 }
 
@@ -312,7 +312,7 @@ void display_assert(
 	{
 		stack_walk(0);
 	}
-	
+
 	error(_error_silent, "EXCEPTION %s in %s,#%d: %s", fatal ? "halt" : "warn", file, line, information ? information : "<no reason given>");
 #endif
 }
@@ -429,11 +429,11 @@ unsigned long csstrlen(
 	const char *s1)
 {
 	long size;
-	
+
 	cseries_match_assert("c:\\halo\\SOURCE\\cseries\\cseries.c", 357, s1);
 	size = strlen(s1);
 	cseries_match_assert("c:\\halo\\SOURCE\\cseries\\cseries.c", 359, size>=0 && size<MAXIMUM_STRING_SIZE);
-	
+
 	return size;
 }
 
@@ -442,10 +442,10 @@ char *csstrcpy(
 	const char *source)
 {
 	long source_size = strlen(source);
-	
+
 	cseries_match_assert("c:\\halo\\SOURCE\\cseries\\cseries.c", 371, source_size>=0 && source_size<MAXIMUM_STRING_SIZE);
 	cseries_match_assert("c:\\halo\\SOURCE\\cseries\\cseries.c", 372, source+source_size<destination || destination+source_size<source);
-	
+
 	/* port: no more is copied than the longest a string is
 	(MAXIMUM_STRING_SIZE, the assert above, which a release build only
 	logs), and copying over itself is a memmove. The destination isn't
@@ -466,7 +466,7 @@ void *csmemcpy(
 	cseries_match_assert("c:\\halo\\SOURCE\\cseries\\cseries.c", 383, destination && source);
 	cseries_match_assert("c:\\halo\\SOURCE\\cseries\\cseries.c", 384, size>=0 && size<MAXIMUM_MEMCPY_MEMMOVE_SIZE);
 	cseries_match_assert("c:\\halo\\SOURCE\\cseries\\cseries.c", 385, (byte *)source+size<=(byte *)destination || (byte *)destination+size<=(byte *)source);
-	
+
 	return memcpy(destination, source, size);
 }
 
@@ -536,10 +536,10 @@ unsigned long string_hash(
 	const char *string)
 {
 	unsigned long hash;
-	
+
 	crc_new(&hash);
 	crc_checksum_buffer(&hash, string, csstrlen(string));
-	
+
 	return hash;
 }
 

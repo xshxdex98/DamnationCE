@@ -63,10 +63,7 @@ enum
 
 /* ---------- structures */
 
-/*
- * January's tag-definition consumer layout.  The 0x25C stride and every field
- * used below are independently corroborated by the HCEA symbols build.
- */
+/* the weather particle type definition */
 struct weather_particle_type_definition
 {
 	char name[32];
@@ -165,11 +162,7 @@ typedef char weather_particle_size_assert[
 typedef char weather_particle_system_globals_size_assert[
 	sizeof(struct weather_particle_system_globals) == 0x274 ? 1 : -1];
 
-/*
- * These three tag-block element layouts are private here because their owner
- * headers do not publish them yet.  Their names, sizes, and accessed offsets
- * are corroborated by HCEA and sibling January consumers.
- */
+/* structure BSP weather and wind palette entries (no header declares them yet) */
 struct structure_weather_palette_entry
 {
 	char name[32];

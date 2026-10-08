@@ -20,10 +20,7 @@ RASTERIZER_XBOX_VERTEX_SHADERS.C
 
 /* ---------- globals */
 
-/* The January object owns 67 compiled Xbox vertex-shader programs in this
-34,628-byte read-only payload.  These are immutable Xbox shader instruction
-tokens, represented as dwords so the generated data remains inspectable and
-the compiler reproduces the original little-endian bytes. */
+/* the 67 compiled Xbox vertex shader programs */
 static unsigned long const vertex_shader_code[] =
 {
 #include "rasterizer_xbox_vertex_shaders_data.inc"

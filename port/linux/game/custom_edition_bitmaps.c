@@ -48,45 +48,6 @@ enum
 	WEAPON_HUD_INTERFACE_GROUP_TAG = 'wphi',
 };
 
-/* bitmaps.c's bitmap types, formats and flags */
-enum
-{
-	_bitmap_type_2d,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-};
-
-enum
-{
-	_bitmap_format_a8,
-	_bitmap_format_y8,
-	_bitmap_format_ay8,
-	_bitmap_format_a8y8,
-	_bitmap_format_unused1,
-	_bitmap_format_unused2,
-	_bitmap_format_r5g6b5,
-	_bitmap_format_unused3,
-	_bitmap_format_a1r5g5b5,
-	_bitmap_format_a4r4g4b4,
-	_bitmap_format_x8r8g8b8,
-	_bitmap_format_a8r8g8b8,
-	_bitmap_format_unused4,
-	_bitmap_format_unused5,
-	_bitmap_format_dxt1,
-	_bitmap_format_dxt3,
-	_bitmap_format_dxt5,
-	_bitmap_format_p8_bump,
-};
-
-enum
-{
-	_bitmap_has_power_of_two_dimensions_bit,
-	_bitmap_compressed_bit,
-	_bitmap_palettized_bit,
-	_bitmap_swizzled_bit,
-	_bitmap_linear_bit,
-};
-
 /* ---------- structures */
 
 /* A model shader, to its reflection cube map: the bitmaps it draws with.

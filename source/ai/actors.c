@@ -42,32 +42,11 @@ ACTORS.C
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
 #include "networking/network_game_globals.h"
-
-/* ---------- constants */
-
-enum
-{
-	_actor_mode_braindead = 0,
-	_actor_mode_alert = 2,
-	_actor_mode_combat,
-	_actor_fire_target_none = 0,
-	_actor_fire_target_prop,
-};
+#include "ai/ai.h"
+#include "ai/encounters.h"
 
 enum actor_default_state
 {
-	actor_default_state_none = 0,
-	actor_default_state_asleep,
-	actor_default_state_alert,
-	actor_default_state_moving_repeat_position,
-	actor_default_state_moving_loop,
-	actor_default_state_moving_loop_back_and_forth,
-	actor_default_state_moving_loop_randomly,
-	actor_default_state_moving_randomly,
-	actor_default_state_guarding,
-	actor_default_state_guarding_at_guard_point,
-	actor_default_state_searching,
-	actor_default_state_fleeing,
 	number_of_actor_default_states,
 };
 
@@ -88,23 +67,21 @@ enum
 	_vehicle_ai_driver_hovering_bit,
 };
 
-/* projectile_datum.flags; projectiles.c currently owns the otherwise private
- * enum, so actors keeps the shared January bit spelling local for now. */
+/* projectile_datum.flags (projectiles.c keeps the enum to itself) */
 enum
 {
 	_projectile_will_super_explode_bit = 7,
 };
 
-/* January names these limits in its assert and error strings; the shared
-header spells them MAXIMUM_SWARMS and MAXIMUM_UNIT_INDICES_PER_SWARM. */
+/* (the shared header calls these MAXIMUM_SWARMS and
+ * MAXIMUM_UNIT_INDICES_PER_SWARM) */
 enum
 {
 	MAXIMUM_NUMBER_OF_ACTIVE_SWARMS = MAXIMUM_SWARMS,
 	MAXIMUM_NUMBER_OF_UNITS_PER_SWARM = MAXIMUM_UNIT_INDICES_PER_SWARM,
 };
 
-/* decision loop bounds; the history length and iteration cap come from the
- * January error path (five remembered actions, ten passes) */
+/* decision loop bounds: five remembered actions, ten passes */
 enum
 {
 	MAXIMUM_DECISION_LOOP_ITERATIONS = 10,
@@ -114,14 +91,6 @@ enum
 /* actor state.combat_status levels (actors.h does not yet declare these) */
 enum
 {
-	_actor_combat_status_none = 0,
-	_actor_combat_status_wary,
-	_actor_combat_status_investigate,
-	_actor_combat_status_definite,
-	_actor_combat_status_certain,
-	_actor_combat_status_clear_los,
-	_actor_combat_status_dangerous,
-	_actor_combat_status_visible,
 	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS,
 };
 
@@ -145,34 +114,9 @@ enum
 	NUMBER_OF_AI_SPATIAL_EFFECTS,
 };
 
-/* ai unit effect types (ai.h does not yet declare these) */
-enum
-{
-	_ai_unit_effect_bump = 0,
-	_ai_unit_effect_shooting,
-	_ai_unit_effect_death_scream,
-	_ai_unit_effect_magic_sight,
-	NUMBER_OF_AI_UNIT_EFFECTS,
-};
-
-/* encounter follow-target types (encounters.h does not yet declare these) */
-enum
-{
-	_follow_target_none = 0,
-	_follow_target_players,
-	_follow_target_unit,
-	_follow_target_ai,
-	NUMBER_OF_FOLLOW_TARGET_TYPES,
-};
-
 /* ai_information_packet.information_type (ai.h does not yet declare these) */
 enum
 {
-	_ai_information_none = 0,
-	_ai_information_allegiance,
-	_ai_information_combat_stimulus,
-	_ai_information_target_knowledge,
-	_ai_information_flee,
 	NUMBER_OF_AI_INFORMATION_TYPES,
 };
 
@@ -239,10 +183,8 @@ typedef char actor_datum_meta_encounter_index_offset_assert[
 typedef char actor_datum_meta_first_prop_index_offset_assert[
 	offsetof(struct actor_datum, meta.first_prop_index) == 0x50 ? 1 : -1];
 
-/* The shared vehicle tag layout is still opaque past the common unit
- * definition (vehicle_definitions.h only forward-declares it).  Actors reads
- * the January-authenticated AI destination radius at 0x384 only, so keep that
- * ownership local to this TU. */
+/* the AI destination radius of a vehicle definition, which
+ * vehicle_definitions.h leaves opaque */
 struct vehicle_definition
 {
 	struct unit_definition unit;
@@ -265,7 +207,6 @@ typedef char ai_globals_service_data_grenades_enabled_offset_assert[
 
 /* ---------- prototypes */
 
-/* January keeps this function private to ACTORS.C. */
 static void actor_input_update(
 	long actor_index);
 
@@ -2598,7 +2539,8 @@ short actors_spawn_from_unit(
 		if (source_actor_index != NONE)
 		{
 			struct actor_datum *source_actor = actor_get(source_unit->unit.actor_index);
-			/* BUG: January reads actor_index even when source_actor_index selected swarm_actor_index. */
+			/* (as the original: actor_index is read even when the swarm actor was
+			 * the source) */
 			encounter_index = source_actor->meta.encounter_index;
 			squad_index = source_actor->meta.squad_index;
 		}

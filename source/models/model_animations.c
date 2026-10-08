@@ -27,17 +27,6 @@ enum
 	animation_update_kind_affects_game_state,
 };
 
-/* No shared header declares the update results yet; first_person_weapons.c keeps a partial copy. */
-enum animation_update_result
-{
-	_animation_running = 0,
-	_animation_key_frame,
-	_animation_will_restart_on_next_frame,
-	_animation_restarted,
-	_animation_looped,
-	NUMBER_OF_ANIMATION_UPDATE_RESULTS,
-};
-
 enum
 {
 	COMPRESSED_ANIMATION_NODE_HEADER_KEYFRAME_COUNT_BITS = 12,
@@ -108,7 +97,7 @@ struct compressed_animation_header
 	unsigned long rotation_node_headers[1];
 };
 
-/* Recovered animation-graph block layouts kept TU-private to preserve VC7 header scheduling. */
+/* the animation graph blocks this file reads */
 struct animation_graph_node
 {
 	char name[TAG_STRING_LENGTH+1];

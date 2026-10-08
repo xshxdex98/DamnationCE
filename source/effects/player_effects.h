@@ -19,6 +19,19 @@ struct damage_data;
 
 /* ---------- constants */
 
+/* screen flash types */
+enum
+{
+	_render_screen_flash_type_none,
+	_render_screen_flash_type_lighten,
+	_render_screen_flash_type_darken,
+	_render_screen_flash_type_max,
+	_render_screen_flash_type_min,
+	_render_screen_flash_type_invert,
+	_render_screen_flash_type_tint,
+	NUMBER_OF_SCREEN_FLASH_TYPES
+};
+
 /* ---------- macros */
 
 /* ---------- structures */

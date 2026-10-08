@@ -97,25 +97,6 @@ enum
 	NUMBER_OF_VIRTUAL_KEYBOARD_EVENTS,
 };
 
-/* event_manager.c keeps these private; see header request in the ledger */
-enum
-{
-	_event_type_null,
-	_event_type_left_stick,
-	_event_type_right_stick,
-	_event_type_button,
-};
-
-/* ui_widget.c owns the same private enum. */
-enum ui_audio_feedback_sound
-{
-	_ui_audio_feedback_none,
-	_ui_audio_feedback_cursor,
-	_ui_audio_feedback_forward,
-	_ui_audio_feedback_back,
-	_ui_audio_feedback_flag_failure,
-};
-
 /* ---------- macros */
 
 #define VIRTUAL_KEYBOARD_TAG 'vcky'
@@ -212,8 +193,6 @@ static void virtual_keyboard_process_internal(
 
 /* ---------- globals */
 
-/* name from the 2003 PC demo PDB and the HCEX PDB (file static const char[5][11]); the 55 bytes are
- * identical to January's, which has no public for it (static) */
 static char const virtual_keyboard_layout_table[VIRTUAL_KEYBOARD_ROW_COUNT][VIRTUAL_KEYBOARD_COLUMN_COUNT] =
 {
 	{ _vkey_done, _vkey_1, _vkey_2, _vkey_3, _vkey_4, _vkey_5, _vkey_6, _vkey_7, _vkey_8, _vkey_9, _vkey_0 },
@@ -645,7 +624,7 @@ static void virtual_keyboard_render_internal(
 
 		if (bitmap)
 		{
-			/* January tests the pointer, not the character; the terminator ends the walk because the font has no glyph for it */
+			/* (the walk ends on the terminator, which the font has no glyph for) */
 			while (character)
 			{
 				struct font_character *font_character = font_get_character_by_ascii_code(keyboard_font_header, *character);

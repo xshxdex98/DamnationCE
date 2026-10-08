@@ -17,6 +17,7 @@ GAME_ENGINE_RACE.C
 #include "text/text_group.h"
 #include "text/unicode.h"
 #include "units/units.h"
+#include "game/game_engine.h"
 
 /* ---------- constants */
 
@@ -47,29 +48,9 @@ enum race_team_scoring
 
 enum
 {
-	_game_engine_vehicles_default = 0,
-	_game_engine_vehicles_none,
-	_game_engine_vehicles_warthog,
-	_game_engine_vehicles_ghost,
-	_game_engine_vehicles_tank,
-};
-
-enum
-{
 	_multiplayer_vehicle_warthog = 0,
 	_multiplayer_vehicle_ghost,
 	_multiplayer_vehicle_scorpion,
-};
-
-enum
-{
-	_multiplayer_sound_race = 0x14,
-	_multiplayer_sound_warthog = 0x17,
-	_multiplayer_sound_ghost = 0x18,
-	_multiplayer_sound_scorpion = 0x19,
-	_multiplayer_sound_countdown_timer = 0x1A,
-	_multiplayer_sound_team_race = 0x22,
-	_multiplayer_sound_countdown_timer_end = 0x2A,
 };
 
 enum
@@ -120,7 +101,7 @@ struct race_globals
 	byte padCD[3];
 };
 
-/* January's layout; the port's per-player arrays are larger */
+/* (the port's per-player arrays are larger than the Xbox's) */
 
 /* ---------- prototypes */
 
@@ -340,8 +321,8 @@ void race_flags_make_unique(
 				{
 					if (!TEST_FLAG(used_flags, free_index))
 					{
-						/* BUG (original): the flag that was already in use is
-						   marked again rather than the newly assigned index. */
+						/* (as the original: the flag already in use is marked again, not the
+						   newly assigned one) */
 						SET_FLAG(used_flags, flag->team_index, TRUE);
 						break;
 					}
@@ -1066,7 +1047,7 @@ static long race_engine_get_score(
 	}
 	else
 	{
-		/* port: lap_bit_vector is kept per player; January read it by team
+		/* port: lap_bit_vector is kept per player; the original read it by team
 		index, which picks another player's flags */
 		long laps = player->statistics.multiplayer_statistics.race_statistics.laps;
 		long flags_touched = count_bits_32(

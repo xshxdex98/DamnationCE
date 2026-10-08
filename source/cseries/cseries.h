@@ -138,7 +138,7 @@ semicolon). */
 #define dhalt(diagnostic) match_dhalt(__FILE__, __LINE__, diagnostic)
 #define assert(expr) match_assert(__FILE__, __LINE__, expr)
 #define dassert(expr, diagnostic) match_dassert(__FILE__, __LINE__, expr, diagnostic)
-/* VC7 has no variadic macros: format vassert messages with csprintf(temporary, ...). */
+/* (format vassert messages with csprintf(temporary, ...)) */
 #define vassert(expr, string) match_vassert(__FILE__, __LINE__, expr, string)
 #define warn(expr) match_warn(__FILE__, __LINE__, expr)
 #define dwarn(expr, diagnostic) match_dwarn(__FILE__, __LINE__, expr, diagnostic)

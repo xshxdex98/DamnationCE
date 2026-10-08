@@ -39,8 +39,6 @@ extern void *debug_malloc(unsigned int, int, const char *, long);
 extern void debug_free(void *, const char *, long);
 extern void *csmemset(void *, long, unsigned long);
 extern void *csmemcpy(void *, const void *, unsigned long);
-/* The January object owns every fax lookup table in writable .data. */
-#define const
 #define	G3CODES
 #include "t4.h"
 #define	G3STATES
@@ -793,7 +791,6 @@ putspan(tif, span, tab)
 	}
 	if (span >= 64) {
 		tableentry const *te = &tab[63 + (span>>6)];
-		/* The January 2002 Xbox object omits the upstream consistency assert. */
 		putcode(tif, te);
 		span -= te->runlen;
 	}

@@ -44,10 +44,8 @@ enum
 
 /* ---------- macros */
 
-/* 0.8 degrees in radians. Spelled as a float literal because MSVC folds
-constant expressions in double and only rounds at the final assignment, so
-((real)(0.8*_pi/180)) yields 0x3c64c388 where January has 0x3c64c389 -- and
-2.0*it then differs in the double constant too. */
+/* 0.8 degrees in radians, spelled as a float (the double expression rounds
+to another value) */
 #define VEHICLE_ANGULAR_ACCELERATION 0.0139626344f
 
 /* ---------- structures */
@@ -149,12 +147,6 @@ struct scenario_vehicle
 
 /* ---------- prototypes */
 
-/* NOTE: code_001a5e50 and code_001a6290 are file statics in January, but they
-are not reconstructed yet. They are declared here rather than defined so that
-code_001a8800 can call them: January passes their arguments on the stack, and a
-declared-but-undefined static would give MSVC a body to inspect and a register
-convention to invent. The relocation carries the name either way, which is what
-the comparator checks. */
 
 
 extern boolean debug_objects_vehicle_powered_mass_points;
@@ -417,9 +409,7 @@ boolean vehicle_stuck(
 	return stuck;
 }
 
-/* NOTE: the vehicle function enum is not recovered from January. These names
-describe what each case computes, read off the disassembly. They are descriptive,
-not authentic. */
+/* vehicle functions (named for what each computes) */
 
 enum
 {
@@ -2303,10 +2293,6 @@ static boolean vehicle_mass_points_fit(
 	return fit;
 }
 
-/* Full semantic reconstruction. January's vehicle_update is 2320 bytes; this
-body has the same padded size and 98 relocations. The remaining residual is
-instruction scheduling, branch layout, and relocation placement. Keep the
-file-static call topology intact while closing it. */
 
 boolean vehicle_update(
 	long vehicle_index)

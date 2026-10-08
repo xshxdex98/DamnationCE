@@ -25,6 +25,7 @@ GAME_ENGINE_KING.C
 #include "text/text_group.h"
 #include "text/unicode.h"
 #include "units/units.h"
+#include "game/game_engine.h"
 #ifdef HALO_64BIT
 #include "rasterizer/rasterizer_model_types.h"
 #endif
@@ -44,22 +45,6 @@ enum
 	HILL_SCORE_SOUND_INTERVAL = 5*TICKS_PER_SECOND,
 	HILL_30_SECOND_WARNING = 30*TICKS_PER_SECOND,
 	HILL_60_SECOND_WARNING = TICKS_PER_MINUTE,
-};
-
-enum
-{
-	_multiplayer_sound_60_seconds = 0x2,
-	_multiplayer_sound_30_seconds,
-	_multiplayer_sound_red_60_seconds,
-	_multiplayer_sound_red_30_seconds,
-	_multiplayer_sound_blue_60_seconds,
-	_multiplayer_sound_blue_30_seconds,
-	_multiplayer_sound_hill_move = 0x1E,
-	_multiplayer_sound_team_king = 0x20,
-	_multiplayer_sound_king = 0x24,
-	_multiplayer_sound_hill_contested = 0x27,
-	_multiplayer_sound_hill_controlled,
-	_multiplayer_sound_countdown_timer_end = 0x2A,
 };
 
 enum
@@ -84,7 +69,6 @@ typedef char verify_rasterizer_model_begin_parameters_size[
 	sizeof(struct rasterizer_model_begin_parameters) == 0xCC ? 1 : -1];
 #endif
 
-/* January scenario flag layout consumed by the King map scan. */
 typedef char verify_scenario_netgame_flag_size[
 	sizeof(struct scenario_netgame_flag) == 0x94 ? 1 : -1];
 typedef char verify_scenario_netgame_flags_offset[
@@ -107,13 +91,10 @@ static void king_calculate_hill_state(
 
 /* ---------- globals */
 
-/* Shared rasterizer defaults, named by the January image. */
 real_rgb_color global_default_animation_colors[4];
 real global_default_animation_values[4];
 
 static struct king_globals king_globals = { 0 };
-/* king_engine_num_hills: name from the 2003 PC demo PDB (file static short at king_globals+0x1AC),
- * corroborated by January: same .bss contribution offset, width and neighbours */
 static short king_engine_num_hills = 0;
 static short king_engine_hills[MAXIMUM_HILLS] = { 0 };
 
@@ -998,8 +979,8 @@ static void king_calculate_hill_state(
 static long find_next_hill(
 	long hill_id)
 {
-	/* port: with no other hill (a map with one), the same hill. January left
-	it unset, and king_engine_update could loop looking for a hill */
+	/* port: with no other hill (a map with one), the same hill. The original
+	left it unset, and king_engine_update could loop looking for a hill */
 	long next_hill_id = hill_id;
 	short start_index = random_range(0, king_engine_num_hills);
 	short i;
@@ -1012,8 +993,6 @@ static long find_next_hill(
 			return king_engine_hills[hill_index];
 	}
 
-	/* January and the later Xbox build both leave the no-candidate result
-	 * undefined. The caller expects maps to provide at least two hill ids. */
 	return next_hill_id;
 }
 

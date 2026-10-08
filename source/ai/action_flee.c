@@ -20,27 +20,11 @@ ACTION_FLEE.C
 #include "scenario/scenario.h"
 #include "scenario/scenario_definitions.h"
 #include "units/units.h"
-
-/* ---------- constants */
-
-enum
-{
-	_actor_panic_none = 0,
-	_actor_panic_friend_leader_type_killed = 8,
-	_actor_panic_grenade_attached_to_us = 9,
-	_actor_panic_delayed_projectile_attached_to_us = 10,
-	_actor_panic_melee_attached_to_us = 11,
-	_actor_panic_burning_to_death = 12,
-};
+#include "ai/actions.h"
+#include "ai/ai.h"
 
 enum
 {
-	_ai_information_flee = 4,
-};
-
-enum
-{
-	/* Later-build symbols authenticate these meanings; January uses this TU's 3/6/7 layout. */
 	_action_flee_primary_priority_facing = 3,
 	_action_flee_primary_priority_locked_facing = 6,
 	_action_flee_primary_priority_locked_aiming = 7,

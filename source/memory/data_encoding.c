@@ -63,9 +63,6 @@ boolean data_encode_memory(
 		memory_size = element_count<<3;
 		break;
 	default:
-		/* BUG (original): if system_exit returns, memory_size remains
-		 * uninitialized. All known callers use a valid element size.
-		 */
 		display_assert(NULL, "c:\\halo\\SOURCE\\memory\\data_encoding.c", 51, TRUE);
 		system_exit(-1);
 		break;
@@ -356,10 +353,6 @@ void *data_decode_memory(
 		memory_size = count<<3;
 		break;
 	default:
-		/* BUG (original): if system_exit returns, memory_size remains
-		 * uninitialized. A corrected build should assign memory_size = count
-		 * before leaving this case.
-		 */
 		display_assert(NULL, "c:\\halo\\SOURCE\\memory\\data_encoding.c", 265, TRUE);
 		system_exit(-1);
 		break;

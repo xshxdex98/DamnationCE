@@ -15,6 +15,16 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* effect vectors */
+enum
+{
+	_effect_vector_normal,
+	_effect_vector_incident,
+	_effect_vector_negative_incident,
+	_effect_vector_reflected,
+	_effect_vector_gravity
+};
+
 /* ---------- macros */
 
 /* ---------- structures */

@@ -93,13 +93,6 @@ adds to */
 
 enum
 {
-	_bitmap_type_2d = 0,
-	_bitmap_format_a8r8g8b8 = 11,
-	_bitmap_has_power_of_two_dimensions_bit = 0,
-};
-
-enum
-{
 	_event_handler_close_current_widget_bit = 0,
 	_event_handler_close_other_widget_bit,
 	_event_handler_close_all_widgets_bit,

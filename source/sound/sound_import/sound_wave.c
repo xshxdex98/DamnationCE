@@ -53,9 +53,6 @@ struct riff_format_chunk
 
 /* ---------- globals */
 
-/* Names and types of these eight file statics are attested by a later first-party build (the 2003 PC demo PDB's
-sound_wave.obj); January's own PDB has no static names. Their offsets and January's single 4-byte-aligned .data
-contribution agree with that build. */
 
 static byte_swap_code riff_container_chunk_bs_codes[6]=
 {

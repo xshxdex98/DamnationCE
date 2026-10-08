@@ -39,21 +39,7 @@ INTERFACE.C
 #include "text/draw_string.h"
 #include "units/unit_definitions.h"
 #include "units/units.h"
-
-/* ---------- constants */
-
-enum
-{
-	_shader_framebuffer_blend_function_alpha_blend = 0,
-	_shader_framebuffer_blend_function_multiply,
-	_shader_framebuffer_blend_function_double_multiply,
-	_shader_framebuffer_blend_function_add,
-	_shader_framebuffer_blend_function_subtract,
-	_shader_framebuffer_blend_function_component_min,
-	_shader_framebuffer_blend_function_component_max,
-	_shader_framebuffer_blend_function_alpha_multiply_add,
-	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS
-};
+#include "shaders/shader_definitions.h"
 
 enum
 {
@@ -748,8 +734,7 @@ static void render_debug_profile_stall_tick(
 	real_point3d point0;
 	real_point3d point1;
 
-	/* January's stall labels are preserved numerically: the original enum names
-	 * are not recoverable from the available profile producer or symbols. */
+	/* (the stalls have no names: they are shown by number) */
 	switch (stall_type)
 	{
 		case 1:
@@ -927,8 +912,6 @@ static void render_debug_profile(
 				real last_values[MAXIMUM_PROFILE_VALUES];
 				point2d current_screen_points[MAXIMUM_PROFILE_VALUES];
 				point2d last_screen_points[MAXIMUM_PROFILE_VALUES];
-				/* The /Od RTC descriptors attest both January locals. Their values
-				 * are retained and copied, although no later graph path reads them. */
 				real_point3d current_world_points[MAXIMUM_PROFILE_VALUES];
 				real_point3d last_world_points[MAXIMUM_PROFILE_VALUES];
 				boolean first_frame = TRUE;

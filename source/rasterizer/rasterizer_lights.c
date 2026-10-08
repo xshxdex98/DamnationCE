@@ -26,13 +26,7 @@ RASTERIZER_LIGHTS.C
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox.h"
 #include "main/main.h"
-
-/* ---------- constants */
-
-enum
-{
-	_rasterizer_target_render_primary = 0
-};
+#include "rasterizer/rasterizer.h"
 
 enum
 {
@@ -105,18 +99,6 @@ enum
 {
 	_lens_flare_sun_bit = 0,
 	NUMBER_OF_LENS_FLARE_DEFINITION_FLAGS
-};
-
-enum
-{
-	_periodic_function_one = 0,
-	_periodic_function_zero
-};
-
-enum
-{
-	RASTERIZER_STENCIL_MODE_NONE = 0,
-	RASTERIZER_STENCIL_MODE_REJECT = 2
 };
 
 /* ---------- macros */

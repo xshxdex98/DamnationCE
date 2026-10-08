@@ -51,9 +51,6 @@ struct aiff_common_chunk
 
 /* ---------- globals */
 
-/* Names and types of these six file statics are attested by a later first-party build (the 2003 PC demo PDB's
-sound_aiff.obj); January's own PDB has no static names. Their offsets and January's single 4-byte-aligned .data
-contribution agree with that build. */
 
 static byte_swap_code aiff_container_chunk_bs_codes[6] =
 {

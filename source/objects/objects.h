@@ -24,12 +24,12 @@ enum
 	OBJECT_ITERATOR_SIGNATURE = 0x86868686,
 	MAXIMUM_CLUSTERS_PER_OBJECT = 32,
 	/* the native builds' larger object pool (halo_port_capacity.h). The
-	garbage limits keep January's proportions: 5/10/20 % of the pool (the pool
-	only allocates at its end, so these are also the bytes one tick may
-	allocate before a compaction), 2.5/5/10 % of the object headers, and
-	75/50/30 active garbage objects per 16 players in the game
-	(objects.c: active_garbage_limit), so campaign and games of up to 16
-	players keep the Xbox's */
+		garbage limits keep the Xbox's proportions: 5/10/20 % of the pool (the
+		pool only allocates at its end, so these are also the bytes one tick may
+		allocate before a compaction), 2.5/5/10 % of the object headers, and
+		75/50/30 active garbage objects per 16 players in the game
+		(objects.c: active_garbage_limit), so campaign and games of up to 16
+		players keep the Xbox's */
 	OBJECT_MEMORY_POOL_SIZE = HALO_PORT_OBJECT_MEMORY_POOL_SIZE,
 	GARBAGE_LIMIT_FREE_MEMORY_CRITICAL = HALO_PORT_OBJECT_MEMORY_POOL_SIZE/20,
 	GARBAGE_LIMIT_FREE_MEMORY_TRIGGER = HALO_PORT_OBJECT_MEMORY_POOL_SIZE/10,
@@ -196,10 +196,8 @@ enum
 #define object_get(index)			((struct object_datum*)object_get_and_verify_type(index, _object_mask_all))
 #define object_try_and_get(index)	((struct object_datum*)object_try_and_get_and_verify_type(index, _object_mask_all))
 
-/* the inline assertions below report January's __FILE__ for this header, and January spelled it
-   two ways: its string census has "..\objects\objects.h" defined by action_vehicle (and
-   referenced by render_objects) and "c:\halo\source\objects\objects.h" defined by
-   object_lights; a unit that needs the absolute spelling defines OBJECTS_H_FILE first */
+/* the file name the inline assertions below report (a file may define
+   OBJECTS_H_FILE first) */
 #ifndef OBJECTS_H_FILE
 #define OBJECTS_H_FILE "..\\objects\\objects.h"
 #endif

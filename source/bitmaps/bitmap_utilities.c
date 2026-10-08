@@ -12,53 +12,11 @@ BITMAP_UTILITIES.C
 #include "bitmaps/s3tc/s3tc.h"
 #include "cseries/errors.h"
 
-/* ---------- constants */
-
 enum
 {
-	_bitmap_type_2d,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-	NUMBER_OF_BITMAP_TYPES,
-};
-
-enum
-{
-	_bitmap_format_a8,
-	_bitmap_format_y8,
-	_bitmap_format_ay8,
-	_bitmap_format_a8y8,
-	_bitmap_format_unused1,
-	_bitmap_format_unused2,
-	_bitmap_format_r5g6b5,
-	_bitmap_format_unused3,
-	_bitmap_format_a1r5g5b5,
-	_bitmap_format_a4r4g4b4,
-	_bitmap_format_x8r8g8b8,
-	_bitmap_format_a8r8g8b8,
-	_bitmap_format_unused4,
-	_bitmap_format_unused5,
-	_bitmap_format_dxt1,
-	_bitmap_format_dxt3,
-	_bitmap_format_dxt5,
-	_bitmap_format_p8_bump,
-	NUMBER_OF_BITMAP_FORMATS,
 
 	FIRST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt1,
 	LAST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt5,
-};
-
-enum
-{
-	_bitmap_has_power_of_two_dimensions_bit,
-	_bitmap_compressed_bit,
-	_bitmap_palettized_bit,
-	_bitmap_swizzled_bit,
-	_bitmap_linear_bit,
-	_bitmap_v16u16_bit,
-	_bitmap_allocated_bit,
-	_bitmap_cached_bit,
-	NUMBER_OF_BITMAP_FLAGS,
 };
 
 enum
@@ -774,11 +732,9 @@ static void bitmap_2d_smooth(
 	}
 	else
 	{
-		/* BUG (preserved): January supplies an unused newline vararg. */
 		fprintf(
 			stdout,
-			"### WARNING tried to smooth a bitmap with a filter which is too large",
-			"\r\n");
+			"### WARNING tried to smooth a bitmap with a filter which is too large\r\n");
 		fflush(stdout);
 	}
 
@@ -936,11 +892,9 @@ static void bitmap_3d_smooth(
 	}
 	else
 	{
-		/* BUG (preserved): January supplies an unused newline vararg. */
 		fprintf(
 			stdout,
-			"### WARNING tried to smooth a bitmap with a filter which is too large",
-			"\r\n");
+			"### WARNING tried to smooth a bitmap with a filter which is too large\r\n");
 		fflush(stdout);
 	}
 

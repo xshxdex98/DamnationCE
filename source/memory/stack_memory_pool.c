@@ -167,7 +167,7 @@ void stack_memory_pool_reset(
 	pool->base_address = saved_base_address;
 	pool->maximum_block_count = saved_maximum_block_count;
 	pool->size = saved_size;
-	/* as January does: the first slot holds the slot array's own address */
+	/* (the first slot holds the slot array's own address) */
 	pool->blocks[0] = (struct stack_memory_pool_block *)pool->blocks;
 #else
 	pool_data[0] = saved_name;
@@ -281,7 +281,6 @@ void dispose_pointer(
 
 	match_assert("c:\\halo\\SOURCE\\memory\\stack_memory_pool.c", 0x197, p);
 #ifdef HALO_64BIT
-	/* January spelled the header size 0x1C (32-bit pointers) */
 	block = (struct stack_memory_pool_block *)((byte *)p-offsetof(struct stack_memory_pool_block, data));
 #else
 	block = (struct stack_memory_pool_block *)((byte *)p-0x1C);
@@ -303,7 +302,6 @@ void dispose_pointer(
 	return;
 }
 
-/* Exact January reconstruction: 0x70 padded bytes and one relocation. */
 struct stack_memory_pool_block *pool_new_handle(
 	struct stack_memory_pool *pool,
 	long allocation_size,
@@ -329,7 +327,6 @@ struct stack_memory_pool_block *pool_new_handle(
 	return NULL;
 }
 
-/* Exact January reconstruction: 0xB0 padded bytes and seven relocations. */
 struct stack_memory_pool_block *pool_new_handle_clear(
 	struct stack_memory_pool *pool,
 	long allocation_size,
@@ -478,8 +475,7 @@ void *pool_resize_pointer(
 
 	if (pointer)
 #ifdef HALO_64BIT
-		/* January spelled this 0x18, and steps back sizeof(unsigned int)
-		more below: the header size, 0x1C with 32-bit pointers */
+		/* (steps back sizeof(unsigned int) more below: the header) */
 		block = (struct stack_memory_pool_block *)((byte *)pointer-
 			(offsetof(struct stack_memory_pool_block, data) - sizeof(unsigned int)));
 #else

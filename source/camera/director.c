@@ -393,9 +393,7 @@ static void director_process_variables(
 			&variables[variable_index];
 		struct director_variable_instance *instance =
 			&director->debug_variables[variable_index];
-		/* BUG (original): January tests the height definition for every
-		 * variable. A corrected build should test definition->has_hyper_scale.
-		 */
+		/* (as the original: the height variable's flag is tested for every variable) */
 		real hyper_scale = variables[_variable_height].has_hyper_scale
 			? director->debug_input_scale
 			: 1.f;

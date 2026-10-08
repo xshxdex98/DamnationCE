@@ -12,34 +12,11 @@ BITMAP_GROUP.C
 #include "cseries/errors.h"
 #include "tag_files/tag_files.h"
 
-/* ---------- constants */
-
-enum
-{
-	_bitmap_group_type_cube_maps = 2,
-	_bitmap_group_type_sprites = 3,
-	_bitmap_group_type_interface_bitmaps = 4,
-	_bitmap_format_a8y8 = 3,
-	_bitmap_format_dxt1 = 14,
-	_bitmap_format_dxt5 = 16,
-	_bitmap_format_p8_bump = 17,
-	_bitmap_has_power_of_two_dimensions_bit = 0,
-	_bitmap_compressed_bit = 1,
-	_bitmap_palettized_bit = 2,
-	_bitmap_linear_bit = 4,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */
 
-/* ---------- declarations that belong in tag_files/tag_groups.h
-   These are shared tag-system types, not bitmap_group's own: seven
-   tag_field_type constants January's bitmap_fields uses, and struct
-   tag_flags_definition and struct tag_group (member lists attested by
-   HCEX.pdb).  They are held here because this lane may not commit shared
-   cross-lane headers; moving them to tag_groups.h is an owner action and is
-   data-inert (VC7 lays .data out by declaration order, not name count).
+/* ---------- tag system declarations (they belong in tag_files/tag_groups.h)
    ---------- */
 
 enum
@@ -597,7 +574,7 @@ short bitmap_group_add_bitmap(
 		SET_FLAG(fake_bitmap.flags, _bitmap_palettized_bit, TRUE);
 	}
 
-	/* January repeats these validation guards after assigning format flags. */
+	/* (the validation is repeated after the format flags are set) */
 	if (group->type == _bitmap_group_type_cube_maps && width != height)
 	{
 		fprintf(

@@ -169,15 +169,12 @@ static void _data_packet_verify(
 	struct data_packet_field *fields,
 	short *field_count)
 {
-	short field_size;
+	short field_size = 0;
 	short total_size;
 	struct data_packet_field *field;
 
 	field = fields;
 	total_size = 0;
-	/* BUG (original): a first version-ineligible field reads an indeterminate
-	 * field_size; later ineligible fields reuse the preceding size. A corrected
-	 * build should initialize field_size to zero before the loop. */
 	while (field->type != _data_packet_field_end)
 	{
 		if (field->type < 0 || field->type >= _data_packet_field_type_count)

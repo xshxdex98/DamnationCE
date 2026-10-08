@@ -21,14 +21,6 @@ enum
 	MAXIMUM_BSP3D_DEPTH = 128,
 };
 
-enum collision_surface_flags
-{
-	_collision_surface_two_sided_bit,
-	_collision_surface_invisible_bit,
-	_collision_surface_climbable_bit,
-	_collision_surface_breakable_bit,
-};
-
 enum collision_leaf_flags
 {
 	_collision_leaf_contains_two_sided_bit,

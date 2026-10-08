@@ -109,28 +109,11 @@ enum
 
 enum
 {
-	_unit_melee_attack_none = 0,
-	_unit_melee_attack_starting,
-	_unit_melee_attack_dangerous,
-	_unit_melee_attack_impact,
-	_unit_melee_attack_continuous,
-};
-
-enum
-{
 	_animation_frame_info_none = 0,
 	_animation_frame_info_xy_translation,
 	_animation_frame_info_xy_translation_yaw_rotation,
 	_animation_frame_info_xyz_translation_yaw_rotation,
 	NUMBER_OF_ANIMATION_FRAME_INFO_TYPES,
-};
-
-enum
-{
-	_collision_surface_two_sided_bit = 0,
-	_collision_surface_invisible_bit,
-	_collision_surface_climbable_bit,
-	_collision_surface_breakable_bit,
 };
 
 /* ---------- macros */
@@ -1243,7 +1226,6 @@ static long biped_find_ground_surface(
 	global_current_collision_users[global_current_collision_user_depth++] = _collision_user_bipeds;
 
 	object_get_origin(object_index, &origin);
-	/* Preserve January's inline schedule without owning point_from_line3d here. */
 	origin.x = global_up3d->i*0.4f + origin.x;
 	origin.y = global_up3d->j*0.4f + origin.y;
 	origin.z = global_up3d->k*0.4f + origin.z;

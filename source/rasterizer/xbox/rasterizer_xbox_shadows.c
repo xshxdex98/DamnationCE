@@ -16,9 +16,6 @@ RASTERIZER_XBOX_SHADOWS.C
 #include "shaders/shader_definitions.h"
 #include "shaders/shaders.h"
 
-/* January retains the stock XDK D3DINLINE out-of-line wrappers emitted by
- * the real device calls below. Keep the stock inline definitions and do not
- * replace these wrappers with handwritten bodies. */
 #include "rasterizer/rasterizer.h"
 #include "rasterizer/rasterizer_console_vars.h"
 #include "rasterizer/rasterizer_model_types.h"
@@ -30,13 +27,6 @@ RASTERIZER_XBOX_SHADOWS.C
 #include "rasterizer/rasterizer_model_types.h"
 #endif
 
-/* ---------- constants */
-
-enum
-{
-	_rasterizer_target_render_primary = 0,
-};
-
 enum
 {
 	_rasterizer_statistics_mode_enabled = 2,
@@ -45,22 +35,6 @@ enum
 enum
 {
 	_shader_type_model = 4,
-};
-
-enum
-{
-	_shader_model_detail_after_reflection_bit = 0,
-	_shader_model_two_sided_bit,
-	_shader_model_not_alpha_tested_bit,
-	_shader_model_alpha_blended_decal_bit,
-	_shader_model_true_atmospheric_fog_bit,
-	_shader_model_nocull_two_sided_bit,
-};
-
-enum
-{
-	RASTERIZER_STENCIL_MODE_NONE = 0,
-	RASTERIZER_STENCIL_MODE_REJECT = 2,
 };
 
 enum

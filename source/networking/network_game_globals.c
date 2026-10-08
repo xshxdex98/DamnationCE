@@ -21,18 +21,6 @@ NETWORK_GAME_GLOBALS.C
 #include "cseries/cseries_windows.h"
 #endif
 
-/* ---------- constants */
-
-enum network_game_client_state
-{
-	_network_game_client_state_searching,
-	_network_game_client_state_joining,
-	_network_game_client_state_pregame,
-	_network_game_client_state_ingame,
-	_network_game_client_state_postgame,
-	NUMBER_OF_NETWORK_GAME_CLIENT_STATES,
-};
-
 /* ---------- macros */
 
 #define global_network_game_client bss_004566dc.client
@@ -52,7 +40,6 @@ typedef char network_player_action_collection_size_assert[
 	sizeof(struct player_action_collection) == 0x80 ? 1 : -1];
 
 #ifdef HALO_64BIT
-/* the Xbox packing only matched January's .data layout; native here */
 #else
 #pragma pack(push, 2)
 #endif
@@ -128,8 +115,6 @@ typedef char network_game_globals_size_assert[
 /* ---------- globals */
 
 static struct network_game_globals bss_004566dc = { 0 };
-/* name from the 2003 PC demo PDB and the HCEX PDB (file static struct data_packet_field[4]); January's
- * 40 bytes are identical to the demo's and it has no public for it (static) */
 static struct data_packet_field player_action_packet_definition_fields[4] =
 {
 	{ _data_packet_field_longs, 6, 0, 0, 0 },

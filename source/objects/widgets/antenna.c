@@ -320,9 +320,7 @@ static void antenna_update_attachment(
 	delta.j = attachment_point->y - antenna->last_attachment_location.y;
 	delta.k = attachment_point->z - antenna->last_attachment_location.z;
 	/*
-	 * BUG (original): integer truncation makes this an effective two-unit
-	 * threshold. A non-matching correctness fix would compare fabs(delta.i),
-	 * fabs(delta.j), and fabs(delta.k) directly against 1.0f.
+	 * (as the original: the integer truncation makes this a two-unit threshold)
 	 */
 	if ((real)abs((long)delta.i) > 1.0f ||
 		(real)abs((long)delta.j) > 1.0f ||

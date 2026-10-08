@@ -10,6 +10,37 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* ai_information_data selector */
+enum
+{
+	_ai_information_none,
+	_ai_information_allegiance,
+	_ai_information_look_unit = 1,
+	_ai_information_combat_stimulus,
+	_ai_information_look_object = 2,
+	_ai_information_target_knowledge,
+	_ai_information_flee
+};
+
+/* ai reference types (an ai reference's top two bits) */
+enum
+{
+	_ai_reference_type_encounter,
+	_ai_reference_type_platoon,
+	_ai_reference_type_squad,
+	NUMBER_OF_AI_REFERENCE_TYPES
+};
+
+/* AI unit effects */
+enum
+{
+	_ai_unit_effect_bump,
+	_ai_unit_effect_shooting,
+	_ai_unit_effect_death_scream,
+	_ai_unit_effect_magic_sight,
+	NUMBER_OF_AI_UNIT_EFFECTS
+};
+
 enum
 {
 	_ai_line_of_sight_clear = 0,
@@ -77,7 +108,6 @@ struct ai_information_data
 		struct ai_target_knowledge_information_data target_knowledge;
 	};
 };
-
 
 struct ai_information_packet
 {

@@ -37,6 +37,7 @@ ENCOUNTERS.C
 #include "structures/structure_bsp_definitions.h"
 #include "units/units.h"
 #include "coop_enemies.h" /* port: port/linux/game/coop_enemies.c */
+#include "ai/actors.h"
 
 #include <stddef.h>
 
@@ -99,21 +100,7 @@ enum group_pursuit_restriction
 	NUMBER_OF_GROUP_PURSUIT_RESTRICTIONS,
 };
 
-// actor_state_data.mode/combat_status (TU-local until actors.h names them)
-enum
-{
-	_actor_mode_alert = 2,
-	_actor_mode_combat = 3,
-};
-
-enum
-{
-	_actor_combat_status_investigate = 2,
-	_actor_combat_status_definite = 3,
-	_actor_combat_status_visible = 7,
-};
-
-// encounter_definition.flags (TU-local until ai_scenario_definitions.h names them)
+// encounter_definition.flags (no header declares them yet)
 enum
 {
 	_encounter_not_initially_created_bit = 0,
@@ -122,7 +109,7 @@ enum
 	_encounter_deaf_bit,
 };
 
-// squad_definition.unique_leader_type (TU-local until ai_scenario_definitions.h names them)
+// squad_definition.unique_leader_type (no header declares them yet)
 enum
 {
 	_unique_leader_type_normal = 0,
@@ -142,7 +129,7 @@ enum
 	_ai_reference_squad_bit = 15,
 };
 
-// actor_definition.flags2 (TU-local until actor_definitions.h names it)
+// actor_definition.flags2 (no header declares it yet)
 enum
 {
 	_actor_definition_no_corpse_shooting_bit = 6,
@@ -1112,7 +1099,7 @@ void encounter_determine_pursuit_availability(
 		actor->external_orders.pursuit_is_coordinator = FALSE;
 	}
 
-	/* January and HCEA both test the two out-pointers, not their values. */
+	/* (the out-pointers are tested, not their values) */
 	*wait_after_pursuit = controlling_group_pursuit || controlled_by_group_pursuit;
 	*allow_indefinite_target_uncover = searching_count < MAXIMUM_SEARCHING_ACTORS;
 	*allow_target_search = fleeing_count < MAXIMUM_FLEEING_ACTORS;
@@ -1597,8 +1584,7 @@ boolean encounter_spawn_actor(
 		}
 	}
 
-	/* Original January and HCEA behavior: the successful placement is not reported to the caller;
-	 * this routine returns FALSE on every path. */
+	/* (a successful placement isn't reported: this always returns FALSE) */
 	return FALSE;
 }
 
@@ -1803,7 +1789,6 @@ void encounter_attach_actor(
 	if (ai_globals->ai_initialized_for_map)
 	{
 		struct actor_datum *actor = actor_get(actor_index);
-		struct actor_definition *actor_definition = actor_definition_get(actor->meta.definition_index); // January fetches the definition but never reads it
 		struct encounter_datum *encounter = encounter_get(encounter_index);
 		struct encounter_definition *encounter_definition = TAG_BLOCK_GET_ELEMENT(
 			&global_scenario_get()->ai_encounters, DATUM_INDEX_TO_ABSOLUTE_INDEX(encounter_index), struct encounter_definition);
@@ -2486,9 +2471,8 @@ static boolean encounter_post_combat_add_possibility(
 	boolean added = FALSE;
 	short i, j;
 
-	/* BUG (original): January and HCEA continue after inserting in slot zero,
-	 * so one candidate can fill both slots. A corrected build should break
-	 * after setting added below. */
+	/* (as the original: the loop goes on after filling slot zero, so one
+	 * candidate can fill both slots) */
 	for (i = 0; i < NUMBER_OF_POST_COMBAT_POSSIBILITIES; ++i)
 	{
 		if (weight > possibility_array[i].weight)
@@ -3309,16 +3293,6 @@ static void encounter_update_platoons(
 
 	return;
 }
-
-// encounter_datum.follow_target_type (TU-local until encounters.h names them)
-enum
-{
-	_follow_target_none = 0,
-	_follow_target_players,
-	_follow_target_unit,
-	_follow_target_ai,
-	NUMBER_OF_FOLLOW_TARGET_TYPES,
-};
 
 static void encounter_update_follow(
 	long encounter_index)

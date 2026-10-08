@@ -22,6 +22,7 @@ ITEMS.C
 #include "scenario/scenario.h"
 #include "sound/game_sound.h"
 #include "units/units.h"
+#include "physics/collision_bsp.h"
 
 /* ---------- constants */
 
@@ -30,11 +31,6 @@ enum
 	_item_definition_always_maintains_z_up_bit = 0,
 	_item_definition_destroyed_by_explosions_bit,
 	_item_definition_antigravity_bit,
-};
-
-enum
-{
-	_collision_surface_breakable_bit = 3,
 };
 
 enum

@@ -51,7 +51,6 @@ struct rasterizer_debug_primitive
 };
 
 #ifdef HALO_64BIT
-/* the Xbox packing only matched January's .data layout; native here */
 #else
 #pragma pack(push, 1)
 #endif

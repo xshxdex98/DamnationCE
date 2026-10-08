@@ -21,11 +21,7 @@ enum
 
 /* ---------- macros */
 
-/*
- * The legacy accessor predates const-correct callers. It only validates and
- * returns the reference storage; keep its required conversion at this one
- * boundary and expose only a read-only view to this translation unit.
- */
+/* (the accessor isn't const-correct; this file reads through a const view) */
 #define file_reference_get_const_info(reference) \
 	((struct file_reference_info const *) \
 		file_reference_get_info((struct file_reference *)(reference)))

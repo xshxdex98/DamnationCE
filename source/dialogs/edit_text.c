@@ -41,7 +41,7 @@ void edit_text_handle_key(
 
 	match_assert("c:\\halo\\SOURCE\\dialogs\\edit_text.c", 35, valid_edit_text(edit));
 	edit_text_fix_selection(edit);
-	
+
 	if (key->key_code==_key_backspace)
 	{
 		backspace = TRUE;
@@ -178,7 +178,7 @@ void edit_text_handle_key(
 	align_to_character(
 		(unsigned char *)edit->buffer,
 		&edit->insertion_point_index);
-	
+
 	return;
 }
 

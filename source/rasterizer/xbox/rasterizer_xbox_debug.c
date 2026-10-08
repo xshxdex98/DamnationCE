@@ -9,16 +9,6 @@ RASTERIZER_XBOX_DEBUG.C
 #include "bitmaps/bitmap_color_conversion.h"
 #include "interface/hud_draw.h"
 #include "real_math.h"
-/* The January object retains out-of-line copies of the D3D inline wrappers.
- * The stock XDK definition of D3DINLINE (static __forceinline) reproduces all
- * eight wrappers, including IDirect3DDevice8_SetRenderState's 0x220-byte body.
- * Do not replace them with handwritten Microsoft dispatchers or override the
- * XDK's inline policy: taking an address or weakening __forceinline changes
- * their emitted ABI and code shape.
- *
- * The emitted owners are D3DDevice_SetRenderState and the corresponding
- * IDirect3DDevice8 render-state, vertex-data, begin, and end wrappers.
- */
 #include "rasterizer/rasterizer.h"
 #include "rasterizer/rasterizer_console_vars.h"
 #include <xtl.h>

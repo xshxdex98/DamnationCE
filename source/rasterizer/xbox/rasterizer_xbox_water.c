@@ -18,14 +18,12 @@ RASTERIZER_XBOX_WATER.C
 #include "tag_files/tag_groups.h"
 
 #include <math.h>
-/* The January object retains out-of-line copies of the D3D inline wrappers.
- * The stock XDK definition of D3DINLINE (static __forceinline) reproduces all
- * nine of them; the real calls below are what instantiates them. */
 #include <xtl.h>
 #include "rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "rasterizer/rasterizer_transparent_geometry.h"
 #include "rasterizer_xbox_water.h"
+#include "rasterizer/rasterizer_geometry.h"
 
 /* ---------- constants */
 
@@ -33,7 +31,6 @@ enum
 {
 	NUMBER_OF_WATER_RIPPLES = 4,
 	WATER_BUMPMAP_RESOLUTION = 128,
-	_rasterizer_target_water_bumpmap = 6
 };
 
 enum
@@ -54,12 +51,6 @@ enum
 	_shader_transparent_water_base_map_color_modulates_background_bit,
 	_shader_transparent_water_atmospheric_fog_bit,
 	_shader_transparent_water_draw_before_fog_bit
-};
-
-enum
-{
-	_rasterizer_geometry_no_queue_bit = 1,
-	_rasterizer_geometry_sky_bit = 4
 };
 
 /* ---------- macros */

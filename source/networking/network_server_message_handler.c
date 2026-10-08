@@ -105,14 +105,6 @@ enum network_game_server_rejection_reason
 	_network_game_server_rejection_reason_game_not_open = 5,
 };
 
-enum network_game_server_countdown_event
-{
-	_network_game_server_countdown_event_player_left = 0,
-	_network_game_server_countdown_event_player_joined,
-	_network_game_server_countdown_event_stop,
-	_network_game_server_countdown_event_start_immediately,
-};
-
 /* ---------- macros */
 
 #define network_machine_is_valid(machine) \

@@ -25,6 +25,7 @@ of its group: each shader group's check makes the type its group's.
 #include "objects/objects.h"
 #include "scenario/wind_definitions.h"
 #include "shaders/shader_definitions.h"
+#include "effects/decals.h"
 
 /* ---------- constants */
 
@@ -32,32 +33,11 @@ of its group: each shader group's check makes the type its group's.
 enum
 {
 	/* periodic_functions.c */
-	NUMBER_OF_PERIODIC_FUNCTIONS = 12,
 
 	/* xbox_texture_cache.c, bitmap_group.c */
-	_bitmap_type_2d = 0,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-	NUMBER_OF_BITMAP_TYPES,
 
-	_bitmap_format_a8 = 0,
-	_bitmap_format_dxt1 = 14,
-	_bitmap_format_dxt3,
-	_bitmap_format_dxt5,
-	_bitmap_format_p8_bump,
-	NUMBER_OF_BITMAP_FORMATS,
 
-	_bitmap_has_power_of_two_dimensions_bit = 0,
-	_bitmap_compressed_bit,
-	_bitmap_palettized_bit,
-	_bitmap_swizzled_bit,
-	_bitmap_linear_bit,
-	_bitmap_v16u16_bit,
-	_bitmap_allocated_bit,
-	_bitmap_cached_bit,
 
-	_bitmap_group_type_sprites = 3,
-	NUMBER_OF_BITMAP_GROUP_TYPES = 5,
 
 	/* the device's (d3d8_gl.c, D3DDevice_GetDeviceCaps; xbox_textures.c
 	uploads nothing larger) */
@@ -137,7 +117,6 @@ enum
 	which render_contrails draws all but ground */
 	NUMBER_OF_CONTRAIL_RENDER_TYPES = 5,
 	/* decals.c */
-	NUMBER_OF_DECAL_LAYERS = 5,
 	/* rasterizer_xbox_detail_objects.c: a constant for each type on the
 	stack (type_data; its sprites' it caps itself); two collection types
 	(vertex shader permutations), or none */

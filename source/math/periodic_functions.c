@@ -10,25 +10,6 @@ PERIODIC_FUNCTIONS.C
 #include "tag_files/tag_groups.h"
 #include "cseries/errors.h" /* port: unknown function types, logged */
 
-/* ---------- constants */
-
-enum
-{
-	_periodic_function_one = 0,
-	_periodic_function_zero,
-	_periodic_function_cosine,
-	_periodic_function_cosine_variable_period,
-	_periodic_function_diagonal_wave,
-	_periodic_function_diagonal_wave_variable_period,
-	_periodic_function_slide,
-	_periodic_function_slide_variable_period,
-	_periodic_function_noise,
-	_periodic_function_jitter,
-	_periodic_function_wander,
-	_periodic_function_spark,
-	NUMBER_OF_PERIODIC_FUNCTIONS,
-};
-
 enum
 {
 	PERIODIC_FUNCTION_TABLE_SIZE = 1024,

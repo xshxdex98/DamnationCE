@@ -20,10 +20,8 @@ struct bitmap_data;
 struct render_lighting;
 struct render_animation;
 
-/* One definition for every unit. The decompiled units each described the
-parts they use, padding the rest to January's 32-bit layout; with 64-bit
-pointers those copies disagree. Fields that units named or typed
-differently share a union. */
+/* one definition for every file: those that named or typed a field
+differently share a union */
 struct transparent_geometry_group
 {
 	unsigned int geometry_flags;

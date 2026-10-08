@@ -23,7 +23,6 @@ PATH.C
 
 enum
 {
-	_collision_surface_breakable_bit = 3,
 	_pathfinding_surface_walkable_bit = 6,
 	_pathfinding_surface_breakable_bit = 7,
 };
@@ -239,10 +238,8 @@ static void path_state_reset(
 	return;
 }
 
-/* January retains this private heap check with a body that reduces to TRUE
- * (name from the 2001-09-25 Xbox linker map, same link slot).  Callers check
- * the heap on entry and exit, as path_obstacle_avoidance.c's heap_verify does.
- */
+/* the path heap's check, which finds nothing to check; callers check
+ * on entry and exit, as path_obstacle_avoidance.c's heap_verify does */
 static boolean path_heap_verify(
 	struct path_state *state)
 {

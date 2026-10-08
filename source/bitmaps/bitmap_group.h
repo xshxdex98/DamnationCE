@@ -15,6 +15,64 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* bitmap group types */
+enum
+{
+	_bitmap_group_type_2d_textures,
+	_bitmap_group_type_3d_textures,
+	_bitmap_group_type_cube_maps,
+	_bitmap_group_type_sprites,
+	_bitmap_group_type_interface_bitmaps,
+	NUMBER_OF_BITMAP_GROUP_TYPES
+};
+
+/* bitmap flags (bitmap_data.flags) */
+enum
+{
+	_bitmap_has_power_of_two_dimensions_bit,
+	_bitmap_compressed_bit,
+	_bitmap_palettized_bit,
+	_bitmap_swizzled_bit,
+	_bitmap_linear_bit,
+	_bitmap_v16u16_bit,
+	_bitmap_allocated_bit,
+	_bitmap_cached_bit,
+	NUMBER_OF_BITMAP_FLAGS
+};
+
+/* bitmap types (bitmap_data.type) */
+enum
+{
+	_bitmap_type_2d,
+	_bitmap_type_3d,
+	_bitmap_type_cube_map,
+	NUMBER_OF_BITMAP_TYPES
+};
+
+/* bitmap formats (bitmap_data.format) */
+enum
+{
+	_bitmap_format_a8,
+	_bitmap_format_y8,
+	_bitmap_format_ay8,
+	_bitmap_format_a8y8,
+	_bitmap_format_unused1,
+	_bitmap_format_unused2,
+	_bitmap_format_r5g6b5,
+	_bitmap_format_unused3,
+	_bitmap_format_a1r5g5b5,
+	_bitmap_format_a4r4g4b4,
+	_bitmap_format_x8r8g8b8,
+	_bitmap_format_a8r8g8b8,
+	_bitmap_format_unused4,
+	_bitmap_format_unused5,
+	_bitmap_format_dxt1,
+	_bitmap_format_dxt3,
+	_bitmap_format_dxt5,
+	_bitmap_format_p8_bump,
+	NUMBER_OF_BITMAP_FORMATS
+};
+
 enum
 {
 	BITMAP_GROUP_TAG = 'bitm',

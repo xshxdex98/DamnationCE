@@ -109,7 +109,7 @@ long cluster_index_from_point(
 {
 	long test_result = bsp3d_test_point(&TAG_BLOCK_GET_ELEMENT(&structure_bsp->collision_bsp, 0, struct collision_bsp)->bsp3d, 0, point);
 	long result = NONE;
-	
+
 	if (test_result != NONE)
 	{
 		result = TAG_BLOCK_GET_ELEMENT(&structure_bsp->leaves, test_result & LONG_MAX, struct structure_leaf)->cluster_index;
@@ -139,8 +139,6 @@ boolean build_structure_lens_flares(
 		!tag_block_resize(&structure_bsp->lens_flare_markers, 0))
 	{
 		error(_error_silent, "### ERROR failed to clear lens flares and/or markers from structure_bsp");
-		/* January has a distinct cold failure epilogue here. Keep this early
-		 * return instead of folding it into the ordinary cleanup return. */
 		return FALSE;
 	}
 
@@ -557,8 +555,6 @@ boolean build_structure_lens_flares(
 			do
 			{
 				temp_markers[marker_index].cluster_index = cluster_index_from_point(structure_bsp, &test_point);
-				/* Preserve the January inline schedule without emitting a
-				 * point_from_line3d COMDAT. */
 				test_point.x = direction.i * offset + test_point.x;
 				test_point.y = direction.j * offset + test_point.y;
 				test_point.z = direction.k * offset + test_point.z;

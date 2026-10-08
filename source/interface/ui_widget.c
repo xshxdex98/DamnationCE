@@ -85,6 +85,7 @@ boolean ui_widget_online_games_list(struct widget_instance *widget);
 /* port/linux/game/menu_tags.c: the PC menus' screen standing for an Xbox one, by name */
 char const *pc_menus_screen(char const *name);
 #include "custom_edition_maps.h"
+#include "interface/hud_messaging.h"
 
 /* (port/linux/game/menu_tags.c: a menus theme chosen, put on at the start of
 a frame) */
@@ -119,57 +120,7 @@ enum
 
 enum
 {
-	_ui_audio_feedback_none,
-	_ui_audio_feedback_cursor,
-	_ui_audio_feedback_forward,
-	_ui_audio_feedback_back,
-	_ui_audio_feedback_flag_failure,
 	NUMBER_OF_UI_AUDIO_FEEDBACK_SOUNDS
-};
-
-enum
-{
-	_icon_a_button,
-	_icon_b_button,
-	_icon_x_button,
-	_icon_y_button,
-	_icon_black_button,
-	_icon_white_button,
-	_icon_left_trigger,
-	_icon_right_trigger,
-	_icon_dpad_up,
-	_icon_dpad_down,
-	_icon_dpad_left,
-	_icon_dpad_right,
-	_icon_start_button,
-	_icon_back_button,
-	_icon_left_thumb,
-	_icon_right_thumb,
-	_icon_left_stick,
-	_icon_right_stick,
-	_icon_action,
-	_icon_throw_grenade,
-	_icon_primary_trigger,
-	_icon_integrated_light,
-	_icon_jump,
-	_icon_use_equipment,
-	_icon_rotate_weapons,
-	_icon_rotate_grenades,
-	_icon_crouch,
-	_icon_zoom,
-	_icon_accept,
-	_icon_back,
-	_icon_move,
-	_icon_look,
-	_icon_custom_1,
-	_icon_custom_2,
-	_icon_custom_3,
-	_icon_custom_4,
-	_icon_custom_5,
-	_icon_custom_6,
-	_icon_custom_7,
-	_icon_custom_8,
-	NUMBER_OF_ICON_TYPES
 };
 
 enum
@@ -177,14 +128,6 @@ enum
 	/* only the icon types below _icon_action name a button bitmap of their own;
 	the rest are resolved through the local player's control preferences */
 	NUM_ICONS = _icon_action
-};
-
-enum
-{
-	_hud_icon_use_text_bit,
-	_hud_icon_use_color_bit,
-	_hud_icon_absolute_width_bit,
-	NUMBER_OF_HUD_ICON_FLAGS
 };
 
 enum
@@ -272,19 +215,7 @@ enum
 
 enum
 {
-	_text_justification_left,
-	_text_justification_right,
-	_text_justification_center,
-	NUMBER_OF_TEXT_JUSTIFICATIONS
-};
-
-enum
-{
 	/* EVENT_MANAGER.C owns this enumeration and publishes none of it */
-	_event_type_null,
-	_event_type_left_stick,
-	_event_type_right_stick,
-	_event_type_button,
 	NUMBER_OF_EVENT_TYPES
 };
 
@@ -343,8 +274,8 @@ enum
 
 #define SIGN(n) ((n) >= 0 ? 1 : -1)
 
-/* The public definition header intentionally exposes only the shared prefix;
-this TU owns the complete January layout used below. */
+/* the widget definition as this file reads it (the shared header has only
+its start) */
 #define ui_widget_definition_get(tag_index) \
 	((struct ui_widget_definition *)tag_get(UI_WIDGET_DEFINITION_TAG, (tag_index)))
 
@@ -904,8 +835,6 @@ static struct ui_widget_bss_prefix ui_widget_globals_storage;
 real_argb_color ui_plasma_effect_color;
 short local_player_index_for_draw_string_and_hack_in_icons;
 
-/* January defines this and never references it, as we do not */
-real const _one_over_255 = 1.0f / 255.0f;
 real const SECONDS_PER_MILLISECOND = 0.001f;
 
 static struct stack_memory_pool_medium __medium_widget_memory_pool =
@@ -1029,7 +958,6 @@ static char button_mappings[_icon_custom_1 - _icon_action] =
 static real global_ui_white_red = 0.8f;
 static real global_ui_white_green = 0.8f;
 static real global_ui_white_blue = 0.8f;
-
 
 /* ---------- public code */
 
@@ -2575,11 +2503,9 @@ static boolean widget_instance_can_receive_events(
 		return FALSE;
 	if (widget->parent)
 	{
-		/* NOTE January carries the parent's definition over from one ancestor to
-		the next: the flags it tests belong to the ancestor BELOW the one whose
-		type it tests, from the second iteration onward.  Reproduced, not
-		repaired - the June 2011 rebuild of this function decompiles to the same
-		carried-over definition pointer */
+		/* (as the original: the definition carries over from one ancestor to the
+		next, so from the second iteration on the flags tested are the
+		ancestor's below the one whose type is tested) */
 		struct ui_widget_definition *definition =
 			ui_widget_definition_get(widget->parent->definition_tag_index);
 		struct widget_instance *parent;
@@ -6278,7 +6204,6 @@ void render_ui_widgets(
 
 /* ---------- private code */
 
-
 static long spinner_string_list_extra_count(
 	long string_list_index)
 {
@@ -6398,10 +6323,6 @@ static __inline void spinner_list_update(
 
 	return;
 }
-
-/* the definition is passed by January's only call site but is not read; the
-spinner list and the column list keep separate updaters rather than sharing one
-parameterised helper */
 
 static void column_list_update(
 	struct widget_instance *widget,

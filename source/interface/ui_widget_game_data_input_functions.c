@@ -55,13 +55,6 @@ enum
 	NUMBER_OF_REMOTE_MACHINE_PANELS = 3,
 };
 
-enum network_game_platform
-{
-	_network_game_platform_xbox,
-	_network_game_platform_pc,
-	NUMBER_OF_NETWORK_GAME_PLATFORMS,
-};
-
 enum multiplayer_game_text_string
 {
 	_multiplayer_game_text_string_capture_the_flag = 3,
@@ -98,9 +91,7 @@ enum multiplayer_game_bitmap_frame
 
 /* ---------- macros */
 
-/* Same TU-local definition as network_client_manager.c, network_game_manager.c,
-   network_server_manager.c and network_server_message_handler.c; no shared header
-   owns it. January assertion strings in those objects preserve the macro name. */
+/* (the network managers keep the same definition: no header has it yet) */
 /* widened: a char machine index is always below the native builds' 128
 machines, and clang warns about the always-true char comparison */
 #define network_machine_is_valid(machine) \
@@ -617,10 +608,6 @@ static void difficulty_select_menu_update_extended_description(
 static void server_list_menu_update(
 	struct widget_instance *widget)
 {
-	/* Name, nine-element size and function scope from the 2003 PC demo PDB and the HCEX PDB (static
-	   local of server_list_menu_update; their element type is named advertised_game_data). Neither
-	   PDB records the block: placing it at the top of the function is unattested. January
-	   corroborates: .bss +0, referenced only by this function. */
 	static struct network_advertised_game *displayed_servers[MAXIMUM_NETWORK_ADVERTISED_GAMES];
 	struct network_game_client *client = global_network_game_client_get();
 	long displayed_server_count = 0;
@@ -1702,9 +1689,6 @@ static void netgame_prejoin_players(
 static void set_textbox_to_build_number(
 	struct widget_instance *widget)
 {
-	/* Name, type and function scope from the 2003 PC demo PDB and the HCEX PDB (static local
-	   wchar_t build_number_string[0x40]). Neither PDB records the block: placing it at the top of
-	   the function is unattested. January corroborates: .bss +0x28, referenced only here. */
 	static wchar_t build_number_string[64];
 
 	if (!build_number_string[0])

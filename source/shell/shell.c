@@ -26,32 +26,32 @@ boolean shell_initialize(
 {
 	boolean success = FALSE;
 	boolean platform_initialized = FALSE;
-	
+
 	cseries_initialize();
 	platform_initialized = shell_platform_initialize();
-	
+
 	if (platform_initialized)
 	{
 		boolean rasterizer_initialized;
-		
+
 		errors_initialize();
 		tag_files_open();
 		real_math_initialize();
 		game_state_initialize();
-		
+
 		rasterizer_initialized = rasterizer_initialize();
-		
+
 		if (rasterizer_initialized)
 		{
 			input_initialize();
 			sound_initialize();
-			
+
 			success = TRUE;
 		}
-			
+
 		shell_platform_verify();
 	}
-	
+
 	return success;
 }
 

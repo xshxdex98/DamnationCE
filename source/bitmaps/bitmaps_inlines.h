@@ -107,10 +107,6 @@ __inline pixel32 real_rgb_color_to_pixel32(
 	return result;
 }
 
-/* January retains an out-of-line copy of this inline in
- * rasterizer_xbox_active_camouflage.obj. Its assertion records this header
- * and line 291. The stack-local scale, 32-bit FISTP, and in-memory shift are
- * the characteristic packet of the original small x87 helper. */
 __inline pixel32 real_alpha_to_pixel32(
 	real alpha)
 {

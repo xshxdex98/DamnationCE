@@ -63,79 +63,10 @@ enum hud_corner
 	NUMBER_OF_HUD_CORNERS
 };
 
-enum hud_number_show_flags
-{
-	_hud_number_show_all_leading_zeros_bit,
-	_hud_number_show_only_when_zoomed_bit,
-	_hud_number_show_trailing_m_bit,
-	NUMBER_OF_HUD_NUMBER_SHOW_FLAGS
-};
-
-enum hud_icon_flags
-{
-	_hud_icon_use_text_bit,
-	_hud_icon_use_color_bit,
-	_hud_icon_absolute_width_bit,
-	NUMBER_OF_HUD_ICON_FLAGS
-};
-
 enum hud_flash_flags
 {
 	_hud_flash_reverse_colors_bit,
 	NUMBER_OF_HUD_FLASH_FLAGS
-};
-
-enum text_justification
-{
-	_text_justification_left,
-	_text_justification_right,
-	_text_justification_center,
-	NUMBER_OF_TEXT_JUSTIFICATIONS
-};
-
-enum hud_icon_type
-{
-	_icon_a_button,
-	_icon_b_button,
-	_icon_x_button,
-	_icon_y_button,
-	_icon_black_button,
-	_icon_white_button,
-	_icon_left_trigger,
-	_icon_right_trigger,
-	_icon_dpad_up,
-	_icon_dpad_down,
-	_icon_dpad_left,
-	_icon_dpad_right,
-	_icon_start_button,
-	_icon_back_button,
-	_icon_left_thumb,
-	_icon_right_thumb,
-	_icon_left_stick,
-	_icon_right_stick,
-	_icon_action,
-	_icon_throw_grenade,
-	_icon_primary_trigger,
-	_icon_integrated_light,
-	_icon_jump,
-	_icon_use_equipment,
-	_icon_rotate_weapons,
-	_icon_rotate_grenades,
-	_icon_crouch,
-	_icon_zoom,
-	_icon_accept,
-	_icon_back,
-	_icon_move,
-	_icon_look,
-	_icon_custom_1,
-	_icon_custom_2,
-	_icon_custom_3,
-	_icon_custom_4,
-	_icon_custom_5,
-	_icon_custom_6,
-	_icon_custom_7,
-	_icon_custom_8,
-	NUMBER_OF_ICON_TYPES
 };
 
 enum

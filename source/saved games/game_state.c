@@ -426,7 +426,6 @@ static void game_state_allocation_record(
 	long size,
 	boolean gpu)
 {
-	// The January compiler inlines this logger into both arena allocators while
 	// retaining one out-of-line copy under its private address-derived name.
 	FILE *file = bss_004d27b0;
 

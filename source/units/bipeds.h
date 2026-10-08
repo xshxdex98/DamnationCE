@@ -14,6 +14,17 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* unit melee attack states */
+enum
+{
+	_unit_melee_attack_none,
+	_unit_melee_attack_starting,
+	_unit_melee_attack_dangerous,
+	_unit_melee_attack_impact,
+	_unit_melee_attack_continuous,
+	_unit_melee_attack_is_fatal_bit = 8
+};
+
 enum
 {
 	_biped_airborne_bit = 0,

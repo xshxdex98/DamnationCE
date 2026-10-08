@@ -64,9 +64,7 @@ enum
 	MAXIMUM_NUMBER_OF_MAGAZINES_PER_WEAPON = 2,
 };
 
-/* TU-local copies: no shared header declares these tag/runtime enumerations yet.
-   Names follow the HCEA database enumerations; ai.c and actors.c carry their own
-   ai unit effect copies, and first_person_weapons.c an animation update result copy. */
+/* weapon tag and runtime enumerations (no header declares them yet) */
 enum trigger_distribution_function
 {
 	_trigger_distribution_point = 0,
@@ -107,25 +105,6 @@ enum weapon_magazine_flags
 	NUMBER_OF_WEAPON_MAGAZINE_FLAGS,
 };
 
-enum animation_update_result
-{
-	_animation_running = 0,
-	_animation_key_frame,
-	_animation_will_restart_on_next_frame,
-	_animation_restarted,
-	_animation_looped,
-	NUMBER_OF_ANIMATION_UPDATE_RESULTS,
-};
-
-enum
-{
-	_ai_unit_effect_bump = 0,
-	_ai_unit_effect_shooting,
-	_ai_unit_effect_death_scream,
-	_ai_unit_effect_magic_sight,
-	NUMBER_OF_AI_UNIT_EFFECTS,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */
@@ -162,7 +141,7 @@ struct animation_graph_first_person_weapon_animations
 	struct tag_block animations;
 };
 
-/* TU-local: weapon_trigger_definition.firing_effects element; no shared header declares it yet. */
+/* weapon_trigger_definition.firing_effects element (no header declares it yet) */
 struct trigger_firing_effect
 {
 	short shots_lower_bound;
@@ -495,7 +474,7 @@ boolean weapon_put_away(
 			effect_delete(weapon->weapon.overheated_effect_index);
 			weapon->weapon.overheated_effect_index = NONE;
 		}
-		
+
 		first_person_weapon_message_from_weapon(weapon_index, 11);
 		put_away = TRUE;
 	}
@@ -1202,7 +1181,8 @@ short weapon_get_first_person_animation_time(
 						struct animation *shotgun_exit_empty = TAG_BLOCK_GET_ELEMENT(&animation_graph->animations, _first_person_weapon_animation_shotgun_exit_empty<weapon_animations->animations.count ? animation_graph_animation_index_get(&weapon_animations->animations)[_first_person_weapon_animation_shotgun_exit_empty].animation_index : NONE, struct animation);
 						struct animation *shotgun_exit_full = TAG_BLOCK_GET_ELEMENT(&animation_graph->animations, _first_person_weapon_animation_shotgun_exit_full<weapon_animations->animations.count ? animation_graph_animation_index_get(&weapon_animations->animations)[_first_person_weapon_animation_shotgun_exit_full].animation_index : NONE, struct animation);
 
-						/* January resolves all three reload variants, but both handled phases use the enter animation. */
+						/* (all three reload variants are looked up; both handled phases use the
+						 * enter animation) */
 						(void)shotgun_exit_empty;
 						(void)shotgun_exit_full;
 						switch (shotgun_reload_type)
@@ -1680,7 +1660,7 @@ static boolean weapon_magazine_state_change_ok(
 {
 	struct weapon_datum *weapon = weapon_get(weapon_index);
 
-	return 
+	return
 		weapon->weapon.triggers[0].state==_trigger_idle &&
 		weapon->weapon.triggers[1].state==_trigger_idle &&
 		weapon->weapon.state == _weapon_state_idle;
@@ -1958,7 +1938,7 @@ static long weapon_effect_new(
 		if (group_tag!=EFFECT_DEFINITION_TAG)
 		{
 			match_vassert("c:\\halo\\SOURCE\\items\\weapons.c", 2514, group_tag==SOUND_DEFINITION_TAG, NULL);
-			
+
 			if (group_tag==SOUND_DEFINITION_TAG)
 			{
 				object_impulse_sound_new(object_index, effect_index, NONE, global_origin3d, global_forward3d, effect_scale);
@@ -1974,7 +1954,6 @@ static long weapon_effect_new(
 	return result;
 }
 
-// TODO: finish
 static void weapon_reset(
 	long weapon_index)
 {
@@ -1986,7 +1965,6 @@ static void weapon_reset(
 	for (magazine_index = 0; magazine_index<weapon_trigger_count(weapon_definition); ++magazine_index)
 	{
 		struct weapon_trigger* trigger = weapon_trigger_get(weapon, magazine_index);
-		struct weapon_trigger_definition *trigger_definition = TAG_BLOCK_GET_ELEMENT(&weapon_definition->weapon.triggers, magazine_index, struct weapon_trigger_definition);
 
 		if (!trigger)
 			continue;
@@ -1997,7 +1975,6 @@ static void weapon_reset(
 	for (magazine_index = 0; magazine_index<weapon_magazine_count(weapon_definition); ++magazine_index)
 	{
 		struct weapon_magazine *magazine = weapon_magazine_get(weapon, magazine_index);
-		struct weapon_magazine_definition *magazine_definition = TAG_BLOCK_GET_ELEMENT(&weapon_definition->weapon.magazines, magazine_index, struct weapon_magazine_definition);
 
 		if (!magazine)
 			continue;

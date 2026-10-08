@@ -26,29 +26,6 @@ RASTERIZER_XBOX_ACTIVE_CAMOUFLAGE.C
 
 /* ---------- constants */
 
-/* no shared header publishes the geometry-flag, shader-type, model-flag or model-effect
-enumerations yet; compatible TU-local copies live in rasterizer_xbox_models.c,
-rasterizer_xbox_transparent_geometry.c, rasterizer_transparent_geometry.c and models.c */
-
-enum
-{
-	_rasterizer_target_render_primary = 0,
-	_rasterizer_target_render_secondary
-};
-
-enum
-{
-	_rasterizer_geometry_no_sort_bit = 0,
-	_rasterizer_geometry_no_queue_bit,
-	_rasterizer_geometry_no_fog_bit,
-	_rasterizer_geometry_no_zbuffer_bit,
-	_rasterizer_geometry_sky_bit,
-	_rasterizer_geometry_viewspace_bit,
-	_rasterizer_geometry_atmospheric_fog_but_no_planar_fog_bit,
-	_rasterizer_geometry_first_person_bit,
-	_rasterizer_geometry_parts_define_local_nodes_bit
-};
-
 enum
 {
 	_shader_type_screen = 0,
@@ -66,16 +43,6 @@ enum
 
 enum
 {
-	_shader_model_detail_after_reflection_bit = 0,
-	_shader_model_two_sided_bit,
-	_shader_model_not_alpha_tested_bit,
-	_shader_model_alpha_blended_decal_bit,
-	_shader_model_true_atmospheric_fog_bit,
-	_shader_model_nocull_two_sided_bit
-};
-
-enum
-{
 	_render_model_effect_type_none = 0,
 	_render_model_effect_type_active_camouflage,
 	_render_model_effect_type_modifier
@@ -86,17 +53,10 @@ enum
 	_active_camouflage_tint_edge_density_bit = 0
 };
 
-/* descriptive names: January's vertex shader name table has not been recovered */
 enum
 {
 	_rasterizer_vertex_shader_active_camouflage_model = 13,
 	_rasterizer_vertex_shader_active_camouflage = 64
-};
-
-enum
-{
-	RASTERIZER_STENCIL_MODE_NONE = 0,
-	RASTERIZER_STENCIL_MODE_REJECT = 2,
 };
 
 enum
@@ -109,11 +69,8 @@ enum
 
 /* ---------- structures */
 
-/* no shared header declares these yet; compatible TU-local copies also live in
-rasterizer_xbox_models.c, rasterizer_xbox_transparent_geometry.c,
-rasterizer_xbox_environment.c, rasterizer_xbox_environment_fog.c,
-rasterizer_xbox_dynavobgeom.c, rasterizer_xbox_water.c, rasterizer_xbox_widgets.c,
-rasterizer_xbox_shadows.c, rasterizer_transparent_geometry.c, models.c and shaders.c */
+/* shader model properties (no header declares them yet; other rasterizer
+files keep copies) */
 
 struct shader_model_properties
 {

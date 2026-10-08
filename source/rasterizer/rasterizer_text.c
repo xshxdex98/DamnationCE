@@ -19,6 +19,7 @@ RASTERIZER_TEXT.C
 #include "text/font_group.h"
 #include "text/unicode.h"
 #include "tag_files/tag_files.h"
+#include "shaders/shader_definitions.h"
 
 /* port: the high-res text (port/linux/src/text_hires.c): the text drawn with
 fonts at the display's resolution, laid out as before. Characters are drawn
@@ -46,17 +47,6 @@ enum
 	of the atlas's glyphs), and the fonts remembered */
 	HIRES_TEXT_ATLAS_BITMAP_SIZE = 256,
 	MAXIMUM_HIRES_TEXT_FONTS = 8,
-};
-
-enum
-{
-	_bitmap_format_a4r4g4b4 = 9,
-};
-
-enum
-{
-	_rasterizer_target_render_primary = 0,
-	_shader_framebuffer_blend_function_alpha_blend = 0,
 };
 
 /* ---------- macros */

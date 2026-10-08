@@ -13,6 +13,15 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* collision surface flags */
+enum
+{
+	_collision_surface_two_sided_bit,
+	_collision_surface_invisible_bit,
+	_collision_surface_climbable_bit,
+	_collision_surface_breakable_bit
+};
+
 /* ---------- macros */
 
 /* ---------- structures */

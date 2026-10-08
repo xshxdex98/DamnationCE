@@ -265,8 +265,7 @@ real_matrix3x3 *matrix3x3_from_forward_and_up(
 	return matrix;
 }
 
-/* January keeps both next-index tables in one 14-byte .data blob. The 4x3
-table starts at offset 0 and the 3x3 table starts at offset 8. */
+/* the next index tables: 4x3 from offset 0, 3x3 from offset 8 */
 static short data_0030790c[7] = { 1, 2, 0, 0, 1, 2, 0 };
 
 #define matrix4x3_next (data_0030790c)
@@ -637,7 +636,7 @@ void matrix4x3_from_point_and_vectors(
 {
 	matrix4x3_rotation_from_vectors(matrix, forward, up);
 	matrix->position = *point;
-	
+
 	return;
 }
 

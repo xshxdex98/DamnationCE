@@ -1,8 +1,4 @@
-/*
-Generated from the January target object's immutable Xbox vertex-shader
-microcode payload.  Size: 0x8744 bytes.  SHA-256:
-ecd7c682d76eb1c72f5fac8b47893bedc278eccb3fa6bd68bded2ee1462b4dd6
-*/
+/* the Xbox vertex shader programs, 0x8744 bytes */
 	0x00072078, 0x00000000, 0x00C0001B, 0x0836186C,
 	0x20708800, 0x00000000, 0x00C0201B, 0x0836186C,
 	0x20704800, 0x00000000, 0x00C0401B, 0x0836186C,

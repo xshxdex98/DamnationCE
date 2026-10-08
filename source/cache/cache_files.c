@@ -1431,7 +1431,7 @@ void *tag_get(
 	{
 		return xbox_pointer(cache_empty_tag_instance(tag_index)->base_address);
 	}
-	
+
 	return xbox_pointer(tag_instance->base_address);
 }
 

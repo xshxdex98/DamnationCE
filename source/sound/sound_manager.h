@@ -10,6 +10,15 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* sound spatialization modes */
+enum
+{
+	_sound_spatialization_mode_none,
+	_sound_spatialization_mode_absolute,
+	_sound_spatialization_mode_relative,
+	NUMBER_OF_SOUND_SPATIALIZATION_MODES
+};
+
 enum looping_sound_refresh_state
 {
 	_looping_sound_refresh_start,

@@ -12,7 +12,7 @@ STACK_WALK_WINDOWS.C
 
 #include <ctype.h>
 
-/* January calls the CRT isspace function rather than the multibyte ctype macro. */
+/* (the C library's isspace, not the multibyte ctype macro) */
 #undef isspace
 
 /* ---------- constants */

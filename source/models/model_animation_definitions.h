@@ -17,6 +17,17 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* animation update results (animation_update_internal) */
+enum
+{
+	_animation_running,
+	_animation_key_frame,
+	_animation_will_restart_on_next_frame,
+	_animation_restarted,
+	_animation_looped,
+	NUMBER_OF_ANIMATION_UPDATE_RESULTS
+};
+
 enum
 {
 	ANIMATION_GRAPH_TAG = 'antr',
@@ -269,7 +280,7 @@ void animation_graph_node_matrices_from_orientations(
 void animation_get_node_orientations(
 	struct model const *model,
 	struct animation const *animation,
-	short frame_index, 
+	short frame_index,
 	struct real_orientation *node_orientations);
 void replacement_animation_apply(
 	struct animation const *animation,

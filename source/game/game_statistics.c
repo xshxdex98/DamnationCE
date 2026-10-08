@@ -87,8 +87,7 @@ void game_statistics_record_kill(
 		if (killing_player_index != NONE && !player_try_and_get(killing_player_index))
 			killing_player_index = NONE;
 
-		/* only player victims are tallied (NONE otherwise); the later HCEA build
-		   still indexes kills[] and assists[] through this NONE-or-zero value */
+		/* only player victims are tallied */
 		if (dead_player_index == NONE)
 			statistic_index = NONE;
 		else

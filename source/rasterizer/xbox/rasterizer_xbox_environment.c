@@ -91,11 +91,6 @@ enum
 
 enum
 {
-	_rasterizer_target_render_primary = 0,
-};
-
-enum
-{
 	_rasterizer_vertex_shader_environment_reflection = 42,
 	_rasterizer_vertex_shader_environment_reflection_mirror = 51,
 };
@@ -127,13 +122,6 @@ enum
 	_shader_type_environment = 3,
 	_shader_type_transparent_water = 7,
 	_rasterizer_statistics_mode_enabled = 2,
-};
-
-enum
-{
-	_rasterizer_geometry_no_sort_bit = 0,
-	_rasterizer_geometry_no_queue_bit,
-	_rasterizer_geometry_no_fog_bit,
 };
 
 enum
@@ -997,7 +985,7 @@ void _rasterizer_environment_lightmap_begin(
 			else
 			{
 #ifdef HALO_64BIT
-				/* the Xbox address, as January seeded with the pointer */
+				/* (seeded with the bitmap's Xbox address) */
 				unsigned int seed = xbox_address(lightmap_bitmap);
 #else
 				unsigned long seed = (unsigned long)lightmap_bitmap;

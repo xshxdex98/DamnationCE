@@ -17,21 +17,13 @@ RASTERIZER_XBOX_DYNAVOBGEOM.C
 #include "shaders/shader_definitions.h"
 #include "rasterizer_xbox_pixel_shader.h"
 
-/* The January translation unit retains the XDK's out-of-line D3D wrappers.
- * Keep the stock D3DINLINE definition: the real calls below make VC7 emit
- * the target's complete wrapper bodies. */
 #include <xtl.h>
 
 #include "rasterizer_xbox.h"
 #include "rasterizer_xbox_dynavobgeom.h"
 #include "rasterizer_xbox_pixel_shader.h"
-
-/* ---------- constants */
-
-enum
-{
-	_rasterizer_geometry_viewspace_bit = 5,
-};
+#include "rasterizer/rasterizer_geometry.h"
+#include "rasterizer/rasterizer.h"
 
 enum
 {
@@ -51,24 +43,6 @@ enum
 enum
 {
 	_rasterizer_statistics_mode_geometry = 2,
-};
-
-enum
-{
-	_rasterizer_target_render_primary = 0,
-};
-
-enum
-{
-	_shader_framebuffer_blend_function_alpha_blend = 0,
-	_shader_framebuffer_blend_function_multiply,
-	_shader_framebuffer_blend_function_double_multiply,
-	_shader_framebuffer_blend_function_add,
-	_shader_framebuffer_blend_function_reverse_subtract,
-	_shader_framebuffer_blend_function_min,
-	_shader_framebuffer_blend_function_max,
-	_shader_framebuffer_blend_function_alpha_multiply_add,
-	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS
 };
 
 enum

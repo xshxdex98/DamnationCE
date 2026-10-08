@@ -28,8 +28,7 @@ enum
 	_player_profile_default_profile_bit = 0
 };
 
-/* January button mappings; the swap names are reconstructed from the
-   actual button table, not later-game preset ordinals. */
+/* button mappings */
 enum
 {
 	_button_preset_standard = 0,
