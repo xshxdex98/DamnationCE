@@ -10,6 +10,21 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* sound channel states */
+enum
+{
+	NUMBER_OF_SOUND_CHANNEL_STATES = 3
+};
+
+/* sound channel flags */
+enum
+{
+	_sound_channel_3d_bit,
+	_sound_channel_stereo_bit,
+	_sound_channel_44k_bit,
+	_sound_channel_compressed_bit
+};
+
 /* sound spatialization modes */
 enum
 {

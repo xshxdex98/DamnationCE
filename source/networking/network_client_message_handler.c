@@ -39,12 +39,6 @@ enum
 
 #define MINIMUM_TRANSPORT_ERROR_MESSAGE_SIZE (sizeof(word) + TRANSPORT_ERROR_MESSAGE_TEXT_LENGTH + sizeof(byte))
 
-enum
-{
-	_message_type_error = 1,
-	_message_type_data = 2,
-};
-
 enum network_game_packet_class
 {
 	_network_game_packet_class_advertisement = 1,

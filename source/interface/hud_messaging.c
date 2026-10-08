@@ -63,12 +63,6 @@ enum hud_corner
 	NUMBER_OF_HUD_CORNERS
 };
 
-enum hud_flash_flags
-{
-	_hud_flash_reverse_colors_bit,
-	NUMBER_OF_HUD_FLASH_FLAGS
-};
-
 enum
 {
 	NUMBER_OF_HUD_CUSTOM_ICONS = _icon_custom_8 - _icon_custom_1 + 1

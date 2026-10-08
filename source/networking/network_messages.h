@@ -14,6 +14,15 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* network message types */
+enum
+{
+	_message_type_error = 1,
+	_message_type_data,
+	_message_type_packet,
+	NUMBER_OF_MESSAGE_TYPES
+};
+
 #define NETWORK_JOIN_GAME_TOKEN_SIZE 16
 
 enum network_game_message_type

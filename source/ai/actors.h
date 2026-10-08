@@ -18,6 +18,12 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* actor combat status levels */
+enum
+{
+	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS = 8
+};
+
 /* actor_external_orders.desired_target_type */
 enum
 {
@@ -64,7 +70,6 @@ enum
 	_actor_combat_status_clear_los,
 	_actor_combat_status_dangerous,
 	_actor_combat_status_visible,
-	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS
 };
 
 /* actor modes (actor_state_data.mode) */

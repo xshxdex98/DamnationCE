@@ -10,6 +10,17 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* script syntax node flags */
+enum
+{
+	_hs_syntax_node_primitive_bit,
+	_hs_syntax_node_script_bit,
+	_hs_syntax_node_global_bit,
+	_hs_syntax_node_variable_bit = 2,
+	_hs_syntax_node_permanent_bit,
+	_hs_syntax_node_failed_bit = 15
+};
+
 enum hs_type
 {
 	_hs_unparsed = 0,

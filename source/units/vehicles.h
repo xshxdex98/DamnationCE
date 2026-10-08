@@ -14,6 +14,19 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* vehicle types */
+enum
+{
+	_vehicle_type_human_tank,
+	_vehicle_type_human_jeep,
+	_vehicle_type_human_boat,
+	_vehicle_type_human_plane,
+	_vehicle_type_alien_scout,
+	_vehicle_type_alien_fighter,
+	_vehicle_type_turret,
+	NUMBER_OF_VEHICLE_TYPES
+};
+
 enum vehicle_flags
 {
 	_vehicle_blurred_bit = 0,

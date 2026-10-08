@@ -13,7 +13,6 @@ header included in hcex build.
 enum
 {
 	MAXIMUM_MESSAGE_SIZE = 0xFFF,
-	NUMBER_OF_MESSAGE_TYPES = 4,
 	MESSAGE_FLAG_BITS_MASK = 3,
 };
 
@@ -21,11 +20,6 @@ enum message_header_byte_order
 {
 	_byte_order_host = 0,
 	_byte_order_network,
-};
-
-enum message_type
-{
-	_message_type_packet = 3,
 };
 
 /* ---------- macros */

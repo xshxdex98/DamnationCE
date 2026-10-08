@@ -11,6 +11,7 @@ SHADERS.C
 #include "objects.h"
 #include "shader_definitions.h"
 #include "shaders.h"
+#include "shaders/shader_definitions.h"
 
 /* ---------- constants */
 
@@ -38,7 +39,6 @@ enum
 	_shader_transparent_draw_before_water_bit = 4,
 	_shader_transparent_ignore_effect_bit = 5,
 	_shader_meter_decal_bit = 0,
-	_shader_environment_dynamic_mirror_bit = 0,
 	_shader_glass_reflection_type_mirror = 2
 };
 

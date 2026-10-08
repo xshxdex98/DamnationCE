@@ -10,6 +10,14 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* game advertisement flags */
+enum
+{
+	_game_advertisement_open_bit = 1,
+	_game_advertisement_has_teams_bit,
+	_game_advertisement_oddball_variant_bit
+};
+
 /* network game platforms */
 enum
 {

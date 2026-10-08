@@ -50,12 +50,6 @@ enum
 	NUMBER_OF_JOYSTICK_CONTROLS,
 };
 
-enum
-{
-	_vehicle_type_human_plane = 3,
-	_vehicle_type_alien_fighter = 5,
-};
-
 /* (the 45 and 10 degree constants are single precision, promoted before
  * subtracting; the 35 degree window and its reciprocal are double) */
 #define STICK_DIAGONAL_ANGLE 0.7853981852531433f

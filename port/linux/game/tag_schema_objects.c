@@ -31,6 +31,8 @@ itmc).
 #include "units/dialogue_definitions.h"
 #include "units/unit_definitions.h"
 #include "units/units.h"
+#include "ai/ai.h"
+#include "units/vehicles.h"
 
 /* ---------- constants */
 
@@ -49,13 +51,11 @@ enum
 	NUMBER_OF_WEAPON_MOVEMENT_PENALTY_MODES = 3,
 	/* ai.c (the volume of a unit's sounds, of a weapon's or projectile's
 	noise) */
-	NUMBER_OF_AI_SOUND_VOLUMES = 5,
 	/* units.c, unit_export_function_values */
 	NUMBER_OF_UNIT_FUNCTION_MODES = 8,
 	/* bipeds.c, biped_export_function_values: none, flying speed */
 	NUMBER_OF_BIPED_FUNCTION_MODES = 2,
 	/* vehicles.c */
-	NUMBER_OF_VEHICLE_TYPES = 7,
 	NUMBER_OF_VEHICLE_FUNCTIONS = 37,
 	/* units.c's unit datum's seat_power[2] */
 	MAXIMUM_POWERED_SEATS_PER_UNIT = 2,

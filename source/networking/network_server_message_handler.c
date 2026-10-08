@@ -55,13 +55,6 @@ enum
 	MAXIMUM_PING_REPLY_ADDRESSES = 32,
 };
 
-enum
-{
-	_game_advertisement_open_bit = 1,
-	_game_advertisement_has_teams_bit,
-	_game_advertisement_oddball_variant_bit,
-};
-
 #define MINIMUM_TRANSPORT_ERROR_MESSAGE_SIZE (sizeof(word) + TRANSPORT_ERROR_MESSAGE_TEXT_LENGTH + sizeof(byte))
 
 /* port: the text of a transport error message as it is logged: printable
@@ -77,19 +70,6 @@ static char const *transport_error_message_text(
 	text[index] = 0;
 	return text;
 }
-
-enum
-{
-	_message_type_error = 1,
-	_message_type_data = 2,
-};
-
-enum network_game_server_state
-{
-	_network_game_server_state_pregame = 0,
-	_network_game_server_state_ingame,
-	_network_game_server_state_postgame,
-};
 
 enum network_game_packet_class
 {

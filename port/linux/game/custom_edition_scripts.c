@@ -44,15 +44,6 @@ build's tables).
 
 /* ---------- constants */
 
-/* a syntax node's flags, as hs_runtime.c names them */
-enum
-{
-	_hs_syntax_node_primitive_bit = 0,
-	_hs_syntax_node_script_bit,
-	_hs_syntax_node_global_bit,
-	_hs_syntax_node_permanent_bit,
-};
-
 /* engine globals are told from the scenario's by this bit of their
 designator (hs_find_global_by_name) */
 #define HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT 15

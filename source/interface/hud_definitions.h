@@ -18,6 +18,21 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* hud flash flags */
+enum
+{
+	_hud_flash_reverse_colors_bit,
+	NUMBER_OF_HUD_FLASH_FLAGS
+};
+
+/* hud scaling flags */
+enum
+{
+	_hud_dont_scale_offset_bit,
+	_hud_dont_scale_size_bit,
+	_hud_use_high_resolution_scale_bit
+};
+
 enum hud_anchor
 {
 	_hud_anchor_top_left,

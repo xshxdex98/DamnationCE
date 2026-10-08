@@ -43,13 +43,6 @@ enum
 
 enum
 {
-	_hs_syntax_node_primitive_bit = 0,
-	_hs_syntax_node_script_bit,
-	_hs_syntax_node_global_bit,
-};
-
-enum
-{
 	MAXIMUM_HS_DEBUG_STRING_ARGUMENTS = 32
 };
 

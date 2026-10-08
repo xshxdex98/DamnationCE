@@ -15,6 +15,15 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* screen effect convolutions */
+enum
+{
+	_rasterizer_screen_effect_convolution_type_none,
+	_rasterizer_screen_effect_convolution_type_blur,
+	_rasterizer_screen_effect_convolution_type_warp,
+	NUMBER_OF_RASTERIZER_SCREEN_EFFECT_CONVOLUTION_TYPES
+};
+
 /* stencil modes */
 enum
 {

@@ -112,15 +112,6 @@ enum
 	_network_game_server_game_valid_bit,
 };
 
-enum
-{
-	_network_game_server_state_pregame,
-	_network_game_server_state_ingame,
-	_network_game_server_state_postgame,
-
-	NUMBER_OF_NETWORK_GAME_SERVER_STATES
-};
-
 /* ---------- macros */
 
 #define network_machine_is_valid(machine) \

@@ -882,15 +882,6 @@ holds the external globals and the map's */
 /* port: the scripts block's maximum (hs_scripts_block) */
 #define MAXIMUM_HS_SCRIPTS_PER_SCENARIO 512
 
-/* port: a script node's flags (as hs_compile.c and hs_runtime.c have them) */
-enum
-{
-	_hs_syntax_node_primitive_bit = 0,
-	_hs_syntax_node_script_bit,
-	_hs_syntax_node_variable_bit,
-	_hs_syntax_node_permanent_bit,
-};
-
 /* port: why a map's script may not have a node (hs_syntax_node_refusal) */
 enum
 {

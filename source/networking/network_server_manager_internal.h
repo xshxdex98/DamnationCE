@@ -15,6 +15,15 @@ Declarations shared by the server manager and its message handler.
 
 /* ---------- constants */
 
+/* network game server states */
+enum
+{
+	_network_game_server_state_pregame,
+	_network_game_server_state_ingame,
+	_network_game_server_state_postgame,
+	NUMBER_OF_NETWORK_GAME_SERVER_STATES
+};
+
 /* server countdown events */
 enum
 {

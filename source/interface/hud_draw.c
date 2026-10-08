@@ -33,13 +33,6 @@ HUD_DRAW.C
 
 /* ---------- constants */
 
-enum
-{
-	_hud_dont_scale_offset_bit = 0,
-	/* port: Halo PC's, which the Xbox's tags never set */
-	_hud_use_high_resolution_scale_bit = 2,
-};
-
 /* hud number and meter definitions (no header declares them yet; other
    hud files keep copies) */
 enum
@@ -65,11 +58,6 @@ enum hud_meter_flags
 	_hud_meter_invert_interpolation_value_bit,
 
 	NUMBER_OF_HUD_METER_FLAGS
-};
-
-enum hud_flash_flags
-{
-	_hud_flash_reverse_colors_bit = 0,
 };
 
 enum hud_weapon_overlay_flags

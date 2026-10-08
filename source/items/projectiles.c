@@ -91,16 +91,6 @@ enum projectile_potential_response_flags
 	NUMBER_OF_PROJECTILE_POTENTIAL_RESPONSE_FLAGS,
 };
 
-/* effect vectors, spatial effects, surface flags and periodic functions (no
- * header declares them yet; other files keep copies) */
-enum
-{
-	_ai_spatial_effect_environmental_noise = 0,
-	_ai_spatial_effect_weapon_impact,
-	_ai_spatial_effect_weapon_detonation,
-	NUMBER_OF_AI_SPATIAL_EFFECTS,
-};
-
 enum
 {
 	MAXIMUM_PROJECTILE_COLLISIONS_PER_UPDATE = 10,

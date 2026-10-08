@@ -85,14 +85,6 @@ enum
 
 enum
 {
-	_render_model_effect_type_none = 0,
-	_render_model_effect_type_active_camouflage,
-	_render_model_effect_type_cortana,
-	NUMBER_OF_RENDER_MODEL_EFFECT_TYPES
-};
-
-enum
-{
 	RASTERIZER_TRANSPARENT_GEOMETRY_MAXIMUM_PASSES = 2,
 	RASTERIZER_TRANSPARENT_GEOMETRY_ALL_GROUPS_INDEX = 1000,
 	RASTERIZER_TRANSPARENT_GEOMETRY_CAMERA_CONSTANT_INDEX = 88,

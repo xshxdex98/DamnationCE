@@ -28,20 +28,6 @@ VEHICLES.C
 #include "units/unit_definitions.h"
 #include "units/vehicle_definitions.h"
 
-/* ---------- constants */
-
-enum
-{
-	_vehicle_type_human_tank = 0,
-	_vehicle_type_human_jeep,
-	_vehicle_type_human_boat,
-	_vehicle_type_human_plane,
-	_vehicle_type_alien_scout,
-	_vehicle_type_alien_fighter,
-	_vehicle_type_turret,
-	NUMBER_OF_VEHICLE_TYPES
-};
-
 /* ---------- macros */
 
 /* 0.8 degrees in radians, spelled as a float (the double expression rounds

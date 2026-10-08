@@ -18,8 +18,6 @@ TRANSPORT_ENDPOINT_WINSOCK.C
 
 enum
 {
-	_transport_type_udp = 0x11,
-	_transport_type_tcp,
 	/* every machine of a session may connect at once */
 	MAXIMUM_PENDING_CONNECTIONS = HALO_PORT_MAXIMUM_NETWORK_MACHINES,
 	MAXIMUM_ENDPOINT_THREADS = 64,
