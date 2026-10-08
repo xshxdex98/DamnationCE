@@ -48,20 +48,6 @@ enum projected_plane_result
 
 #define index_from_node(node) ((node) & LONG_MAX)
 
-/* ---------- structures */
-
-struct map_leaf_face
-{
-	long node_index;
-	struct tag_block vertices;			// real_point2d
-};
-
-struct map_leaf
-{
-	struct tag_block faces;				// map_leaf_face
-	struct tag_block portal_designators;		// long
-};
-
 struct leaf_map_polygon
 {
 	short vertex_count;

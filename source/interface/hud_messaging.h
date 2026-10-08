@@ -6,6 +6,11 @@ HUD_MESSAGING.H
 #define __HUD_MESSAGING_H
 #pragma once
 
+/* ---------- headers */
+
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
+
 /* ---------- constants */
 
 /* hud icon types */
@@ -75,6 +80,22 @@ enum
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct hud_state_message_element
+{
+	byte type;
+	byte data;
+};
+
+struct hud_state_message_definition
+{
+	char name[32];
+	word text_start_index;
+	word element_start_index;
+	byte element_count;
+	byte pad25[3];
+	long unused28[6];
+};
 
 struct icon_hud_element_definition;
 union real_argb_color;

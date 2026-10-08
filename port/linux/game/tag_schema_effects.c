@@ -31,6 +31,12 @@ fonts and strings (font, str#, ustr); matg and mply.
 #include "effects/player_effects.h"
 #include "scenario/multiplayer_scenario_description.h"
 #include "physics/breakable_surfaces.h"
+#include "interface/ui_widget.h"
+#include "effects/effects.h"
+#include "camera/following_camera.h"
+#include "interface/hud_draw.h"
+#include "interface/hud_messaging.h"
+#include "interface/virtual_keyboard.h"
 
 #include <string.h>
 
@@ -170,67 +176,7 @@ enum
 	MAXIMUM_PARTICLE_EFFECTS_PER_BREAKABLE_SURFACE = 32,
 };
 
-/* ---------- structures */
-
-/* effects.c's */
-struct effect_particles_definition
-{
-	short environment;
-	short disposition;
-	short camera_mode;
-	short unused006;
-	short location_index;
-	short unused00a;
-	real_euler_angles2d direction;
-	real_vector3d offset;
-	real_vector3d runtime_direction;
-	long unused02c[10];
-	struct tag_reference particle;
-	unsigned long flags;
-	short distribution_function;
-	short unused06a;
-	short count_lower_bound;
-	short count_upper_bound;
-	real distribution_radius_lower_bound;
-	real distribution_radius_upper_bound;
-	long unused078[3];
-	real velocity_lower_bound;
-	real velocity_upper_bound;
-	real velocity_cone_angle;
-	real angular_velocity_lower_bound;
-	real angular_velocity_upper_bound;
-	long unused098[2];
-	real radius_lower_bound;
-	real radius_upper_bound;
-	long unused0a8[2];
-	real_argb_color tint_lower_bound;
-	real_argb_color tint_upper_bound;
-	long unused0d0[4];
-	unsigned long scale_a_flags;
-	unsigned long scale_b_flags;
-};
-
-struct effect_location_definition
-{
-	char marker_name[32];
-};
-
 typedef char verify_effect_particles_definition_size[sizeof(struct effect_particles_definition) == 0xE8 ? 1 : -1];
-
-/* following_camera.c's */
-struct camera_track_control_point
-{
-	real_vector3d position;
-	real_quaternion orientation;
-	long unused[8];
-};
-
-struct camera_track_definition
-{
-	unsigned long flags;
-	struct tag_block control_points;
-	long unused[8];
-};
 
 typedef char verify_camera_track_control_point_size[sizeof(struct camera_track_control_point) == 0x3C ? 1 : -1];
 typedef char verify_camera_track_definition_size[sizeof(struct camera_track_definition) == 0x30 ? 1 : -1];
@@ -245,76 +191,6 @@ struct number_hud_element_definition
 	char fractional_digits;
 	byte pad;
 	long unused[3];
-};
-
-struct hud_number_definition
-{
-	struct tag_reference number_bitmap;
-	char character_width;
-	char screen_width;
-	char x_offset;
-	char y_offset;
-	char decimal_point_width;
-	char colon_width;
-	short pad;
-	long unused[19];
-};
-
-struct weapon_hud_overlay_item
-{
-	struct hud_placement_definition placement;
-	struct hud_color_definition colors;
-	short frame_rate;
-	short pad;
-	short sequence_index;
-	short type;
-	long flags;
-	long unused[14];
-};
-
-struct weapon_hud_overlay_definition
-{
-	struct tag_reference bitmap;
-	struct tag_block items;
-};
-
-struct multitexture_overlay_hud_element_effector_definition
-{
-	long unused0[16];
-	short destination_type;
-	short destination;
-	short source;
-	word pad46;
-	real in_bounds[2];
-	real out_bounds[2];
-	long unused58[16];
-	real_rgb_color tint_color_lower_bounds;
-	real_rgb_color tint_color_upper_bounds;
-	short periodic_function;
-	word padB2;
-	real periodic_function_period;
-	real periodic_function_phase;
-	long unusedBC[8];
-};
-
-struct multitexture_overlay_hud_element_definition
-{
-	word flags;
-	short type;
-	short framebuffer_blend_function;
-	word pad06;
-	long unused08[8];
-	word map_flags[3];
-	short map_blending_function[2];
-	short pad32;
-	real_vector2d map_scale[3];
-	real_vector2d map_offset[3];
-	struct tag_reference map[3];
-	short map_clamp[3];
-	short pad9A;
-	long unused9C[46];
-	struct tag_block functions;
-	long unused160[32];
 };
 
 typedef char verify_number_hud_element_definition_size[sizeof(struct number_hud_element_definition) == 0x54 ? 1 : -1];
@@ -449,23 +325,6 @@ struct hud_waypoint_arrow
 	long unused2[6];
 };
 
-/* hud_messaging.c's */
-struct hud_state_message_definition
-{
-	char name[32];
-	word text_start_index;
-	word element_start_index;
-	byte element_count;
-	byte pad25[3];
-	long unused28[6];
-};
-
-struct hud_state_message_element
-{
-	byte type;
-	byte data;
-};
-
 struct hud_message_text_definition
 {
 	struct tag_data text_data;
@@ -501,49 +360,6 @@ struct font_character_index
 
 typedef char verify_font_character_size[sizeof(struct font_character) == FONT_CHARACTER_SIZE ? 1 : -1];
 typedef char verify_font_header_size[sizeof(struct font_header) == 0x9C ? 1 : -1];
-
-/* ui_widget.c's */
-struct ui_widget_event_handler_reference
-{
-	long flags;
-	short event_type;
-	short function;
-	struct tag_reference widget_tag;
-	struct tag_reference sound_effect;
-	char script[32];
-};
-
-struct ui_widget_child_reference
-{
-	struct tag_reference widget_tag;
-	char name[32];
-	long flags;
-	short custom_controller_index;
-	short vertical_offset;
-	short horizontal_offset;
-	byte unknown03A[0x50 - 0x3A];
-};
-
-struct ui_widget_conditional_reference
-{
-	struct tag_reference widget_tag;
-	char name[32];
-	long flags;
-	short custom_controller_index;
-	byte unknown036[0x50 - 0x36];
-};
-
-struct ui_widget_game_data_input_reference
-{
-	short function;
-	byte unknown002[0x24 - 0x02];
-};
-
-struct ui_widget_search_and_replace_reference
-{
-	char search_string[32];
-	short replace_function;
-};
 
 struct ui_widget_definition
 {
@@ -599,31 +415,6 @@ struct ui_widget_collection_widget
 struct ui_widget_collection
 {
 	struct tag_block widgets;
-};
-
-/* virtual_keyboard.c's */
-struct virtual_keyboard_key
-{
-	short keycode;
-	wchar_t character;
-	wchar_t shift_character;
-	wchar_t caps_character;
-	wchar_t symbols_character;
-	wchar_t shift_caps_character;
-	wchar_t shift_symbols_character;
-	wchar_t caps_symbols_character;
-	struct tag_reference unselected_background_bitmap_tag;
-	struct tag_reference selected_background_bitmap_tag;
-	struct tag_reference active_background_bitmap_tag;
-	struct tag_reference sticky_background_bitmap_tag;
-};
-
-struct virtual_keyboard_definition
-{
-	struct tag_reference font_tag;
-	struct tag_reference background_bitmap_tag;
-	struct tag_reference special_key_labels_string_list_tag;
-	struct tag_block keys;
 };
 
 typedef char verify_virtual_keyboard_key_size[sizeof(struct virtual_keyboard_key) == 0x50 ? 1 : -1];

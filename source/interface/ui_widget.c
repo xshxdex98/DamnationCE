@@ -86,6 +86,7 @@ boolean ui_widget_online_games_list(struct widget_instance *widget);
 char const *pc_menus_screen(char const *name);
 #include "custom_edition_maps.h"
 #include "interface/hud_messaging.h"
+#include "interface/ui_widget.h"
 
 /* (port/linux/game/menu_tags.c: a menus theme chosen, put on at the start of
 a frame) */
@@ -284,52 +285,6 @@ typedef char verify_hud_globals_button_icons_offset[
 	offsetof(struct hud_globals_definition, messaging.button_icons) == 0xC4 ? 1 : -1];
 typedef char verify_interface_tag_references_definition_size[
 	sizeof(struct game_globals_interface_tag_references) == 0x130 ? 1 : -1];
-/* narrow views of the 'DeLa' widget definition tag and of the three block
-elements this file walks; only the members this file reaches are named and
-every other span is left explicitly unknown */
-
-struct ui_widget_event_handler_reference
-{
-	long flags;
-	short event_type;
-	short function;
-	struct tag_reference widget_tag;
-	struct tag_reference sound_effect;
-	char script[32];
-};
-
-struct ui_widget_child_reference
-{
-	struct tag_reference widget_tag;
-	char name[32];
-	long flags;
-	short custom_controller_index;
-	short vertical_offset;
-	short horizontal_offset;
-	byte unknown03A[0x50 - 0x3A];
-};
-
-struct ui_widget_conditional_reference
-{
-	struct tag_reference widget_tag;
-	char name[32];
-	long flags;
-	short custom_controller_index;
-	byte unknown036[0x50 - 0x36];
-};
-
-struct ui_widget_game_data_input_reference
-{
-	short function;
-	byte unknown002[0x24 - 0x02];
-};
-
-struct ui_widget_search_and_replace_reference
-{
-	char search_string[32];
-	short replace_function;
-};
-
 struct ui_widget_definition
 {
 	short type;

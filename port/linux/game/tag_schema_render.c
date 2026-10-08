@@ -26,6 +26,9 @@ of its group: each shader group's check makes the type its group's.
 #include "scenario/wind_definitions.h"
 #include "shaders/shader_definitions.h"
 #include "effects/decals.h"
+#include "objects/widgets/glow.h"
+#include "objects/widgets/flags.h"
+#include "objects/widgets/lightning.h"
 
 /* ---------- constants */
 
@@ -916,140 +919,16 @@ typedef char verify_fog_background_sound_offset[
 typedef char verify_fog_sound_environment_offset[offsetof(struct fog_definition_full, sound_environment) == 0x104 ? 1 : -1];
 typedef char verify_fog_size[sizeof(struct fog_definition_full) == 0x18C ? 1 : -1];
 
-/* glow.c */
-
-struct glow_definition
-{
-	char attachment_marker[32];
-	short number_of_particles;
-	short boundary_effect;
-	short particle_distribution;
-	short trailing_particle_distribution;
-	unsigned long flags;
-	long unused02C[7];
-	short render_mode;
-	short render_orientation;
-	long render_flags;
-	short particle_rotational_velocity_attachment_index;
-	short pad052;
-	real particle_rotational_velocity;
-	real particle_rotational_velocity_scale_lower_bound;
-	real particle_rotational_velocity_scale_upper_bound;
-	short effect_rotational_velocity_attachment_index;
-	short pad062;
-	real effect_rotational_velocity;
-	real effect_rotational_velocity_scale_lower_bound;
-	real effect_rotational_velocity_scale_upper_bound;
-	short effect_translational_velocity_attachment_index;
-	short pad072;
-	real effect_translational_velocity;
-	real effect_translational_velocity_scale_lower_bound;
-	real effect_translational_velocity_scale_upper_bound;
-	short distance_to_object_attachment_index;
-	short pad082;
-	real minimum_distance_to_object;
-	real maximum_distance_to_object;
-	real distance_to_object_scale_lower_bound;
-	real distance_to_object_scale_upper_bound;
-	long unused094[2];
-	short particle_size_attachment_index;
-	short pad09E;
-	real particle_size_lower_bound;
-	real particle_size_upper_bound;
-	real particle_size_scale_lower_bound;
-	real particle_size_scale_upper_bound;
-	short color_attachment_index;
-	short pad0B2;
-	real_argb_color color_lower_bound;
-	real_argb_color color_upper_bound;
-	real_argb_color scale_color_lower_bound;
-	real_argb_color scale_color_upper_bound;
-	real color_rate_of_change;
-	real percentage_edge_fade;
-	real trailing_particle_generation_frequency;
-	real trailing_particle_lifetime;
-	real trailing_particle_velocity;
-	real trailing_particle_minimum_t;
-	real trailing_particle_maximum_t;
-	long unused110[13];
-	struct tag_reference texture;
-};
-
 typedef char verify_glow_flags_offset[offsetof(struct glow_definition, flags) == 0x28 ? 1 : -1];
 typedef char verify_glow_color_lower_bound_offset[offsetof(struct glow_definition, color_lower_bound) == 0xB4 ? 1 : -1];
 typedef char verify_glow_size[sizeof(struct glow_definition) == 0x154 ? 1 : -1];
 
-/* flags.c */
-
-struct flag_attachment_point
-{
-	short height_to_next_attachment;
-	short pad2;
-	long unused[4];
-	char marker_name[32];
-};
-
-struct flag_definition
-{
-	unsigned long flags;
-	short trailing_edge_shape;
-	short trailing_edge_offset;
-	short attached_edge_shape;
-	short padA;
-	short width;
-	short height;
-	real cell_width_scale;
-	real cell_height_scale;
-	struct tag_reference shader_red;
-	struct tag_reference physics;
-	real wind_noise;
-	long unused3C[2];
-	struct tag_reference shader_blue;
-	struct tag_block attachment_points;
-};
-
 typedef char verify_flag_attachment_point_size[sizeof(struct flag_attachment_point) == 0x34 ? 1 : -1];
 typedef char verify_flag_size[sizeof(struct flag_definition) == 0x60 ? 1 : -1];
-
-/* lightning.c */
-
-struct lightning_marker_definition
-{
-	char attachment_marker[32];
-	word flags;
-	short type;
-	short octaves_to_next_marker;
-	word pad26;
-	byte reserved28[0x4C];
-	real_vector3d random_position_bounds;
-	real random_jitter_offset;
-	real thickness;
-	real_argb_color tint;
-	byte reserved98[0x4C];
-};
 
 struct lightning_shader
 {
 	struct shader_effect_definition shader;
-};
-
-struct lightning_definition
-{
-	word flags;
-	short count;
-	byte reserved04[0x10];
-	real near_fade_distance;
-	real far_fade_distance;
-	byte reserved1C[0x10];
-	short jitter_scale_source;
-	short thickness_scale_source;
-	short tint_modulation_source;
-	short brightness_scale_source;
-	struct tag_reference map;
-	byte reserved44[0x54];
-	struct tag_block markers;
-	struct tag_block shaders;
-	byte reservedB0[0x58];
 };
 
 typedef char verify_lightning_marker_size[sizeof(struct lightning_marker_definition) == 0xE4 ? 1 : -1];

@@ -20,6 +20,7 @@ CACHE_FILES.C
 #include "custom_edition_cache.h"
 #include "cache_file_formats.h" /* port: CUSTOM_EDITION_TAG_CACHE_BYTES */
 #include "tag_schema.h"
+#include "cache/cache_files.h"
 
 /* ---------- constants */
 
@@ -40,19 +41,6 @@ enum
 #define CACHE_FILE_STRUCTURE_BSP_HEADER_SIGNATURE 'sbsp'
 #define CACHE_FILE_HEADER_SIGNATURE 'head'
 #define CACHE_FILE_FOOTER_SIGNATURE 'foot'
-
-/* ---------- structures */
-
-struct cache_file_tag_instance
-{
-	long group_tag;
-	long parent_group_tags[2];
-	long tag_index;
-	/* read from the cache file: Xbox addresses */
-	XPTR(char) name;
-	XPTR(void) base_address;
-	unsigned long unused[2];
-};
 
 struct cache_file_tag_header
 {

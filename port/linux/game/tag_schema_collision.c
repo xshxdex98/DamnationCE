@@ -36,6 +36,10 @@ surfaces and detail objects.
 #include "structures/structure_bsp_definitions.h"
 #include "structures/structures.h"
 #include "tag_files/tag_files.h"
+#include "physics/collision_bsp.h"
+#include "objects/damage.h"
+#include "physics/physics.h"
+#include "effects/weather_particle_systems.h"
 
 #include <string.h>
 
@@ -101,36 +105,8 @@ enum
 	MAXIMUM_VERTICES_PER_LEAF_MAP_PORTAL = 0x10000,
 };
 
-/* ---------- structures */
-
-/* collision_bsp.c */
-struct collision_leaf
-{
-	word flags;
-	short bsp2d_reference_count;
-	long first_bsp2d_reference_index;
-};
-
-struct bsp2d_reference
-{
-	long plane_designator;
-	long root_index;
-};
-
 typedef char verify_collision_leaf_size[sizeof(struct collision_leaf) == 0x8 ? 1 : -1];
 typedef char verify_bsp2d_reference_size[sizeof(struct bsp2d_reference) == 0x8 ? 1 : -1];
-
-/* damage.c */
-struct damage_region
-{
-	char name[TAG_STRING_LENGTH+1];
-	unsigned long flags;
-	long unused0;
-	real damage_threshold;
-	long unused1[3];
-	struct tag_reference destroyed_effect;
-	struct tag_block permutations;
-};
 
 /* a damage region's permutation (only counted: damage.c,
 object_permutation_shield_regions) */
@@ -141,20 +117,6 @@ struct damage_permutation
 
 typedef char verify_damage_region_size[sizeof(struct damage_region) == 0x54 ? 1 : -1];
 typedef char verify_damage_permutation_size[sizeof(struct damage_permutation) == 0x20 ? 1 : -1];
-
-/* physics.c */
-struct powered_mass_point_definition
-{
-	char name[32];
-	unsigned long flags;
-	real antigrav_strength;
-	real antigrav_offset;
-	real antigrav_height;
-	real antigrav_damp_fraction;
-	real antigrav_normal_k1;
-	real antigrav_normal_k0;
-	real unused[17];
-};
 
 typedef char verify_powered_mass_point_definition_size[
 	sizeof(struct powered_mass_point_definition) == 0x80 ? 1 : -1];
@@ -202,24 +164,6 @@ struct structure_portal_index
 	short portal_index;
 };
 
-/* structures.c */
-struct structure_cluster_portal
-{
-	short cluster_indices[2];
-	long plane_index;
-	real_point3d centroid;
-	real bounding_radius;
-	unsigned long flags;
-	long unused[6];
-	struct tag_block vertices;
-};
-
-struct structure_surface_reference
-{
-	long surface_index;
-	long bsp3d_node_index;
-};
-
 /* structures.c's structure_fog_plane_render, with
 structure_bsp_definitions.h's runtime_material_type */
 struct structure_fog_plane_schema
@@ -252,32 +196,6 @@ struct structure_lens_flare_marker
 };
 
 typedef char verify_structure_lens_flare_marker_size[sizeof(struct structure_lens_flare_marker) == 0x10 ? 1 : -1];
-
-/* wind.c, weather_particle_systems.c */
-struct structure_weather_palette_entry
-{
-	char name[32];
-	struct tag_reference particle_system;
-	word pad30;
-	short runtime_particle_system_global_function_index;
-	char particle_system_global_function_name[32];
-	long particle_system_unused[11];
-	struct tag_reference wind;
-	real_vector3d wind_direction;
-	real wind_magnitude;
-	word padA0;
-	short wind_global_function_index;
-	char wind_global_function_name[32];
-	long wind_unused[11];
-};
-
-struct structure_weather_polyhedron
-{
-	real_point3d bounding_sphere_center;
-	real bounding_sphere_radius;
-	long unused;
-	struct tag_block planes;
-};
 
 typedef char verify_structure_weather_palette_entry_size[
 	sizeof(struct structure_weather_palette_entry) == 0xF0 ? 1 : -1];
@@ -318,19 +236,6 @@ typedef char verify_detail_object_cell_definition_size[
 	sizeof(struct detail_object_cell_definition) == 0x20 ? 1 : -1];
 typedef char verify_structure_detail_object_data_size[sizeof(struct structure_detail_object_data) == 0x40 ? 1 : -1];
 typedef char verify_detail_object_size[sizeof(struct detail_object) == 0x6 ? 1 : -1];
-
-/* leaf_map.c */
-struct map_leaf_face
-{
-	long node_index;
-	struct tag_block vertices;
-};
-
-struct map_leaf
-{
-	struct tag_block faces;
-	struct tag_block portal_designators;
-};
 
 typedef char verify_map_leaf_face_size[sizeof(struct map_leaf_face) == 0x10 ? 1 : -1];
 typedef char verify_map_leaf_size[sizeof(struct map_leaf) == 0x18 ? 1 : -1];

@@ -9,6 +9,8 @@ CACHE_FILES.H
 /* ---------- headers */
 
 #include "real_math.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -31,6 +33,17 @@ enum
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct cache_file_tag_instance
+{
+	long group_tag;
+	long parent_group_tags[2];
+	long tag_index;
+	/* Xbox addresses (as in cache_files.c) */
+	XPTR(char) name;
+	XPTR(void) base_address;
+	unsigned long unused[2];
+};
 
 struct tag_block;
 struct tag_data;

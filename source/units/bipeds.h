@@ -9,6 +9,8 @@ BIPEDS.H
 /* ---------- headers */
 
 #include "units.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -38,6 +40,12 @@ enum
 #define biped_try_and_get(index)	((struct biped_datum *)object_try_and_get_and_verify_type((index), _object_mask_biped))
 
 /* ---------- structures */
+
+struct biped_contact_point
+{
+	byte unused[32];
+	char marker_name[32];
+};
 
 struct animation;
 struct object_placement_data;

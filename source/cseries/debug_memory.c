@@ -9,6 +9,7 @@ DEBUG_MEMORY.C
 #include "errors.h"
 #include "math/real_math.h"
 #include "memory/crc.h"
+#include "scenario/scenario.h"
 
 /* ---------- constants */
 
@@ -61,12 +62,6 @@ typedef char debug_memory_header_size_must_be_0x20[
 typedef char debug_memory_header_checksum_offset_must_be_0x1c[
 	offsetof(struct debug_memory_header, checksum) == 0x1C ? 1 : -1];
 #endif
-
-struct memory_status
-{
-	unsigned long minimum_available_memory;
-	unsigned long maximum_available_memory;
-};
 
 struct file_pointer_totals
 {

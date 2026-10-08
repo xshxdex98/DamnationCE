@@ -13,6 +13,7 @@ ACTORS.H
 
 #include "math/real_math.h"
 #include "objects/objects.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -363,6 +364,13 @@ enum
 	((struct swarm_component_datum *)datum_get(swarm_component_data, (index)))
 
 /* ---------- structures */
+
+struct actor_variant_change_colors
+{
+	real_rgb_color color_lower_bound;
+	real_rgb_color color_upper_bound;
+	unsigned long unused[2];
+};
 
 struct firing_position_definition;
 

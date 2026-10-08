@@ -122,14 +122,6 @@ enum
 #define BIPED_CLIMBING_SNAP_ANGLE ((real)(10.0*M_PI/180.0))
 #define MINIMUM_SLIPPING_FOOTSTEP_VELOCITY_SQUARED (1.f/900.f)
 
-/* ---------- structures */
-
-struct biped_contact_point
-{
-	byte unused[32];
-	char marker_name[32];
-};
-
 struct game_globals_falling_damage
 {
 	long falling_unused[2];

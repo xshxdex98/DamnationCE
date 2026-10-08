@@ -240,54 +240,12 @@ typedef char effect_marker_list_names_offset_assert[
 
 #endif
 
-struct effect_particles_definition
-{
-	short environment;
-	short disposition;
-	short camera_mode;
-	short unused006;
-	short location_index;
-	short unused00a;
-	real_euler_angles2d direction;
-	real_vector3d offset;
-	real_vector3d runtime_direction;
-	long unused02c[10];
-	struct tag_reference particle;
-	unsigned long flags;
-	short distribution_function;
-	short unused06a;
-	short count_lower_bound;
-	short count_upper_bound;
-	real distribution_radius_lower_bound;
-	real distribution_radius_upper_bound;
-	long unused078[3];
-	real velocity_lower_bound;
-	real velocity_upper_bound;
-	real velocity_cone_angle;
-	real angular_velocity_lower_bound;
-	real angular_velocity_upper_bound;
-	long unused098[2];
-	real radius_lower_bound;
-	real radius_upper_bound;
-	long unused0a8[2];
-	real_argb_color tint_lower_bound;
-	real_argb_color tint_upper_bound;
-	long unused0d0[4];
-	unsigned long scale_a_flags;
-	unsigned long scale_b_flags;
-};
-
 typedef char effect_particles_definition_size_assert[
 	sizeof(struct effect_particles_definition) == 0xE8 ? 1 : -1];
 typedef char effect_particles_definition_count_offset_assert[
 	offsetof(struct effect_particles_definition, count_lower_bound) == 0x6C ? 1 : -1];
 typedef char effect_particles_definition_scales_offset_assert[
 	offsetof(struct effect_particles_definition, scale_a_flags) == 0xE0 ? 1 : -1];
-
-struct effect_location_definition
-{
-	char marker_name[32];
-};
 
 struct effect_location_datum
 {

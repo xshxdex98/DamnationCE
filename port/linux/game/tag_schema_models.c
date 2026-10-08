@@ -23,6 +23,10 @@ lists (next_animation_index) end.
 #include "objects/object_definitions.h"
 #include "rasterizer/rasterizer_geometry.h"
 #include "units/units.h"
+#include "models/models.h"
+#include "interface/first_person_weapons.h"
+#include "units/vehicles.h"
+#include "devices/devices.h"
 
 #include <string.h>
 
@@ -65,40 +69,6 @@ enum
 };
 
 /* ---------- structures */
-
-/* models.c's */
-
-struct model_shader_reference
-{
-	struct tag_reference shader;
-	short permutation_index;
-	word pad;
-	long unused[3];
-};
-
-struct model_geometry
-{
-	byte reserved[0x24];
-	struct tag_block parts;
-};
-
-struct model_geometry_part
-{
-	unsigned long flags;
-	short shader_index;
-	char previous_part_index;
-	char next_part_index;
-	short centroid_primary_node_index;
-	short centroid_secondary_node_index;
-	real centroid_primary_node_weight;
-	real centroid_secondary_node_weight;
-	real_point3d centroid;
-	struct tag_block uncompressed_vertices;
-	struct tag_block compressed_vertices;
-	struct tag_block triangles;
-	struct triangle_buffer triangle_buffer;
-	struct vertex_buffer vertex_buffer;
-};
 
 /* a region permutation's marker (model_definitions.h's markers block, which
 the game never reads) */
@@ -156,12 +126,6 @@ struct animation_graph_node
 	long pad1;
 };
 
-struct animation_graph_sound_reference
-{
-	struct tag_reference sound;
-	long unused;
-};
-
 struct compressed_animation_header
 {
 	long rotation_keyframe_frame_indices_offset;
@@ -176,38 +140,6 @@ struct compressed_animation_header
 	long default_scales_offset;
 	long scale_keyframes_offset;
 	unsigned long rotation_node_headers[1];
-};
-
-/* weapons.c's, first_person_weapons.c's */
-struct animation_graph_weapon_animations
-{
-	long unused1[4];
-	struct tag_block animations;
-};
-
-/* vehicles.c's */
-struct vehicle_animation
-{
-	struct animation_aiming_screen_bounds steering_screen_bounds;
-	long unused[0x11];
-	struct tag_block animations;
-	struct tag_block suspensions;
-};
-
-struct vehicle_suspension
-{
-	short mass_point_index;
-	short animation_index;
-	real unknown4;
-	real unknown8;
-	byte unknownc[8];
-};
-
-/* devices.c's */
-struct animation_graph_device_animations
-{
-	long unused[21];
-	struct tag_block animations;
 };
 
 typedef char verify_animation_graph_node_size[sizeof(struct animation_graph_node) == 0x40 ? 1 : -1];

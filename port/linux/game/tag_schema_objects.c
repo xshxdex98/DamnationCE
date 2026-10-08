@@ -33,6 +33,9 @@ itmc).
 #include "units/units.h"
 #include "ai/ai.h"
 #include "units/vehicles.h"
+#include "camera/bored_camera.h"
+#include "units/bipeds.h"
+#include "ai/actors.h"
 
 /* ---------- constants */
 
@@ -88,21 +91,7 @@ enum
 
 /* ---------- structures */
 
-/* following_camera.c */
-struct unit_camera_track
-{
-	struct tag_reference track;
-	long unused[3];
-};
-
 typedef char verify_unit_camera_track_size[sizeof(struct unit_camera_track) == 0x1C ? 1 : -1];
-
-/* units.c */
-struct unit_initial_weapon
-{
-	struct tag_reference weapon;
-	long unused[5];
-};
 
 typedef char verify_unit_initial_weapon_size[sizeof(struct unit_initial_weapon) == 0x24 ? 1 : -1];
 
@@ -121,13 +110,6 @@ typedef char verify_unit_dialogue_variant_definition_size[
 typedef char verify_unit_dialogue_variant_definition_dialogue_offset[
 	offsetof(struct unit_dialogue_variant_definition, dialogue.index) ==
 		offsetof(struct unit_dialogue_variant, dialogue_index) ? 1 : -1];
-
-/* bipeds.c */
-struct biped_contact_point
-{
-	byte unused[32];
-	char marker_name[32];
-};
 
 typedef char verify_biped_contact_point_size[sizeof(struct biped_contact_point) == 0x40 ? 1 : -1];
 
@@ -164,14 +146,6 @@ struct vehicle_definition
 };
 
 typedef char verify_vehicle_definition_size[sizeof(struct vehicle_definition) == 0x3F0 ? 1 : -1];
-
-/* actors.c */
-struct actor_variant_change_colors
-{
-	real_rgb_color color_lower_bound;
-	real_rgb_color color_upper_bound;
-	unsigned long unused[2];
-};
 
 typedef char verify_actor_variant_change_colors_size[sizeof(struct actor_variant_change_colors) == 0x20 ? 1 : -1];
 

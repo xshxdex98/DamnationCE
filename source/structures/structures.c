@@ -22,6 +22,7 @@ STRUCTURES.C
 #include "structures.h"
 #include "physics/collision_bsp.h"
 #include "rasterizer/rasterizer_geometry.h"
+#include "structures/structures.h"
 
 /* ---------- constants */
 
@@ -76,23 +77,6 @@ struct structure_cluster_graph
 	struct tag_block surface_indices;
 	struct tag_block mirrors;
 	struct tag_block portal_indices;
-};
-
-struct structure_cluster_portal
-{
-	short cluster_indices[2];
-	long plane_index;
-	real_point3d centroid;
-	real bounding_radius;
-	unsigned long flags;
-	long unused[6];
-	struct tag_block vertices;
-};
-
-struct structure_surface_reference
-{
-	long surface_index;
-	long bsp3d_node_index;
 };
 
 struct fog_screen

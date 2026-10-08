@@ -6,6 +6,11 @@ STRUCTURES.H
 #define __STRUCTURES_H
 #pragma once
 
+/* ---------- headers */
+
+#include "tag_files/tag_groups.h"
+#include "math/real_math.h"
+
 /* ---------- constants */
 
 enum
@@ -45,6 +50,23 @@ enum
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct structure_surface_reference
+{
+	long surface_index;
+	long bsp3d_node_index;
+};
+
+struct structure_cluster_portal
+{
+	short cluster_indices[2];
+	long plane_index;
+	real_point3d centroid;
+	real bounding_radius;
+	unsigned long flags;
+	long unused[6];
+	struct tag_block vertices;
+};
 
 /* ---------- prototypes/STRUCTURES.C */
 

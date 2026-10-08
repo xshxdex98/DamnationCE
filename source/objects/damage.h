@@ -9,6 +9,8 @@ DAMAGE.H
 /* ---------- headers */
 
 #include "objects.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -60,6 +62,17 @@ enum
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct damage_region
+{
+	char name[TAG_STRING_LENGTH+1];
+	unsigned long flags;
+	long unused0;
+	real damage_threshold;
+	long unused1[3];
+	struct tag_reference destroyed_effect;
+	struct tag_block permutations;
+};
 
 struct damage_data
 {

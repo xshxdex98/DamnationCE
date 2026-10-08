@@ -10,6 +10,8 @@ UI_WIDGET.H
 
 #include "integer_math.h"
 #include "real_math.h"
+#include "tag_files/tag_groups.h"
+#include "math/real_math.h"
 
 /* ---------- constants */
 
@@ -82,6 +84,48 @@ enum
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct ui_widget_game_data_input_reference
+{
+	short function;
+	byte unknown002[0x24 - 0x02];
+};
+
+struct ui_widget_search_and_replace_reference
+{
+	char search_string[32];
+	short replace_function;
+};
+
+struct ui_widget_conditional_reference
+{
+	struct tag_reference widget_tag;
+	char name[32];
+	long flags;
+	short custom_controller_index;
+	byte unknown036[0x50 - 0x36];
+};
+
+struct ui_widget_child_reference
+{
+	struct tag_reference widget_tag;
+	char name[32];
+	long flags;
+	short custom_controller_index;
+	short vertical_offset;
+	short horizontal_offset;
+	byte unknown03A[0x50 - 0x3A];
+};
+
+struct ui_widget_event_handler_reference
+{
+	long flags;
+	short event_type;
+	short function;
+	struct tag_reference widget_tag;
+	struct tag_reference sound_effect;
+	char script[32];
+};
 
 /* ---------- prototypes/UI_WIDGET.C */
 

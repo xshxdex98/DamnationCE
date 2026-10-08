@@ -39,6 +39,8 @@ bad_sky).
 #include "units/dialogue_definitions.h"
 #include "ai/actors.h"
 #include "text/draw_string.h"
+#include "game/players.h"
+#include "cutscene/cinematics.h"
 
 #include <string.h>
 
@@ -175,44 +177,6 @@ struct light_fixture_placement
 struct sound_scenery_placement
 {
 	struct scenario_object_datum object;
-};
-
-/* devices.c */
-struct scenario_device_group
-{
-	char name[32];
-	real initial_value;
-	unsigned long flags;
-	long unused[3];
-};
-
-/* players.c */
-struct scenario_bsp_switch_trigger_volume
-{
-	short trigger_volume_index;
-	short source_structure_bsp_index;
-	short destination_structure_bsp_index;
-	short cutscene_flag_index;
-};
-
-/* cinematics.c */
-struct scenario_cutscene_title
-{
-	long flags;
-	char name[TAG_STRING_LENGTH+1];
-	long pad24;
-	rectangle2d bounds;
-	short text_index;
-	word style;
-	word justification;
-	word pad36;
-	unsigned long text_flags;
-	pixel32 foreground_color;
-	pixel32 shadow_color;
-	real fade_in_time;
-	real up_time;
-	real fade_out_time;
-	byte unused50[0x10];
 };
 
 /* ai_communication.c */

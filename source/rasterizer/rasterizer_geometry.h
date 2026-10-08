@@ -6,6 +6,10 @@ RASTERIZER_GEOMETRY.H
 #define __RASTERIZER_GEOMETRY_H
 #pragma once
 
+/* ---------- headers */
+
+#include "math/real_math.h"
+
 /* ---------- constants */
 
 /* rasterizer geometry flags */

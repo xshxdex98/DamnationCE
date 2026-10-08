@@ -9,12 +9,20 @@ BORED_CAMERA.H
 /* ---------- headers */
 
 #include "cseries/cseries.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct unit_camera_track
+{
+	struct tag_reference track;
+	long unused[3];
+};
 
 struct bored_camera
 {

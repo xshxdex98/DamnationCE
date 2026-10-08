@@ -23,6 +23,7 @@ RASTERIZER.C
 #include "render/render_debug.h"
 #include "saved games/game_state.h"
 #include "tag_files/tag_groups.h"
+#include "models/models.h"
 
 /* ---------- constants */
 
@@ -48,24 +49,6 @@ struct rasterizer_model_vertex_compressed
 	point2d texture_coordinates;
 	char node_indices[2];
 	short node_weight;
-};
-
-struct model_geometry_part
-{
-	unsigned long flags;
-	short shader_index;
-	char previous_part_index;
-	char next_part_index;
-	short centroid_primary_node_index;
-	short centroid_secondary_node_index;
-	real centroid_primary_node_weight;
-	real centroid_secondary_node_weight;
-	real_point3d centroid;
-	struct tag_block uncompressed_vertices;
-	struct tag_block compressed_vertices;
-	struct tag_block triangles;
-	struct triangle_buffer triangle_buffer;
-	struct vertex_buffer vertex_buffer;
 };
 
 struct rasterizer_debug_model_vertex

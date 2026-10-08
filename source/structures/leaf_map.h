@@ -17,6 +17,18 @@ LEAF_MAP.H
 
 /* ---------- structures */
 
+struct map_leaf
+{
+	struct tag_block faces;
+	struct tag_block portal_designators;
+};
+
+struct map_leaf_face
+{
+	long node_index;
+	struct tag_block vertices;
+};
+
 struct bsp3d;
 
 struct leaf_map

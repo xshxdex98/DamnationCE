@@ -8,6 +8,8 @@ COLLISION_BSP.H
 
 #include "bsp2d.h"
 #include "bsp3d.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -23,6 +25,19 @@ enum
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct bsp2d_reference
+{
+	long plane_designator;
+	long root_index;
+};
+
+struct collision_leaf
+{
+	word flags;
+	short bsp2d_reference_count;
+	long first_bsp2d_reference_index;
+};
 
 struct collision_bsp_test_vector_result
 {

@@ -96,21 +96,8 @@ struct animation_state_continuous
 	real frame_index;
 };
 
-/* the animation graph blocks this file reads */
-struct animation_graph_sound_reference
-{
-	struct tag_reference sound;
-	long unused;
-};
-
 typedef char verify_animation_graph_sound_reference_size[
 	sizeof(struct animation_graph_sound_reference) == 0x14 ? 1 : -1];
-
-struct animation_graph_first_person_weapon_animations
-{
-	long unused[4];
-	struct tag_block animations;		// animation_graph_animation_index
-};
 
 typedef char verify_animation_graph_first_person_weapon_animations_size[
 	sizeof(struct animation_graph_first_person_weapon_animations) == 0x1C ? 1 : -1];

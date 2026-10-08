@@ -10,6 +10,7 @@ MODEL_ANIMATIONS.C
 #include "models/models.h"
 #include "models/model_definitions.h"
 #include "objects/objects.h"
+#include "interface/first_person_weapons.h"
 
 /* ---------- constants */
 
@@ -92,13 +93,6 @@ struct animation_graph_node
 
 typedef char verify_animation_graph_node_size[
 	sizeof(struct animation_graph_node) == 0x40 ? 1 : -1];
-
-/* No shared header declares this block element yet; first_person_weapons.c keeps the same copy. */
-struct animation_graph_sound_reference
-{
-	struct tag_reference sound;
-	long unused;
-};
 
 typedef char verify_animation_graph_sound_reference_size[
 	sizeof(struct animation_graph_sound_reference) == 0x14 ? 1 : -1];

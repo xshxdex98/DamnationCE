@@ -37,6 +37,7 @@ SCENARIO.C
 #include "sound/sound_manager.h"
 #include "structures/structure_bsp_definitions.h"
 #include "units/units.h"
+#include "scenario/scenario.h"
 
 /* ---------- constants */
 
@@ -46,14 +47,6 @@ SCENARIO.C
 #define scenario_structure_bsp_reconnect_procs scenario_structure_bsp_reconnect_proc_table
 #define scenario_structure_bsp_disconnect_procs scenario_structure_bsp_disconnect_proc_table
 #define scenario_memory_status_attributed (&scenario_memory_status)
-
-/* ---------- structures */
-
-struct memory_status
-{
-	unsigned long minimum_available_memory;
-	unsigned long maximum_available_memory;
-};
 
 /* ---------- prototypes */
 

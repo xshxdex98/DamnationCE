@@ -19,6 +19,8 @@ FOLLOWING_CAMERA.C
 #include "units/units.h"
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
+#include "camera/following_camera.h"
+#include "camera/bored_camera.h"
 
 /* ---------- constants */
 
@@ -45,26 +47,6 @@ struct following_camera_result
 	byte parameter_flags[5];
 	byte pad51[3];
 	real parameter_timers[5];
-};
-
-struct camera_track_control_point
-{
-	real_vector3d position;
-	real_quaternion orientation;
-	long unused[8];
-};
-
-struct camera_track_definition
-{
-	unsigned long flags;
-	struct tag_block control_points;
-	long unused[8];
-};
-
-struct unit_camera_track
-{
-	struct tag_reference track;
-	long unused[3];
 };
 
 typedef char camera_track_control_point_size_assert[

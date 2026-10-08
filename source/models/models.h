@@ -6,11 +6,49 @@ MODELS.H
 #define __MODELS_H
 #pragma once
 
+/* ---------- headers */
+
+#include "rasterizer/rasterizer_geometry.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
+
 /* ---------- constants */
 
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct model_shader_reference
+{
+	struct tag_reference shader;
+	short permutation_index;
+	word pad;
+	long unused[3];
+};
+
+struct model_geometry_part
+{
+	unsigned long flags;
+	short shader_index;
+	char previous_part_index;
+	char next_part_index;
+	short centroid_primary_node_index;
+	short centroid_secondary_node_index;
+	real centroid_primary_node_weight;
+	real centroid_secondary_node_weight;
+	real_point3d centroid;
+	struct tag_block uncompressed_vertices;
+	struct tag_block compressed_vertices;
+	struct tag_block triangles;
+	struct triangle_buffer triangle_buffer;
+	struct vertex_buffer vertex_buffer;
+};
+
+struct model_geometry
+{
+	byte reserved[0x24];
+	struct tag_block parts;
+};
 
 struct model;
 struct model_geometry_part;

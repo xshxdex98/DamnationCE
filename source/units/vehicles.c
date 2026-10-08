@@ -100,26 +100,10 @@ struct physics_mass_point_definition
 	byte unused6c[0x14];
 };
 
-struct vehicle_animation
-{
-	struct animation_aiming_screen_bounds steering_screen_bounds;
-	long unused[0x11];
-	struct tag_block animations;
-	struct tag_block suspensions;
-};
-
-struct vehicle_suspension
-{
-	short mass_point_index;
-	short animation_index;
-	real unknown4;
-	real unknown8;
-	byte unknownc[8];
-};
-
 #include "physics/mass_point_datum.h"
 
 #include "physics/powered_mass_point_datum.h"
+#include "units/vehicles.h"
 
 struct scenario_object_permutation;
 struct scenario_unit;

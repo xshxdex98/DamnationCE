@@ -9,12 +9,41 @@ FLAGS.H
 /* ---------- headers */
 
 #include "objects/widgets/widget_types.h"
+#include "tag_files/tag_groups.h"
+#include "math/real_math.h"
 
 /* ---------- constants */
 
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct flag_definition
+{
+	unsigned long flags;
+	short trailing_edge_shape;
+	short trailing_edge_offset;
+	short attached_edge_shape;
+	short padA;
+	short width;
+	short height;
+	real cell_width_scale;
+	real cell_height_scale;
+	struct tag_reference shader_red;
+	struct tag_reference physics;
+	real wind_noise;
+	long unused3C[2];
+	struct tag_reference shader_blue;
+	struct tag_block attachment_points;
+};
+
+struct flag_attachment_point
+{
+	short height_to_next_attachment;
+	short pad2;
+	long unused[4];
+	char marker_name[32];
+};
 
 /* ---------- prototypes/EXAMPLE.C */
 

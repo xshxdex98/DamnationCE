@@ -164,12 +164,6 @@ struct number_hud_element_definition
 	long unused[3];
 };
 
-struct weapon_hud_overlay_definition
-{
-	struct tag_reference bitmap;
-	struct tag_block items;
-};
-
 struct grenade_count_panel_definition
 {
 	struct static_hud_element_definition background;

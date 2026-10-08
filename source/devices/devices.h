@@ -9,6 +9,8 @@ DEVICES.H
 /* ---------- headers */
 
 #include "objects/objects.h"
+#include "math/real_math.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -36,6 +38,20 @@ enum
 #define device_get(index) ((struct device_datum *)object_get_and_verify_type((index), _object_mask_device))
 
 /* ---------- structures */
+
+struct scenario_device_group
+{
+	char name[32];
+	real initial_value;
+	unsigned long flags;
+	long unused[3];
+};
+
+struct animation_graph_device_animations
+{
+	long unused[21];
+	struct tag_block animations;
+};
 
 struct _device_datum
 {
