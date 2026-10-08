@@ -1,19 +1,15 @@
 /*
 HALO_LINKER_COMMON.C
 
-Game definitions the link needs that no reconstructed translation unit
-provides yet. Nothing here is decompiled game code; every definition is
-weak, so the genuine one takes over automatically once its owning unit is
-reconstructed.
+Game definitions the link needs that no game source provides. Nothing
+here is game code; every definition is weak, so a real one replaces it.
 
-Globals: in the January image these are tentative definitions that the
-linker pooled into one COMMON block. COMMON storage is zero filled, so each
-is zeroed storage here. The sizes come from the spacing of the symbols in
-the January image and so are upper bounds of the real sizes; the declared
-type is noted beside each.
+Globals: on the Xbox these were tentative definitions pooled into one
+COMMON block, so each is zeroed storage here, sized from the spacing of
+the Xbox build's symbols (upper bounds); the declared type is noted beside
+each.
 
-Functions: fast_ftol_C and main_crash are Halo functions that are still
-missing from the reconstruction.
+Functions: fast_ftol_C and main_crash, which the game sources lack.
 */
 
 #include "platform.h"
