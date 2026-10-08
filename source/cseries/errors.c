@@ -22,8 +22,8 @@ struct error_suppression_globals
 
 /* ---------- globals */
 
-static boolean data_002dcd2c = TRUE;
-static struct error_suppression_globals bss_0031df2c = { 0, 0 };
+static boolean error_file_first_write = TRUE;
+static struct error_suppression_globals error_suppression = { 0, 0 };
 boolean find_all_fucked_up_shit = FALSE;
 long fucked_up_shit_count = 0;
 
@@ -127,9 +127,9 @@ void write_to_error_file(
 	char line[1024];
 	long time_value;
 
-	if (data_002dcd2c)
+	if (error_file_first_write)
 	{
-		data_002dcd2c = FALSE;
+		error_file_first_write = FALSE;
 		write_to_error_file("\r\n\r\n", FALSE);
 		write_to_error_file("halobeta xbox 01.01.14.2342(CACHE) ----------------------------------------------\r\n", TRUE);
 		sprintf(line, "reference function: %s\r\n", "_write_to_error_file");
@@ -184,19 +184,19 @@ void error(
 	{
 		long time = system_milliseconds();
 
-		if ((unsigned long)(time - bss_0031df2c.last_error_time) > 900)
+		if ((unsigned long)(time - error_suppression.last_error_time) > 900)
 		{
-			bss_0031df2c.error_count = 0;
+			error_suppression.error_count = 0;
 		}
-		bss_0031df2c.last_error_time = time;
-		if (bss_0031df2c.error_count == 10 && terminal_shows(_terminal_message_chatter))
+		error_suppression.last_error_time = time;
+		if (error_suppression.error_count == 10 && terminal_shows(_terminal_message_chatter))
 		{
 			terminal_printf(
 				global_real_argb_white,
 				"too many errors, only printing to debug.txt");
 		}
-		bss_0031df2c.error_count++;
-		if (bss_0031df2c.error_count >= 10)
+		error_suppression.error_count++;
+		if (error_suppression.error_count >= 10)
 		{
 			priority = _error_log;
 		}

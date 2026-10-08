@@ -428,10 +428,10 @@ void _tr_init(s)
     s->l_desc.stat_desc = &data_00308b54[0];
 
     s->d_desc.dyn_tree = s->dyn_dtree;
-    s->d_desc.stat_desc = (static_tree_desc *)((char *)data_00308b54 + 0x14);
+    s->d_desc.stat_desc = &data_00308b54[1];
 
     s->bl_desc.dyn_tree = s->bl_tree;
-    s->bl_desc.stat_desc = (static_tree_desc *)((char *)data_00308b54 + 0x28);
+    s->bl_desc.stat_desc = &data_00308b54[2];
 
     s->bi_buf = 0;
     s->bi_valid = 0;

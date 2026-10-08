@@ -18,7 +18,7 @@ unsigned long system_milliseconds(void);
 #define DATA_PACKET_FIELD(type, count) { type, count, 0, 0, 0 }
 #define DATA_PACKET_FIELD_END DATA_PACKET_FIELD(_data_packet_field_end, 0)
 #define NETWORK_GAME_MESSAGE_DEFINITION(member, name, structure) \
-	{ name, 0, sizeof(structure), 1, data_0030aa68.member##_fields, FALSE }
+	{ name, 0, sizeof(structure), 1, message_packet_definitions.member##_fields, FALSE }
 
 /* ---------- structures */
 
@@ -151,7 +151,7 @@ DEFINE_NETWORK_GAME_MESSAGE(message_client_graceful_game_exit_postgame, 0x04);
 
 /* ---------- globals */
 
-static struct network_game_message_packet_definitions data_0030aa68 =
+static struct network_game_message_packet_definitions message_packet_definitions =
 {
 	{
 		DATA_PACKET_FIELD(_data_packet_field_shorts, 2),
@@ -373,41 +373,41 @@ static struct network_game_message_packet_definitions data_0030aa68 =
 	},
 	NETWORK_GAME_MESSAGE_DEFINITION(client_graceful_game_exit_postgame, "message_client_graceful_game_exit_postgame_packet", message_client_graceful_game_exit_postgame),
 	{
-		{ 0, 0, &data_0030aa68.client_broadcast_game_search },
-		{ 0, 0, &data_0030aa68.client_ping },
-		{ 1, 0, &data_0030aa68.server_game_advertise },
-		{ 1, 0, &data_0030aa68.server_pong },
-		{ 2, 0, &data_0030aa68.server_machine_accepted },
-		{ 2, 0, &data_0030aa68.server_machine_rejected },
-		{ 2, 0, &data_0030aa68.server_game_settings_update },
-		{ 2, 0, &data_0030aa68.server_pregame_countdown },
-		{ 2, 0, &data_0030aa68.server_pregame_keep_alive },
-		{ 2, 0, &data_0030aa68.server_begin_game },
-		{ 2, 0, &data_0030aa68.server_graceful_game_exit_pregame },
-		{ 6, 0, &data_0030aa68.server_postgame_keep_alive },
-		{ 3, 0, &data_0030aa68.client_join_game_request },
-		{ 3, 0, &data_0030aa68.client_add_player_request_pregame },
-		{ 3, 0, &data_0030aa68.client_remove_player_request_pregame },
-		{ 3, 0, &data_0030aa68.client_settings_request },
-		{ 3, 0, &data_0030aa68.client_player_settings_request },
-		{ 3, 0, &data_0030aa68.client_game_start_request },
-		{ 3, 0, &data_0030aa68.client_graceful_game_exit_pregame },
-		{ 3, 0, &data_0030aa68.client_map_is_precached_pregame },
-		{ 4, 0, &data_0030aa68.server_game_update },
-		{ 4, 0, &data_0030aa68.server_add_player_ingame },
-		{ 4, 0, &data_0030aa68.server_remove_player_ingame },
-		{ 4, 0, &data_0030aa68.server_game_over },
-		{ 5, 0, &data_0030aa68.client_loaded },
-		{ 5, 0, &data_0030aa68.client_game_update },
-		{ 5, 0, &data_0030aa68.client_add_player_request_ingame },
-		{ 5, 0, &data_0030aa68.client_remove_player_request_ingame },
-		{ 5, 0, &data_0030aa68.client_host_crashed_cry_for_help },
-		{ 5, 0, &data_0030aa68.client_join_new_host },
-		{ 6, 0, &data_0030aa68.server_switch_to_pregame },
-		{ 6, 0, &data_0030aa68.server_graceful_game_exit_postgame },
-		{ 7, 0, &data_0030aa68.client_remove_player_request_postgame },
-		{ 7, 0, &data_0030aa68.client_switch_to_pregame },
-		{ 7, 0, &data_0030aa68.client_graceful_game_exit_postgame },
+		{ 0, 0, &message_packet_definitions.client_broadcast_game_search },
+		{ 0, 0, &message_packet_definitions.client_ping },
+		{ 1, 0, &message_packet_definitions.server_game_advertise },
+		{ 1, 0, &message_packet_definitions.server_pong },
+		{ 2, 0, &message_packet_definitions.server_machine_accepted },
+		{ 2, 0, &message_packet_definitions.server_machine_rejected },
+		{ 2, 0, &message_packet_definitions.server_game_settings_update },
+		{ 2, 0, &message_packet_definitions.server_pregame_countdown },
+		{ 2, 0, &message_packet_definitions.server_pregame_keep_alive },
+		{ 2, 0, &message_packet_definitions.server_begin_game },
+		{ 2, 0, &message_packet_definitions.server_graceful_game_exit_pregame },
+		{ 6, 0, &message_packet_definitions.server_postgame_keep_alive },
+		{ 3, 0, &message_packet_definitions.client_join_game_request },
+		{ 3, 0, &message_packet_definitions.client_add_player_request_pregame },
+		{ 3, 0, &message_packet_definitions.client_remove_player_request_pregame },
+		{ 3, 0, &message_packet_definitions.client_settings_request },
+		{ 3, 0, &message_packet_definitions.client_player_settings_request },
+		{ 3, 0, &message_packet_definitions.client_game_start_request },
+		{ 3, 0, &message_packet_definitions.client_graceful_game_exit_pregame },
+		{ 3, 0, &message_packet_definitions.client_map_is_precached_pregame },
+		{ 4, 0, &message_packet_definitions.server_game_update },
+		{ 4, 0, &message_packet_definitions.server_add_player_ingame },
+		{ 4, 0, &message_packet_definitions.server_remove_player_ingame },
+		{ 4, 0, &message_packet_definitions.server_game_over },
+		{ 5, 0, &message_packet_definitions.client_loaded },
+		{ 5, 0, &message_packet_definitions.client_game_update },
+		{ 5, 0, &message_packet_definitions.client_add_player_request_ingame },
+		{ 5, 0, &message_packet_definitions.client_remove_player_request_ingame },
+		{ 5, 0, &message_packet_definitions.client_host_crashed_cry_for_help },
+		{ 5, 0, &message_packet_definitions.client_join_new_host },
+		{ 6, 0, &message_packet_definitions.server_switch_to_pregame },
+		{ 6, 0, &message_packet_definitions.server_graceful_game_exit_postgame },
+		{ 7, 0, &message_packet_definitions.client_remove_player_request_postgame },
+		{ 7, 0, &message_packet_definitions.client_switch_to_pregame },
+		{ 7, 0, &message_packet_definitions.client_graceful_game_exit_postgame },
 	},
 	{
 		"network_game_messages_group",
@@ -416,7 +416,7 @@ static struct network_game_message_packet_definitions data_0030aa68 =
 		/* the per-tick update of 128 players decodes to 0x1010 bytes */
 		HALO_PORT_NETWORK_PACKET_SIZE,
 		HALO_PORT_NETWORK_PACKET_SIZE,
-		data_0030aa68.packets,
+		message_packet_definitions.packets,
 	},
 };
 
@@ -427,7 +427,7 @@ static byte network_game_message_buffer[HALO_PORT_MAXIMUM_NETWORK_MESSAGE_SIZE +
 void initialize_network_game_packets(
 	void)
 {
-	data_packet_group_initialize(&data_0030aa68.group);
+	data_packet_group_initialize(&message_packet_definitions.group);
 
 	return;
 }
@@ -490,7 +490,7 @@ static boolean encode_network_game_message(
 #line 353 "c:\\halo\\SOURCE\\networking\\network_messages.c"
 	match_assert(__FILE__, __LINE__, message_struct && encoded_message && encoded_message_size && (*encoded_message_size>0));
 
-	return data_packet_group_encode_packet(&data_0030aa68.group, message_struct, encoded_message, encoded_message_size, message_type, message_version);
+	return data_packet_group_encode_packet(&message_packet_definitions.group, message_struct, encoded_message, encoded_message_size, message_type, message_version);
 }
 
 void *create_network_game_message(
@@ -692,7 +692,7 @@ boolean decode_network_game_message(
 #line 313 "c:\\halo\\SOURCE\\networking\\network_messages.c"
 	match_assert(__FILE__, __LINE__, message_struct && encoded_message && encoded_message_size && (*encoded_message_size>0) && packet_type && (*packet_type>=0) && packet_version && (*packet_version>0));
 
-	result = data_packet_group_decode_packet(&data_0030aa68.group, message_struct, encoded_message, encoded_message_size, packet_type, packet_version, expected_packet_class);
+	result = data_packet_group_decode_packet(&message_packet_definitions.group, message_struct, encoded_message, encoded_message_size, packet_type, packet_version, expected_packet_class);
 
 	if (!result)
 	{

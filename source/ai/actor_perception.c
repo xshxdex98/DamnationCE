@@ -426,10 +426,8 @@ struct actor_perception_refresh_entry
 	real priority;
 };
 
-/*
- * code_00023290 maintains separate enemy and friend candidate lists on its
- * stack. Each list has two 16-bit counters followed by 128 12-byte entries.
- */
+/* the perception refresh's enemy and friend candidate lists (on its stack):
+ * two counts, then 128 entries */
 struct actor_perception_refresh_list
 {
 	short accepted_count;

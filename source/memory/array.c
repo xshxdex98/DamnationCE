@@ -10,7 +10,7 @@ ARRAY.C
 
 /* ---------- globals */
 
-static struct profile_section data_00308bc0[3] =
+static struct profile_section array_profile_sections[3] =
 {
 	{ "memory_dynamic_array_resize", NONE, TRUE },
 	{ "memory_dynamic_array_add_element", NONE, TRUE },
@@ -62,7 +62,7 @@ boolean dynamic_array_resize(
 		0x24,
 		(array->count!=0)==(array->elements!=NULL));
 
-	profile_enter(data_00308bc0[0]);
+	profile_enter(array_profile_sections[0]);
 	if (count>=0 && count<=LONG_MAX)
 	{
 		if (count == array->count)
@@ -91,7 +91,7 @@ boolean dynamic_array_resize(
 			}
 		}
 	}
-	profile_exit(data_00308bc0[0]);
+	profile_exit(array_profile_sections[0]);
 
 	return result;
 }
@@ -148,7 +148,7 @@ long dynamic_array_add_element(
 		0x60,
 		(array->count!=0)==(array->elements!=NULL));
 
-	profile_enter(data_00308bc0[1]);
+	profile_enter(array_profile_sections[1]);
 	if (array->count < LONG_MAX)
 	{
 		long new_count = array->count + 1;
@@ -168,7 +168,7 @@ long dynamic_array_add_element(
 			array->elements = elements;
 		}
 	}
-	profile_exit(data_00308bc0[1]);
+	profile_exit(array_profile_sections[1]);
 
 	return index;
 }
@@ -222,7 +222,7 @@ void dynamic_array_delete_element(
 		(array->count!=0)==(array->elements!=NULL));
 	match_assert("c:\\halo\\SOURCE\\memory\\array.c", 143, index>=0 && index<array->count);
 
-	profile_enter(data_00308bc0[2]);
+	profile_enter(array_profile_sections[2]);
 	array->count--;
 	if (index<array->count)
 	{
@@ -242,7 +242,7 @@ void dynamic_array_delete_element(
 		"c:\\halo\\SOURCE\\memory\\array.c",
 		158,
 		(array->count!=0)==(array->elements!=NULL));
-	profile_exit(data_00308bc0[2]);
+	profile_exit(array_profile_sections[2]);
 
 	return;
 }

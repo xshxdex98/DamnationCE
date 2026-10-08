@@ -173,7 +173,7 @@ static void apply_multi_vector(
 
 /* ---------- globals */
 
-static struct recorded_animation_playback_v1_data data_002dd030 =
+static struct recorded_animation_playback_v1_data recorded_animation_v1_codes =
 {
 	{
 		NULL,
@@ -204,7 +204,7 @@ static struct recorded_animation_playback_v1_data data_002dd030 =
 	{
 		"animation_event_v1",
 		sizeof(struct recorded_animation_event_v1),
-		data_002dd030.animation_event_v1_codes,
+		recorded_animation_v1_codes.animation_event_v1_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -212,7 +212,7 @@ static struct recorded_animation_playback_v1_data data_002dd030 =
 	{
 		"animation_state_set_event_v1",
 		sizeof(struct recorded_animation_state_set_event_v1),
-		data_002dd030.animation_state_set_event_v1_codes,
+		recorded_animation_v1_codes.animation_state_set_event_v1_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -220,7 +220,7 @@ static struct recorded_animation_playback_v1_data data_002dd030 =
 	{
 		"aiming_speed_set_event_v1",
 		sizeof(struct recorded_aiming_speed_set_event_v1),
-		data_002dd030.aiming_speed_set_event_v1_codes,
+		recorded_animation_v1_codes.aiming_speed_set_event_v1_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -228,7 +228,7 @@ static struct recorded_animation_playback_v1_data data_002dd030 =
 	{
 		"control_flags_set_event_v1",
 		sizeof(struct recorded_control_flags_set_event_v1),
-		data_002dd030.control_flags_set_event_v1_codes,
+		recorded_animation_v1_codes.control_flags_set_event_v1_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -236,7 +236,7 @@ static struct recorded_animation_playback_v1_data data_002dd030 =
 	{
 		"weapon_index_set_event_v1",
 		sizeof(struct recorded_weapon_index_set_event_v1),
-		data_002dd030.weapon_index_set_event_v1_codes,
+		recorded_animation_v1_codes.weapon_index_set_event_v1_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -244,7 +244,7 @@ static struct recorded_animation_playback_v1_data data_002dd030 =
 	{
 		"throttle_set_event_v1",
 		sizeof(struct recorded_throttle_set_event_v1),
-		data_002dd030.throttle_set_event_v1_codes,
+		recorded_animation_v1_codes.throttle_set_event_v1_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -252,7 +252,7 @@ static struct recorded_animation_playback_v1_data data_002dd030 =
 	{
 		"multi_vector_set_event_v1",
 		sizeof(struct recorded_multi_vector_set_event_v1),
-		data_002dd030.multi_vector_set_event_v1_codes,
+		recorded_animation_v1_codes.multi_vector_set_event_v1_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
@@ -260,13 +260,13 @@ static struct recorded_animation_playback_v1_data data_002dd030 =
 	{
 		"angle_vector_set_event_v1",
 		sizeof(struct recorded_angle_vector_set_event_v1),
-		data_002dd030.angle_vector_set_event_v1_codes,
+		recorded_animation_v1_codes.angle_vector_set_event_v1_codes,
 		BYTE_SWAP_DEFINITION_SIGNATURE,
 		FALSE,
 	},
 };
 
-#define apply_funcs data_002dd030.apply_funcs
+#define apply_funcs recorded_animation_v1_codes.apply_funcs
 
 /* port: the bytes each event takes, its header included (what its apply proc
 reads, or the header alone), so an event is applied only when it is all in

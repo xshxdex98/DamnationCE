@@ -254,10 +254,8 @@ real_matrix3x3 *matrix3x3_from_forward_and_up(
 }
 
 /* the next index tables: 4x3 from offset 0, 3x3 from offset 8 */
-static short data_0030790c[7] = { 1, 2, 0, 0, 1, 2, 0 };
+static short const next_axis[3] = { 1, 2, 0 };
 
-#define matrix4x3_next (data_0030790c)
-#define matrix3x3_next (data_0030790c+4)
 
 void matrix4x3_rotation_from_axis_and_angle(
 	real_matrix4x3 *matrix,
@@ -377,8 +375,8 @@ void matrix4x3_rotation_to_quaternion(
 		if (matrix->n[2][2] > matrix->n[i][i])
 			i = 2;
 
-		j = matrix4x3_next[i];
-		k = matrix4x3_next[j];
+		j = next_axis[i];
+		k = next_axis[j];
 
 		s = square_root(matrix->n[i][i] - (matrix->n[k][k] + matrix->n[j][j]) + 1.f);
 
@@ -430,8 +428,8 @@ void matrix3x3_rotation_to_quaternion(
 		if (matrix->n[2][2] > matrix->n[i][i])
 			i = 2;
 
-		j = matrix3x3_next[i];
-		k = matrix3x3_next[j];
+		j = next_axis[i];
+		k = next_axis[j];
 
 		s = square_root(matrix->n[i][i] - (matrix->n[k][k] + matrix->n[j][j]) + 1.f);
 

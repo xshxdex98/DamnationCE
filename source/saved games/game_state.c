@@ -66,7 +66,7 @@ static void game_state_set_revert_time(
 
 boolean recover_saved_games_hack;
 
-static FILE* bss_004d27b0;
+static FILE* game_state_log_file;
 
 static struct
 {
@@ -422,19 +422,18 @@ static void game_state_allocation_record(
 	long size,
 	boolean gpu)
 {
-	// retaining one out-of-line copy under its private address-derived name.
-	FILE *file = bss_004d27b0;
+	FILE *file = game_state_log_file;
 
 	if (!file)
 	{
 		file = fopen("d:\\gamestate.txt", "w");
-		bss_004d27b0 = file;
+		game_state_log_file = file;
 	}
 
 	if (file)
 	{
 		fprintf(file, "% 40s% 20s% 10d%s\n", name, type, size, gpu ? "*" : "");
-		fflush(bss_004d27b0);
+		fflush(game_state_log_file);
 	}
 
 	return;

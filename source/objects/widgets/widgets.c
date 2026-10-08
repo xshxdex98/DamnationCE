@@ -26,7 +26,6 @@ enum
 
 /* ---------- macros */
 
-#define widget_type_definitions data_0030b2b0
 
 /* ---------- prototypes */
 
@@ -35,7 +34,7 @@ static struct widget_type_definition *widget_type_definition_get(
 
 /* ---------- globals */
 
-static struct widget_type_definition data_0030b2b0[NUMBER_OF_WIDGET_TYPES] =
+static struct widget_type_definition widget_type_definitions[NUMBER_OF_WIDGET_TYPES] =
 {
 	{
 		'flag',

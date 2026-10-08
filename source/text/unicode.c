@@ -27,7 +27,7 @@ enum
 #if !defined(HALO_ANDROID) && !defined(__APPLE__) /* Mach-O section names differ; the default is .bss anyway */
 #pragma bss_seg(".bss")
 #endif
-static wchar_t bss_004c1a08[0x100];
+static wchar_t error_number_string[0x100];
 #if !defined(HALO_ANDROID) && !defined(__APPLE__)
 #pragma bss_seg()
 #endif
@@ -1228,9 +1228,9 @@ char *wide_to_ascii(
 wchar_t *ustrerror(
 	int error_number)
 {
-	bss_004c1a08[0] = 0;
-	usnprintf(bss_004c1a08, 0x100, L"%hs", strerror(error_number));
+	error_number_string[0] = 0;
+	usnprintf(error_number_string, 0x100, L"%hs", strerror(error_number));
 
-	return bss_004c1a08;
+	return error_number_string;
 }
 

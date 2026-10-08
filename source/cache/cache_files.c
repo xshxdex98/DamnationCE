@@ -135,7 +135,7 @@ extern struct cache_file_tag_instance *global_tag_instances;
 the table (port/linux/game/menu_tags.c); the map's tag header keeps its own,
 which a Custom Edition map's loader goes on reading. */
 static long global_tag_count;
-static char const *data_00316820[] =
+static char const *map_directories[] =
 {
 	"d:\\maps_de\\",
 	"d:\\maps_fr\\",
@@ -445,14 +445,14 @@ char const *cache_files_map_directory(
 
 	if (!file_exists(file_reference_create_from_path(&reference, map_directory, TRUE)))
 	{
-		for (directory_index = 0; data_00316820[directory_index]; directory_index++)
+		for (directory_index = 0; map_directories[directory_index]; directory_index++)
 		{
 			if (file_exists(file_reference_create_from_path(
 				&reference,
-				data_00316820[directory_index],
+				map_directories[directory_index],
 				TRUE)))
 			{
-				map_directory = data_00316820[directory_index];
+				map_directory = map_directories[directory_index];
 				break;
 			}
 		}
@@ -460,7 +460,7 @@ char const *cache_files_map_directory(
 		match_vassert(
 			"c:\\halo\\SOURCE\\cache\\cache_files.c",
 			60,
-			data_00316820[directory_index],
+			map_directories[directory_index],
 			"no valid map directory exists");
 	}
 

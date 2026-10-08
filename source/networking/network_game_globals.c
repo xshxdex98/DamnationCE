@@ -23,8 +23,8 @@ NETWORK_GAME_GLOBALS.C
 
 /* ---------- macros */
 
-#define global_network_game_client bss_004566dc.client
-#define global_network_game_server bss_004566dc.server
+#define global_network_game_client network_globals.client
+#define global_network_game_server network_globals.server
 
 /* ---------- structures */
 
@@ -107,7 +107,7 @@ typedef char network_game_globals_size_assert[
 
 /* ---------- globals */
 
-static struct network_game_globals bss_004566dc = { 0 };
+static struct network_game_globals network_globals = { 0 };
 static struct data_packet_field player_action_packet_definition_fields[4] =
 {
 	{ _data_packet_field_longs, 6, 0, 0, 0 },
@@ -200,21 +200,21 @@ boolean network_game_distributed_client(
 boolean network_game_is_active(
 	void)
 {
-	return bss_004566dc.client != NULL || bss_004566dc.server != NULL;
+	return network_globals.client != NULL || network_globals.server != NULL;
 }
 
 void network_game_set_number_of_games_played(
 	long number_of_games_played)
 {
-	if (bss_004566dc.server)
+	if (network_globals.server)
 	{
-		network_game_server_get_game(bss_004566dc.server)->number_of_games_played =
+		network_game_server_get_game(network_globals.server)->number_of_games_played =
 			number_of_games_played;
 	}
 
-	if (bss_004566dc.client)
+	if (network_globals.client)
 	{
-		network_game_client_get_game(bss_004566dc.client)->number_of_games_played =
+		network_game_client_get_game(network_globals.client)->number_of_games_played =
 			number_of_games_played;
 	}
 
@@ -224,11 +224,11 @@ void network_game_set_number_of_games_played(
 void network_game_set_random_seed(
 	long random_seed)
 {
-	if (bss_004566dc.server)
-		network_game_server_get_game(bss_004566dc.server)->random_seed = random_seed;
+	if (network_globals.server)
+		network_game_server_get_game(network_globals.server)->random_seed = random_seed;
 
-	if (bss_004566dc.client)
-		network_game_client_get_game(bss_004566dc.client)->random_seed = random_seed;
+	if (network_globals.client)
+		network_game_client_get_game(network_globals.client)->random_seed = random_seed;
 
 	return;
 }
@@ -276,7 +276,7 @@ boolean network_game_player_is_local(
 void network_game_accept_remote_connections(
 	boolean accept_remote_connections)
 {
-	bss_004566dc.accept_remote_connections = accept_remote_connections;
+	network_globals.accept_remote_connections = accept_remote_connections;
 
 	return;
 }
@@ -284,19 +284,19 @@ void network_game_accept_remote_connections(
 boolean network_game_should_accept_remote_connections(
 	void)
 {
-	return bss_004566dc.accept_remote_connections;
+	return network_globals.accept_remote_connections;
 }
 
 boolean network_game_is_splitscreen_local(
 	void)
 {
-	return bss_004566dc.server != NULL && !bss_004566dc.accept_remote_connections;
+	return network_globals.server != NULL && !network_globals.accept_remote_connections;
 }
 
 void network_game_set_quickstart_local(
 	void)
 {
-	bss_004566dc.quickstart_local = TRUE;
+	network_globals.quickstart_local = TRUE;
 
 	return;
 }
@@ -304,25 +304,25 @@ void network_game_set_quickstart_local(
 boolean network_game_is_quickstart_local(
 	void)
 {
-	return bss_004566dc.server != NULL &&
-		!bss_004566dc.accept_remote_connections &&
-		bss_004566dc.quickstart_local == TRUE;
+	return network_globals.server != NULL &&
+		!network_globals.accept_remote_connections &&
+		network_globals.quickstart_local == TRUE;
 }
 
 struct network_game_server *global_network_game_server_get(
 	void)
 {
-	return bss_004566dc.server;
+	return network_globals.server;
 }
 
 void dispose_global_network_game_server(
 	void)
 {
-	if (bss_004566dc.server)
+	if (network_globals.server)
 	{
-		network_game_server_dispose(bss_004566dc.server);
-		bss_004566dc.server = NULL;
-		bss_004566dc.quickstart_local = FALSE;
+		network_game_server_dispose(network_globals.server);
+		network_globals.server = NULL;
+		network_globals.quickstart_local = FALSE;
 	}
 
 	return;
@@ -333,8 +333,8 @@ boolean network_game_server_start_frame(
 {
 	boolean result;
 
-	if (bss_004566dc.server)
-		result = network_game_server_idle(bss_004566dc.server);
+	if (network_globals.server)
+		result = network_game_server_idle(network_globals.server);
 	else
 	{
 		error(_error_silent, "no network game server");
@@ -347,7 +347,7 @@ boolean network_game_server_start_frame(
 struct network_game_client *global_network_game_client_get(
 	void)
 {
-	return bss_004566dc.client;
+	return network_globals.client;
 }
 
 boolean create_global_network_game_client(
@@ -358,23 +358,23 @@ boolean create_global_network_game_client(
 		0x10F,
 		global_network_game_client==NULL);
 
-	bss_004566dc.client = network_game_client_create();
-	if (bss_004566dc.client)
-		bss_004566dc.client_started = FALSE;
+	network_globals.client = network_game_client_create();
+	if (network_globals.client)
+		network_globals.client_started = FALSE;
 
-	return bss_004566dc.client != NULL;
+	return network_globals.client != NULL;
 }
 
 void dispose_global_network_game_client(
 	void)
 {
-	if (bss_004566dc.client)
+	if (network_globals.client)
 	{
-		network_game_client_dispose(bss_004566dc.client);
-		bss_004566dc.client = NULL;
+		network_game_client_dispose(network_globals.client);
+		network_globals.client = NULL;
 	}
 
-	bss_004566dc.client_started = FALSE;
+	network_globals.client_started = FALSE;
 
 	return;
 }
@@ -387,7 +387,7 @@ boolean network_game_client_start_frame(
 	boolean result;
 	struct network_game *game;
 
-	if (bss_004566dc.client_started == TRUE)
+	if (network_globals.client_started == TRUE)
 	{
 		game_connection_set(0);
 		if (global_network_game_server)
@@ -404,12 +404,12 @@ boolean network_game_client_start_frame(
 			global_network_game_client = NULL;
 		}
 
-		bss_004566dc.client_started = FALSE;
+		network_globals.client_started = FALSE;
 		if (global_network_game_server)
 		{
 			network_game_server_dispose(global_network_game_server);
 			global_network_game_server = NULL;
-			bss_004566dc.quickstart_local = FALSE;
+			network_globals.quickstart_local = FALSE;
 		}
 
 		main_goto_main_menu();
@@ -500,7 +500,7 @@ boolean network_game_client_end_frame(
 	else if (network_game_client_get_state(global_network_game_client, NULL) == _network_game_client_state_ingame)
 	{
 		now = system_milliseconds();
-		if (now-bss_004566dc.last_client_update_time >=
+		if (now-network_globals.last_client_update_time >=
 			/* (the input goes in its own message, network_distributed.c,
 			and the host takes its own players' at each tick,
 			update_server_next_update: this one only says the client is
@@ -541,7 +541,7 @@ boolean network_game_client_end_frame(
 				result = FALSE;
 			}
 
-			bss_004566dc.last_client_update_time = now;
+			network_globals.last_client_update_time = now;
 		}
 	}
 
@@ -644,7 +644,7 @@ long network_game_get_random_seed(
 void network_game_abort(
 	void)
 {
-	bss_004566dc.client_started = TRUE;
+	network_globals.client_started = TRUE;
 
 	return;
 }
@@ -652,7 +652,7 @@ void network_game_abort(
 void network_game_client_all_local_players_have_quit(
 	void)
 {
-	bss_004566dc.client_started = TRUE;
+	network_globals.client_started = TRUE;
 
 	return;
 }
