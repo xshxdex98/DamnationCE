@@ -17,6 +17,7 @@ Helpers shared by the screens drawn over the menus with the overlay
 
 #include "interface/ui_widget_instance.h"
 
+#include "custom_edition_cache.h"
 #include "custom_edition_maps.h"
 #include "halo_menus.h"
 #include "overlay_screens.h"
@@ -376,7 +377,8 @@ void overlay_map_name(
 	long size)
 {
 	char const *file_name = tag_name_strip_path(map_name);
-	char const *xbox_name = overlay_xbox_map_name(file_name);
+	/* (a Custom Edition map is never the game's own of its name) */
+	char const *xbox_name = custom_edition_level_name(map_name) ? NULL : overlay_xbox_map_name(file_name);
 	short display_index = custom_edition_maps_display_index(map_name);
 	wchar_t const *custom_name = display_index != NONE ? custom_edition_maps_name(display_index) : NULL;
 
@@ -542,7 +544,7 @@ short overlay_map_display_index(
 	char const *name = tag_name_strip_path(map_name);
 	short index, custom;
 
-	for (index = 0; index < NUMBEROF(xbox_levels); index++)
+	for (index = 0; index < NUMBEROF(xbox_levels) && !custom_edition_level_name(map_name); index++)
 	{
 		if (!csstrcmp(name, xbox_levels[index]))
 			return index;
