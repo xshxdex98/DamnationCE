@@ -226,8 +226,9 @@ def main() -> None:
         lines.append("")
         tag = asset["tag"].replace("\\", "\\\\")
         coverage = int(any(cell["kind"] == "meter" for cell in asset.get("cells", [])))
+        point_threshold = int(any(cell.get("thresholds") for cell in asset.get("cells", [])))
         theme_name = f'"{theme}"' if theme else "NULL"
-        table.append(f'\t{{ "{tag}", {asset["bitmap"]}, {width}, {height}, 0x{asset["crc"]:08x}u, {coverage}, '
+        table.append(f'\t{{ "{tag}", {asset["bitmap"]}, {width}, {height}, 0x{asset["crc"]:08x}u, {coverage}, {point_threshold}, '
                      f'{int(title)}, {theme_name}, {int((asset["tag"], asset["bitmap"]) in custom_edition)}, '
                      f'asset{index}, {len(data)} }},')
     lines.append("const struct hud_hires_embedded hud_hires_embedded[] =")
