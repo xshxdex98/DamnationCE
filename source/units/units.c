@@ -5085,7 +5085,7 @@ boolean unit_update(
 		if (aiming_velocity_limit==0.f && aiming_angular_acceleration_limit==0.f)
 		{
 			match_assert_valid_real_normal3d("c:\\halo\\SOURCE\\units\\units.c", 993, &unit->unit.desired_aiming_vector);
-			
+
 			unit->unit.aiming_vector = unit->unit.desired_aiming_vector;
 			unit_clip_to_aiming_bounds(unit_index, &unit->unit.aiming_vector, TRUE);
 			unit->unit.aiming_velocity = *global_zero_vector3d;
@@ -5125,7 +5125,7 @@ boolean unit_update(
 		{
 			real angle = angle_between_vectors3d(&unit->unit.aiming_vector, &last_aiming_vector);
 			real change = angle / (unit_definition->unit.aiming_velocity_maximum/TICKS_PER_SECOND);
-				
+
 			unit->unit.aiming_change = (byte)(PIN(change, 0.f, 1.f) * 255.f);
 		}
 
@@ -5412,7 +5412,7 @@ boolean unit_update(
 
 		SET_FLAG(unit->unit.flags, _unit_desired_integrated_light_on_bit, FALSE);
 	}
-	
+
 
 	if (TEST_FLAG(unit->unit.flags, _unit_desired_integrated_light_off_bit))
 	{
@@ -5512,9 +5512,9 @@ boolean unit_update(
 			}
 		}
 	}
-	
 
-	
+
+
 	if (unit_integrated_night_vision_is_active(unit_index))
 	{
 		if (TEST_FLAG(unit->unit.flags, _unit_integrated_night_vision_on_bit))
@@ -5541,9 +5541,9 @@ boolean unit_update(
 	}
 
 	unit_verify_vectors(unit_index, "unit-update-end");
-	
+
 	profile_exit(unit_update_section);
-	
+
 	return TRUE;
 }
 
@@ -6870,7 +6870,7 @@ boolean unit_clip_to_aiming_bounds(
 }
 
 long unit_inventory_get_weapon(
-	long unit_index, 
+	long unit_index,
 	short index)
 {
 	struct unit_datum *unit = unit_get(unit_index);
@@ -6915,7 +6915,7 @@ static void unit_ready_desired_weapon(
 			object_set_visibility(desired_weapon_index, TRUE);
 			object_attach_to_marker(unit_index, weapon_class->hand_marker_name, desired_weapon_index, weapon_class->grip_marker_name);
 			unit->unit.current_weapon_index = unit->unit.desired_weapon_index;
-			
+
 			if (unit->unit.desired_weapon_index!=NONE)
 			{
 				unit->unit.weapon_last_used_at_game_time[unit->unit.current_weapon_index] = game_time_get();
@@ -6967,7 +6967,7 @@ boolean unit_drop_current_weapon(
 		unit->unit.weapon_object_indices[unit->unit.current_weapon_index] = NONE;
 		unit->unit.current_weapon_index = NONE;
 		unit->unit.desired_weapon_index = unit_weapon_next_index(unit_index, NONE, 0);
-		
+
 		if (!weapon_can_be_fired(current_weapon_index))
 		{
 			object_delete(current_weapon_index);
@@ -7074,7 +7074,7 @@ static short unit_weapon_next_index(
 	short delta)
 {
 	short inventory_index;
-	
+
 	struct unit_datum *unit = unit_get(unit_index);
 	short selected_weapon_index = NONE;
 
@@ -7084,9 +7084,9 @@ static short unit_weapon_next_index(
 	}
 
 	match_assert("c:\\halo\\SOURCE\\units\\units.c", 7744, current_index>=0 && current_index<MAXIMUM_WEAPONS_PER_UNIT);
-	
+
 	inventory_index = current_index;
-	
+
 	do
 	{
 		long current_weapon_index = unit->unit.weapon_object_indices[inventory_index];
@@ -7420,7 +7420,7 @@ static boolean unit_set_or_test_seat_and_weapon_label(
 				for (weapon_type_index = 0; weapon_type_index<weapon_class->weapon_types.count; ++weapon_type_index)
 				{
 					struct animation_graph_weapon_type *weapon_type = TAG_BLOCK_GET_ELEMENT(&weapon_class->weapon_types, weapon_type_index, struct animation_graph_weapon_type);
-					
+
 					if (!weapon_label ||
 						!strcmp(weapon_label, "unarmed") &&
 						weapon_type->label[0]=='\0'||
@@ -7433,14 +7433,14 @@ static boolean unit_set_or_test_seat_and_weapon_label(
 								NONE :
 								animation_graph_animation_index_get(&unit_seat->animations)[2].animation_index;
 							boolean showing_acceleration;
-							
+
 							if (anim_2==NONE)
 							{
 								long anim_3 =
 									unit_seat->animations.count <= 3 ?
 									NONE :
 									animation_graph_animation_index_get(&unit_seat->animations)[3].animation_index;
-								
+
 								if (anim_3==NONE)
 								{
 									long anim_4 =
@@ -10676,9 +10676,9 @@ static void unit_throw_grenade_release(
 		if (unit->unit.grenade_object_index!=NONE)
 		{
 			long grenade_index = unit->unit.grenade_object_index;
-			
+
 			object_detach(grenade_index);
-			
+
 			// Get new grenade origin from the actor
 			if (unit->unit.actor_index!=NONE)
 			{
@@ -10703,14 +10703,14 @@ static void unit_throw_grenade_release(
 						struct game_globals_player_information);
 
 					forward = unit->unit.aiming_vector;
-					
+
 					if (normalize3d(cross_product3d(global_up3d, &forward, &up))==0.f)
 					{
 						up = *global_up3d;
 					}
 
 					normalize3d(cross_product3d(&forward, &up, &left));
-					
+
 					unit_get_camera_position(unit_index, &camera_position);
 					origin_scale = player_information->grenade_origin.i;
 					point_from_line3d(&camera_position, &forward, (real)origin_scale, &camera_position);
@@ -10718,7 +10718,7 @@ static void unit_throw_grenade_release(
 					point_from_line3d(&camera_position, &up, (real)origin_scale, &camera_position);
 					origin_scale = player_information->grenade_origin.k;
 					point_from_line3d(&camera_position, &left, (real)origin_scale, &camera_position);
-					
+
 					object_translate(grenade_index, &camera_position, NULL);
 				}
 
@@ -10750,7 +10750,7 @@ static void unit_throw_grenade_release(
 				subtract_vectors3d(&initial_velocity, &grenade->object.translational_velocity, &initial_velocity);
 				projectile_accelerate(grenade_index, &initial_velocity);
 			}
-			
+
 			unit->unit.grenade_throw_state = _unit_grenade_throw_ending;
 			unit->unit.grenade_object_index = NONE;
 
@@ -10799,7 +10799,7 @@ static void unit_seat_update(
 	else
 	{
 		struct unit_definition *unit_definition = unit_definition_get(unit->definition_index);
-		
+
 		seat_marker.matrix.position = unit->object.position;
 		seat_marker.matrix.forward = unit->object.forward;
 		seat_marker.matrix.up = unit->object.up;
@@ -10818,9 +10818,9 @@ static void unit_seat_update(
 		new_velocity.i = last_velocity.i - unit->unit.seat_last_velocity.i;
 		new_velocity.j = last_velocity.j - unit->unit.seat_last_velocity.j;
 		new_velocity.k = last_velocity.k - unit->unit.seat_last_velocity.k;
-		
+
 		cross_product3d(&seat_marker.matrix.up, &seat_marker.matrix.forward, &vp);
-		
+
 		unit->unit.seat_desired_acceleration.i = (dot_product3d(&new_velocity, &seat_marker.matrix.forward) * acceleration_scale->i) + 0.5f;
 		unit->unit.seat_desired_acceleration.j = (dot_product3d(&new_velocity, &vp) * acceleration_scale->j) + 0.5f;
 		unit->unit.seat_desired_acceleration.k = (dot_product3d(&new_velocity, &seat_marker.matrix.up) * acceleration_scale->k) + 0.5f;
@@ -10886,7 +10886,7 @@ static void unit_drop_item(
 {
 	struct unit_datum *unit = unit_get(unit_index);
 	struct item_datum *item = item_get(item_index);
-	
+
 	if (item->object.parent_object_index==NONE)
 	{
 		object_reconnect_to_map(item_index, 0);
@@ -10900,7 +10900,7 @@ static void unit_drop_item(
 
 	item_in_unit_inventory(item_index, NONE);
 	object_detach(item_index);
-	
+
 	item->object.translational_velocity = *global_zero_vector3d;
 	item->object.angular_velocity = *global_zero_vector3d;
 
@@ -10937,7 +10937,6 @@ static void unit_drop_item(
 	return;
 }
 
-// TODO: Fix
 static void unit_cause_continuous_melee_damage(
 	long unit_index)
 {
@@ -10968,7 +10967,7 @@ static void unit_cause_continuous_melee_damage(
 				object_get_origin(unit_index, &collision_origin);
 				scale_vector3d(&unit->object.forward, 0.2f, &collision_vector);
 				point_from_line3d(&collision_origin, &collision_vector, -0.5f, &collision_origin);
-				
+
 				if (collision_model_test_vector(
 					&instance,
 					FLAG(_collision_test_front_facing_surfaces_bit) | FLAG(_collision_test_back_facing_surfaces_bit),
@@ -10978,7 +10977,7 @@ static void unit_cause_continuous_melee_damage(
 				{
 					point_from_line3d(&collision_origin, &collision_vector, vector_result.bsp_result.t, &collision_point);
 					matrix4x3_transform_plane(&instance.matrices[vector_result.node_index], vector_result.bsp_result.plane, &collision_plane);
-					
+
 					if (vector_result.bsp_result.plane_designator & LONG_MIN)
 					{
 						plane3d_negate(&collision_plane, &collision_plane);
@@ -10991,9 +10990,9 @@ static void unit_cause_continuous_melee_damage(
 			match_assert("c:\\halo\\SOURCE\\units\\units.c", 8965, global_current_collision_user_depth > 1);
 			--global_current_collision_user_depth;
 		}
-		
+
 		damage_data_new(&damage_data, unit_definition->unit.melee_damage.index);
-		
+
 		damage_data.owner_object_index = unit_index;
 		damage_data.owner_team_index = unit->object.owner_team_index;
 		damage_data.owner_player_index = unit->unit.player_index;
@@ -11010,7 +11009,7 @@ static void unit_cause_continuous_melee_damage(
 
 			object_cause_damage(
 				&damage_data,
-				unit->object.parent_object_index, 
+				unit->object.parent_object_index,
 				vector_result.node_index,
 				vector_result.region_index,
 				vector_result.bsp_result.material_index,
@@ -11097,7 +11096,7 @@ static void unit_verify_vectors(
 			unit->unit.looking_velocity.j,
 			unit->unit.looking_velocity.k
 		);
-		
+
 		error(_error_silent, "  warning, hex dump follows...");
 
 		error(
@@ -11154,7 +11153,7 @@ static void unit_verify_vectors(
 			"unit_verify_vectors FAILURE, see above for details"
 		);
 	}
-	
+
 	return;
 }
 
@@ -11164,7 +11163,7 @@ static void unit_running_blind(
 {
 	struct unit_datum *unit = unit_get(unit_index);
 	boolean actor_controlled = FALSE;
-	
+
 	if (unit->unit.actor_index==NONE || !actor_get_running_blind_vector(unit->unit.actor_index, run_vector))
 	{
 		*run_vector = *global_forward3d;
@@ -11238,7 +11237,7 @@ static void unit_running_blind(
 	{
 		unit->unit.run_blindly_angle -= 2.f*_pi;
 	}
-	
+
 	rotate_vector_about_axis(run_vector, global_up3d, sine(unit->unit.run_blindly_angle), cosine(unit->unit.run_blindly_angle));
 
 	match_assert_valid_real_normal3d("c:\\halo\\SOURCE\\units\\units.c", 9612, run_vector)
@@ -11296,7 +11295,7 @@ static boolean unit_integrated_night_vision_is_active(
 		{
 			struct weapon_datum *weapon = weapon_get(current_weapon_index);
 			struct weapon_definition* weapon_definition = weapon_definition_get(weapon->definition_index);
-			
+
 			if (TEST_FLAG(weapon_definition->weapon.flags, _weapon_enables_unit_integrated_night_vision_bit))
 			{
 				active = TRUE;

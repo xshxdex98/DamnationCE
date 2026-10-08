@@ -493,7 +493,7 @@ boolean weapon_put_away(
 			effect_delete(weapon->weapon.overheated_effect_index);
 			weapon->weapon.overheated_effect_index = NONE;
 		}
-		
+
 		first_person_weapon_message_from_weapon(weapon_index, 11);
 		put_away = TRUE;
 	}
@@ -1679,7 +1679,7 @@ static boolean weapon_magazine_state_change_ok(
 {
 	struct weapon_datum *weapon = weapon_get(weapon_index);
 
-	return 
+	return
 		weapon->weapon.triggers[0].state==_trigger_idle &&
 		weapon->weapon.triggers[1].state==_trigger_idle &&
 		weapon->weapon.state == _weapon_state_idle;
@@ -1957,7 +1957,7 @@ static long weapon_effect_new(
 		if (group_tag!=EFFECT_DEFINITION_TAG)
 		{
 			match_vassert("c:\\halo\\SOURCE\\items\\weapons.c", 2514, group_tag==SOUND_DEFINITION_TAG, NULL);
-			
+
 			if (group_tag==SOUND_DEFINITION_TAG)
 			{
 				object_impulse_sound_new(object_index, effect_index, NONE, global_origin3d, global_forward3d, effect_scale);
@@ -1973,7 +1973,6 @@ static long weapon_effect_new(
 	return result;
 }
 
-// TODO: finish
 static void weapon_reset(
 	long weapon_index)
 {
@@ -1985,7 +1984,6 @@ static void weapon_reset(
 	for (magazine_index = 0; magazine_index<weapon_trigger_count(weapon_definition); ++magazine_index)
 	{
 		struct weapon_trigger* trigger = weapon_trigger_get(weapon, magazine_index);
-		struct weapon_trigger_definition *trigger_definition = TAG_BLOCK_GET_ELEMENT(&weapon_definition->weapon.triggers, magazine_index, struct weapon_trigger_definition);
 
 		if (!trigger)
 			continue;
@@ -1996,7 +1994,6 @@ static void weapon_reset(
 	for (magazine_index = 0; magazine_index<weapon_magazine_count(weapon_definition); ++magazine_index)
 	{
 		struct weapon_magazine *magazine = weapon_magazine_get(weapon, magazine_index);
-		struct weapon_magazine_definition *magazine_definition = TAG_BLOCK_GET_ELEMENT(&weapon_definition->weapon.magazines, magazine_index, struct weapon_magazine_definition);
 
 		if (!magazine)
 			continue;
