@@ -98,20 +98,11 @@ enum sound_datum_flags
 	NUMBER_OF_SOUND_FLAGS,
 };
 
-enum sound_channel_flags
-{
-	_sound_channel_3d_bit,
-	_sound_channel_stereo_bit,
-	_sound_channel_44k_bit,
-	_sound_channel_compressed_bit,
-};
-
 enum sound_channel_state
 {
 	_sound_channel_idle,
 	_sound_channel_playing,
 	_sound_channel_queued,
-	NUMBER_OF_SOUND_CHANNEL_STATES,
 };
 
 enum looping_sound_track_flags

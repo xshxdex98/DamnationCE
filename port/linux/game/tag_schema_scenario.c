@@ -80,7 +80,6 @@ enum
 	MAXIMUM_HS_GLOBALS_PER_SCENARIO = 0x400 - 443,
 	/* hs_compile.c: the strings' last bytes are the console's */
 	HS_STRING_CONSTANTS_CONSOLE_SIZE = 0x400,
-	_hs_syntax_node_primitive_bit = 0,
 	/* recorded_animations.c (playback_codec) */
 	RECORDED_ANIMATION_VERSION = 4,
 	MAXIMUM_UNIT_CONTROL_DATA_VERSION = 4,

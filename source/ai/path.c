@@ -19,14 +19,6 @@ PATH.C
 
 #include <stddef.h>
 
-/* ---------- constants */
-
-enum
-{
-	_pathfinding_surface_walkable_bit = 6,
-	_pathfinding_surface_breakable_bit = 7,
-};
-
 #define PATH_COST_ESTIMATE_GRANULARITY 0.1f
 
 /* ---------- macros */

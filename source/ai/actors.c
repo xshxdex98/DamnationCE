@@ -84,26 +84,6 @@ enum
 };
 
 /* actor state.combat_status levels (actors.h does not yet declare these) */
-/* ai sound volumes (ai.h does not yet declare these) */
-enum
-{
-	_ai_sound_volume_silent = 0,
-	_ai_sound_volume_medium,
-	_ai_sound_volume_loud,
-	_ai_sound_volume_shout,
-	_ai_sound_volume_quiet,
-	NUMBER_OF_AI_SOUND_VOLUMES,
-};
-
-/* ai spatial effect types (ai.h does not yet declare these) */
-enum
-{
-	_ai_spatial_effect_environmental_noise = 0,
-	_ai_spatial_effect_weapon_impact,
-	_ai_spatial_effect_weapon_detonation,
-	NUMBER_OF_AI_SPATIAL_EFFECTS,
-};
-
 /* ai_information_packet.information_type (ai.h does not yet declare these) */
 /* ---------- macros */
 

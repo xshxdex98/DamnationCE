@@ -48,19 +48,6 @@ enum
 
 enum
 {
-	_render_model_effect_type_none = 0,
-	_render_model_effect_type_active_camouflage,
-	_render_model_effect_type_modifier,
-};
-
-enum
-{
-	_render_model_shadow_bit = 1,
-	_render_model_no_planar_fog_bit,
-};
-
-enum
-{
 	_render_planar_fog_mode_normal = 1,
 };
 

@@ -24,15 +24,11 @@ RASTERIZER_XBOX_DYNAVOBGEOM.C
 #include "rasterizer_xbox_pixel_shader.h"
 #include "rasterizer/rasterizer_geometry.h"
 #include "rasterizer/rasterizer.h"
+#include "render/render.h"
 
 enum
 {
 	_shader_type_effect = 1,
-};
-
-enum
-{
-	_render_model_effect_type_none = 0,
 };
 
 enum

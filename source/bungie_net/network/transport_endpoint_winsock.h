@@ -15,6 +15,13 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* transport types */
+enum
+{
+	_transport_type_udp = 17,
+	_transport_type_tcp
+};
+
 /* ---------- macros */
 
 /* ---------- structures */

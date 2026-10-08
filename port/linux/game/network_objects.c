@@ -64,6 +64,7 @@ same datum index (identifier and all), so that any message can name one:
 #include "cutscene/cinematics.h"
 #include "network_coop.h"
 #include "network_distributed.h"
+#include "units/vehicles.h"
 
 #include <math.h>
 
@@ -94,15 +95,6 @@ struct vehicle_definition
 
 typedef char network_objects_vehicle_type_offset_assert[
 	offsetof(struct vehicle_definition, vehicle_type) == 0x2F4 ? 1 : -1];
-/* (vehicles.c's vehicle types: those that float, fly or stay) */
-enum
-{
-	_vehicle_type_human_boat = 2,
-	_vehicle_type_human_plane = 3,
-	_vehicle_type_alien_fighter = 5,
-	_vehicle_type_turret = 6,
-};
-
 typedef char network_objects_vehicle_maximum_forward_speed_offset_assert[
 	offsetof(struct vehicle_definition, maximum_forward_speed) == 0x2F8 ? 1 : -1];
 

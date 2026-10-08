@@ -23,6 +23,7 @@ RASTERIZER_XBOX_ACTIVE_CAMOUFLAGE.C
 #include "rasterizer/xbox/rasterizer_xbox_internal.h"
 #include "rasterizer/rasterizer_console_vars.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
+#include "render/render.h"
 
 /* ---------- constants */
 
@@ -39,13 +40,6 @@ enum
 	_shader_type_transparent_glass,
 	_shader_type_transparent_meter,
 	_shader_type_transparent_plasma
-};
-
-enum
-{
-	_render_model_effect_type_none = 0,
-	_render_model_effect_type_active_camouflage,
-	_render_model_effect_type_modifier
 };
 
 enum

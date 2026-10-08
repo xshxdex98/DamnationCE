@@ -15,6 +15,13 @@ file has inline function assertions.
 
 /* ---------- constants */
 
+/* pathfinding surface flags */
+enum
+{
+	_pathfinding_surface_walkable_bit = 6,
+	_pathfinding_surface_breakable_bit
+};
+
 enum
 {
 	PATH_NODE_LIST_SIZE = 0x400,

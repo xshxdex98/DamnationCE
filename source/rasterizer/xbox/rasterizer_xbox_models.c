@@ -42,9 +42,6 @@ int rasterizer_frame_statistics_count_static_vertices(
 
 enum
 {
-	_render_model_effect_type_none = 0,
-	_render_model_effect_type_active_camouflage,
-	_render_model_effect_type_modifier,
 	_rasterizer_statistics_mode_summary = 1,
 	_rasterizer_statistics_mode_enabled = 2,
 	_rasterizer_vertex_shader_model = 10,
@@ -76,13 +73,6 @@ enum
 enum
 {
 	_shader_detail_mask_none = 0,
-};
-
-enum
-{
-	_shader_environment_alpha_tested_bit = 0,
-	_shader_environment_bump_map_is_specular_mask_bit,
-	_shader_environment_true_atmospheric_fog_bit,
 };
 
 enum

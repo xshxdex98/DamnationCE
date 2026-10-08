@@ -16,6 +16,22 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* environment shader flags */
+enum
+{
+	_shader_environment_alpha_tested_bit,
+	_shader_environment_specular_overbright_bit = 0,
+	_shader_environment_reflection_dynamic_mirror_bit = 0,
+	_shader_environment_self_illumination_unfiltered_bit = 0,
+	_shader_environment_diffuse_rescale_detail_maps_bit = 0,
+	_shader_environment_dynamic_mirror_bit = 0,
+	_shader_environment_bump_map_is_specular_mask_bit,
+	_shader_environment_specular_extra_shiny_bit = 1,
+	_shader_environment_diffuse_rescale_bump_map_bit = 1,
+	_shader_environment_true_atmospheric_fog_bit,
+	_shader_environment_specular_lightmap_bit = 2
+};
+
 /* shader model flags */
 enum
 {

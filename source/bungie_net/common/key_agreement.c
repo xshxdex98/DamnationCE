@@ -11,6 +11,7 @@ KEY_AGREEMENT.C
 #include "bungie_net/common/random_numbers.h"
 #include "bungie_net/network/transport_endpoint_winsock.h"
 #include "memory/data_packet_groups.h"
+#include "networking/network_messages.h"
 
 /* ---------- constants */
 

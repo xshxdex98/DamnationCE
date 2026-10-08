@@ -16,6 +16,7 @@ SOUND_DSOUND_XBOX.C
 #include "sound/sound_environment_definitions.h"
 #include "sound/sound_preferences.h"
 #include "text/draw_string.h"
+#include "sound/sound_manager.h"
 
 #include <xtl.h>
 
@@ -38,20 +39,11 @@ enum
 	MAXIMUM_DSOUND_MIXBINS = 8
 };
 
-enum
-{
-	_sound_channel_3d_bit,
-	_sound_channel_stereo_bit,
-	_sound_channel_44k_bit,
-	_sound_channel_compressed_bit
-};
-
 enum sound_channel_state
 {
 	_sound_channel_idle,
 	_sound_channel_playing,
 	_sound_channel_queued,
-	NUMBER_OF_SOUND_CHANNEL_STATES
 };
 
 /* ---------- macros */

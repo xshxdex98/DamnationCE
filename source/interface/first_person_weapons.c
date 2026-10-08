@@ -36,13 +36,6 @@ FIRST_PERSON_WEAPONS.C
 #include "rasterizer/rasterizer_model_types.h"
 #endif
 
-/* ---------- constants */
-
-enum
-{
-	_render_model_first_person_bit = 3,
-};
-
 enum
 {
 	NUMBER_OF_FIRST_PERSON_WEAPON_OVERLAY_FRAMES = 9,
@@ -78,12 +71,6 @@ enum first_person_weapon_state
 	_first_person_weapon_state_overheated_exit,
 	_first_person_weapon_state_overheating_super_recoil,
 	NUMBER_OF_FIRST_PERSON_WEAPON_STATES,
-};
-
-enum
-{
-	_render_model_effect_type_none = 0,
-	_render_model_effect_type_active_camouflage,
 };
 
 enum

@@ -13,14 +13,7 @@ PATH_STRUCTURE_BSP.C
 #include "physics/collision_bsp.h"
 #include "physics/collision_bsp_definitions.h"
 #include "structures/structure_bsp_definitions.h"
-
-/* ---------- constants */
-
-enum
-{
-	_pathfinding_surface_walkable_bit = 6,
-	_pathfinding_surface_breakable_bit = 7,
-};
+#include "ai/path.h"
 
 enum
 {

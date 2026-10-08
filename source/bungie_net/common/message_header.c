@@ -6,6 +6,7 @@ MESSAGE_HEADER.C
 
 #include "cseries.h"
 #include "message_header.h"
+#include "networking/network_messages.h"
 
 /* ---------- constants */
 

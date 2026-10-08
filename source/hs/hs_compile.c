@@ -39,17 +39,6 @@ enum
 	hud_message_definition_size = 0x40,
 };
 
-enum hs_syntax_node_flag_bits
-{
-	_hs_syntax_node_primitive_bit = 0,
-	_hs_syntax_node_script_bit,
-	_hs_syntax_node_variable_bit,
-	_hs_syntax_node_permanent_bit,
-	/* port: a Halo PC map's expression that did not load
-	(hs_compile_postprocess), for a moment */
-	_hs_syntax_node_failed_bit = 15,
-};
-
 enum hs_tokenizer_state
 {
 	_hs_tokenizer_state_normal = 0,

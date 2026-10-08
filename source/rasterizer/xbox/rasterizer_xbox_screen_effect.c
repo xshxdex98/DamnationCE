@@ -27,14 +27,6 @@ RASTERIZER_XBOX_SCREEN_EFFECT.C
 
 enum
 {
-	_rasterizer_screen_effect_convolution_type_none = 0,
-	_rasterizer_screen_effect_convolution_type_blur,
-	_rasterizer_screen_effect_convolution_type_warp,
-	NUMBER_OF_RASTERIZER_SCREEN_EFFECT_CONVOLUTION_TYPES
-};
-
-enum
-{
 	NUMBER_OF_RASTERIZER_SCREEN_EFFECT_VIDEO_OVERBRIGHT_MODES = 3
 };
 

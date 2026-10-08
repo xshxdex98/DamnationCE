@@ -16,6 +16,26 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* model render flags */
+enum
+{
+	_render_model_immediate_bit,
+	_render_model_shadow_bit,
+	_render_model_no_planar_fog_bit,
+	_render_model_first_person_bit,
+	NUMBER_OF_RENDER_MODEL_FLAGS
+};
+
+/* model effect types */
+enum
+{
+	_render_model_effect_type_none,
+	_render_model_effect_type_active_camouflage,
+	_render_model_effect_type_modifier,
+	_render_model_effect_type_cortana = 2,
+	NUMBER_OF_RENDER_MODEL_EFFECT_TYPES
+};
+
 enum
 {
 	MAXIMUM_RENDERED_DISTANT_LIGHTS = 2,

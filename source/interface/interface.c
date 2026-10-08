@@ -63,13 +63,6 @@ enum
 	_hud_screen_effect_desaturation_uses_convolution_mask_bit = 3,
 };
 
-enum
-{
-	_rasterizer_screen_effect_convolution_type_none = 0,
-	_rasterizer_screen_effect_convolution_type_blur,
-	_rasterizer_screen_effect_convolution_type_warp,
-};
-
 /* ---------- macros */
 
 #define interface_tag_references_get() \

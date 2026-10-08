@@ -40,8 +40,6 @@ enum
 	/* datagrams that could not be read (too large, or empty) skipped in a
 	frame before the rest wait for the next */
 	MAXIMUM_SKIPPED_DATAGRAMS_PER_IDLE = 64,
-	_transport_type_udp = 0x11,
-	_transport_type_tcp,
 	_connection_closed_bit = 4,
 	_connection_going_stale_bit,
 	/* a message of a size the stream cannot hold was read: what follows it

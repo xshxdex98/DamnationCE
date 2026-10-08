@@ -73,13 +73,6 @@ enum weapon_crosshair_type
 	NUMBER_OF_CROSSHAIR_STATES,
 };
 
-enum hud_scaling_flags
-{
-	_hud_dont_scale_offset_bit = 0,
-	_hud_dont_scale_size_bit,
-	_hud_use_high_resolution_scale_bit,
-};
-
 enum hud_crosshair_flags
 {
 	_hud_crosshair_flashes_bit = 0,

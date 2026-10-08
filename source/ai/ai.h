@@ -10,6 +10,26 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* AI sound volumes */
+enum
+{
+	_ai_sound_volume_silent,
+	_ai_sound_volume_medium,
+	_ai_sound_volume_loud,
+	_ai_sound_volume_shout,
+	_ai_sound_volume_quiet,
+	NUMBER_OF_AI_SOUND_VOLUMES
+};
+
+/* AI spatial effects */
+enum
+{
+	_ai_spatial_effect_environmental_noise,
+	_ai_spatial_effect_weapon_impact,
+	_ai_spatial_effect_weapon_detonation,
+	NUMBER_OF_AI_SPATIAL_EFFECTS
+};
+
 /* ai_information_data selector */
 enum
 {

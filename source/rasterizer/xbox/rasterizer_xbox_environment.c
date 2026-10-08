@@ -53,32 +53,8 @@ enum
 
 enum
 {
-	_shader_environment_alpha_tested_bit = 0,
-	_shader_environment_bump_map_is_specular_mask_bit,
-	_shader_environment_true_atmospheric_fog_bit,
-};
-
-enum
-{
-	_shader_environment_specular_overbright_bit = 0,
-	_shader_environment_specular_extra_shiny_bit,
-	_shader_environment_specular_lightmap_bit,
-};
-
-enum
-{
-	_shader_environment_reflection_dynamic_mirror_bit = 0,
-};
-
-enum
-{
 	_rasterizer_environment_vector_mode_test_pattern = 50,
 	NUMBER_OF_RASTERIZER_ENVIRONMENT_VECTOR_MODES,
-};
-
-enum
-{
-	_shader_environment_self_illumination_unfiltered_bit = 0,
 };
 
 enum
@@ -93,12 +69,6 @@ enum
 {
 	_rasterizer_vertex_shader_environment_reflection = 42,
 	_rasterizer_vertex_shader_environment_reflection_mirror = 51,
-};
-
-enum
-{
-	_shader_environment_diffuse_rescale_detail_maps_bit = 0,
-	_shader_environment_diffuse_rescale_bump_map_bit,
 };
 
 enum
