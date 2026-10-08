@@ -137,32 +137,6 @@ struct lights_game_globals
 	byte reserved01[3];
 };
 
-struct point_light_definition
-{
-	long flags;
-	real radius;
-	real radius_modifier_lower_bound;
-	real radius_modifier_upper_bound;
-	real falloff_angle;
-	real cutoff_angle;
-	real lens_flare_radius;
-	real runtime_cosine_falloff_angle;
-	real runtime_cosine_cutoff_angle;
-	real specular_radius_multiplier;
-	real runtime_sine_cutoff_angle;
-	byte reserved2C[0x8];
-	unsigned long color_interpolation_flags;
-	real_argb_color color_lower_bound;
-	real_argb_color color_upper_bound;
-	byte reserved58[0x54];
-	struct tag_reference lens_flare;
-	byte reservedBC[0x38];
-	real transition_duration;
-	word reservedF8;
-	short falloff_function;
-	byte reservedFC[0x8];
-};
-
 struct light_datum
 {
 	struct datum_header header;
@@ -227,14 +201,6 @@ typedef char verify_light_datum_flags_offset[
 	offsetof(struct light_datum, flags) == 0x2 ? 1 : -1];
 typedef char verify_light_datum_cluster_reference_offset[
 	offsetof(struct light_datum, cluster_reference) == 0x10 ? 1 : -1];
-typedef char verify_light_definition_lens_flare_offset[
-	offsetof(struct point_light_definition, lens_flare) == 0xAC ? 1 : -1];
-typedef char verify_light_definition_color_offset[
-	offsetof(struct point_light_definition, color_interpolation_flags) == 0x34 ? 1 : -1];
-typedef char verify_light_definition_transition_duration_offset[
-	offsetof(struct point_light_definition, transition_duration) == 0xF4 ? 1 : -1];
-typedef char verify_light_definition_falloff_function_offset[
-	offsetof(struct point_light_definition, falloff_function) == 0xFA ? 1 : -1];
 typedef char verify_light_datum_size[
 	sizeof(struct light_datum) == 0x7C ? 1 : -1];
 #ifndef HALO_64BIT
@@ -918,9 +884,9 @@ void lights_preprocess_scene(
 		{
 			if (TEST_FLAG(light->flags, _point_light_dynamic_bit))
 			{
-				light->radius = (definition->radius_modifier_lower_bound * inverse_intensity
-					+ definition->radius_modifier_upper_bound * intensity)
-					* definition->radius;
+				light->radius = (definition->geometry.radius_modifier_lower_bound * inverse_intensity
+					+ definition->geometry.radius_modifier_upper_bound * intensity)
+					* definition->geometry.radius;
 				lights_port.radius_writes++;
 				if (light->radius != 0.0f)
 				{
@@ -989,7 +955,7 @@ void lights_preprocess_scene(
 			}
 			else
 			{
-				light->radius = definition->radius;
+				light->radius = definition->geometry.radius;
 				lights_port.radius_writes++;
 			}
 
@@ -1399,13 +1365,13 @@ static void render_debug_light(
 	{
 		struct light_datum *light = light_get(light_index);
 		struct point_light_definition *definition = light_definition_get(light->definition_index);
-		real radius = definition->radius_modifier_upper_bound * definition->radius;
+		real radius = definition->geometry.radius_modifier_upper_bound * definition->geometry.radius;
 		real_argb_color color = *global_real_argb_orange;
 
 		render_debug_sphere(
 			TRUE,
 			&light->position,
-			definition->lens_flare_radius,
+			definition->geometry.lens_flare_radius,
 			global_real_argb_white);
 		render_debug_sphere(
 			TRUE,
@@ -1417,11 +1383,11 @@ static void render_debug_light(
 		color.blue *= 0.8f;
 		if (!TEST_FLAG(definition->flags, _light_definition_no_specular_bit))
 		{
-			radius *= definition->specular_radius_multiplier;
+			radius *= definition->geometry.specular_radius_multiplier;
 			render_debug_sphere(
 				TRUE,
 				&light->position,
-				definition->specular_radius_multiplier * light->radius,
+				definition->geometry.specular_radius_multiplier * light->radius,
 				&color);
 		}
 		color.red *= 0.8f;
@@ -1499,33 +1465,33 @@ static void light_compute_bounding_sphere(
 	struct light_datum *light = light_get(light_index);
 	struct point_light_definition *definition = light_definition_get(light->definition_index);
 	real light_radius = maximum
-		? definition->radius_modifier_upper_bound * definition->radius
+		? definition->geometry.radius_modifier_upper_bound * definition->geometry.radius
 		: light->radius;
 
 	if (!TEST_FLAG(definition->flags, _light_definition_no_specular_bit)
 		&& (specular || maximum))
 	{
-		light_radius *= definition->specular_radius_multiplier;
+		light_radius *= definition->geometry.specular_radius_multiplier;
 	}
 
-	if (lens_flare_only && light_radius < definition->lens_flare_radius)
+	if (lens_flare_only && light_radius < definition->geometry.lens_flare_radius)
 	{
 		*position = light->position;
-		*radius = definition->lens_flare_radius;
+		*radius = definition->geometry.lens_flare_radius;
 	}
-	else if (definition->cutoff_angle < _pi / 2)
+	else if (definition->geometry.cutoff_angle < _pi / 2)
 	{
-		if (definition->cutoff_angle < _pi / 4)
+		if (definition->geometry.cutoff_angle < _pi / 4)
 		{
-			light_radius = *radius = light_radius / definition->runtime_cosine_cutoff_angle;
+			light_radius = *radius = light_radius / definition->geometry.runtime_cosine_cutoff_angle;
 			position->x = light_radius * light->forward.i + light->position.x;
 			position->y = light_radius * light->forward.j + light->position.y;
 			position->z = light_radius * light->forward.k + light->position.z;
 		}
 		else
 		{
-			*radius = light_radius * definition->runtime_sine_cutoff_angle;
-			light_radius *= definition->runtime_cosine_cutoff_angle;
+			*radius = light_radius * definition->geometry.runtime_sine_cutoff_angle;
+			light_radius *= definition->geometry.runtime_cosine_cutoff_angle;
 			position->x = light_radius * light->forward.i + light->position.x;
 			position->y = light_radius * light->forward.j + light->position.y;
 			position->z = light_radius * light->forward.k + light->position.z;

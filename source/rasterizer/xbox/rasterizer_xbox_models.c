@@ -29,6 +29,7 @@ RASTERIZER_XBOX_MODELS.C
 #include "rasterizer/xbox/rasterizer_xbox_draw_primitives.h"
 #include "rasterizer/xbox/rasterizer_xbox_internal.h"
 #include "rasterizer/xbox/rasterizer_xbox_models.h"
+#include "models/models.h"
 #ifdef HALO_64BIT
 #include "rasterizer/rasterizer_model_types.h"
 
@@ -102,17 +103,7 @@ struct shader_transparent_plasma_definition
 	short intensity_exponent_source;
 };
 
-struct render_sort_filth
-{
-	short *previous_group_presorted_index_reference;
-	short *next_group_presorted_index_reference;
-	short group_index;
-	short next_part_index;
-	short part_index;
-	word pad0A;
 #ifndef HALO_64BIT
-};
-
 struct transparent_geometry_group
 {
 	unsigned long geometry_flags;
@@ -145,8 +136,8 @@ struct transparent_geometry_group
 	boolean sort_last;
 	boolean cortana_hack;
 	byte pad9E[2];
-#endif
 };
+#endif
 
 struct shader_environment_diffuse_properties
 {

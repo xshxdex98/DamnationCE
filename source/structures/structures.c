@@ -79,25 +79,6 @@ struct structure_cluster_graph
 	struct tag_block portal_indices;
 };
 
-struct fog_screen
-{
-	word flags;
-	short layer_count;
-	real near_distance;
-	real far_distance;
-	real near_density;
-	real far_density;
-	real start_distance_from_fog_plane;
-	byte reserved18[4];
-	pixel32 color;
-	real rotation_multiplier;
-	real strafing_multiplier;
-	real zoom_multiplier;
-	byte reserved2C[8];
-	real map_scale;
-	struct tag_reference map;
-};
-
 struct structure_planar_fog_definition
 {
 	word flags;

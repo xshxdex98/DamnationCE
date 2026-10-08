@@ -42,48 +42,6 @@ enum
 #define CACHE_FILE_HEADER_SIGNATURE 'head'
 #define CACHE_FILE_FOOTER_SIGNATURE 'foot'
 
-struct cache_file_tag_header
-{
-	/* read from the cache file: Xbox addresses */
-	XPTR(struct cache_file_tag_instance) tag_instances;
-	long scenario_tag_index;
-	unsigned long checksum;
-	long tag_count;
-	long vertex_buffer_count;
-	XPTR(void) vertex_buffers;
-	long index_buffer_count;
-	XPTR(void) index_buffers;
-	unsigned long signature;
-};
-
-struct cache_file_structure_bsp_header
-{
-	/* read from the cache file: Xbox addresses */
-	XPTR(void) base_address;
-	long vertex_buffer_count;
-	XPTR(void) vertex_buffers;
-	long index_buffer_count;
-	XPTR(void) index_buffers;
-	unsigned long signature;
-};
-
-struct cache_file_header
-{
-	unsigned long header_signature;
-	long version;
-	long file_length;
-	byte reservedC[4];
-	long tag_data_offset;
-	long tag_data_size;
-	byte reserved18[8];
-	char name[0x20];
-	char build[0x20];
-	byte reserved60[4];
-	unsigned long checksum;
-	byte reserved68[0x794];
-	unsigned long footer_signature;
-};
-
 struct cache_file_globals
 {
 	boolean tags_loaded;
@@ -96,15 +54,10 @@ struct cache_file_globals
 typedef char verify_cache_file_tag_instance_size[
 	sizeof(struct cache_file_tag_instance) == 0x20 ? 1 : -1];
 
-typedef char verify_cache_file_tag_header_count_offset[
-	offsetof(struct cache_file_tag_header, tag_count) == 0xC ? 1 : -1];
-
 #ifndef HALO_64BIT
 typedef char verify_cache_file_globals_size[
 	sizeof(struct cache_file_globals) == 0x80C ? 1 : -1];
 #endif
-typedef char verify_cache_file_header_size[
-	sizeof(struct cache_file_header) == 0x800 ? 1 : -1];
 
 /* ---------- prototypes */
 
@@ -617,8 +570,8 @@ void cache_files_disable_writes(
 			cache_file_globals.structure_bsp_header->vertex_buffer_count * 12,
 			PAGE_READWRITE);
 		XPhysicalProtect(
-			xbox_pointer(cache_file_globals.structure_bsp_header->index_buffers),
-			cache_file_globals.structure_bsp_header->index_buffer_count * 12,
+			xbox_pointer(cache_file_globals.structure_bsp_header->lightmap_vertex_buffers),
+			cache_file_globals.structure_bsp_header->lightmap_vertex_buffer_count * 12,
 			PAGE_READWRITE);
 	}
 
@@ -1301,8 +1254,8 @@ boolean scenario_structure_bsp_load(
 			!cache_file_region_contains(
 				structure_bsp_header,
 				reference->file_size,
-				xbox_pointer(structure_bsp_header->index_buffers),
-				structure_bsp_header->index_buffer_count,
+				xbox_pointer(structure_bsp_header->lightmap_vertex_buffers),
+				structure_bsp_header->lightmap_vertex_buffer_count,
 				CACHE_FILE_BUFFER_SIZE))))
 		{
 			error(

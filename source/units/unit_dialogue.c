@@ -79,17 +79,6 @@ enum unit_dialogue_ai_unit_effect
 	(game_connection() == _game_connection_local && ai_debug.field)
 #define NUMBER_OF_VOCALIZATION_TYPES NUMBER_OF_DIALOGUE_VOCALIZATION_TYPES
 
-/* ---------- structures */
-
-struct dialogue_definition
-{
-	short vocalization_enum_version;
-	word pad;
-	long unused[3];
-	struct tag_reference vocalizations[NUMBER_OF_DIALOGUE_VOCALIZATION_TYPES];
-	struct tag_reference unused_vocalizations[47];
-};
-
 /* ---------- prototypes */
 
 static long unit_find_dialogue_variant(

@@ -9,6 +9,7 @@ DEVICE_CONTROLS.C
 #include "device_controls.h"
 #include "memory/data.h"
 #include "scenario/scenario_definitions.h"
+#include "devices/devices.h"
 
 /* ---------- structures */
 
@@ -19,13 +20,6 @@ struct scenario_control_datum
 	word flags;
 	short unused;
 	short custom_name_index;
-};
-
-struct device_group_datum
-{
-	short identifier;
-	word pad;
-	real actual_value;
 };
 
 /* ---------- prototypes */

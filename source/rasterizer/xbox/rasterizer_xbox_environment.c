@@ -34,6 +34,7 @@ RASTERIZER_XBOX_ENVIRONMENT.C
 #include "rasterizer_xbox_draw_primitives.h"
 #include "rasterizer_xbox_internal.h"
 #include "rasterizer/xbox/rasterizer_xbox_internal.h"
+#include "objects/light_definitions.h"
 
 /* ---------- constants */
 
@@ -158,33 +159,6 @@ struct rasterizer_environment_globals
 	boolean lightmap_missing;
 	byte reservedAD[0x3];
 	real specular_light_brightness;
-};
-
-struct point_light_gel_parameters
-{
-	struct tag_reference map;
-	word pad0;
-	short texture_animation_function;
-	real texture_animation_rate;
-	struct tag_reference secondary_map;
-	word pad1;
-	short yaw_function;
-	real yaw_period;
-	word pad2;
-	short roll_function;
-	real roll_period;
-	word pad3;
-	short pitch_function;
-	real pitch_period;
-	long unused[2];
-};
-
-struct point_light_definition
-{
-	unsigned long flags;
-	struct point_light_geometry_parameters geometry;
-	byte reserved34[0x30];
-	struct point_light_gel_parameters gel;
 };
 
 struct shader_environment_diffuse_properties

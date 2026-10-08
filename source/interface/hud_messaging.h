@@ -98,6 +98,21 @@ struct hud_state_message_definition
 struct icon_hud_element_definition;
 union real_argb_color;
 
+struct hud_message_definition
+{
+	long time;
+	wchar_t text[63];
+	boolean valid;
+	boolean magic_number;
+	long item_definition_index;
+	short quantity;
+	char message_offset;
+	byte pad8B;
+};
+
+typedef char hud_message_definition_size_assert[
+	sizeof(struct hud_message_definition) == 0x8C ? 1 : -1];
+
 /* ---------- prototypes/HUD_MESSAGING.C */
 
 void hud_messaging_initialize(

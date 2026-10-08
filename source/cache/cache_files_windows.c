@@ -49,46 +49,6 @@ typedef char d3d_texture_size_assert[sizeof(D3DTexture) == 0x14 ? 1 : -1];
 
 /* read from the cache file: Xbox addresses (as in cache_files.c) */
 #endif
-struct cache_file_tag_header
-{
-	XPTR(struct cache_file_tag_instance) tag_instances;
-	long scenario_tag_index;
-	unsigned long checksum;
-	long tag_count;
-	long vertex_buffer_count;
-	XPTR(D3DVertexBuffer) vertex_buffers;
-	long index_buffer_count;
-	XPTR(D3DIndexBuffer) index_buffers;
-	unsigned long signature;
-};
-
-struct cache_file_structure_bsp_header
-{
-	XPTR(void) base_address;
-	long vertex_buffer_count;
-	XPTR(D3DVertexBuffer) vertex_buffers;
-	long lightmap_vertex_buffer_count;
-	XPTR(D3DVertexBuffer) lightmap_vertex_buffers;
-	unsigned long signature;
-};
-
-struct cache_file_header
-{
-	unsigned long header_signature;
-	long version;
-	long file_length;
-	byte reservedC[4];
-	long tag_data_offset;
-	long tag_data_size;
-	byte reserved18[8];
-	char name[0x20];
-	char build[0x20];
-	short scenario_type;
-	short pad62;
-	unsigned long checksum;
-	byte reserved68[0x794];
-	unsigned long footer_signature;
-};
 
 struct cached_map_file
 {
@@ -129,8 +89,6 @@ struct cache_file_runtime_globals
 	struct cache_file_request *requests;
 };
 
-typedef char verify_cache_file_header_size[
-	sizeof(struct cache_file_header) == 0x800 ? 1 : -1];
 #ifndef HALO_64BIT
 typedef char verify_cached_map_file_size[
 	sizeof(struct cached_map_file) == 0x80C ? 1 : -1];

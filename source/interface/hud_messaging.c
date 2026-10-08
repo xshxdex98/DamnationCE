@@ -77,18 +77,6 @@ enum
 
 /* ---------- structures */
 
-struct hud_message_definition
-{
-	long time;
-	wchar_t text[63];
-	boolean valid;
-	boolean magic_number;
-	long item_definition_index;
-	short quantity;
-	char message_offset;
-	byte pad8B;
-};
-
 enum
 {
 	_hud_message_type_text,
@@ -161,10 +149,6 @@ struct hud_messaging_globals_definition
 
 typedef char hud_timer_data_size_assert[
 	sizeof(struct hud_timer_data_definition) == 0x10 ? 1 : -1];
-typedef char hud_message_valid_offset_assert[
-	offsetof(struct hud_message_definition, valid) == 0x82 ? 1 : -1];
-typedef char hud_message_size_assert[
-	sizeof(struct hud_message_definition) == 0x8C ? 1 : -1];
 typedef char hud_state_message_text_info_size_assert[
 	sizeof(struct hud_state_message_text_info_definition) == 4 ? 1 : -1];
 #ifndef HALO_64BIT

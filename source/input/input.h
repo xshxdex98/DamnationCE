@@ -178,7 +178,26 @@ enum
 	NUMBER_OF_GAMEPAD_STICKS
 };
 
+enum mouse_button
+{
+	_mouse_button_left = 0,
+	_mouse_button_middle,
+	_mouse_button_right,
+	NUMBER_OF_MOUSE_BUTTONS = 4,
+};
+
 /* ---------- structures */
+
+struct mouse_state
+{
+	long x;
+	long y;
+	long wheel_delta;
+	byte buttons[NUMBER_OF_MOUSE_BUTTONS];
+};
+
+typedef char mouse_state_size_assert[
+	sizeof(struct mouse_state) == 0x10 ? 1 : -1];
 
 struct key_stroke
 {

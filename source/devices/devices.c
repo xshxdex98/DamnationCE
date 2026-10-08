@@ -61,17 +61,6 @@ enum
 
 /* ---------- structures */
 
-struct device_group_datum
-{
-	short identifier;
-	word flags;
-	real actual_value;
-};
-
-typedef char device_group_datum_size_assert[
-	sizeof(struct device_group_datum) == 0x8 ? 1 : -1];
-typedef char device_group_datum_actual_value_offset_assert[
-	offsetof(struct device_group_datum, actual_value) == 0x4 ? 1 : -1];
 typedef char scenario_device_group_size_assert[
 	sizeof(struct scenario_device_group) == 0x34 ? 1 : -1];
 typedef char scenario_device_group_initial_value_offset_assert[

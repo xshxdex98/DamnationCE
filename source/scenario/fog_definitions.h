@@ -43,4 +43,32 @@ typedef char fog_definition_background_sound_offset_assert[
 typedef char fog_definition_sound_environment_offset_assert[
 	offsetof(struct fog_definition, sound_environment) == 0x104 ? 1 : -1];
 
+struct fog_screen
+{
+	word flags;
+	short layer_count;
+	real near_distance;
+	real far_distance;
+	real near_density;
+	real far_density;
+	real start_distance_from_fog_plane;
+	byte reserved18[4];
+	pixel32 color;
+	real rotation_multiplier;
+	real strafing_multiplier;
+	real zoom_multiplier;
+	byte reserved2C[8];
+	real map_scale;
+	struct tag_reference map;
+	real animation_period;
+	real animation_unused;
+	struct real_bounds wind_velocity;
+	struct real_bounds wind_period;
+	real wind_acceleration_weight;
+	real wind_perpendicular_weight;
+};
+
+typedef char fog_screen_size_assert[
+	sizeof(struct fog_screen) == 0x68 ? 1 : -1];
+
 #endif // __FOG_DEFINITIONS_H

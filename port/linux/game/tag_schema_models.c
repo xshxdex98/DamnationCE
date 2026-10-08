@@ -113,26 +113,8 @@ typedef char verify_model_size[sizeof(struct model) == 0xE8 ? 1 : -1];
 
 /* model_animations.c's */
 
-struct compressed_animation_header
-{
-	long rotation_keyframe_frame_indices_offset;
-	long default_rotations_offset;
-	long rotation_keyframes_offset;
-	long translation_node_headers_offset;
-	long translation_keyframe_frame_indices_offset;
-	long default_translations_offset;
-	long translation_keyframes_offset;
-	long scale_node_headers_offset;
-	long scale_keyframe_frame_indices_offset;
-	long default_scales_offset;
-	long scale_keyframes_offset;
-	unsigned long rotation_node_headers[1];
-};
-
 typedef char verify_animation_graph_sound_reference_size[
 	sizeof(struct animation_graph_sound_reference) == 0x14 ? 1 : -1];
-typedef char verify_compressed_animation_header_size[
-	offsetof(struct compressed_animation_header, rotation_node_headers) == COMPRESSED_ANIMATION_HEADER_SIZE ? 1 : -1];
 typedef char verify_animation_graph_weapon_animations_size[
 	sizeof(struct animation_graph_weapon_animations) == 0x1C ? 1 : -1];
 typedef char verify_vehicle_animation_size[sizeof(struct vehicle_animation) == 0x74 ? 1 : -1];

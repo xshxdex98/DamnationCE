@@ -85,15 +85,6 @@ struct shader_model_definition
 	real translucency;
 };
 
-struct render_sort_filth
-{
-	short *previous_group_presorted_index_reference;
-	short *next_group_presorted_index_reference;
-	short group_index;
-	short next_part_index;
-	short part_index;
-	word pad;
-};
 #ifndef HALO_64BIT
 
 typedef char verify_render_model_effect_size[sizeof(struct render_model_effect) == 0x28 ? 1 : -1];

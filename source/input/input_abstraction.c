@@ -26,23 +26,6 @@ INPUT_ABSTRACTION.C
 
 enum
 {
-	_game_control_jump,
-	_game_control_switch_grenades,
-	_game_control_action,
-	_game_control_switch_weapons,
-	_game_control_melee,
-	_game_control_flashlight,
-	_game_control_grenade,
-	_game_control_primary_trigger,
-	_game_control_start,
-	_game_control_back,
-	_game_control_crouch,
-	_game_control_zoom,
-	NUMBER_OF_GAME_CONTROLS,
-};
-
-enum
-{
 	_joystick_controls_default,
 	_joystick_controls_southpaw,
 	_joystick_controls_legacy,
@@ -59,15 +42,6 @@ enum
 #define STICK_DIAGONAL_BLEND_SCALE (1.0 / LEFT_STICK_DIAGONAL_SNAP_ANGLE)
 
 /* ---------- structures */
-
-struct game_input_state
-{
-	byte buttons[NUMBER_OF_GAME_CONTROLS];
-	real forward_movement;
-	real strafe;
-	real yaw;
-	real pitch;
-};
 
 /* the start of a vehicle definition, enough for the aircraft check */
 struct vehicle_definition
@@ -90,8 +64,6 @@ struct input_abstraction_runtime_globals
 	unsigned long time_of_first_device_insertion;
 };
 
-typedef char verify_game_input_state_size[
-	sizeof(struct game_input_state) == 0x1C ? 1 : -1];
 typedef char verify_input_abstraction_input_states_offset[
 	offsetof(struct input_abstraction_runtime_globals, input_states) == 0x60 ? 1 : -1];
 typedef char verify_input_abstraction_device_timer_offset[

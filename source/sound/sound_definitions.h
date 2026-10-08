@@ -192,6 +192,47 @@ typedef char looping_sound_track_size_assert[
 typedef char looping_sound_detail_size_assert[
 	sizeof(struct looping_sound_detail) == 0x68 ? 1 : -1];
 
+struct sound_platform_definition
+{
+	short platform_code;
+	byte reserved0[2];
+	boolean (*initialize)(
+		struct sound_preferences *preferences);
+	void (*dispose)(
+		void);
+	void (*set_listener_properties)(
+		struct platform_sound_listener_properties const *properties);
+	void (*begin_scene)(
+		void);
+	void (*end_scene)(
+		void);
+	void (*queue_sound_to_channel)(
+		short channel_index,
+		struct sound_permutation *permutation);
+	void (*channel_update)(
+		short channel_index);
+	void (*stop_channel)(
+		short channel_index);
+	short (*get_channel_state)(
+		short channel_index);
+	void (*set_pause)(
+		boolean paused);
+	void (*flush)(
+		void);
+	void (*set_channel_location)(
+		short channel_index,
+		boolean spatialized,
+		struct sound_location const *location,
+		real obstruction,
+		real occlusion,
+		boolean attenuate_direct_path);
+	void (*set_channel_properties)(
+		short channel_index,
+		struct platform_sound_channel_properties const *properties,
+		boolean gain_only);
+	real direct_path_gain;
+};
+
 /* ---------- public code */
 
 real sound_definition_get_maximum_distance(

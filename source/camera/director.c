@@ -31,14 +31,6 @@ boolean network_game_distributed_client(void);
 
 /* ---------- structures */
 
-struct mouse_state
-{
-	long x;
-	long y;
-	long wheel_delta;
-	byte buttons[2];
-};
-
 enum camera_control_flags
 {
 	_camera_control_forward_bit = 0,
@@ -756,7 +748,7 @@ static boolean director_update_controls(
 		switch_camera = input_key_is_down(_key_backspace) == TRUE;
 		if ((director->camera_proc !=
 				(director_camera_update_proc)first_person_camera_update &&
-			mouse->buttons[1]) || input_key_is_down(_key_tab))
+			mouse->buttons[_mouse_button_middle]) || input_key_is_down(_key_tab))
 		{
 			SET_FLAG(control_flags, _camera_control_forward_bit,
 				input_key_is_down(_key_w));

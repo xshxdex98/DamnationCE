@@ -48,37 +48,11 @@ enum
 
 /* ---------- structures */
 
-struct decal_vertex
+struct rasterizer_decal_vertex
 {
 	real_point3d position;
 	unsigned long texcoord;
 };
-
-struct decal_datum
-{
-	short identifier;
-	unsigned short flags;
-	short cluster_index;
-	short layer;
-	real_point3d position;
-	long creation_time;
-	byte sequence_index;
-	byte unused_was_frames_remaining;
-	byte sprite_index;
-	byte bitmap_index;
-	real lifetime;
-	real decay_time;
-	pixel32 color;
-	byte intensity;
-	byte unused;
-	short quad_count;
-	long definition_index;
-	long previous_decal_index;
-	long next_decal_index;
-};
-
-typedef char verify_decal_datum_size[
-	sizeof(struct decal_datum) == 0x38 ? 1 : -1];
 
 typedef char verify_decal_definition_framebuffer_blend_function_offset[
 	offsetof(
@@ -291,11 +265,11 @@ long _rasterizer_decal_vertices_new(
 	match_assert(
 		"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_decals.c",
 		204,
-		cache_size>sizeof(struct decal_vertex));
+		cache_size>sizeof(struct rasterizer_decal_vertex));
 	match_assert(
 		"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_decals.c",
 		205,
-		cache_size%sizeof(struct decal_vertex)==0);
+		cache_size%sizeof(struct rasterizer_decal_vertex)==0);
 
 	return lruv_block_new(local_vertex_cache, cache_size);
 }
@@ -461,7 +435,7 @@ void _rasterizer_decals_begin(
 		global_d3d_device,
 		0,
 		local_d3d_vertex_buffer,
-		sizeof(struct decal_vertex));
+		sizeof(struct rasterizer_decal_vertex));
 
 	return;
 }
@@ -586,7 +560,7 @@ void _rasterizer_decals_draw(
 		match_assert(
 			"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_decals.c",
 			511,
-			vertex_data_offset%sizeof(struct decal_vertex)==0);
+			vertex_data_offset%sizeof(struct rasterizer_decal_vertex)==0);
 		IDirect3DDevice8_SetVertexData4ub(
 			global_d3d_device,
 			9,
@@ -597,7 +571,7 @@ void _rasterizer_decals_draw(
 		IDirect3DDevice8_DrawPrimitive(
 			global_d3d_device,
 			D3DPT_QUADLIST,
-			vertex_data_offset/sizeof(struct decal_vertex),
+			vertex_data_offset/sizeof(struct rasterizer_decal_vertex),
 			decal->quad_count);
 		if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 		{

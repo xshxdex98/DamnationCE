@@ -221,15 +221,6 @@ struct persistent_game_data_info_view
 	boolean corrupted;
 };
 
-struct single_player_level_entry
-{
-	char const *map_name;
-	boolean available;
-	boolean completion_marker;
-	boolean difficulty_marker;
-	boolean cooperative_marker;
-};
-
 struct cached_player_profile_entry
 {
 	long profile_index;

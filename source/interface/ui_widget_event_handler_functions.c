@@ -34,17 +34,9 @@ boolean playlist_profile_get_options(long playlist_profile_index, struct game_va
 #include "text/unicode.h"
 #include "halo_menus.h" /* port: PC_MENU_FUNCTION_BASE */
 #include "custom_edition_maps.h"
+#include "interface/ui_widget_game_data_input_functions.h"
 
 /* ---------- structures */
-
-struct single_player_level_entry
-{
-	char *map_name;
-	boolean available;
-	boolean unknown5;
-	boolean unknown6;
-	boolean unknown7;
-};
 
 struct event_record
 {
@@ -3262,10 +3254,10 @@ static boolean solo_level_initialize_list_coop(
 				unsigned long level_flags;
 
 				level_flags = (char)profile0.single_player_map_flags[level_index] | (char)profile1.single_player_map_flags[level_index];
-				((struct single_player_level_entry *)single_player_level_data)[level_index].unknown5 = (level_flags >> 1) & 1;
+				((struct single_player_level_entry *)single_player_level_data)[level_index].completion_marker = (level_flags >> 1) & 1;
 				((struct single_player_level_entry *)single_player_level_data)[level_index].available = TRUE;
-				((struct single_player_level_entry *)single_player_level_data)[level_index].unknown6 = (level_flags >> 2) & 1;
-				((struct single_player_level_entry *)single_player_level_data)[level_index].unknown7 = (level_flags >> 3) & 1;
+				((struct single_player_level_entry *)single_player_level_data)[level_index].difficulty_marker = (level_flags >> 2) & 1;
+				((struct single_player_level_entry *)single_player_level_data)[level_index].cooperative_marker = (level_flags >> 3) & 1;
 			}
 		}
 	}
@@ -4923,10 +4915,10 @@ static boolean solo_level_initialize_list_single_player(
 		if (profile.single_player_map_flags[level_index] || level_index == highest_level + 1 || level_index == 0)
 		{
 			level_flags = (char)profile.single_player_map_flags[level_index];
-			((struct single_player_level_entry *)single_player_level_data)[level_index].unknown5 = (level_flags >> 1) & 1;
+			((struct single_player_level_entry *)single_player_level_data)[level_index].completion_marker = (level_flags >> 1) & 1;
 			((struct single_player_level_entry *)single_player_level_data)[level_index].available = TRUE;
-			((struct single_player_level_entry *)single_player_level_data)[level_index].unknown6 = (level_flags >> 2) & 1;
-			((struct single_player_level_entry *)single_player_level_data)[level_index].unknown7 = (level_flags >> 3) & 1;
+			((struct single_player_level_entry *)single_player_level_data)[level_index].difficulty_marker = (level_flags >> 2) & 1;
+			((struct single_player_level_entry *)single_player_level_data)[level_index].cooperative_marker = (level_flags >> 3) & 1;
 		}
 	}
 

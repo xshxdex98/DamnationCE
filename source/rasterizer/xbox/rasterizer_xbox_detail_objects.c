@@ -63,31 +63,6 @@ struct detail_object_bitmap_group_sequence
 	struct tag_block sprites;
 };
 
-struct detail_object_cell_data
-{
-	long first_detail_object_index;
-	long detail_object_count;
-	short cell_x;
-	short cell_y;
-	float cell_z;
-	long first_vertex_index;
-	void const *z_reference_vector;
-};
-
-struct detail_object_layer_data
-{
-	struct detail_object_cell_data *cells;
-	short cell_count;
-	short collection_definition_index;
-};
-
-struct detail_object_view_data
-{
-	struct detail_object_layer_data *layers;
-	short layer_count;
-	word pad;
-};
-
 typedef char detail_objects_pixel_shader_size_assert[
 	sizeof(struct pixel_shader_definition) == 0xF0 ? 1 : -1];
 typedef char detail_object_vertex_size_assert[
@@ -96,15 +71,6 @@ typedef char detail_object_bitmap_group_sprite_size_assert[
 	sizeof(struct detail_object_bitmap_group_sprite) == 0x20 ? 1 : -1];
 typedef char detail_object_bitmap_group_sequence_size_assert[
 	sizeof(struct detail_object_bitmap_group_sequence) == 0x40 ? 1 : -1];
-#ifndef HALO_64BIT
-typedef char detail_object_cell_data_size_assert[
-	sizeof(struct detail_object_cell_data) == 0x18 ? 1 : -1];
-typedef char detail_object_layer_data_size_assert[
-	sizeof(struct detail_object_layer_data) == 0x8 ? 1 : -1];
-typedef char detail_object_view_data_size_assert[
-	sizeof(struct detail_object_view_data) == 0x8 ? 1 : -1];
-
-#endif
 /* ---------- prototypes */
 
 static void detail_object_data_error(

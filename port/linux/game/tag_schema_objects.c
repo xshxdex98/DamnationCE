@@ -144,18 +144,6 @@ typedef char verify_vehicle_definition_size[sizeof(struct vehicle_definition) ==
 
 typedef char verify_actor_variant_change_colors_size[sizeof(struct actor_variant_change_colors) == 0x20 ? 1 : -1];
 
-/* unit_dialogue.c */
-struct dialogue_definition
-{
-	short vocalization_enum_version;
-	word pad;
-	long unused[3];
-	struct tag_reference vocalizations[NUMBER_OF_DIALOGUE_VOCALIZATION_TYPES];
-	struct tag_reference unused_vocalizations[47];
-};
-
-typedef char verify_dialogue_definition_size[sizeof(struct dialogue_definition) == 0x1010 ? 1 : -1];
-
 /* ---------- globals */
 
 static struct tag_schema_definition const predicted_resource_schema;

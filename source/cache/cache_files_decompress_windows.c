@@ -73,23 +73,6 @@ enum decompressor_timer
 
 /* ---------- structures */
 
-struct cache_file_header
-{
-	unsigned long header_signature;
-	long version;
-	long size;
-	byte reservedC[4];
-	long tag_data_offset;
-	long tag_data_size;
-	byte reserved18[8];
-	char name[0x20];
-	char build[0x20];
-	byte reserved60[4];
-	unsigned long checksum;
-	byte reserved68[0x794];
-	unsigned long footer_signature;
-};
-
 struct cache_copy_read_request
 {
 	short read_sequence_index;
@@ -157,8 +140,6 @@ struct decompressor_runtime_globals
 	struct simple_decompressor_definition self;
 };
 
-typedef char verify_cache_file_header_size[
-	sizeof(struct cache_file_header) == 0x800 ? 1 : -1];
 typedef char verify_simple_decompressor_zlib_stream_offset[
 	offsetof(struct simple_decompressor_definition, zlib_stream) == 0x908 ? 1 : -1];
 #ifndef HALO_64BIT
@@ -816,7 +797,7 @@ short cache_copy_get_status(
 
 	if (!flags && global_self->copy_thread)
 	{
-		if (global_self->header.size > 0)
+		if (global_self->header.file_length > 0)
 		{
 			status = (short)((WaitForSingleObject(global_self->copy_complete_event, 0) == 0) +
 				_cache_copy_in_progress);
@@ -912,8 +893,8 @@ void CALLBACK cache_copy_FileIOCompletionRoutine(
 
 			ResetEvent(global_self->progress_update_event);
 			global_self->read_progress =
-				(real)(global_self->header.size - global_self->async_read_bytes_left) /
-				global_self->header.size;
+				(real)(global_self->header.file_length - global_self->async_read_bytes_left) /
+				global_self->header.file_length;
 			SetEvent(global_self->progress_update_event);
 		}
 		else if (overlapped_index >= _write_buffer_base &&
@@ -1204,7 +1185,7 @@ static void cache_copy_issue_write_internal(
 	match_assert(
 		"c:\\halo\\SOURCE\\cache\\cache_files_decompress_windows.c",
 		1666,
-		self->current_write_offset<=self->header.size);
+		self->current_write_offset<=self->header.file_length);
 
 	return;
 }
@@ -1419,7 +1400,7 @@ static void cache_copy_run_decompression(
 		/* port: a stream that ends before the size the header gives the map
 		is a bad file: the rest of the cache file would be taken for it */
 		if (zlib_result == Z_STREAM_END &&
-			zlib_stream->total_out != (uLong)(self->header.size - sizeof(self->header)))
+			zlib_stream->total_out != (uLong)(self->header.file_length - sizeof(self->header)))
 		{
 			match_vassert(
 				"c:\\halo\\SOURCE\\cache\\cache_files_decompress_windows.c",
@@ -1429,7 +1410,7 @@ static void cache_copy_run_decompression(
 					decompressor_globals.message,
 					"decompression ended after %lu of %ld bytes",
 					(unsigned long)zlib_stream->total_out,
-					self->header.size - (long)sizeof(self->header)));
+					self->header.file_length - (long)sizeof(self->header)));
 			cache_copy_set_flag(_copy_bad_file_bit);
 
 			break;
@@ -1505,7 +1486,7 @@ static unsigned long __stdcall simple_cache_copy_thread(
 			{
 				boolean keep_going = TRUE;
 
-				self->write_bytes_left = self->header.size - sizeof(self->header);
+				self->write_bytes_left = self->header.file_length - sizeof(self->header);
 				self->async_write_bytes_left = self->write_bytes_left;
 
 				cache_copy_issue_initial_reads(self);

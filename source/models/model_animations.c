@@ -59,27 +59,9 @@ typedef char verify_animation_frame_info_dx_dy_dyaw_size[
 	sizeof(struct animation_frame_info_dx_dy_dyaw) == 0x0C ? 1 : -1];
 typedef char verify_animation_frame_info_dx_dy_dz_dyaw_size[
 	sizeof(struct animation_frame_info_dx_dy_dz_dyaw) == 0x10 ? 1 : -1];
-struct compressed_animation_header
-{
-	long rotation_keyframe_frame_indices_offset;
-	long default_rotations_offset;
-	long rotation_keyframes_offset;
-	long translation_node_headers_offset;
-	long translation_keyframe_frame_indices_offset;
-	long default_translations_offset;
-	long translation_keyframes_offset;
-	long scale_node_headers_offset;
-	long scale_keyframe_frame_indices_offset;
-	long default_scales_offset;
-	long scale_keyframes_offset;
-	unsigned long rotation_node_headers[1];
-};
 
 typedef char verify_animation_graph_sound_reference_size[
 	sizeof(struct animation_graph_sound_reference) == 0x14 ? 1 : -1];
-
-typedef char verify_compressed_animation_header_rotation_node_headers_offset[
-	offsetof(struct compressed_animation_header, rotation_node_headers) == 0x2C ? 1 : -1];
 
 /* ---------- prototypes */
 
