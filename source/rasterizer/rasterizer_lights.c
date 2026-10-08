@@ -27,6 +27,7 @@ RASTERIZER_LIGHTS.C
 #include "rasterizer/xbox/rasterizer_xbox.h"
 #include "main/main.h"
 #include "rasterizer/rasterizer.h"
+#include "structures/structure_lens_flares.h"
 
 enum
 {
@@ -185,20 +186,6 @@ struct structure_cluster
 	byte reserved44[0x24];
 };
 
-struct structure_lens_flare
-{
-	struct tag_reference lens_flare;
-};
-
-struct structure_lens_flare_marker
-{
-	real_point3d position;
-	char i_direction;
-	char j_direction;
-	char k_direction;
-	byte lens_flare_index;
-};
-
 struct lens_flare_occlusion_test_results
 {
 	short light_identifier;
@@ -226,8 +213,6 @@ typedef char verify_structure_cluster_lens_flare_marker_count_offset[
 	offsetof(
 		struct structure_cluster,
 		lens_flare_marker_count) == 0x42 ? 1 : -1];
-typedef char verify_structure_lens_flare_marker_size[
-	sizeof(struct structure_lens_flare_marker) == 0x10 ? 1 : -1];
 typedef char verify_lens_flare_definition_far_fade_distance_offset[
 	offsetof(
 		struct lens_flare_definition,
@@ -486,7 +471,7 @@ void rasterizer_lens_flare_submit(
 				{
 					if (parameters->light_index==NONE)
 					{
-						lens_flare_parameters->light_index= _lens_flare_dynamic_light_flag;
+						lens_flare_parameters->light_index= (short)_lens_flare_dynamic_light_flag;
 
 						match_assert(
 							"c:\\halo\\SOURCE\\rasterizer\\rasterizer_lights.c",
@@ -710,9 +695,9 @@ void rasterizer_lens_flare_submit_for_cluster(
 
 				set_real_vector3d(
 					&direction,
-					marker->i_direction*(1.0f/127.0f),
-					marker->j_direction*(1.0f/127.0f),
-					marker->k_direction*(1.0f/127.0f));
+					marker->direction[0]*(1.0f/127.0f),
+					marker->direction[1]*(1.0f/127.0f),
+					marker->direction[2]*(1.0f/127.0f));
 
 				perpendicular3d(&direction, &up);
 				normalize3d(&direction);

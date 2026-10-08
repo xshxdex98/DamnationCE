@@ -80,21 +80,6 @@ struct decal_datum
 typedef char verify_decal_datum_size[
 	sizeof(struct decal_datum) == 0x38 ? 1 : -1];
 
-/* the decal shader fields the rasterizer reads */
-struct decal_shader_definition
-{
-	byte reserved0000[4];
-	short framebuffer_blend_function;
-	byte reserved0006[0x16];
-	struct tag_reference map;
-};
-
-struct decal_definition
-{
-	byte reserved0000[0xbc];
-	struct decal_shader_definition shader;
-};
-
 typedef char verify_decal_definition_framebuffer_blend_function_offset[
 	offsetof(
 		struct decal_definition,

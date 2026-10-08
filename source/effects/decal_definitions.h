@@ -8,6 +8,7 @@ DECAL_DEFINITIONS.H
 
 /* ---------- headers */
 
+#include "shaders/shader_definitions.h"
 #include "tag_files/tag_groups.h"
 
 /* ---------- constants */
@@ -46,6 +47,51 @@ enum decal_type
 
 /* ---------- structures */
 
-struct decal_definition;
+struct decal_shader_definition
+{
+	struct shader shader;
+	word flags;
+	short type;
+	short framebuffer_blend_function;
+	word pad02E;
+	long unused030[5];
+	struct tag_reference map;
+	long unused054[5];
+};
+
+struct decal_definition
+{
+	word flags;                                 /* 0x000 */
+	short type;                                 /* 0x002 */
+	short layer;                                /* 0x004 */
+	word pad006;
+	struct tag_reference next_decal_in_chain;   /* 0x008 */
+	real radius_lower_bound;                    /* 0x018 */
+	real radius_upper_bound;                    /* 0x01C */
+	long unused020[3];
+	real intensity_lower_bound;                 /* 0x02C */
+	real intensity_upper_bound;                 /* 0x030 */
+	real_rgb_color color_lower_bound;           /* 0x034 */
+	real_rgb_color color_upper_bound;           /* 0x040 */
+	long unused04C[3];
+	short animation_loop_frame_index;
+	short animation_speed;
+	long unused05C[7];
+	real lifetime_lower_bound;                  /* 0x078 */
+	real lifetime_upper_bound;                  /* 0x07C */
+	real decay_time_lower_bound;                /* 0x080 */
+	real decay_time_upper_bound;                /* 0x084 */
+	long unused088[3];
+	struct decal_shader_definition shader;      /* 0x094 */
+	real runtime_maximum_sprite_extent;         /* 0x0FC */
+	word runtime_incremental_counter;
+	word pad102;
+	long unused104[2];
+};
+
+typedef char decal_definition_size_assert[
+	sizeof(struct decal_definition) == 0x10C ? 1 : -1];
+typedef char decal_definition_blend_function_offset_assert[
+	offsetof(struct decal_definition, shader.framebuffer_blend_function) == 0xC0 ? 1 : -1];
 
 #endif // __DECAL_DEFINITIONS_H

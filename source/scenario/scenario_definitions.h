@@ -328,4 +328,13 @@ struct scenario_cutscene_flag
 	byte unused[0x24];
 };
 
+struct scenario_detail_object_collection_palette_entry
+{
+	struct tag_reference collection;
+	byte reserved10[0x20];
+};
+
+typedef char scenario_detail_object_collection_palette_entry_size_assert[
+	sizeof(struct scenario_detail_object_collection_palette_entry) == 0x30 ? 1 : -1];
+
 #endif // __SCENARIO_DEFINITIONS_H

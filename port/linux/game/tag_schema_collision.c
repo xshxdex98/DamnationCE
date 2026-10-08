@@ -42,6 +42,8 @@ surfaces and detail objects.
 #include "effects/weather_particle_systems.h"
 
 #include <string.h>
+#include "structures/detail_object_definitions.h"
+#include "structures/structure_lens_flares.h"
 
 /* ---------- constants */
 
@@ -182,60 +184,9 @@ typedef char verify_structure_surface_reference_size[sizeof(struct structure_sur
 typedef char verify_structure_fog_plane_schema_size[
 	sizeof(struct structure_fog_plane_schema) == sizeof(struct structure_fog_plane) ? 1 : -1];
 
-/* structure_lens_flares.c */
-struct structure_lens_flare
-{
-	struct tag_reference lens_flare;
-};
-
-struct structure_lens_flare_marker
-{
-	real_point3d position;
-	char direction[3];
-	byte lens_flare_index;
-};
-
-typedef char verify_structure_lens_flare_marker_size[sizeof(struct structure_lens_flare_marker) == 0x10 ? 1 : -1];
-
 typedef char verify_structure_weather_palette_entry_size[
 	sizeof(struct structure_weather_palette_entry) == 0xF0 ? 1 : -1];
 typedef char verify_structure_weather_polyhedron_size[sizeof(struct structure_weather_polyhedron) == 0x20 ? 1 : -1];
-
-/* structure_detail_objects.c */
-struct detail_object_cell_definition
-{
-	short cell_x;
-	short cell_y;
-	short cell_z;
-	short offset_z;
-	unsigned long valid_layers;
-	long start_index;
-	long count_index;
-	long unused14[3];
-};
-
-struct structure_detail_object_data
-{
-	struct tag_block cells;
-	struct tag_block detail_objects;
-	struct tag_block counts;
-	struct tag_block z_reference_vectors;
-	byte valid;
-	byte pad31[3];
-	long unused34[3];
-};
-
-struct detail_object
-{
-	byte position[3];
-	byte data;
-	word color;
-};
-
-typedef char verify_detail_object_cell_definition_size[
-	sizeof(struct detail_object_cell_definition) == 0x20 ? 1 : -1];
-typedef char verify_structure_detail_object_data_size[sizeof(struct structure_detail_object_data) == 0x40 ? 1 : -1];
-typedef char verify_detail_object_size[sizeof(struct detail_object) == 0x6 ? 1 : -1];
 
 typedef char verify_map_leaf_face_size[sizeof(struct map_leaf_face) == 0x10 ? 1 : -1];
 typedef char verify_map_leaf_size[sizeof(struct map_leaf) == 0x18 ? 1 : -1];

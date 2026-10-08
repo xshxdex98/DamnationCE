@@ -19,6 +19,7 @@ STRUCTURE_DETAIL_OBJECTS.C
 #include "tag_files/tag_groups.h"
 #include "rasterizer/rasterizer.h"
 #include "structures.h"
+#include "structures/detail_object_definitions.h"
 
 #undef memset
 #pragma intrinsic(memset)
@@ -46,18 +47,6 @@ struct detail_object_cell_coordinate
 	short z;
 	boolean initialized;
 	byte pad07;
-};
-
-struct detail_object_cell_definition
-{
-	short cell_x;
-	short cell_y;
-	short cell_z;
-	short offset_z;
-	unsigned long valid_layers;
-	long start_index;
-	long count_index;
-	long unused14[3];
 };
 
 struct detail_object_cell_data
@@ -99,28 +88,8 @@ struct detail_object_global_runtime_data
 	real_vector4d default_z_reference_vector;
 };
 
-struct structure_detail_object_data
-{
-	struct tag_block cells;
-	struct tag_block detail_objects;
-	struct tag_block counts;
-	struct tag_block z_reference_vectors;
-	byte valid;
-	byte pad31[3];
-	long unused34[3];
-};
-
-struct detail_object
-{
-	byte position[3];
-	byte data;
-	word color;
-};
-
 typedef char detail_object_cell_coordinate_size[
 	sizeof(struct detail_object_cell_coordinate) == 0x8 ? 1 : -1];
-typedef char detail_object_cell_definition_size[
-	sizeof(struct detail_object_cell_definition) == 0x20 ? 1 : -1];
 #ifndef HALO_64BIT
 typedef char detail_object_cell_data_size[
 	sizeof(struct detail_object_cell_data) == 0x18 ? 1 : -1];
@@ -133,10 +102,6 @@ typedef char detail_object_runtime_data_size[
 typedef char detail_object_global_runtime_data_size[
 	sizeof(struct detail_object_global_runtime_data) == 0xA430 ? 1 : -1];
 #endif
-typedef char structure_detail_object_data_size[
-	sizeof(struct structure_detail_object_data) == 0x40 ? 1 : -1];
-typedef char detail_object_size[
-	sizeof(struct detail_object) == 0x6 ? 1 : -1];
 
 /* ---------- prototypes */
 
