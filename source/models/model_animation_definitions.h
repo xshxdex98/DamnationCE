@@ -269,7 +269,7 @@ void animation_graph_node_matrices_from_orientations(
 void animation_get_node_orientations(
 	struct model const *model,
 	struct animation const *animation,
-	short frame_index, 
+	short frame_index,
 	struct real_orientation *node_orientations);
 void replacement_animation_apply(
 	struct animation const *animation,

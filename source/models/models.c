@@ -753,7 +753,7 @@ short model_get_marker_by_name(
 					"c:\\halo\\SOURCE\\models\\models.c",
 					785,
 					object_marker->node_index>=0 && object_marker->node_index<(node_remapping_table ? node_count : model->nodes.count));
-				
+
 				matrix4x3_multiply(&node_matrices[object_marker->node_index], &object_marker->node_matrix, &object_marker->matrix);
 				if (mirrored_flag)
 				{

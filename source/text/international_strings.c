@@ -52,7 +52,7 @@ word get_next_character(
 		result = 0;
 		result|= string[0]<<8;
 		result|= string[1]<<0;
-		
+
 		*index+= 2;
 	}
 	else
@@ -232,7 +232,7 @@ boolean character_in_pattern(
 			found = TRUE;
 		}
 	}
-		
+
 	return result;
 }
 

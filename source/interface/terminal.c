@@ -377,7 +377,7 @@ static boolean terminal_update_input(
 	if (terminal_globals.input_state)
 	{
 		long time = local_time_get();
-		
+
 		for (terminal_globals.input_state->key_count = 0;
 			input_get_key(&key);
 			terminal_globals.last_insertion_point_toggle = time)
@@ -422,7 +422,7 @@ static void terminal_update_output(
 	while (line_index!=NONE)
 	{
 		long older_line_index;
-		
+
 		line = output_line_get(line_index);
 		older_line_index = line->older_line_index;
 		line->timer += ticks;

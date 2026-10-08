@@ -27,7 +27,7 @@ boolean xbox_demos_available(
 	void)
 {
 	struct file_reference file;
-	
+
 	if (check_for_demos==TRUE)
 	{
 		if (file_reference_create_from_path(&file, "d:\\XDemos\\XDemos.xbe", FALSE))

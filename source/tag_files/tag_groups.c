@@ -87,7 +87,7 @@ long verify_tag_reference(
 #else
 	index = tag_loaded(reference->group_tag, reference->name);
 #endif
-	
+
 	match_vassert(
 		"c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3061, reference->index==index,
 		csprintf(temporary,
@@ -105,8 +105,8 @@ long verify_tag_reference(
 
 void* tag_data_get_pointer(
 	const struct tag_data *data,
-	long offset, 
-	long size) 
+	long offset,
+	long size)
 {
 	/* port: Halo PC reads a Custom Edition map's tags unchecked, and maps
 	made for it can hold an offset past a tag data's end, which never
@@ -134,8 +134,8 @@ void* tag_data_get_pointer(
 
 void *tag_block_get_element_with_size(
 	const struct tag_block *block,
-	long index, 
-	long element_size) 
+	long index,
+	long element_size)
 {
 	match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3084, block);
 	match_assert("c:\\halo\\SOURCE\\tag_files\\tag_groups.c", 3085, block->count>=0);

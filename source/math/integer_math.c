@@ -307,7 +307,7 @@ unsigned long integer_square_root(
 		result>>= 1;
 	}
 	while (magic);
-	
+
 	if (k>result)
 	{
 		result++;

@@ -725,7 +725,7 @@ struct actor_destination_orders
 	short destination_type;
 	boolean keep_moving;
 	byte pad;
-	
+
 	union
 	{
 		struct
@@ -733,10 +733,10 @@ struct actor_destination_orders
 			real_point3d point;
 			long surface_index;
 		} raw;
-		
+
 		short firing_position_index;
 		short move_position_index;
-		
+
 		struct
 		{
 			int prop_index;
@@ -866,13 +866,13 @@ struct actor_control_data
 	boolean next_burst_secondary;
 	real weapon_maximum_range;
 	short current_fire_target_type;
-	
+
 	union
 	{
 		real_point3d current_fire_target_manual_point;
 		long current_fire_target_prop_index;
 	};
-	
+
 	long current_fire_target_timer;
 	boolean current_fire_target_visible;
 	boolean current_fire_target_underwater;

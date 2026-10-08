@@ -120,11 +120,11 @@ void console_printf(
 	{
 		terminal_clear();
 	}
-	
+
 	/* port: no longer than the buffer (cut to 255 below, as it was) */
 	vsnprintf(buffer, NUMBEROF(buffer), format, arglist);
 	buffer[255] = '\0';
-	
+
 	terminal_printf(0, "%s", buffer);
 	if (console_dump_to_file)
 	{
@@ -425,9 +425,9 @@ boolean console_update(
 				console_globals.selected_previous_command_index = last_command ? console_globals.selected_previous_command_index : 0;
 
 				prev_command_valid = console_globals.selected_previous_command_index>console_globals.previous_command_count-1;
-				console_globals.selected_previous_command_index = 
+				console_globals.selected_previous_command_index =
 				(
-					prev_command_valid ? 
+					prev_command_valid ?
 					console_globals.previous_command_count-1 :
 					console_globals.selected_previous_command_index
 				);

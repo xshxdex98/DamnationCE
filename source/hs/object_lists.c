@@ -154,7 +154,7 @@ void object_list_gc(
 	long i;
 
 	for (i = data_next_index(object_list_header_data, NONE);
-		i!=NONE; 
+		i!=NONE;
 		i = data_next_index(object_list_header_data, i))
 	{
 		if (object_list_header_get(i)->reference_count==0)

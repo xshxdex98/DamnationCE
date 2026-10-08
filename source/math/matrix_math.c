@@ -636,7 +636,7 @@ void matrix4x3_from_point_and_vectors(
 {
 	matrix4x3_rotation_from_vectors(matrix, forward, up);
 	matrix->position = *point;
-	
+
 	return;
 }
 

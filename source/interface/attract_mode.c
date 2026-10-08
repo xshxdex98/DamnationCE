@@ -57,10 +57,10 @@ boolean attract_mode_should_start(
 		unsigned long time_elapsed;
 		unsigned long current_time = system_milliseconds();
 		unsigned long time_since_last_event = event_manager_time_of_last_event();
-		
+
 		time_since_last_event = MAX(attract_mode_countdown_timer, time_since_last_event);
 		time_elapsed = current_time-time_since_last_event;
-	
+
 		if (time_elapsed>=ATTRACT_MODE_COUNTDOWN-MUSIC_FADE_TIME)
 		{
 			if (ui_main_menu_music_active())

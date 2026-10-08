@@ -315,8 +315,8 @@ struct obey_individual_simple_control
 	short pause_timer;
 	byte metadata_flags;
 	byte simple_control_flags;
-	
-	union 
+
+	union
 	{
 		struct obey_individual_directmovement_control directmovement;
 		struct obey_individual_jump_control jump;

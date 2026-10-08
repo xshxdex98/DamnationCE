@@ -57,19 +57,19 @@ enum
 
 	NUMBER_OF_COLLISION_TEST_FLAGS,
 
-	_collision_test_objects_sight_blocking_flags = 
+	_collision_test_objects_sight_blocking_flags =
 		FLAG(_collision_test_objects_vehicles_bit) |
 		FLAG(_collision_test_objects_scenery_bit) |
 		FLAG(_collision_test_objects_machines_bit),
 
 	_collision_test_objects_all_types_flags =
 		FLAG(_collision_test_objects_last_type_bit+1)-FLAG(_collision_test_objects_first_type_bit),
-	
-	_collision_test_environment_flags = 
+
+	_collision_test_environment_flags =
 		FLAG(_collision_test_structure_bit) |
 		FLAG(_collision_test_media_bit) |
 		FLAG(_collision_test_objects_bit),
-	
+
 	_collision_test_for_projectiles_flags = 0x1000E9,
 	_collision_test_for_projectiles_fat_flags = 0x89,
 	_collision_test_for_line_of_sight_flags = 0xC2AD,

@@ -337,7 +337,7 @@ void SetupSmartStates(
 struct rasterizer_xbox_d3d_globals
 {
 	real vsh_constants__nodematrices
-		[RASTERIZER_MAXIMUM_NODES_PER_MODEL][3][4];         
+		[RASTERIZER_MAXIMUM_NODES_PER_MODEL][3][4];
 	point2d bitmap_dimensions_non_blocking;             /* +2112 */
 	point2d bitmap_dimensions;                          /* +2116 */
 	Direct3D *d3d;                                      /* +2120 */

@@ -317,28 +317,28 @@ void quaternions_multiply(
 	result->v.i =
 					+ q0->v.j*q1->v.k
 					+ q0->v.i*q1->w
-					+ q0->w  *q1->v.i 
+					+ q0->w  *q1->v.i
 					- q0->v.k*q1->v.j
 					;
 
 	result->v.j =
-					+ q0->w  *q1->v.j 
+					+ q0->w  *q1->v.j
 					+ q0->v.j*q1->w
-					+ q0->v.k*q1->v.i 
+					+ q0->v.k*q1->v.i
 					- q0->v.i*q1->v.k
 					;
 
 	result->v.k =
-					+ q0->v.k*q1->w 
+					+ q0->v.k*q1->w
 					+ q0->v.i*q1->v.j
-					+ q0->w  *q1->v.k 
+					+ q0->w  *q1->v.k
 					- q0->v.j*q1->v.i
 					;
 
 	result->w =
-					+ q0->w  *q1->w 
-					- q0->v.i*q1->v.i 
-					- q0->v.j*q1->v.j 
+					+ q0->w  *q1->w
+					- q0->v.i*q1->v.i
+					- q0->v.j*q1->v.j
 					- q0->v.k*q1->v.k
 					;
 
@@ -352,7 +352,7 @@ void quaternions_interpolate(
 	real_quaternion *result)
 {
 	real v = 1.f-t;
-	
+
 	if (q0->v.i*q1->v.i + q0->v.j*q1->v.j + q0->v.k*q1->v.k + q0->w*q1->w < 0.f)
 	{
 		t = -t;
@@ -374,7 +374,7 @@ void quaternion_transform_point(
 	real w_squared = q->w*q->w;
 	real two_w_squared_minus_one = 2.f * w_squared - 1.f;
 	real v_dot_p = (q->v.i*p->x + q->v.k*p->z + q->v.j*p->y);
-	
+
 	real two_v_dot_p = v_dot_p+v_dot_p;
 	real two_w = q->w+q->w;
 
@@ -425,7 +425,7 @@ boolean fast_vector_intersects_sphere(
 
 		direction = *vector;
 		b = direction.i*p.x + direction.j*p.y + direction.k*p.z;
-		
+
 		if (b >= 0.f)
 		{
 			return FALSE;
@@ -437,7 +437,7 @@ boolean fast_vector_intersects_sphere(
 				direction.j*direction.j +
 				direction.k*direction.k;
 			real disc = b * b - a * c;
-			
+
 			if (disc <= 0.f)
 			{
 				return FALSE;
@@ -2004,7 +2004,7 @@ real_vector2d *fast_normalize2d(
 	real_vector2d *v)
 {
 	real magnitude_squared = magnitude_squared2d(v);
-	
+
 	if (magnitude_squared != 0.f)
 	{
 		scale_vector2d(v, 1.f / square_root(magnitude_squared), v);
@@ -2017,7 +2017,7 @@ real_vector3d *fast_normalize3d(
 	real_vector3d *v)
 {
 	real magnitude_squared = magnitude_squared3d(v);
-	
+
 	if (magnitude_squared != 0.f)
 	{
 		scale_vector3d(v, 1.f / square_root(magnitude_squared), v);
@@ -2044,7 +2044,7 @@ real dequantize_byte_to_real(
 	{
 		return max;
 	}
-	
+
 	return (max-min) * ((real)value / 255.f) + min;
 }
 
@@ -2176,14 +2176,14 @@ real angle_between_vectors2d(
 {
 	real angle = 0.f;
 	real aa_bb = (a->i*a->i + a->j*a->j) * (b->i*b->i + b->j*b->j);
-	
+
 	if (aa_bb != 0.f)
 	{
 		real ab = dot_product2d(a, b);
 		real c = PIN((ab/aa_bb*ab) + (ab/aa_bb*ab) - 1.f, -1.f, 1.f);
 
 		angle = arccosine(c) * 0.5f;
-		
+
 		if (ab < 0.f)
 		{
 			angle = _pi - angle;
@@ -2379,7 +2379,7 @@ real_vector3d *refract_vector3d(
 	real sine_refraction = coefficient_of_refraction * sine_incident;
 
 	real cosine_refraction = square_root(1.f - sine_refraction * sine_refraction);
-	
+
 	real delta = (sine_incident * cosine_refraction + cosine_incident * sine_refraction) / sine_refraction;
 
 	refraction->i = delta * normal->i + incident->i;
@@ -2387,7 +2387,7 @@ real_vector3d *refract_vector3d(
 	refraction->k = delta * normal->k + incident->k;
 
 	refraction_scale = incident_magnitude / magnitude3d(refraction);
-	
+
 	refraction->i *= refraction_scale;
 	refraction->j *= refraction_scale;
 	refraction->k *= refraction_scale;
@@ -2434,7 +2434,7 @@ void quaternion_to_angle_and_vector(
 {
 	*v = q->v;
 	*a = 2 * arctangent(normalize3d(v), q->w) ;
-	
+
 	if (*a > _pi)
 	{
 		negate_vector3d(v, v);
@@ -2527,7 +2527,7 @@ real point_to_line_distance_squared3d(
 	real t;
 	real distance_squared;
 	real_vector3d v;
-	
+
 	vector_from_points3d(base, point, &v);
 	t = PIN(dot_product3d(&v, height) / magnitude_squared3d(height), 0.f, 1.f);
 	point_from_line3d((real_point3d *)&v, height, -t, (real_point3d *)&v);
@@ -3192,7 +3192,7 @@ void accelerate_to_velocity(
 }
 
 boolean valid_real_sine_cosine(
-	real sine, 
+	real sine,
 	real cosine)
 {
 	return valid_realcmp(sine * sine + cosine * cosine, 1.0f);

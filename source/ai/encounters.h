@@ -77,7 +77,7 @@ struct encounter_datum
 	long last_grenade_throw_time;
 	boolean playfighting;
 	short follow_target_type;
-	
+
 	union
 	{
 		long follow_target_unit_index;
