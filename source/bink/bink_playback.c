@@ -24,6 +24,12 @@ BINK_PLAYBACK.C
 #include "text/text_group.h"
 #include <xtl.h>
 
+#ifdef HALO_GAME_BROWSER
+/* server/src's: the dedicated server and the game list's probe */
+boolean dedicated_server_active(void);
+boolean probe_active(void);
+#endif
+
 /* ---------- constants */
 
 enum
@@ -410,10 +416,8 @@ void bink_playback_start(
 #ifdef HALO_GAME_BROWSER
 	/* the dedicated server and the game list's probe play no movies: the
 	intro, the attract mode's (server/src) */
-	{ boolean dedicated_server_active(void);
-	  boolean probe_active(void);
-	  if (dedicated_server_active() || probe_active())
-		return; }
+	if (dedicated_server_active() || probe_active())
+		return;
 #endif
 
 	if (!bink_globals.initialized)
