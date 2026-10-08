@@ -42,21 +42,16 @@ struct vehicle_definition
 	unsigned long flags;
 	short vehicle_type;
 	short pad2f6;
-	/* 0x2f8 is a four-real 'speed' block and 0x308 a two-real 'turn' block;
-	their sub-field names are not recovered, so they keep offset names. */
-	real unknown2f8;
-	real unknown2fc;
-	real unknown300;
-	real unknown304;
-	real unknown308;
-	real unknown30c;
+	struct physics_variable_speed_parameters speed;
+	real maximum_left_turn;
+	real maximum_right_turn;
 	real wheel_circumference;
-	real unknown314;
+	real turn_rate;
 	real unknown318;
 	short function_modes[4];
 	byte unknown324[0xc];
-	real unknown330;
-	real unknown334;
+	real maximum_left_slide;
+	real maximum_right_slide;
 	byte unused338[8];
 	real unknown340;
 	real unknown344;
@@ -427,14 +422,14 @@ void vehicle_export_function_values(
 	struct vehicle_datum *vehicle = vehicle_datum_get(vehicle_index);
 	struct vehicle_definition *definition = vehicle_specific_definition_get(
 		vehicle->definition_index);
-	real forward_speed = (real)fabs(definition->unknown2f8);
-	real reverse_speed = (real)fabs(definition->unknown2fc);
+	real forward_speed = (real)fabs(definition->speed.positive_scale);
+	real reverse_speed = (real)fabs(definition->speed.negative_scale);
 	real maximum_speed = MAX(forward_speed, reverse_speed);
-	real left_slide = (real)fabs(definition->unknown330);
-	real right_slide = (real)fabs(definition->unknown334);
+	real left_slide = (real)fabs(definition->maximum_left_slide);
+	real right_slide = (real)fabs(definition->maximum_right_slide);
 	real maximum_slide = MAX(left_slide, right_slide);
-	real left_turn = (real)fabs(definition->unknown308);
-	real right_turn = (real)fabs(definition->unknown30c);
+	real left_turn = (real)fabs(definition->maximum_left_turn);
+	real right_turn = (real)fabs(definition->maximum_right_turn);
 	real maximum_turn = MAX(left_turn, right_turn);
 	real *value = vehicle->object.incoming_function_values;
 	short *mode = definition->function_modes;
@@ -594,7 +589,7 @@ void vehicle_export_function_values(
 
 				case _vehicle_function_boost:
 					result = magnitude3d(&vehicle->object.translational_velocity)/
-						definition->unknown2f8;
+						definition->speed.positive_scale;
 					result = (result*vehicle->vehicle.thrust-0.05f)*
 						(1.0f/(0.9f-0.05f));
 					break;
@@ -782,12 +777,12 @@ static void update_alien_fighter_physics_new(
 			scale_vector3d(&vehicle->object.forward, vehicle->vehicle.speed, &desired_velocity);
 
 			if (vehicle->vehicle.speed>0.0f)
-				throttle = vehicle->vehicle.speed/definition->unknown2f8;
+				throttle = vehicle->vehicle.speed/definition->speed.positive_scale;
 			else
-				throttle = -(vehicle->vehicle.speed/definition->unknown2fc);
+				throttle = -(vehicle->vehicle.speed/definition->speed.negative_scale);
 
 			compute_acceleration(&desired_velocity, &vehicle->object.translational_velocity, &acceleration,
-				throttle*definition->unknown300, throttle*definition->unknown304);
+				throttle*definition->speed.acceleration, throttle*definition->speed.deceleration);
 
 			scale_vector3d(&acceleration, physics->mass, &magic_force);
 			scale_vector3d(&magic_force, vehicle->unit.seat_power[0], &magic_force);
@@ -815,7 +810,7 @@ static void update_alien_fighter_physics_new(
 
 			yaw = cross_product2d((real_vector2d const *)&desired_rotation.forward,
 				(real_vector2d const *)&vehicle->object.translational_velocity)/
-				definition->unknown2f8*definition->unknown308;
+				definition->speed.positive_scale*definition->maximum_left_turn;
 
 			yaw_vectors(&desired_rotation.up, &desired_rotation.forward, sine(yaw), cosine(yaw));
 
@@ -825,7 +820,7 @@ static void update_alien_fighter_physics_new(
 			matrix3x3_multiply(&desired_rotation, &current_rotation, &rotation);
 			matrix3x3_rotation_to_quaternion(&rotation, &rotation_quaternion);
 			quaternion_to_angle_and_vector(&rotation_quaternion, &angle, &axis);
-			scale_vector3d(&axis, (-angle)*definition->unknown314*(1.0f/_pi), &desired_angular_velocity);
+			scale_vector3d(&axis, (-angle)*definition->turn_rate*(1.0f/_pi), &desired_angular_velocity);
 		}
 
 		subtract_vectors3d(&desired_angular_velocity, &vehicle->object.angular_velocity, &angular_acceleration);
@@ -834,7 +829,7 @@ static void update_alien_fighter_physics_new(
 			(physics->zz_moment+physics->yy_moment+physics->xx_moment)*(1.0f/3), &magic_torque);
 		scale_vector3d(&magic_torque, vehicle->unit.seat_power[0], &magic_torque);
 
-		spin = magnitude3d(&vehicle->object.angular_velocity)/definition->unknown314;
+		spin = magnitude3d(&vehicle->object.angular_velocity)/definition->turn_rate;
 
 		if (spin>vehicle->vehicle.thrust)
 		{
@@ -899,7 +894,7 @@ static void update_alien_fighter_physics_old(
 		speed = dot_product3d(&vehicle->object.forward,
 			&vehicle->object.translational_velocity);
 		thrust = (vehicle->vehicle.speed-speed)*physics->mass*0.05f;
-		lift = ((real)fabs(speed/definition->unknown2f8)*physics->mass)*global_gravity*1.05f;
+		lift = ((real)fabs(speed/definition->speed.positive_scale)*physics->mass)*global_gravity*1.05f;
 
 		force.i = lift*vehicle->object.up.i+thrust*vehicle->object.forward.i;
 		force.j = lift*vehicle->object.up.j+thrust*vehicle->object.forward.j;
@@ -915,7 +910,7 @@ static void update_alien_fighter_physics_old(
 		}
 
 		yaw = (facing.i*velocity.j-facing.j*velocity.i)*(_pi*0.5f)/
-			(real)fabs(definition->unknown2f8);
+			(real)fabs(definition->speed.positive_scale);
 
 		yaw_vectors(&perpendicular, &facing, sine(yaw), cosine(yaw));
 
@@ -1231,7 +1226,7 @@ void vehicle_preprocess_node_orientations(
 			((short *)xbox_pointer(animation->animations.address))[1], model_node_count))!=NULL)
 	{
 		value = (triple_product3d(&vehicle->object.up, &vehicle->object.forward,
-			&vehicle->object.translational_velocity)/definition->unknown2f8+1.0f)*0.5f;
+			&vehicle->object.translational_velocity)/definition->speed.positive_scale+1.0f)*0.5f;
 
 		overlay_animation_apply_continuous(overlay,
 			PIN(value, 0.0f, 1.0f)*(overlay->frame_count-1), node_orientations);
@@ -1242,9 +1237,9 @@ void vehicle_preprocess_node_orientations(
 			((short *)xbox_pointer(animation->animations.address))[2], model_node_count))!=NULL)
 	{
 		if (vehicle->vehicle.speed<0.0f)
-			value = 0.5f-vehicle->vehicle.speed/definition->unknown2fc*0.5f;
+			value = 0.5f-vehicle->vehicle.speed/definition->speed.negative_scale*0.5f;
 		else
-			value = (vehicle->vehicle.speed/definition->unknown2f8+1.0f)*0.5f;
+			value = (vehicle->vehicle.speed/definition->speed.positive_scale+1.0f)*0.5f;
 
 		overlay_animation_apply_continuous(overlay, value*(overlay->frame_count-1),
 			node_orientations);
@@ -1255,7 +1250,7 @@ void vehicle_preprocess_node_orientations(
 			((short *)xbox_pointer(animation->animations.address))[3], model_node_count))!=NULL)
 	{
 		value = vehicle_dot_product3d_test(&vehicle->object.translational_velocity, &vehicle->object.forward);
-		value = PIN(value, 0.0f, 1.0f)/(real)fabs(definition->unknown2f8);
+		value = PIN(value, 0.0f, 1.0f)/(real)fabs(definition->speed.positive_scale);
 
 		overlay_animation_apply_continuous(overlay,
 			PIN(value, 0.0f, 1.0f)*(overlay->frame_count-1), node_orientations);
@@ -1331,8 +1326,8 @@ static void update_human_plane_physics(
 		real throttle;
 		real factor;
 
-		throttle = PIN(vehicle->vehicle.speed, 0.0f, definition->unknown2f8)/
-			definition->unknown2f8;
+		throttle = PIN(vehicle->vehicle.speed, 0.0f, definition->speed.positive_scale)/
+			definition->speed.positive_scale;
 		throttle = throttle*throttle;
 
 		factor = !TEST_FLAG(vehicle->vehicle.flags, 2) ? (TEST_FLAG(vehicle->vehicle.flags, 3) ? 1.0f : 0.75f) : 0.25f;
@@ -1365,7 +1360,7 @@ static void update_human_plane_physics(
 			dot = dot_product3d(&vehicle->object.translational_velocity, &vehicle->object.forward);
 
 			drive = (vehicle->vehicle.speed-dot)*vehicle->vehicle.thrust*physics->mass*drive_scale;
-			lift = ((real)fabs(dot/definition->unknown2f8)*speed_lift_scale+
+			lift = ((real)fabs(dot/definition->speed.positive_scale)*speed_lift_scale+
 				vehicle->vehicle.hover*hover_lift_scale)*global_gravity;
 			lift *= physics->mass;
 
@@ -1389,7 +1384,7 @@ static void update_human_plane_physics(
 			}
 
 			yaw = (velocity.j*desired_forward.i-velocity.i*desired_forward.j)*yaw_scale/
-				(real)fabs(definition->unknown2f8);
+				(real)fabs(definition->speed.positive_scale);
 
 			yaw_vectors(&desired_up, &desired_forward, sine(yaw), cosine(yaw));
 		}
@@ -1970,7 +1965,7 @@ static void update_alien_scout_physics(
 
 		if (vehicle->vehicle.hover>0.0f)
 		{
-			real maximum_speed = definition->unknown2f8;
+			real maximum_speed = definition->speed.positive_scale;
 			real maximum_acceleration;
 			real_vector2d target_velocity;
 			real_vector3d acceleration;
@@ -1979,7 +1974,7 @@ static void update_alien_scout_physics(
 			if (TEST_FLAG(vehicle->vehicle.flags, 3))
 				maximum_speed *= 0.8f;
 
-			maximum_acceleration = definition->unknown300;
+			maximum_acceleration = definition->speed.acceleration;
 
 			target_velocity.i = maximum_speed*vehicle->unit.throttle.i;
 			target_velocity.j = maximum_speed*vehicle->unit.throttle.j;
@@ -2114,7 +2109,7 @@ static void update_alien_scout_physics(
 		if (TEST_FLAG(vehicle->vehicle.flags, 3))
 		{
 			real speed = dot_product3d(object_forward,
-				&vehicle->object.translational_velocity)/definition->unknown2f8;
+				&vehicle->object.translational_velocity)/definition->speed.positive_scale;
 			real_vector3d left;
 
 			speed = PIN(speed, 0.0f, 1.0f);
@@ -2377,7 +2372,7 @@ boolean vehicle_update(
 
 	{
 		struct physics_variable_speed_parameters *speed_parameters =
-			(struct physics_variable_speed_parameters *)&definition->unknown2f8;
+			&definition->speed;
 
 		if (TEST_FLAG(vehicle->vehicle.flags, 3))
 		{
@@ -2390,7 +2385,7 @@ boolean vehicle_update(
 				&vehicle->vehicle.speed, speed_parameters, vehicle->unit.throttle.i, 1.0f);
 			physics_variable_speed_update_seek(
 				&vehicle->vehicle.slide,
-				(struct physics_variable_speed_parameters *)&definition->unknown330,
+				(struct physics_variable_speed_parameters *)&definition->maximum_left_slide,
 				vehicle->unit.throttle.j, 1.0f);
 		}
 
@@ -2400,17 +2395,17 @@ boolean vehicle_update(
 				? -steering_angle
 				: steering_angle;
 
-			if (desired_position<DEGREES_TO_RADIANS(definition->unknown30c))
-				desired_position = DEGREES_TO_RADIANS(definition->unknown30c);
-			else if (desired_position>DEGREES_TO_RADIANS(definition->unknown308))
-				desired_position = DEGREES_TO_RADIANS(definition->unknown308);
+			if (desired_position<DEGREES_TO_RADIANS(definition->maximum_right_turn))
+				desired_position = DEGREES_TO_RADIANS(definition->maximum_right_turn);
+			else if (desired_position>DEGREES_TO_RADIANS(definition->maximum_left_turn))
+				desired_position = DEGREES_TO_RADIANS(definition->maximum_left_turn);
 
 			physics_variable_position_update_seek(
 				&vehicle->vehicle.turn,
-				&definition->unknown308,
+				&definition->maximum_left_turn,
 				FALSE,
 				desired_position,
-				DEGREES_TO_RADIANS(definition->unknown314)*(1.0f/TICKS_PER_SECOND));
+				DEGREES_TO_RADIANS(definition->turn_rate)*(1.0f/TICKS_PER_SECOND));
 		}
 		else
 		{
@@ -2424,7 +2419,7 @@ boolean vehicle_update(
 				physics_variable_speed_update_seek(
 					&vehicle->vehicle.turn,
 					speed_parameters,
-					PIN(steering_angle*0.63661975f, -1.0f, 1.0f)*definition->unknown2f8,
+					PIN(steering_angle*0.63661975f, -1.0f, 1.0f)*definition->speed.positive_scale,
 					2.0f);
 			}
 		}
