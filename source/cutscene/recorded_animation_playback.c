@@ -8,6 +8,7 @@ RECORDED_ANIMATION_PLAYBACK.C
 #include "cseries/errors.h"
 #include "memory/byte_swapping.h"
 #include "math/real_math.h"
+#include "cutscene/recorded_animation_definitions.h"
 
 #undef memcpy
 #include <string.h>
@@ -75,23 +76,6 @@ struct animation_playback_controller
 	struct direction_playback_controller facing_control;
 	struct direction_playback_controller aiming_control;
 	struct direction_playback_controller looking_control;
-};
-
-struct recorded_unit_control
-{
-	byte byte_field0;
-	byte byte_field1;
-	short word_field2;
-	short word_field4;
-	short version2_field;
-	short version3_field;
-	short unused_field10;
-	real_vector2d vector2d_field12;
-	long long_field20;
-	long version1_field;
-	real_vector3d vector3d_field28;
-	real_vector3d vector3d_field40;
-	real_vector3d vector3d_field52;
 };
 
 typedef void (*recorded_animation_apply_proc)(

@@ -33,6 +33,7 @@ RASTERIZER_XBOX_ENVIRONMENT.C
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "rasterizer_xbox_draw_primitives.h"
 #include "rasterizer_xbox_internal.h"
+#include "rasterizer/xbox/rasterizer_xbox_internal.h"
 
 /* ---------- constants */
 
@@ -161,21 +162,6 @@ struct rasterizer_environment_globals
 	real specular_light_brightness;
 };
 
-struct point_light_geometry_parameters
-{
-	real radius;
-	real radius_modifier_lower_bound;
-	real radius_modifier_upper_bound;
-	real falloff_angle;
-	real cutoff_angle;
-	real lens_flare_radius;
-	real runtime_cosine_falloff_angle;
-	real runtime_cosine_cutoff_angle;
-	real specular_radius_multiplier;
-	real runtime_sine_cutoff_angle;
-	long unused[2];
-};
-
 struct point_light_gel_parameters
 {
 	struct tag_reference map;
@@ -279,18 +265,6 @@ struct shader_environment_reflection_properties
 	long unused3[4];
 	struct tag_reference cube_map;
 	long unused4[4];
-};
-
-struct shader_environment_specular_properties
-{
-	word flags;
-	short type;
-	long unused04[4];
-	real brightness;
-	long unused18[5];
-	real_rgb_color view_perpendicular_color;
-	real_rgb_color view_parallel_color;
-	long unused44[4];
 };
 
 struct shader_environment_properties

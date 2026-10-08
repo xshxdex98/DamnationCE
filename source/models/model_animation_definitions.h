@@ -74,6 +74,27 @@ enum
 
 /* ---------- structures */
 
+struct animation_frame_info_dx_dy_dz_dyaw
+{
+	real dx;
+	real dy;
+	real dz;
+	real dyaw;
+};
+
+struct animation_frame_info_dx_dy_dyaw
+{
+	real dx;
+	real dy;
+	real dyaw;
+};
+
+struct animation_frame_info_dx_dy
+{
+	real dx;
+	real dy;
+};
+
 struct animation
 {
 	char name[TAG_STRING_LENGTH+1];

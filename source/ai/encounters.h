@@ -11,6 +11,7 @@ file has inline function assertions.
 /* ---------- headers */
 
 #include "math/real_math.h"
+#include "memory/data.h"
 
 /* ---------- constants */
 
@@ -36,6 +37,13 @@ enum
 #define encounter_try_and_get(index)	((struct encounter_datum *)datum_try_and_get(encounter_data, (index)))
 
 /* ---------- structures */
+
+struct encounter_iterator
+{
+	struct data_iterator data;
+	long index;
+	boolean active_only;
+};
 
 struct actor_datum;
 struct actor_iterator;

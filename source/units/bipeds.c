@@ -189,27 +189,6 @@ struct biped_physics
 	real collision_velocity;
 };
 
-struct animation_frame_info_dx_dy
-{
-	real dx;
-	real dy;
-};
-
-struct animation_frame_info_dx_dy_dyaw
-{
-	real dx;
-	real dy;
-	real dyaw;
-};
-
-struct animation_frame_info_dx_dy_dz_dyaw
-{
-	real dx;
-	real dy;
-	real dz;
-	real dyaw;
-};
-
 struct vehicle_runtime_datum
 {
 	long definition_index;
@@ -221,12 +200,6 @@ struct vehicle_runtime_datum
 		short reserved;
 		byte airborne_ticks;
 	} vehicle;
-};
-
-struct scenario_unit_datum
-{
-	real body_vitality;
-	unsigned long flags;
 };
 
 struct scenario_biped_datum

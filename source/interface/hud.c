@@ -85,28 +85,6 @@ enum hud_state_message_type
 #define weapon_hud_interface_definition_get(index) \
 	((struct weapon_hud_interface_definition *)tag_get('wphi', (index)))
 
-/* ---------- structures */
-
-struct weapon_interface_magazine_state
-{
-	boolean reloading;
-	boolean can_fire;
-	short rounds_loaded;
-	short rounds_loaded_maximum;
-	short rounds_remaining;
-	short rounds_remaining_maximum;
-};
-
-struct weapon_interface_state
-{
-	real heat;
-	real age;
-	boolean overheated;
-	byte pad09;
-	short magazine_count;
-	struct weapon_interface_magazine_state magazines[2];
-};
-
 typedef char hud_scripted_globals_size_assert[
 	sizeof(struct hud_scripted_globals_definition) == 0x4 ? 1 : -1];
 typedef char hud_scripted_globals_show_hud_help_text_offset_assert[

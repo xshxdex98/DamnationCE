@@ -65,27 +65,6 @@ struct sound_virtual_channel
 	short type_index;
 };
 
-struct platform_sound_listener_properties
-{
-	real_point3d position;
-	real_vector3d forward;
-	real_vector3d up;
-	real_vector3d velocity;
-	struct sound_environment_definition const *environment;
-};
-
-struct platform_sound_channel_properties
-{
-	real minimum_distance;
-	real maximum_distance;
-	real pitch;
-	real gain;
-	real cone_inside_angle;
-	real cone_outside_angle;
-	real cone_outside_gain;
-	real reverb_attenuation;
-};
-
 struct sound_channel
 {
 	short state;

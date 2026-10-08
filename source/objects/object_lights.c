@@ -124,24 +124,6 @@ enum
 			+ (material)->vertices.count) \
 		+ (vertex_index))
 
-/* ---------- structures */
-
-struct environment_vertex_compressed
-{
-	real_point3d position;
-	unsigned long normal;
-	unsigned long binormal;
-	unsigned long tangent;
-	real_point2d texcoord;
-};
-
-struct environment_lightmap_vertex_compressed
-{
-	unsigned long incident_radiosity;
-	short lightmap_u;
-	short lightmap_v;
-};
-
 struct shader_environment_definition
 {
 	struct shader shader;

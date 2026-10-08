@@ -85,17 +85,6 @@ enum
 #define network_machine_is_valid(machine) \
 	((machine) && (machine)->machine_index >= 0 && (machine)->machine_index < NETWORK_GAME_MACHINE_SLOTS)
 
-/* ---------- structures */
-
-struct game_options
-{
-	unsigned long flags;
-	short code_version;
-	short difficulty;
-	unsigned long random_seed;
-	char map_name[256];
-};
-
 typedef char network_game_players_offset_assert[
 	offsetof(struct network_game, players) == HALO_PORT_NETWORK_GAME_PLAYERS_OFFSET ? 1 : -1];
 typedef char network_game_size_assert[

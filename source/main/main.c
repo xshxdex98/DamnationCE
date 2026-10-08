@@ -72,6 +72,7 @@ MAIN.C
 #include "editor_play.h" /* port: port/linux/game/editor_play.c */
 #endif
 #include "custom_edition_cache.h" /* port: custom_edition_level_name */
+#include "game/game.h"
 
 #if defined(HALO_WINDOWS) || defined(HALO_ANDROID) || defined(__linux__)
 #define HALO_NATIVE_BUILD_INFO 1
@@ -309,15 +310,6 @@ typedef char main_globals_vblank_debug_string_offset_assert[
 	offsetof(struct _main_globals, vblank_debug_string) == 0x41C ? 1 : -1];
 
 #endif
-struct game_options
-{
-	unsigned long flags;
-	short code_version;
-	short difficulty;
-	unsigned long random_seed;
-	char map_name[256];
-};
-
 typedef char game_options_size_assert[
 	sizeof(struct game_options) == 0x10C ? 1 : -1];
 

@@ -64,6 +64,12 @@ enum netgame_flag_type
 
 /* ---------- structures */
 
+struct scenario_unit_datum
+{
+	real body_vitality;
+	unsigned long flags;
+};
+
 struct scenario_object_palette_entry
 {
 	struct tag_reference reference;

@@ -35,6 +35,7 @@ RASTERIZER_XBOX.C
 #include "rasterizer_xbox_internal.h"
 #include "rasterizer_xbox_vertex_shaders.h"
 #include "shaders/shader_definitions.h"
+#include "rasterizer/xbox/rasterizer_xbox_internal.h"
 
 enum
 {
@@ -224,21 +225,6 @@ struct rasterizer_model_lighting_constants
 		distant_lights[MAXIMUM_RENDERED_DISTANT_LIGHTS];
 	real_rgb_color ambient_color;
 	real pad;
-};
-
-struct point_light_geometry_parameters
-{
-	real radius;
-	real radius_modifier_lower_bound;
-	real radius_modifier_upper_bound;
-	real falloff_angle;
-	real cutoff_angle;
-	real lens_flare_radius;
-	real runtime_cosine_falloff_angle;
-	real runtime_cosine_cutoff_angle;
-	real specular_radius_multiplier;
-	real runtime_sine_cutoff_angle;
-	long unused[2];
 };
 
 struct point_light_definition

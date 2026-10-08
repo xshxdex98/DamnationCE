@@ -8,6 +8,10 @@ header included in hcex build.
 #define __SOUND_MANAGER_H
 #pragma once
 
+/* ---------- headers */
+
+#include "sound/game_sound.h"
+
 /* ---------- constants */
 
 /* sound channel states */
@@ -45,6 +49,38 @@ enum looping_sound_refresh_state
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct platform_sound_channel_properties
+{
+	real minimum_distance;
+	real maximum_distance;
+	real pitch;
+	real gain;
+	real cone_inside_angle;
+	real cone_outside_angle;
+	real cone_outside_gain;
+	real reverb_attenuation;
+};
+
+struct platform_sound_listener_properties
+{
+	real_point3d position;
+	real_vector3d forward;
+	real_vector3d up;
+	real_vector3d velocity;
+	struct sound_environment_definition const *environment;
+};
+
+struct sound_source
+{
+	short spatialization_mode;
+	short pad_2;
+	real scale;
+	real gain;
+	struct sound_location location;
+	real obstruction;
+	real occlusion;
+};
 
 struct sound_source;
 struct sound_environment_definition;
