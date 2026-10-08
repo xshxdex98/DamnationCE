@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.31
+
+### From OpenCE
+
+- A new PC vehicle set, between Gun Turrets and Custom: a team set to it
+  gets every vehicle the map places, as in Halo PC.
+- LAN, internet and split screen games can start with one player; others
+  join while it plays.
+- Custom Edition maps: weapons with an analog rate of fire now fire, and
+  multiplayer weapons and items spawn facing the way the map places them.
+- The overshield and active camouflage no longer vanish near the edges of
+  the screen.
+- The health meter's segments light up exactly.
+- Particles with a negative radius are corrected as the map loads.
+- Hosting works on machines that have been up for more than 24 days.
+- The halt screen shows the build and the last errors.
+- Android: smoother audio, and a captured mouse moves the camera.
+
+Network version 24, OpenCE's: 0.3.30 and older can't join these games, or
+host them for this one.
+
 ## 0.3.30
 
 ### Co-op
