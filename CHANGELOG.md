@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.32
+
+### Fixes
+
+- The campaign HUD no longer draws stray numbers and icons over the
+  ammunition and grenade panels.
+- Server Setup starts at the most players, not two.
+- A following camera on a short track no longer halts the game.
+
+### From OpenCE
+
+- `sv_say` messages leave out `|`, which the HUD read as a control
+  character.
+- SteamOS (Steam Deck, Steam Frame): the GPU driver's trace markers are
+  kept off, which cost the Steam Frame about a third of its frame rate.
+- Android: visibility tests (lens flares) no longer wait on the GPU, and
+  the guest runtime compares memory faster.
+
+Network version 24, as before: 0.3.31 and 0.3.32 play together.
+
 ## 0.3.31
 
 ### From OpenCE
