@@ -80,46 +80,7 @@ enum
 /* The shared scenario-AI header does not yet own this source-attested enum. */
 enum actor_default_state
 {
-	actor_default_state_none = 0,
-	actor_default_state_asleep,
-	actor_default_state_alert,
-	actor_default_state_moving_repeat_position,
-	actor_default_state_moving_loop,
-	actor_default_state_moving_loop_back_and_forth,
-	actor_default_state_moving_loop_randomly,
-	actor_default_state_moving_randomly,
-	actor_default_state_guarding,
-	actor_default_state_guarding_at_guard_point,
-	actor_default_state_searching,
-	actor_default_state_fleeing,
 	number_of_actor_default_states,
-};
-
-enum
-{
-	_ai_unit_effect_bump = 0,
-	_ai_unit_effect_shooting,
-	_ai_unit_effect_death_scream,
-	_ai_unit_effect_magic_sight,
-	NUMBER_OF_AI_UNIT_EFFECTS,
-};
-
-enum
-{
-	_damage_category_none = 0,
-	_damage_category_falling,
-	_damage_category_bullet,
-	_damage_category_grenade,
-	_damage_category_highexplosive,
-	_damage_category_sniper,
-	_damage_category_melee,
-	_damage_category_flame,
-	_damage_category_mountedweapon,
-	_damage_category_vehicle,
-	_damage_category_plasma,
-	_damage_category_needle,
-	_damage_category_shotgun,
-	NUMBER_OF_DAMAGE_CATEGORIES,
 };
 
 /* ---------- macros */

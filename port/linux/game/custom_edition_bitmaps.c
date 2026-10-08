@@ -48,23 +48,6 @@ enum
 	WEAPON_HUD_INTERFACE_GROUP_TAG = 'wphi',
 };
 
-/* bitmaps.c's bitmap types, formats and flags */
-enum
-{
-	_bitmap_type_2d,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-};
-
-enum
-{
-	_bitmap_has_power_of_two_dimensions_bit,
-	_bitmap_compressed_bit,
-	_bitmap_palettized_bit,
-	_bitmap_swizzled_bit,
-	_bitmap_linear_bit,
-};
-
 /* ---------- structures */
 
 /* A model shader, to its reflection cube map: the bitmaps it draws with.

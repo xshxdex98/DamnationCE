@@ -51,20 +51,6 @@ enum
 
 enum
 {
-	_rasterizer_geometry_no_sort_bit = 0,
-	_rasterizer_geometry_no_queue_bit,
-	_rasterizer_geometry_no_fog_bit,
-	_rasterizer_geometry_no_zbuffer_bit,
-	_rasterizer_geometry_sky_bit,
-	_rasterizer_geometry_viewspace_bit,
-	_rasterizer_geometry_atmospheric_fog_but_no_planar_fog_bit,
-	_rasterizer_geometry_first_person_bit,
-	_rasterizer_geometry_parts_define_local_nodes_bit,
-	NUMBER_OF_RASTERIZER_GEOMETRY_FLAGS
-};
-
-enum
-{
 	_shader_type_screen = 0,
 	_shader_type_effect,
 	_shader_type_decal,

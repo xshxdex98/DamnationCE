@@ -37,6 +37,7 @@ ENCOUNTERS.C
 #include "structures/structure_bsp_definitions.h"
 #include "units/units.h"
 #include "coop_enemies.h" /* port: port/linux/game/coop_enemies.c */
+#include "ai/actors.h"
 
 #include <stddef.h>
 
@@ -97,13 +98,6 @@ enum group_pursuit_restriction
 	_group_pursuit_nobody,
 	_group_pursuit_everyone,
 	NUMBER_OF_GROUP_PURSUIT_RESTRICTIONS,
-};
-
-enum
-{
-	_actor_combat_status_investigate = 2,
-	_actor_combat_status_definite = 3,
-	_actor_combat_status_visible = 7,
 };
 
 // encounter_definition.flags (no header declares them yet)
@@ -3299,16 +3293,6 @@ static void encounter_update_platoons(
 
 	return;
 }
-
-// encounter_datum.follow_target_type (no header declares them yet)
-enum
-{
-	_follow_target_none = 0,
-	_follow_target_players,
-	_follow_target_unit,
-	_follow_target_ai,
-	NUMBER_OF_FOLLOW_TARGET_TYPES,
-};
 
 static void encounter_update_follow(
 	long encounter_index)

@@ -55,6 +55,7 @@ UNITS.C
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
 #include "coop_scripts.h" /* port: port/linux/game/coop_scripts.c */
 #include "coop_enemies.h" /* port: port/linux/game/coop_enemies.c */
+#include "units/bipeds.h"
 
 /* port: the control and animation impulses the host's actors give their
 units go to the clients' copies (port/linux/game/network_actors.c) */

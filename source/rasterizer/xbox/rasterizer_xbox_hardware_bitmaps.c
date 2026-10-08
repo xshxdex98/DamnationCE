@@ -15,17 +15,6 @@ RASTERIZER_XBOX_HARDWARE_BITMAPS.C
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox.h"
 
-/* ---------- constants */
-
-enum
-{
-	_bitmap_type_2d = 0,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-	_bitmap_has_power_of_two_dimensions_bit = 0,
-	_bitmap_compressed_bit = 1,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */

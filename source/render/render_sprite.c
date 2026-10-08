@@ -18,6 +18,7 @@ RENDER_SPRITE.C
 #include "cache/texture_cache.h"
 #include "tag_files/tag_files.h"
 #include "tag_files/tag_groups.h"
+#include "rasterizer/rasterizer_geometry.h"
 
 /* ---------- constants */
 
@@ -34,20 +35,6 @@ enum
 enum
 {
 	_shader_effect_uses_nonlinear_tint_bit = 1,
-};
-
-enum
-{
-	_rasterizer_geometry_no_sort_bit = 0,
-	_rasterizer_geometry_no_queue_bit,
-	_rasterizer_geometry_no_fog_bit,
-	_rasterizer_geometry_no_zbuffer_bit,
-	_rasterizer_geometry_sky_bit,
-	_rasterizer_geometry_viewspace_bit,
-	_rasterizer_geometry_atmospheric_fog_but_no_planar_fog_bit,
-	_rasterizer_geometry_first_person_bit,
-	_rasterizer_geometry_parts_define_local_nodes_bit,
-	NUMBER_OF_RASTERIZER_GEOMETRY_FLAGS
 };
 
 /* ---------- macros */

@@ -22,6 +22,7 @@ BINK_PLAYBACK.C
 #include "sound/sound_dsound.h"
 #include "text/draw_string.h"
 #include "text/text_group.h"
+#include "shaders/shader_definitions.h"
 #include <xtl.h>
 
 /* ---------- constants */
@@ -53,33 +54,6 @@ enum
 	BINK_TEXTURE_COMMON= D3DCOMMON_TYPE_TEXTURE|1,
 	BINK_TEXTURE_FORMAT= (1<<D3DFORMAT_MIPMAP_SHIFT)|(D3DFMT_LIN_X8R8G8B8<<D3DFORMAT_FORMAT_SHIFT)|
 		(2<<D3DFORMAT_DIMENSION_SHIFT)|D3DFORMAT_BORDERSOURCE_COLOR|D3DFORMAT_DMACHANNEL_A
-};
-
-/* bitmap_group.h does not name the bitmap types, formats or flags; these spellings are
-   the ones bitmaps.c and rasterizer_xbox.c use */
-enum
-{
-	_bitmap_type_2d= 0
-};
-
-enum
-{
-	_bitmap_linear_bit= 4
-};
-
-/* rasterizer.h does not name the framebuffer blend functions; these spellings are the
-   ones rasterizer_xbox_dynavobgeom.c uses */
-enum
-{
-	_shader_framebuffer_blend_function_alpha_blend= 0,
-	_shader_framebuffer_blend_function_multiply,
-	_shader_framebuffer_blend_function_double_multiply,
-	_shader_framebuffer_blend_function_add,
-	_shader_framebuffer_blend_function_reverse_subtract,
-	_shader_framebuffer_blend_function_min,
-	_shader_framebuffer_blend_function_max,
-	_shader_framebuffer_blend_function_alpha_multiply_add,
-	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS
 };
 
 /* ---------- macros */

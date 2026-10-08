@@ -15,6 +15,40 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* bitmap group types */
+enum
+{
+	_bitmap_group_type_2d_textures,
+	_bitmap_group_type_3d_textures,
+	_bitmap_group_type_cube_maps,
+	_bitmap_group_type_sprites,
+	_bitmap_group_type_interface_bitmaps,
+	NUMBER_OF_BITMAP_GROUP_TYPES
+};
+
+/* bitmap flags (bitmap_data.flags) */
+enum
+{
+	_bitmap_has_power_of_two_dimensions_bit,
+	_bitmap_compressed_bit,
+	_bitmap_palettized_bit,
+	_bitmap_swizzled_bit,
+	_bitmap_linear_bit,
+	_bitmap_v16u16_bit,
+	_bitmap_allocated_bit,
+	_bitmap_cached_bit,
+	NUMBER_OF_BITMAP_FLAGS
+};
+
+/* bitmap types (bitmap_data.type) */
+enum
+{
+	_bitmap_type_2d,
+	_bitmap_type_3d,
+	_bitmap_type_cube_map,
+	NUMBER_OF_BITMAP_TYPES
+};
+
 /* bitmap formats (bitmap_data.format) */
 enum
 {
@@ -38,7 +72,6 @@ enum
 	_bitmap_format_p8_bump,
 	NUMBER_OF_BITMAP_FORMATS
 };
-
 
 enum
 {

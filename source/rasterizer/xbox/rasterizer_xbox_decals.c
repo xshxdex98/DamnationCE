@@ -17,6 +17,7 @@ RASTERIZER_XBOX_DECALS.C
 #include "rasterizer/xbox/rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "saved games/game_state.h"
+#include "shaders/shader_definitions.h"
 
 /* ---------- constants */
 
@@ -38,19 +39,6 @@ enum
 {
 	_decal_locked_bit,
 	_decal_permanent_bit
-};
-
-enum
-{
-	_shader_framebuffer_blend_function_alpha_blend = 0,
-	_shader_framebuffer_blend_function_multiply,
-	_shader_framebuffer_blend_function_double_multiply,
-	_shader_framebuffer_blend_function_add,
-	_shader_framebuffer_blend_function_reverse_subtract,
-	_shader_framebuffer_blend_function_min,
-	_shader_framebuffer_blend_function_max,
-	_shader_framebuffer_blend_function_alpha_multiply_add,
-	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS
 };
 
 enum

@@ -10,13 +10,6 @@ TARGA_FILE.C
 #include "bitmaps/bitmaps.h"
 #include "tag_files/files.h"
 
-/* ---------- constants */
-
-enum
-{
-	_bitmap_type_2d = 0,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */

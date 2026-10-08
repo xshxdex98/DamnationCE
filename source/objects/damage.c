@@ -86,24 +86,6 @@ enum
 
 enum
 {
-	_damage_category_none = 0,
-	_damage_category_falling,
-	_damage_category_bullet,
-	_damage_category_grenade,
-	_damage_category_highexplosive,
-	_damage_category_sniper,
-	_damage_category_melee,
-	_damage_category_flame,
-	_damage_category_mountedweapon,
-	_damage_category_vehicle,
-	_damage_category_plasma,
-	_damage_category_needle,
-	_damage_category_shotgun,
-	NUMBER_OF_DAMAGE_CATEGORIES,
-};
-
-enum
-{
 	_effect_vector_normal = 0,
 	_effect_vector_incident,
 	_effect_vector_negative_incident,

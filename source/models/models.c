@@ -42,20 +42,6 @@ enum
 
 enum
 {
-	_rasterizer_geometry_no_sort_bit = 0,
-	_rasterizer_geometry_no_queue_bit,
-	_rasterizer_geometry_no_fog_bit,
-	_rasterizer_geometry_no_zbuffer_bit,
-	_rasterizer_geometry_sky_bit,
-	_rasterizer_geometry_viewspace_bit,
-	_rasterizer_geometry_atmospheric_fog_but_no_planar_fog_bit,
-	_rasterizer_geometry_first_person_bit,
-	_rasterizer_geometry_parts_define_local_nodes_bit,
-	NUMBER_OF_RASTERIZER_GEOMETRY_FLAGS
-};
-
-enum
-{
 	_render_model_immediate_bit = 0,
 	_render_model_shadow_bit,
 	_render_model_no_planar_fog_bit,
@@ -92,17 +78,6 @@ enum
 	_shader_type_transparent_meter,
 	_shader_type_transparent_plasma,
 	NUMBER_OF_SHADER_TYPES
-};
-
-enum
-{
-	_shader_model_detail_after_reflection_bit = 0,
-	_shader_model_two_sided_bit,
-	_shader_model_not_alpha_tested_bit,
-	_shader_model_alpha_blended_decal_bit,
-	_shader_model_true_atmospheric_fog_bit,
-	_shader_model_nocull_two_sided_bit,
-	NUMBER_OF_SHADER_MODEL_FLAGS
 };
 
 /* ---------- macros */

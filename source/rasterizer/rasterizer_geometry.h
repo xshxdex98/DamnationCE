@@ -10,6 +10,21 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* rasterizer geometry flags */
+enum
+{
+	_rasterizer_geometry_no_sort_bit,
+	_rasterizer_geometry_no_queue_bit,
+	_rasterizer_geometry_no_fog_bit,
+	_rasterizer_geometry_no_zbuffer_bit,
+	_rasterizer_geometry_sky_bit,
+	_rasterizer_geometry_viewspace_bit,
+	_rasterizer_geometry_atmospheric_fog_but_no_planar_fog_bit,
+	_rasterizer_geometry_first_person_bit,
+	_rasterizer_geometry_parts_define_local_nodes_bit,
+	NUMBER_OF_RASTERIZER_GEOMETRY_FLAGS
+};
+
 enum
 {
 	_rasterizer_vertex_type_environment_uncompressed = 0,

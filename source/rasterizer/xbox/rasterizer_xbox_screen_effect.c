@@ -20,23 +20,10 @@ RASTERIZER_XBOX_SCREEN_EFFECT.C
 #include <xtl.h>
 #include "rasterizer_xbox.h"
 #include "rasterizer_xbox_pixel_shader.h"
+#include "effects/player_effects.h"
 #ifdef HALO_64BIT
 #include "cseries/cseries_windows.h" /* (declared: its result is not an int) */
 #endif
-
-/* ---------- constants */
-
-enum
-{
-	_render_screen_flash_type_none = 0,
-	_render_screen_flash_type_lighten,
-	_render_screen_flash_type_darken,
-	_render_screen_flash_type_max,
-	_render_screen_flash_type_min,
-	_render_screen_flash_type_invert,
-	_render_screen_flash_type_tint,
-	NUMBER_OF_SCREEN_FLASH_TYPES
-};
 
 enum
 {
@@ -54,19 +41,6 @@ enum
 enum
 {
 	RASTERIZER_MAXIMUM_COMBINER_STAGES = 8
-};
-
-enum
-{
-	_rasterizer_target_render_primary = 0,
-	_rasterizer_target_screen_effect = 7,
-	NUMBER_OF_RASTERIZER_TARGETS = 8
-};
-
-enum
-{
-	_bitmap_type_2d = 0,
-	_bitmap_linear_bit = 4
 };
 
 enum

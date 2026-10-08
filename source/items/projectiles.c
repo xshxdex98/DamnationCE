@@ -31,6 +31,7 @@ PROJECTILES.C
 #include "sound/sound_definitions.h"
 #include "units/bipeds.h"
 #include "units/units.h"
+#include "physics/collision_bsp.h"
 
 /* ---------- constants */
 
@@ -108,28 +109,6 @@ enum
 	_ai_spatial_effect_weapon_impact,
 	_ai_spatial_effect_weapon_detonation,
 	NUMBER_OF_AI_SPATIAL_EFFECTS,
-};
-
-enum
-{
-	_collision_surface_breakable_bit = 3,
-};
-
-enum
-{
-	_periodic_function_one = 0,
-	_periodic_function_zero,
-	_periodic_function_cosine,
-	_periodic_function_cosine_variable_period,
-	_periodic_function_diagonal_wave,
-	_periodic_function_diagonal_wave_variable_period,
-	_periodic_function_slide,
-	_periodic_function_slide_variable_period,
-	_periodic_function_noise,
-	_periodic_function_jitter,
-	_periodic_function_wander,
-	_periodic_function_spark,
-	NUMBER_OF_PERIODIC_FUNCTIONS,
 };
 
 enum

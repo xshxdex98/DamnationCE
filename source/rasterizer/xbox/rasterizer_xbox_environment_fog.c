@@ -82,11 +82,6 @@ enum
 
 enum
 {
-	_rasterizer_target_render_primary = 0,
-};
-
-enum
-{
 	_fog_screen_use_fixed_density_bit = 0,
 };
 

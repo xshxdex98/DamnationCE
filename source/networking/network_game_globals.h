@@ -10,6 +10,17 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* network game client states */
+enum
+{
+	_network_game_client_state_searching,
+	_network_game_client_state_joining,
+	_network_game_client_state_pregame,
+	_network_game_client_state_ingame,
+	_network_game_client_state_postgame,
+	NUMBER_OF_NETWORK_GAME_CLIENT_STATES
+};
+
 /* ---------- macros */
 
 /* ---------- structures */

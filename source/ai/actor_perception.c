@@ -31,6 +31,8 @@ ACTOR_PERCEPTION.C
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
 #include "units/biped_definitions.h"
+#include "ai/actors.h"
+#include "ai/ai.h"
 
 /* ---------- constants */
 
@@ -44,32 +46,12 @@ enum
 	NUMBER_OF_ACTOR_KNOWLEDGE_TYPES,
 };
 
-/* (actors.c, ai.c and ai_script.c keep copies) */
-enum
-{
-	_ai_unit_effect_bump = 0,
-	_ai_unit_effect_shooting,
-	_ai_unit_effect_death_scream,
-	_ai_unit_effect_magic_sight,
-	NUMBER_OF_AI_UNIT_EFFECTS,
-};
-
 /* actor_external_orders.desired_target_type (ai_script.c keeps a copy) */
 enum
 {
 	_desired_target_none = 0,
 	_desired_target_ai,
 	_desired_target_player,
-};
-
-/* an ai reference's scope, its top two bits (ai_script.c and actions.c
- * keep copies) */
-enum
-{
-	_ai_reference_type_encounter = 0,
-	_ai_reference_type_platoon,
-	_ai_reference_type_squad,
-	NUMBER_OF_AI_REFERENCE_TYPES,
 };
 
 /* acknowledgement speeds, indexed from global_acknowledgement_speeds */
@@ -96,15 +78,6 @@ enum
 	_ai_information_allegiance,
 	_ai_information_combat_stimulus,
 	_ai_information_target_knowledge,
-};
-
-enum
-{
-	_actor_combat_status_none = 0,
-	_actor_combat_status_investigate = 2,
-	_actor_combat_status_definite = 3,
-	_actor_combat_status_certain = 4,
-	_actor_combat_status_visible = 7,
 };
 
 enum

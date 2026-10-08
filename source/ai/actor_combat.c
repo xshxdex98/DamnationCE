@@ -44,6 +44,7 @@ ACTOR_COMBAT.C
 #undef normalize3d
 
 #include "math/real_math_declarations.h"
+#include "ai/actors.h"
 
 /* ---------- constants */
 
@@ -94,14 +95,6 @@ enum
 
 enum
 {
-	_actor_combat_status_none = 0,
-	_actor_combat_status_wary,
-	_actor_combat_status_investigate,
-	_actor_combat_status_definite,
-	_actor_combat_status_certain,
-	_actor_combat_status_clear_los,
-	_actor_combat_status_dangerous,
-	_actor_combat_status_visible,
 	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS,
 };
 

@@ -97,25 +97,6 @@ enum
 	NUMBER_OF_VIRTUAL_KEYBOARD_EVENTS,
 };
 
-/* event_manager.c keeps these private; see header request in the ledger */
-enum
-{
-	_event_type_null,
-	_event_type_left_stick,
-	_event_type_right_stick,
-	_event_type_button,
-};
-
-/* ui_widget.c owns the same private enum. */
-enum ui_audio_feedback_sound
-{
-	_ui_audio_feedback_none,
-	_ui_audio_feedback_cursor,
-	_ui_audio_feedback_forward,
-	_ui_audio_feedback_back,
-	_ui_audio_feedback_flag_failure,
-};
-
 /* ---------- macros */
 
 #define VIRTUAL_KEYBOARD_TAG 'vcky'

@@ -27,13 +27,7 @@ ACTIONS.C
 #include "units/unit_definitions.h"
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
-
-/* ---------- constants */
-
-enum
-{
-	NUMBER_OF_ACTOR_DEFAULT_STATES = 12,
-};
+#include "ai/actors.h"
 
 enum
 {

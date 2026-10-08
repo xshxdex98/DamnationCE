@@ -15,6 +15,7 @@ NETWORK_CLIENT_MESSAGE_HANDLER.C
 #include "networking/network_client_message_handler.h"
 #include "networking/network_game_manager.h"
 #include "networking/network_messages.h"
+#include "networking/network_game_globals.h"
 
 /* port/linux/game/network_distributed.c's */
 void network_distributed_handle_message(long machine_index, word const *message, word size);
@@ -42,16 +43,6 @@ enum
 {
 	_message_type_error = 1,
 	_message_type_data = 2,
-};
-
-enum network_game_client_state
-{
-	_network_game_client_state_searching,
-	_network_game_client_state_joining,
-	_network_game_client_state_pregame,
-	_network_game_client_state_ingame,
-	_network_game_client_state_postgame,
-	NUMBER_OF_NETWORK_GAME_CLIENT_STATES,
 };
 
 enum network_game_packet_class

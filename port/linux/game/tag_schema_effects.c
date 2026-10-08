@@ -26,6 +26,9 @@ fonts and strings (font, str#, ustr); matg and mply.
 #include "sound/sound_environment_definitions.h"
 #include "text/font_group.h"
 #include "text/text_group.h"
+#include "shaders/shader_definitions.h"
+#include "objects/damage.h"
+#include "effects/player_effects.h"
 
 #include <string.h>
 
@@ -35,7 +38,6 @@ fonts and strings (font, str#, ustr); matg and mply.
 enum
 {
 	/* periodic_functions.c */
-	NUMBER_OF_PERIODIC_FUNCTIONS = 12,
 
 	/* effects.c */
 	NUMBER_OF_EFFECT_ENVIRONMENTS = 4,
@@ -44,7 +46,6 @@ enum
 	NUMBER_OF_EFFECT_PARTICLE_DISTRIBUTION_FUNCTIONS = 6,
 
 	/* player_effects.c */
-	NUMBER_OF_SCREEN_FLASH_TYPES = 7,
 	NUMBER_OF_SCREEN_FLASH_PRIORITIES = 3,
 
 	/* sound_classes.c, sound_manager.c */
@@ -65,7 +66,6 @@ enum
 
 	/* damage.c */
 	NUMBER_OF_DAMAGE_SIDE_EFFECTS = 4,
-	NUMBER_OF_DAMAGE_CATEGORIES = 13,
 
 	/* hud_draw.c, rasterizer_xbox.c */
 	NUMBER_OF_HUD_MULTITEXTURE_OVERLAY_EFFECTOR_TYPES = 4,
@@ -76,7 +76,6 @@ enum
 	_hud_multitexture_overlay_effector_destination_primary_map = 1,
 	NUMBER_OF_HUD_MULTITEXTURE_OVERLAY_EFFECTOR_SOURCES = 8,
 	NUMBER_OF_HUD_MULTITEXTURE_OVERLAY_BLEND_FUNCTIONS = 5,
-	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS = 8,
 	MAXIMUM_MULTITEXTURE_OVERLAY_MAPS = 3,
 	/* (sequence 0's frames: the digits, the decimal point, the colon, the
 	minus sign, metres and kilometres) */

@@ -92,18 +92,6 @@ enum hud_crosshair_flags
 	_hud_crosshair_runtime_invalid_bit,
 };
 
-/* bitmap group types (bitmap_group.h doesn't declare them; other files
-   keep copies) */
-enum bitmap_group_type
-{
-	_bitmap_group_type_2d_textures = 0,
-	_bitmap_group_type_3d_textures,
-	_bitmap_group_type_cube_maps,
-	_bitmap_group_type_sprites,
-	_bitmap_group_type_interface_bitmaps,
-	NUMBER_OF_BITMAP_GROUP_TYPES
-};
-
 enum weapon_overlay_on_flags
 {
 	_weapon_overlay_on_flashing_bit = 0,

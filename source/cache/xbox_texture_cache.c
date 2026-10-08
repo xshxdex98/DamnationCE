@@ -58,27 +58,6 @@ typedef char verify_xbox_texture_cache_size[
 
 enum
 {
-	_bitmap_type_2d,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-	NUMBER_OF_BITMAP_TYPES,
-};
-
-enum
-{
-	_bitmap_has_power_of_two_dimensions_bit,
-	_bitmap_compressed_bit,
-	_bitmap_palettized_bit,
-	_bitmap_swizzled_bit,
-	_bitmap_linear_bit,
-	_bitmap_v16u16_bit,
-	_bitmap_allocated_bit,
-	_bitmap_cached_bit,
-	NUMBER_OF_BITMAP_FLAGS,
-};
-
-enum
-{
 	_bitmap_d3d_format_table_regular,
 	_bitmap_d3d_format_table_linear,
 	NUMBER_OF_BITMAP_D3D_FORMAT_TABLES,

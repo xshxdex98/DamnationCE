@@ -28,16 +28,6 @@ PHYSICS.C
 #include "units/unit_definitions.h"
 #include "units/vehicles.h"
 
-/* ---------- constants */
-
-enum
-{
-	_collision_surface_two_sided_bit = 0,
-	_collision_surface_invisible_bit,
-	_collision_surface_climbable_bit,
-	_collision_surface_breakable_bit,
-};
-
 enum
 {
 	_friction_type_point = 0,
@@ -105,6 +95,7 @@ struct powered_mass_point_definition
 #include "mass_point_datum.h"
 
 #include "units/vehicle_datum.h"
+#include "physics/collision_bsp.h"
 
 /* the game globals' falling damage block (no header declares it yet;
  * damage.c and bipeds.c keep copies) */

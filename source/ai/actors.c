@@ -42,6 +42,8 @@ ACTORS.C
 #include "units/vehicle_definitions.h"
 #include "units/vehicles.h"
 #include "networking/network_game_globals.h"
+#include "ai/ai.h"
+#include "ai/encounters.h"
 
 /* ---------- constants */
 
@@ -53,18 +55,6 @@ enum
 
 enum actor_default_state
 {
-	actor_default_state_none = 0,
-	actor_default_state_asleep,
-	actor_default_state_alert,
-	actor_default_state_moving_repeat_position,
-	actor_default_state_moving_loop,
-	actor_default_state_moving_loop_back_and_forth,
-	actor_default_state_moving_loop_randomly,
-	actor_default_state_moving_randomly,
-	actor_default_state_guarding,
-	actor_default_state_guarding_at_guard_point,
-	actor_default_state_searching,
-	actor_default_state_fleeing,
 	number_of_actor_default_states,
 };
 
@@ -109,14 +99,6 @@ enum
 /* actor state.combat_status levels (actors.h does not yet declare these) */
 enum
 {
-	_actor_combat_status_none = 0,
-	_actor_combat_status_wary,
-	_actor_combat_status_investigate,
-	_actor_combat_status_definite,
-	_actor_combat_status_certain,
-	_actor_combat_status_clear_los,
-	_actor_combat_status_dangerous,
-	_actor_combat_status_visible,
 	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS,
 };
 
@@ -138,26 +120,6 @@ enum
 	_ai_spatial_effect_weapon_impact,
 	_ai_spatial_effect_weapon_detonation,
 	NUMBER_OF_AI_SPATIAL_EFFECTS,
-};
-
-/* ai unit effect types (ai.h does not yet declare these) */
-enum
-{
-	_ai_unit_effect_bump = 0,
-	_ai_unit_effect_shooting,
-	_ai_unit_effect_death_scream,
-	_ai_unit_effect_magic_sight,
-	NUMBER_OF_AI_UNIT_EFFECTS,
-};
-
-/* encounter follow-target types (encounters.h does not yet declare these) */
-enum
-{
-	_follow_target_none = 0,
-	_follow_target_players,
-	_follow_target_unit,
-	_follow_target_ai,
-	NUMBER_OF_FOLLOW_TARGET_TYPES,
 };
 
 /* ai_information_packet.information_type (ai.h does not yet declare these) */

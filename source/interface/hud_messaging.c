@@ -63,22 +63,6 @@ enum hud_corner
 	NUMBER_OF_HUD_CORNERS
 };
 
-enum hud_number_show_flags
-{
-	_hud_number_show_all_leading_zeros_bit,
-	_hud_number_show_only_when_zoomed_bit,
-	_hud_number_show_trailing_m_bit,
-	NUMBER_OF_HUD_NUMBER_SHOW_FLAGS
-};
-
-enum hud_icon_flags
-{
-	_hud_icon_use_text_bit,
-	_hud_icon_use_color_bit,
-	_hud_icon_absolute_width_bit,
-	NUMBER_OF_HUD_ICON_FLAGS
-};
-
 enum hud_flash_flags
 {
 	_hud_flash_reverse_colors_bit,
@@ -135,7 +119,6 @@ enum hud_icon_type
 	_icon_custom_6,
 	_icon_custom_7,
 	_icon_custom_8,
-	NUMBER_OF_ICON_TYPES
 };
 
 enum

@@ -23,7 +23,6 @@ PATH.C
 
 enum
 {
-	_collision_surface_breakable_bit = 3,
 	_pathfinding_surface_walkable_bit = 6,
 	_pathfinding_surface_breakable_bit = 7,
 };

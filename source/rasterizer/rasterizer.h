@@ -15,6 +15,21 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* render targets */
+enum
+{
+	_rasterizer_target_render_primary,
+	_rasterizer_target_render_secondary,
+	_rasterizer_target_shadow_primary,
+	_rasterizer_target_shadow_secondary,
+	_rasterizer_target_sun_glow_primary,
+	_rasterizer_target_sun_glow_secondary,
+	_rasterizer_target_water_bumpmap,
+	_rasterizer_target_render_primary_copy,
+	_rasterizer_target_screen_effect = 7,
+	NUMBER_OF_RASTERIZER_TARGETS
+};
+
 enum
 {
 	MAXIMUM_WINDOWS = 4,
@@ -108,7 +123,6 @@ enum rasterizer_lock_operation
 	_rasterizer_lock_bsp_switch = 17,
 	NUMBER_OF_RASTERIZER_LOCK_OPERATIONS,
 };
-
 
 /* ---------- macros */
 

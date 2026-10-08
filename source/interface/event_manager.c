@@ -8,15 +8,12 @@ EVENT_MANAGER.C
 #include "cseries_windows.h"
 #include "event_manager.h"
 #include "input.h"
+#include "interface/ui_widget.h"
 
 /* ---------- constants */
 
 enum
 {
-	_event_type_null,
-	_event_type_left_stick,
-	_event_type_right_stick,
-	_event_type_button,
 
 	STICK_EVENT_THRESHOLD = 29490,
 	STICK_EVENT_REPEAT_MILLISECONDS = 250

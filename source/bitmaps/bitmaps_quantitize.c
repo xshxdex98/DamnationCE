@@ -16,7 +16,6 @@ enum
 {
 	CHANNEL_COUNT = 4,
 	CHANNEL_BITS = 8,
-	_bitmap_type_2d = 0,
 };
 
 /* ---------- macros */

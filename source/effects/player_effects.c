@@ -45,7 +45,6 @@ enum screen_flash_type
 	_screen_flash_type_invert,
 	_screen_flash_type_tint,
 
-	NUMBER_OF_SCREEN_FLASH_TYPES
 };
 
 enum screen_flash_priority
@@ -59,13 +58,6 @@ enum screen_flash_priority
 
 enum render_screen_flash_type
 {
-	_render_screen_flash_type_none = 0,
-	_render_screen_flash_type_lighten,
-	_render_screen_flash_type_darken,
-	_render_screen_flash_type_max,
-	_render_screen_flash_type_min,
-	_render_screen_flash_type_invert,
-	_render_screen_flash_type_tint,
 
 	NUMBER_OF_RENDER_SCREEN_FLASH_TYPES
 };

@@ -21,13 +21,7 @@ ACTOR_TYPE_INFECTION.C
 #include "units/bipeds.h"
 #include "units/units.h"
 #include "units/unit_definitions.h"
-
-/* ---------- constants */
-
-enum
-{
-	_actor_combat_status_definite = 3,
-};
+#include "ai/actors.h"
 
 enum
 {
@@ -43,15 +37,6 @@ enum
 	_swarm_movement_towards_prop,
 	_swarm_movement_away_from_prop,
 	_swarm_movement_obey,
-};
-
-enum
-{
-	_unit_melee_attack_none = 0,
-	_unit_melee_attack_starting,
-	_unit_melee_attack_dangerous,
-	_unit_melee_attack_impact,
-	_unit_melee_attack_continuous,
 };
 
 /* ---------- macros */

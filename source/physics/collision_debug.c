@@ -25,6 +25,7 @@ COLLISION_DEBUG.C
 #include "render/render_debug.h"
 #include "scenario/scenario.h"
 #include "tag_files/tag_groups.h"
+#include "physics/collision_bsp.h"
 
 /* ---------- constants */
 
@@ -35,14 +36,6 @@ enum
 	COLLISION_DEBUG_SPRAY_COLUMNS = 40,
 	COLLISION_DEBUG_SPRAY_ROWS = 30,
 	COLLISION_DEBUG_SPRAY_COUNT = COLLISION_DEBUG_SPRAY_COLUMNS * COLLISION_DEBUG_SPRAY_ROWS,
-};
-
-enum collision_surface_flags
-{
-	_collision_surface_two_sided_bit = 0,
-	_collision_surface_invisible_bit,
-	_collision_surface_climbable_bit,
-	_collision_surface_breakable_bit,
 };
 
 /* ---------- macros */

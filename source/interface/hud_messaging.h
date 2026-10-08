@@ -10,6 +10,29 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* hud number display flags */
+enum
+{
+	_hud_number_show_all_leading_zeros_bit,
+	_hud_number_show_only_when_zoomed_bit,
+	_hud_number_show_trailing_m_bit,
+	NUMBER_OF_HUD_NUMBER_SHOW_FLAGS
+};
+
+/* hud icon flags */
+enum
+{
+	_hud_icon_use_text_bit,
+	_hud_icon_use_color_bit,
+	_hud_icon_absolute_width_bit,
+	NUMBER_OF_HUD_ICON_FLAGS
+};
+
+enum
+{
+	NUMBER_OF_ICON_TYPES = 40
+};
+
 /* ---------- macros */
 
 /* ---------- structures */

@@ -34,21 +34,7 @@ RASTERIZER_XBOX.C
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "rasterizer_xbox_internal.h"
 #include "rasterizer_xbox_vertex_shaders.h"
-
-/* ---------- constants */
-
-enum
-{
-	_shader_framebuffer_blend_function_alpha_blend = 0,
-	_shader_framebuffer_blend_function_multiply,
-	_shader_framebuffer_blend_function_double_multiply,
-	_shader_framebuffer_blend_function_add,
-	_shader_framebuffer_blend_function_subtract,
-	_shader_framebuffer_blend_function_component_min,
-	_shader_framebuffer_blend_function_component_max,
-	_shader_framebuffer_blend_function_alpha_multiply_add,
-	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS
-};
+#include "shaders/shader_definitions.h"
 
 enum
 {
@@ -57,18 +43,9 @@ enum
 
 enum
 {
-	_rasterizer_target_render_primary = 0,
-	_rasterizer_target_render_secondary,
-	_rasterizer_target_shadow_primary,
-	_rasterizer_target_shadow_secondary,
-	_rasterizer_target_sun_glow_primary,
-	_rasterizer_target_sun_glow_secondary,
-	_rasterizer_target_water_bumpmap,
 	/* the eighth target has no first-party name in this object; it is the
 	 * second render-primary surface/texture pair */
-	_rasterizer_target_render_primary_copy,
 
-	NUMBER_OF_RASTERIZER_TARGETS
 };
 
 /* mode 1 makes the window clear to black instead of to the atmospheric fog
@@ -101,11 +78,6 @@ enum
 	_bitmap_usage_bump_map = 3,
 
 	NUMBER_OF_BITMAP_USAGES = 4
-};
-
-enum
-{
-	NUMBER_OF_BITMAP_TYPES = 3
 };
 
 /* render_fog.planar_mode and fog_definition.flags; both enumerations belong in
@@ -218,16 +190,6 @@ enum
 	RASTERIZER_TARGET_RENDER_PRIMARY_COMMON = 0x00040001,
 	RASTERIZER_TARGET_RENDER_PRIMARY_FORMAT = 0x00011229,
 	RASTERIZER_TARGET_RENDER_PRIMARY_SIZE = 0x271df27f
-};
-
-/* bitmap_group.h does not name the bitmap types; these three spellings come
- * from source/bitmaps/bitmap_utilities.c's own assert strings
- * ("bitmap->type==_bitmap_type_2d" and friends). */
-enum
-{
-	_bitmap_type_2d = 0,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map
 };
 
 /* the default 4x4 A4R4G4B4 checkerboard every unbound texture stage falls back

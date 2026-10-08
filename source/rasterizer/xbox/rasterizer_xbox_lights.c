@@ -23,10 +23,7 @@ RASTERIZER_XBOX_LIGHTS.C
 
 enum
 {
-	_rasterizer_target_sun_glow_primary = 4,
-	_rasterizer_target_sun_glow_secondary,
 
-	NUMBER_OF_RASTERIZER_TARGETS = 8
 };
 
 enum

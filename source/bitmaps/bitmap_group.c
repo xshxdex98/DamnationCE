@@ -12,19 +12,6 @@ BITMAP_GROUP.C
 #include "cseries/errors.h"
 #include "tag_files/tag_files.h"
 
-/* ---------- constants */
-
-enum
-{
-	_bitmap_group_type_cube_maps = 2,
-	_bitmap_group_type_sprites = 3,
-	_bitmap_group_type_interface_bitmaps = 4,
-	_bitmap_has_power_of_two_dimensions_bit = 0,
-	_bitmap_compressed_bit = 1,
-	_bitmap_palettized_bit = 2,
-	_bitmap_linear_bit = 4,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */

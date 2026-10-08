@@ -34,6 +34,7 @@ AI_COMMUNICATION.C
 #include "tag_files/tag_files.h"
 #include "units/dialogue_definitions.h"
 #include "units/units.h"
+#include "ai/actors.h"
 
 /* ---------- constants */
 
@@ -85,9 +86,6 @@ enum
 	_find_actor_same_vehicle_bit = 2,
 	_find_actor_allow_subject_bit = 3,
 	_find_actor_allow_cause_bit = 4,
-	_actor_combat_status_definite = 3,
-	_actor_combat_status_certain = 4,
-	_actor_combat_status_dangerous = 6,
 	_ai_information_none = 0,
 	_ai_information_look_unit = 1,
 	_ai_information_look_object = 2,

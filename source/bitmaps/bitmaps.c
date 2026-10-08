@@ -24,30 +24,9 @@ enum
 
 enum
 {
-	_bitmap_type_2d,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-	NUMBER_OF_BITMAP_TYPES,
-};
-
-enum
-{
 
 	FIRST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt1,
 	LAST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt5,
-};
-
-enum
-{
-	_bitmap_has_power_of_two_dimensions_bit,
-	_bitmap_compressed_bit,
-	_bitmap_palettized_bit,
-	_bitmap_swizzled_bit,
-	_bitmap_linear_bit,
-	_bitmap_v16u16_bit,
-	_bitmap_allocated_bit,
-	_bitmap_cached_bit,
-	NUMBER_OF_BITMAP_FLAGS,
 };
 
 /* ---------- macros */

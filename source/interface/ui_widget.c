@@ -85,6 +85,7 @@ boolean ui_widget_online_games_list(struct widget_instance *widget);
 /* port/linux/game/menu_tags.c: the PC menus' screen standing for an Xbox one, by name */
 char const *pc_menus_screen(char const *name);
 #include "custom_edition_maps.h"
+#include "interface/hud_messaging.h"
 
 /* (port/linux/game/menu_tags.c: a menus theme chosen, put on at the start of
 a frame) */
@@ -119,11 +120,6 @@ enum
 
 enum
 {
-	_ui_audio_feedback_none,
-	_ui_audio_feedback_cursor,
-	_ui_audio_feedback_forward,
-	_ui_audio_feedback_back,
-	_ui_audio_feedback_flag_failure,
 	NUMBER_OF_UI_AUDIO_FEEDBACK_SOUNDS
 };
 
@@ -169,7 +165,6 @@ enum
 	_icon_custom_6,
 	_icon_custom_7,
 	_icon_custom_8,
-	NUMBER_OF_ICON_TYPES
 };
 
 enum
@@ -177,14 +172,6 @@ enum
 	/* only the icon types below _icon_action name a button bitmap of their own;
 	the rest are resolved through the local player's control preferences */
 	NUM_ICONS = _icon_action
-};
-
-enum
-{
-	_hud_icon_use_text_bit,
-	_hud_icon_use_color_bit,
-	_hud_icon_absolute_width_bit,
-	NUMBER_OF_HUD_ICON_FLAGS
 };
 
 enum
@@ -281,10 +268,6 @@ enum
 enum
 {
 	/* EVENT_MANAGER.C owns this enumeration and publishes none of it */
-	_event_type_null,
-	_event_type_left_stick,
-	_event_type_right_stick,
-	_event_type_button,
 	NUMBER_OF_EVENT_TYPES
 };
 

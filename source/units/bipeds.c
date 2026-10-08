@@ -109,28 +109,11 @@ enum
 
 enum
 {
-	_unit_melee_attack_none = 0,
-	_unit_melee_attack_starting,
-	_unit_melee_attack_dangerous,
-	_unit_melee_attack_impact,
-	_unit_melee_attack_continuous,
-};
-
-enum
-{
 	_animation_frame_info_none = 0,
 	_animation_frame_info_xy_translation,
 	_animation_frame_info_xy_translation_yaw_rotation,
 	_animation_frame_info_xyz_translation_yaw_rotation,
 	NUMBER_OF_ANIMATION_FRAME_INFO_TYPES,
-};
-
-enum
-{
-	_collision_surface_two_sided_bit = 0,
-	_collision_surface_invisible_bit,
-	_collision_surface_climbable_bit,
-	_collision_surface_breakable_bit,
 };
 
 /* ---------- macros */

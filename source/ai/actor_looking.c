@@ -19,6 +19,7 @@ ACTOR_LOOKING.C
 #include "physics/collision_usage.h"
 #include "props.h"
 #include "units/units.h"
+#include "ai/actors.h"
 #ifdef HALO_64BIT
 #include "game/game.h"
 #endif
@@ -39,14 +40,6 @@ enum
 /* actor combat status (no header declares it yet; action_obey.c keeps a copy) */
 enum
 {
-	_actor_combat_status_none = 0,
-	_actor_combat_status_wary,
-	_actor_combat_status_investigate,
-	_actor_combat_status_definite,
-	_actor_combat_status_certain,
-	_actor_combat_status_clear_los,
-	_actor_combat_status_dangerous,
-	_actor_combat_status_visible,
 	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS,
 };
 

@@ -29,6 +29,7 @@ ACTION_OBEY.C
 #include "units/biped_definitions.h"
 #include "memory/data.h"
 #include "units/units.h"
+#include "ai/actors.h"
 
 /* ---------- constants */
 
@@ -74,14 +75,6 @@ enum
 
 enum
 {
-	_actor_combat_status_none = 0,
-	_actor_combat_status_wary = 1,
-	_actor_combat_status_investigate = 2,
-	_actor_combat_status_definite = 3,
-	_actor_combat_status_certain = 4,
-	_actor_combat_status_clear_los = 5,
-	_actor_combat_status_dangerous = 6,
-	_actor_combat_status_visible = 7,
 	NUMBER_OF_ACTOR_COMBAT_STATUS_LEVELS = 8,
 };
 

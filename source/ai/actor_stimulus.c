@@ -26,16 +26,6 @@ ACTOR_STIMULUS.C
 
 #include <stddef.h>
 
-/* ---------- constants */
-
-enum
-{
-	_actor_combat_status_investigate = 2,
-	_actor_combat_status_definite = 3,
-	_actor_combat_status_certain = 4,
-	_actor_combat_status_clear_los = 5,
-};
-
 enum
 {
 	_actor_stimulus_combat_friend = 1,

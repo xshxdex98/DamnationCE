@@ -20,6 +20,7 @@ STRUCTURES.C
 #include "structure_bsp_definitions.h"
 #include "structure_vector_tests.h"
 #include "structures.h"
+#include "physics/collision_bsp.h"
 
 /* ---------- constants */
 
@@ -29,7 +30,6 @@ enum
 	_render_planar_fog_mode_normal = 1,
 	_render_planar_fog_mode_fully_fogged,
 	_render_fog_runtime_screen_use_sky_interpolator_bit = 0,
-	_collision_surface_two_sided_bit = 0,
 };
 
 /* ---------- macros */

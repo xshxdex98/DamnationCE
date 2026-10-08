@@ -23,6 +23,7 @@ ACTOR_FIRING_POSITION.C
 #include "units/vehicles.h"
 #include "scenario/scenario.h"
 #include "scenario/scenario_definitions.h"
+#include "ai/actors.h"
 #ifdef HALO_64BIT
 #include "cseries/sort.h"
 #endif
@@ -41,11 +42,6 @@ enum
 {
 	_actor_definition_flags2_avoid_all_enemy_attack_vectors_bit = 0,
 	_actor_definition_flags2_pathfinding_ignores_danger_bit = 4,
-};
-
-enum
-{
-	_actor_combat_status_definite = 3,
 };
 
 enum

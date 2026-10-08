@@ -25,7 +25,6 @@ GLOW.C
 enum
 {
 	GLOW_TAG = 'glw!',
-	_bitmap_group_type_sprites = 3,
 };
 
 enum

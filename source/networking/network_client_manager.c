@@ -58,16 +58,6 @@ enum
 	MAXIMUM_MESSAGE_MILLISECONDS_PER_IDLE = 50,
 };
 
-enum network_game_client_state
-{
-	_network_game_client_state_searching,
-	_network_game_client_state_joining,
-	_network_game_client_state_pregame,
-	_network_game_client_state_ingame,
-	_network_game_client_state_postgame,
-	NUMBER_OF_NETWORK_GAME_CLIENT_STATES,
-};
-
 enum
 {
 	_network_game_client_error_none = 0,

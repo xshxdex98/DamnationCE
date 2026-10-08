@@ -39,21 +39,7 @@ INTERFACE.C
 #include "text/draw_string.h"
 #include "units/unit_definitions.h"
 #include "units/units.h"
-
-/* ---------- constants */
-
-enum
-{
-	_shader_framebuffer_blend_function_alpha_blend = 0,
-	_shader_framebuffer_blend_function_multiply,
-	_shader_framebuffer_blend_function_double_multiply,
-	_shader_framebuffer_blend_function_add,
-	_shader_framebuffer_blend_function_subtract,
-	_shader_framebuffer_blend_function_component_min,
-	_shader_framebuffer_blend_function_component_max,
-	_shader_framebuffer_blend_function_alpha_multiply_add,
-	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS
-};
+#include "shaders/shader_definitions.h"
 
 enum
 {

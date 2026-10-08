@@ -85,13 +85,6 @@ enum
 	MAP_OTHER,
 };
 
-/* ui_widget.c owns the same private enum (virtual_keyboard.c keeps a copy) */
-enum
-{
-	_ui_audio_feedback_none,
-	_ui_audio_feedback_cursor,
-};
-
 /* game engine names, short enough for the list */
 static char const *const engine_names[] =
 {

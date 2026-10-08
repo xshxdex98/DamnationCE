@@ -28,6 +28,8 @@ HUD_DRAW.C
 #include "units/units.h"
 #include "cache_file_formats.h" /* port: port/linux/game/cache_file_formats.c */
 #include "custom_edition_cache.h"
+#include "shaders/shader_definitions.h"
+#include "interface/hud_messaging.h"
 
 /* ---------- constants */
 
@@ -47,11 +49,7 @@ enum
 
 enum hud_number_show_flags
 {
-	_hud_number_show_all_leading_zeros_bit = 0,
-	_hud_number_show_only_when_zoomed_bit,
-	_hud_number_show_trailing_m_bit,
 
-	NUMBER_OF_HUD_NUMBER_SHOW_FLAGS
 };
 
 enum hud_number
@@ -130,32 +128,10 @@ enum hud_multitexture_overlay_blend_function
 	NUMBER_OF_HUD_MULTITEXTURE_OVERLAY_BLEND_FUNCTIONS
 };
 
-enum bitmap_group_type
-{
-	_bitmap_group_type_interface_bitmaps = 4,
-};
-
 /* port: Halo PC's bitmap group flag, which the Xbox's tags never set */
 enum
 {
 	_bitmap_group_half_hud_scale_bit = 4,
-};
-
-enum
-{
-	_bitmap_linear_bit = 4,
-};
-
-enum
-{
-	_shader_framebuffer_blend_function_alpha_blend = 0,
-	_shader_framebuffer_blend_function_multiply,
-	_shader_framebuffer_blend_function_double_multiply,
-	_shader_framebuffer_blend_function_add,
-	_shader_framebuffer_blend_function_subtract,
-	_shader_framebuffer_blend_function_component_min,
-	_shader_framebuffer_blend_function_component_max,
-	_shader_framebuffer_blend_function_alpha_multiply_add,
 };
 
 /* ---------- macros */

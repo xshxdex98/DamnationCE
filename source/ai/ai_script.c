@@ -41,14 +41,6 @@ enum
 	NUMBER_OF_AI_COUNT_TYPES,
 };
 
-enum ai_reference_type
-{
-	_ai_reference_type_encounter = 0,
-	_ai_reference_type_platoon,
-	_ai_reference_type_squad,
-	NUMBER_OF_AI_REFERENCE_TYPES,
-};
-
 enum
 {
 	MAXIMUM_ACTIVATION_LINK_INDICES_PER_ENCOUNTER = 3,
@@ -59,34 +51,7 @@ enum
 /* actor default states (actors.c keeps this enum file-local too) */
 enum actor_default_state
 {
-	actor_default_state_none = 0,
-	actor_default_state_asleep,
-	actor_default_state_alert,
-	actor_default_state_moving_repeat_position,
-	actor_default_state_moving_loop,
-	actor_default_state_moving_loop_back_and_forth,
-	actor_default_state_moving_loop_randomly,
-	actor_default_state_moving_randomly,
-	actor_default_state_guarding,
-	actor_default_state_guarding_at_guard_point,
-	actor_default_state_searching,
-	actor_default_state_fleeing,
 	number_of_actor_default_states,
-};
-
-enum
-{
-	_actor_combat_status_none = 0,
-};
-
-/* ai unit effect types (ai.h does not yet declare these) */
-enum
-{
-	_ai_unit_effect_bump = 0,
-	_ai_unit_effect_shooting,
-	_ai_unit_effect_death_scream,
-	_ai_unit_effect_magic_sight,
-	NUMBER_OF_AI_UNIT_EFFECTS,
 };
 
 /* actor_external_orders.desired_target_type (actors.h does not yet declare these) */
@@ -96,16 +61,6 @@ enum
 	_desired_target_ai,
 	_desired_target_player,
 	NUMBER_OF_DESIRED_TARGET_TYPES,
-};
-
-/* encounter_datum.follow_target_type (encounters.h does not yet declare these) */
-enum
-{
-	_follow_target_none = 0,
-	_follow_target_players,
-	_follow_target_unit,
-	_follow_target_ai,
-	NUMBER_OF_FOLLOW_TARGET_TYPES,
 };
 
 /* ---------- macros */

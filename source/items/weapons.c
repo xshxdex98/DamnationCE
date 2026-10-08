@@ -115,15 +115,6 @@ enum animation_update_result
 	NUMBER_OF_ANIMATION_UPDATE_RESULTS,
 };
 
-enum
-{
-	_ai_unit_effect_bump = 0,
-	_ai_unit_effect_shooting,
-	_ai_unit_effect_death_scream,
-	_ai_unit_effect_magic_sight,
-	NUMBER_OF_AI_UNIT_EFFECTS,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */

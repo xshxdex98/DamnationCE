@@ -32,26 +32,11 @@ of its group: each shader group's check makes the type its group's.
 enum
 {
 	/* periodic_functions.c */
-	NUMBER_OF_PERIODIC_FUNCTIONS = 12,
 
 	/* xbox_texture_cache.c, bitmap_group.c */
-	_bitmap_type_2d = 0,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-	NUMBER_OF_BITMAP_TYPES,
 
 
-	_bitmap_has_power_of_two_dimensions_bit = 0,
-	_bitmap_compressed_bit,
-	_bitmap_palettized_bit,
-	_bitmap_swizzled_bit,
-	_bitmap_linear_bit,
-	_bitmap_v16u16_bit,
-	_bitmap_allocated_bit,
-	_bitmap_cached_bit,
 
-	_bitmap_group_type_sprites = 3,
-	NUMBER_OF_BITMAP_GROUP_TYPES = 5,
 
 	/* the device's (d3d8_gl.c, D3DDevice_GetDeviceCaps; xbox_textures.c
 	uploads nothing larger) */

@@ -37,6 +37,7 @@ bad_sky).
 #include "scenario/scenario_definitions.h"
 #include "text/text_group.h"
 #include "units/dialogue_definitions.h"
+#include "ai/actors.h"
 
 #include <string.h>
 
@@ -60,7 +61,6 @@ enum
 	NUMBER_OF_ENCOUNTER_SEARCH_BEHAVIORS = 3,
 	NUMBER_OF_SQUAD_UNIQUE_LEADER_TYPES = 5,
 	/* actions.c (global_ai_default_state_names) */
-	NUMBER_OF_ACTOR_DEFAULT_STATES = 12,
 	/* encounters.c, encounter_test_rule */
 	NUMBER_OF_PLATOON_RULES = 10,
 	/* actions.h: the obey action's command indices are bytes, NONE 0xFF */

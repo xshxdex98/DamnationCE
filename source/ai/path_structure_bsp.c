@@ -24,11 +24,6 @@ enum
 
 enum
 {
-	_collision_surface_breakable_bit = 3,
-};
-
-enum
-{
 	_path_test_pill_endpoint_near_wall_ok_bit = 0,
 };
 

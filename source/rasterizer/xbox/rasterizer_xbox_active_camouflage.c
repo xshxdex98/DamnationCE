@@ -26,28 +26,6 @@ RASTERIZER_XBOX_ACTIVE_CAMOUFLAGE.C
 
 /* ---------- constants */
 
-/* geometry flags, shader types, model flags and model effects (no header
-declares them yet; other rasterizer files keep copies) */
-
-enum
-{
-	_rasterizer_target_render_primary = 0,
-	_rasterizer_target_render_secondary
-};
-
-enum
-{
-	_rasterizer_geometry_no_sort_bit = 0,
-	_rasterizer_geometry_no_queue_bit,
-	_rasterizer_geometry_no_fog_bit,
-	_rasterizer_geometry_no_zbuffer_bit,
-	_rasterizer_geometry_sky_bit,
-	_rasterizer_geometry_viewspace_bit,
-	_rasterizer_geometry_atmospheric_fog_but_no_planar_fog_bit,
-	_rasterizer_geometry_first_person_bit,
-	_rasterizer_geometry_parts_define_local_nodes_bit
-};
-
 enum
 {
 	_shader_type_screen = 0,
@@ -61,16 +39,6 @@ enum
 	_shader_type_transparent_glass,
 	_shader_type_transparent_meter,
 	_shader_type_transparent_plasma
-};
-
-enum
-{
-	_shader_model_detail_after_reflection_bit = 0,
-	_shader_model_two_sided_bit,
-	_shader_model_not_alpha_tested_bit,
-	_shader_model_alpha_blended_decal_bit,
-	_shader_model_true_atmospheric_fog_bit,
-	_shader_model_nocull_two_sided_bit
 };
 
 enum

@@ -18,6 +18,37 @@ header included in hcex build.
 
 /* ---------- constants */
 
+/* actor default states */
+enum
+{
+	actor_default_state_none,
+	actor_default_state_asleep,
+	actor_default_state_alert,
+	actor_default_state_moving_repeat_position,
+	actor_default_state_moving_loop,
+	actor_default_state_moving_loop_back_and_forth,
+	actor_default_state_moving_loop_randomly,
+	actor_default_state_moving_randomly,
+	actor_default_state_guarding,
+	actor_default_state_guarding_at_guard_point,
+	actor_default_state_searching,
+	actor_default_state_fleeing,
+	NUMBER_OF_ACTOR_DEFAULT_STATES
+};
+
+/* actor combat status (actor_state_data.combat_status) */
+enum
+{
+	_actor_combat_status_none,
+	_actor_combat_status_wary,
+	_actor_combat_status_investigate,
+	_actor_combat_status_definite,
+	_actor_combat_status_certain,
+	_actor_combat_status_clear_los,
+	_actor_combat_status_dangerous,
+	_actor_combat_status_visible
+};
+
 /* actor modes (actor_state_data.mode) */
 enum
 {
@@ -256,7 +287,6 @@ enum
 	NUMBER_OF_ACTOR_MOVEMENT_TYPES,
 };
 
-
 enum
 {
 	_actor_perception_none = 0,
@@ -423,7 +453,6 @@ struct firing_position
 	real pre_evaluation;
 	real evaluation;
 };
-
 
 struct actor_meta_data
 {

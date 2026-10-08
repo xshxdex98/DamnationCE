@@ -18,18 +18,6 @@ BITMAP_EXTRACT.C
 #include "memory/data_compress.h"
 #include "memory/texture_page.h"
 
-/* ---------- constants */
-
-enum
-{
-	_bitmap_group_type_2d_textures,
-	_bitmap_group_type_3d_textures,
-	_bitmap_group_type_cube_maps,
-	_bitmap_group_type_sprites,
-	_bitmap_group_type_interface_bitmaps,
-	NUMBER_OF_BITMAP_GROUP_TYPES
-};
-
 enum
 {
 	_bitmap_group_format_compressed_color_key_transparency,
@@ -50,22 +38,6 @@ enum
 	_bitmap_group_usage_light_map,
 	_bitmap_group_usage_vector_map,
 	NUMBER_OF_BITMAP_GROUP_USAGES
-};
-
-enum
-{
-	_bitmap_type_2d,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-};
-
-enum
-{
-	_bitmap_has_power_of_two_dimensions_bit,
-	_bitmap_compressed_bit,
-	_bitmap_palettized_bit,
-	_bitmap_swizzled_bit,
-	_bitmap_linear_bit,
 };
 
 enum

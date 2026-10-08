@@ -19,21 +19,6 @@ enum
 	NUMBER_OF_SWIZZLE_TABLE_ENTRIES = 64,
 };
 
-enum
-{
-	_bitmap_type_2d = 0,
-	_bitmap_type_3d,
-	_bitmap_type_cube_map,
-};
-
-enum
-{
-	_bitmap_has_power_of_two_dimensions_bit = 0,
-	_bitmap_compressed_bit = 1,
-	_bitmap_swizzled_bit = 3,
-	_bitmap_linear_bit = 4,
-};
-
 /* ---------- macros */
 
 /* ---------- structures */

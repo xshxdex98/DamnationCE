@@ -47,19 +47,6 @@ enum
 	_decal_permanent_bit
 };
 
-enum
-{
-	_bitmap_group_type_sprites = 3
-};
-
-enum
-{
-	_collision_surface_two_sided_bit,
-	_collision_surface_invisible_bit,
-	_collision_surface_climbable_bit,
-	_collision_surface_breakable_bit
-};
-
 /* ---------- macros */
 
 #define DECAL_GET(index) ((struct decal_datum *)datum_get(global_decal_data, (index)))
