@@ -1641,7 +1641,6 @@ void progress_bar_eachframe(
 void progress_bar_display(
 	real progress)
 {
-#line 827 "c:\\halo\\SOURCE\\interface\\progress_bar.c"
 	match_assert(__FILE__, __LINE__, (progress>=0.f) && (progress<=1.f));
 
 	if (progress_bar_mode.active && progress>0.f)
@@ -1793,7 +1792,6 @@ void generate_gravy_rect(
 		1000.f - layer->distance, &rect->x0, &rect->y0);
 	to_screen(layer->x + layer->half_width, layer->y + layer->half_height,
 		1000.f - layer->distance, &rect->x1, &rect->y1);
-#line 898 "c:\\halo\\SOURCE\\interface\\progress_bar.c"
 	match_assert(__FILE__, __LINE__, rect->x0 < rect->x1);
 	match_assert(__FILE__, __LINE__, rect->y0 < rect->y1);
 

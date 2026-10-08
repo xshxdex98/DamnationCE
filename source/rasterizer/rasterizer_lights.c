@@ -351,7 +351,6 @@ static real lens_flare_evaluate_corona_rotation_function(
 	real_vector3d direction;
 	real_vector3d offset;
 
-#line 118 "c:\\halo\\SOURCE\\rasterizer\\rasterizer_lights.c"
 	assert(lens_flare_parameters);
 
 	direction = uncompress_int32_to_real_vector3d(lens_flare_parameters->compressed_direction);
@@ -408,7 +407,6 @@ static real lens_flare_evaluate_corona_rotation_function(
 			break;
 
 		default:
-#line 151 "c:\\halo\\SOURCE\\rasterizer\\rasterizer_lights.c"
 			vassert(FALSE, "### ERROR unsupported lens flare corona rotation function");
 			break;
 	}
@@ -791,7 +789,6 @@ void rasterizer_lens_flares_submit_occlusion_tests(
 					break;
 
 				default:
-#line 482 "c:\\halo\\SOURCE\\rasterizer\\rasterizer_lights.c"
 					vassert(FALSE, "### ERROR unsupported lens flare occlusion offset direction");
 					break;
 				}

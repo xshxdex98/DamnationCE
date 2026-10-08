@@ -260,7 +260,6 @@ static long shader_stage_color_input(
 {
 	long register_value;
 
-#line 212 "c:\\halo\\SOURCE\\rasterizer\\xbox\\shader_transparent_generic_preprocessor.c"
 	match_assert(__FILE__, __LINE__, register_index>=0 && register_index<NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_INPUTS);
 	match_assert(__FILE__, __LINE__, mapping_index>=0 && mapping_index<NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_INPUT_MAPPINGS);
 
@@ -286,7 +285,6 @@ static long shader_stage_color_input(
 static long shader_stage_color_output(
 	short register_index)
 {
-#line 233 "c:\\halo\\SOURCE\\rasterizer\\xbox\\shader_transparent_generic_preprocessor.c"
 	match_assert(__FILE__, __LINE__, register_index>=0 && register_index<NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_OUTPUTS);
 
 	/* port: an output the table doesn't have (a map's) is discarded */
@@ -304,7 +302,6 @@ static long shader_stage_color_output_flags(
 {
 	long flags;
 
-#line 246 "c:\\halo\\SOURCE\\rasterizer\\xbox\\shader_transparent_generic_preprocessor.c"
 	match_assert(__FILE__, __LINE__, stage);
 	match_assert(__FILE__, __LINE__, stage->color_output_mapping>=0 && stage->color_output_mapping<NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_OUTPUT_MAPPINGS);
 	match_assert(__FILE__, __LINE__, stage->color_output_AB_function>=0 && stage->color_output_AB_function<NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_OUTPUT_FUNCTIONS);
@@ -345,7 +342,6 @@ static long shader_stage_alpha_input(
 {
 	long register_value;
 
-#line 266 "c:\\halo\\SOURCE\\rasterizer\\xbox\\shader_transparent_generic_preprocessor.c"
 	match_assert(__FILE__, __LINE__, register_index>=0 && register_index<NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_INPUTS);
 	match_assert(__FILE__, __LINE__, mapping_index>=0 && mapping_index<NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_INPUT_MAPPINGS);
 
@@ -371,7 +367,6 @@ static long shader_stage_alpha_input(
 static long shader_stage_alpha_output(
 	short register_index)
 {
-#line 287 "c:\\halo\\SOURCE\\rasterizer\\xbox\\shader_transparent_generic_preprocessor.c"
 	match_assert(__FILE__, __LINE__, register_index>=0 && register_index<NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_OUTPUTS);
 
 	/* port: an output the table doesn't have (a map's) is discarded */
@@ -389,7 +384,6 @@ static long shader_stage_alpha_output_flags(
 {
 	long flags;
 
-#line 300 "c:\\halo\\SOURCE\\rasterizer\\xbox\\shader_transparent_generic_preprocessor.c"
 	match_assert(__FILE__, __LINE__, stage);
 	match_assert(__FILE__, __LINE__, stage->alpha_output_mapping>=0 && stage->alpha_output_mapping<NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_OUTPUT_MAPPINGS);
 
@@ -418,7 +412,6 @@ static boolean shader_map_verify(
 {
 	boolean result = TRUE;
 
-#line 316 "c:\\halo\\SOURCE\\rasterizer\\xbox\\shader_transparent_generic_preprocessor.c"
 	match_assert(__FILE__, __LINE__, map);
 
 	if (map->map.index == NONE)
@@ -442,7 +435,6 @@ static boolean shader_stage_verify(
 {
 	boolean result = TRUE;
 
-#line 340 "c:\\halo\\SOURCE\\rasterizer\\xbox\\shader_transparent_generic_preprocessor.c"
 	match_assert(__FILE__, __LINE__, stage);
 
 	if ((stage->color_output_AB != _shader_transparent_generic_stage_output_discard && stage->color_output_CD != _shader_transparent_generic_stage_output_discard && stage->color_output_AB == stage->color_output_CD) ||
@@ -494,7 +486,6 @@ boolean shader_transparent_generic_create(
 	short stage_index;
 	short stage_count;
 
-#line 388 "c:\\halo\\SOURCE\\rasterizer\\xbox\\shader_transparent_generic_preprocessor.c"
 	match_assert(__FILE__, __LINE__, shader);
 	match_assert(__FILE__, __LINE__, pixel_shader);
 
