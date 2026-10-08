@@ -34,6 +34,7 @@ with it under the lock.
 #include "p2p_internal.h"
 #include "browser.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -203,13 +204,28 @@ static void name_from_utf8(const char *text, unsigned short *name, int length)
 		name[used++] = 0;
 }
 
+/* appends to text (size bytes, used of them so far): cut short rather than
+run past the end */
+static void text_append(char *text, size_t size, int *used, const char *format, ...)
+{
+	va_list arguments;
+	int written;
+
+	if ((size_t)*used >= size - 1)
+		return;
+	va_start(arguments, format);
+	written = vsnprintf(text + *used, size - (size_t)*used, format, arguments);
+	va_end(arguments);
+	*used = written < 0 || (size_t)(*used + written) >= size ? (int)size - 1 : *used + written;
+}
+
 /* appends name=value, URL encoded */
 static void form_add(char *form, int size, const char *name, const char *value)
 {
 	static const char digits[] = "0123456789ABCDEF";
 	int used = (int)strlen(form);
 
-	used += snprintf(form + used, (size_t)(size - used), "%s%s=", used ? "&" : "", name);
+	text_append(form, (size_t)size, &used, "%s%s=", used ? "&" : "", name);
 	for (; *value && used < size - 4; value++)
 	{
 		unsigned char character = (unsigned char)*value;
@@ -338,11 +354,20 @@ static unsigned long public_address(unsigned long game_address)
 	return address;
 }
 
+/* whether the address is of the host, whole (http://localhost.example.com
+is not http://localhost) */
+static int url_of_host(const char *url, const char *host)
+{
+	size_t length = strlen(host);
+
+	return !strncmp(url, host, length) && (url[length] == ':' || url[length] == '/' || !url[length]);
+}
+
 /* the key goes to an HTTPS server, or one on this machine (a test) */
 static int safe_for_key(const char *url)
 {
-	return !strncmp(url, "https://", 8) || !strncmp(url, "http://127.0.0.1", 16) ||
-		!strncmp(url, "http://localhost", 16);
+	return !strncmp(url, "https://", 8) || url_of_host(url, "http://127.0.0.1") ||
+		url_of_host(url, "http://localhost");
 }
 
 static void send_claims(void)
@@ -469,7 +494,7 @@ static void roster_text(const struct browser_roster_player *roster, int count, c
 		char name[64];
 
 		utf8_from_name(roster[index].name, 12, name, sizeof(name));
-		used += snprintf(text + used, (size_t)(size - used), "%s%d:%s", index ? "|" : "", roster[index].team, name);
+		text_append(text, (size_t)size, &used, "%s%d:%s", index ? "|" : "", roster[index].team, name);
 	}
 }
 
@@ -802,20 +827,22 @@ static int json_name(char *out, int size, const unsigned short *name, int length
 	int used = 0;
 	const char *cursor;
 
+	if (size <= 0)
+		return 0;
 	utf8_from_name(name, length, text, sizeof(text));
-	used += snprintf(out + used, (size_t)(size - used), "\"");
+	text_append(out, (size_t)size, &used, "\"");
 	for (cursor = text; *cursor && used < size - 8; cursor++)
 	{
 		unsigned char character = (unsigned char)*cursor;
 
 		if (character == '"' || character == '\\')
-			used += snprintf(out + used, (size_t)(size - used), "\\%c", character);
+			text_append(out, (size_t)size, &used, "\\%c", character);
 		else if (character < 0x20)
-			used += snprintf(out + used, (size_t)(size - used), "\\u%04x", character);
+			text_append(out, (size_t)size, &used, "\\u%04x", character);
 		else
 			out[used++] = (char)character;
 	}
-	used += snprintf(out + used, (size_t)(size - used), "\"");
+	text_append(out, (size_t)size, &used, "\"");
 	return used;
 }
 
@@ -834,7 +861,7 @@ void browser_report_game(int teams, int red_score, int blue_score, int duration_
 		free(report);
 		return;
 	}
-	used += snprintf(report + used, size - (size_t)used,
+	text_append(report, size, &used,
 		"{\"teams\": %d, \"duration\": %d, \"team_scores\": [%d, %d], \"players\": [",
 		teams != 0, duration_seconds, teams ? red_score : 0, teams ? blue_score : 0);
 	tagged = p2p_hosting_invite(invite, sizeof(invite));
@@ -843,9 +870,9 @@ void browser_report_game(int teams, int red_score, int blue_score, int duration_
 		const struct browser_report_player *player = &players[index];
 		unsigned long address = tagged ? public_address(player->address) : 0;
 
-		used += snprintf(report + used, size - (size_t)used, "%s{\"name\": ", index ? ", " : "");
+		text_append(report, size, &used, "%s{\"name\": ", index ? ", " : "");
 		used += json_name(report + used, (int)(size - (size_t)used), player->name, 12);
-		used += snprintf(report + used, size - (size_t)used,
+		text_append(report, size, &used,
 			", \"team\": %d, \"place\": %d, \"score\": %d, \"kills\": %d, \"assists\": %d, \"deaths\": %d, "
 			"\"betrayals\": %d, \"suicides\": %d, \"shots_fired\": %d, \"shots_hit\": %d, \"multikills\": %d, "
 			"\"color\": %d, \"flag_grabs\": %d, \"flag_returns\": %d, \"flag_scores\": %d, \"ball_time\": %d, "
@@ -861,10 +888,10 @@ void browser_report_game(int teams, int red_score, int blue_score, int duration_
 
 			address_tag(invite, address, tag);
 			used--;
-			used += snprintf(report + used, size - (size_t)used, ", \"tag\": \"%s\"}", tag);
+			text_append(report, size, &used, ", \"tag\": \"%s\"}", tag);
 		}
 	}
-	snprintf(report + used, size - (size_t)used, "]}");
+	text_append(report, size, &used, "]}");
 
 	pthread_once(&browser_once, start_thread);
 	pthread_mutex_lock(&browser_lock);
