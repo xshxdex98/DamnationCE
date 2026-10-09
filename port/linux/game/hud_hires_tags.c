@@ -55,6 +55,22 @@ static struct
 } hires_bitmaps[MAXIMUM_HIRES_BITMAPS];
 static long hires_bitmap_count = 0;
 
+/* ---------- private code */
+
+/* whether the pixels of a high-res bitmap (an index of hires_bitmaps) are in
+the texture cache at address, at that size */
+static boolean hires_bitmap_at(
+	long index,
+	unsigned long address,
+	long width,
+	long height)
+{
+	struct bitmap_data const *bitmap = hires_bitmaps[index].bitmap;
+
+	return bitmap->cache_block_index != NONE && (unsigned long)bitmap->base_address == address &&
+		bitmap->width == width && bitmap->height == height;
+}
+
 /* ---------- public code */
 
 void hud_hires_tags_loaded(
@@ -116,13 +132,8 @@ long hud_hires_asset_stock_custom_edition(
 
 	for (index = 0; index < hires_bitmap_count; index++)
 	{
-		struct bitmap_data *bitmap = hires_bitmaps[index].bitmap;
-
-		if (hires_bitmaps[index].asset == asset && bitmap->cache_block_index != NONE &&
-			(unsigned long)bitmap->base_address == address && bitmap->width == width && bitmap->height == height)
-		{
+		if (hires_bitmaps[index].asset == asset && hires_bitmap_at(index, address, width, height))
 			return hires_bitmaps[index].stock_custom_edition;
-		}
 	}
 
 	return FALSE;
@@ -150,19 +161,9 @@ long hud_hires_asset_after(
 	for (index = 0; index < hires_bitmap_count; index++)
 	{
 		if (!passed)
-		{
 			passed = hires_bitmaps[index].asset == asset;
-			continue;
-		}
-		struct bitmap_data *bitmap = hires_bitmaps[index].bitmap;
-
-		if (bitmap->cache_block_index != NONE &&
-			(unsigned long)bitmap->base_address == address &&
-			bitmap->width == width &&
-			bitmap->height == height)
-		{
+		else if (hires_bitmap_at(index, address, width, height))
 			return hires_bitmaps[index].asset;
-		}
 	}
 
 	return NONE;
