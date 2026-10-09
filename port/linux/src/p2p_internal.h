@@ -12,6 +12,9 @@ p2p_discord.c; see p2p.c for the design).
 
 #include <pthread.h>
 
+/* an invite link's start */
+#define P2P_INVITE_PREFIX "halo://join/"
+
 enum
 {
 	/* a machine's identifier: from the hash of its public key (which is new
@@ -25,9 +28,9 @@ enum
 	P2P_TOKEN_SIZE = 16,
 	/* the addresses a machine offers to be reached at */
 	P2P_MAXIMUM_CANDIDATES = 4,
-	/* an invite link's text: "halo://join/", the host's key hash and the
-	token in hexadecimal, and a terminator */
-	P2P_LINK_SIZE = 12 + 2 * (P2P_KEY_HASH_SIZE + P2P_TOKEN_SIZE) + 1,
+	/* an invite link's text: the prefix, the host's key hash and the token
+	in hexadecimal, and a terminator */
+	P2P_LINK_SIZE = (int)sizeof(P2P_INVITE_PREFIX) - 1 + 2 * (P2P_KEY_HASH_SIZE + P2P_TOKEN_SIZE) + 1,
 	/* the most machines one tunnels to: a host and the rest of a system
 	link game's 128 machines (include/halo_port_limits.h) */
 	P2P_MAXIMUM_PEERS = 127,
@@ -65,6 +68,8 @@ go of the p2p lock while it may wait for a program */
 void p2p_register_url_scheme(const char *scheme, const char *description);
 /* formats bytes as lower-case hexadecimal (text holds 2 * size + 1) */
 void p2p_hex(const unsigned char *bytes, int size, char *text);
+/* the invite link of a host's key hash and an invite's token */
+void p2p_format_invite(char *link, int size, const unsigned char *key_hash, const unsigned char *token);
 /* the addresses this machine can be reached at; returns their count */
 int p2p_local_candidates(struct p2p_candidate *candidates, int maximum_count);
 /* this run's X25519 public key (P2P_KEY_SIZE bytes), whose hash the
