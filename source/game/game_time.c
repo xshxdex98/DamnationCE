@@ -257,6 +257,18 @@ boolean game_time_reset_speed(
 	return changed;
 }
 
+/* port: whether the main menu's scene is what ticks. It runs on this
+machine's clock and takes no player input. A tick normally waits for the
+players' input, an action for each player; the menus change who the local
+players are (profiles, a lobby's network game owns the queues), and with
+none the ticks stopped and the scene froze behind the menus. (No scenario
+between maps; global_scenario_get asserts there is one.) */
+boolean game_time_menu_scene(
+	void)
+{
+	return global_scenario && global_scenario->type == _scenario_type_main_menu;
+}
+
 /* port: the connection the clock keeps time by. In the main menu that is
 always this machine's own, whatever network game is being set up (System
 Link's list, Online Games, a lobby, a game being made): its scene is local,
@@ -264,21 +276,7 @@ and the network's clocks only stalled it and then ran it in bursts. */
 static short game_time_connection(
 	void)
 {
-	/* (none between maps; global_scenario_get asserts there is one) */
-	if (global_scenario && global_scenario->type == _scenario_type_main_menu)
-		return _game_connection_local;
-	return game_connection();
-}
-
-/* port: whether the main menu's scene is what ticks. It runs on this
-machine's clock and takes no player input. A tick normally waits for the
-players' input, an action for each player; the menus change who the local
-players are (profiles, a lobby's network game owns the queues), and with
-none the ticks stopped and the scene froze behind the menus. */
-boolean game_time_menu_scene(
-	void)
-{
-	return global_scenario && global_scenario->type == _scenario_type_main_menu;
+	return game_time_menu_scene() ? _game_connection_local : game_connection();
 }
 
 /* whether a client's clock waits for the host's first game update, which

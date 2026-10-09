@@ -73,16 +73,8 @@ enum
 /* (network_server_manager_internal.h's, and the menus') */
 word network_game_server_get_state(struct network_game_server *server, short *state_data);
 struct network_game *network_game_server_get_game(struct network_game_server *server);
-void network_game_server_change_map_name(struct network_game_server *server, char const *map_name);
-void network_game_server_change_game_variant(struct network_game_server *server, struct game_variant *variant);
-void network_game_server_pause_countdown(struct network_game_server *server, boolean pause_countdown);
-void network_game_server_dedicated_start_countdown(struct network_game_server *server);
-void network_game_accept_remote_connections(boolean accept);
-void game_engine_playlist_initialize(void);
-void game_engine_playlist_begin(void);
 void game_connection_set(short connection);
 void main_set_multiplayer_map_name(char const *map_name);
-void game_engine_override_map_name(char const *map_name);
 long game_engine_total_score(void);
 boolean main_menu_is_active(void);
 boolean bink_playback_active(void);

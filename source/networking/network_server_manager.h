@@ -105,5 +105,14 @@ void network_game_server_change_map_name(
 void network_game_server_change_game_variant(
 	struct network_game_server *server,
 	struct game_variant *variant);
+#ifdef HALO_GAME_BROWSER
+/* port: the dedicated server's countdown (server/src/dedicated.c), and a
+client machine's IPv4 address for the game list (game_engine.c) */
+void network_game_server_dedicated_start_countdown(
+	struct network_game_server *server);
+unsigned long network_game_server_machine_ipv4_address(
+	struct network_game_server *server,
+	short machine_index);
+#endif
 
 #endif // __NETWORK_SERVER_MANAGER_H
