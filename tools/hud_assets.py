@@ -456,15 +456,15 @@ def layout(arguments) -> None:
                     kind = "meter"
                 flat = svg.replace("/", "__").replace(" ", "_")
                 sources[flat] = svg
-                match = {"xbox": cell, "svg": flat, "source_scale": scale,
+                entry = {"xbox": cell, "svg": flat, "source_scale": scale,
                          "source": corner, "clip": clip, "kind": kind, "score": round(score, 3)}
                 if tag == HUD + "combined\\hud_unit_meters":
                     original = xbox[top:bottom, left:right]
                     values = set(np.unique(original[..., 2][original[..., 3] > 0]))
                     health = set(range(30, 241, 30))
                     if health <= values <= health | {0}:
-                        match["thresholds"] = sorted(health)
-                matched.append(match)
+                        entry["thresholds"] = sorted(health)
+                matched.append(entry)
             if not matched:
                 if matched is not None:
                     print(f"{name}: left out, empty")
