@@ -56,18 +56,6 @@ enum
 	MAXIMUM_BITMAP_PIXELS_SIZE = 0x1600000,
 
 	/* shaders.c */
-	_shader_type_screen = 0,
-	_shader_type_effect,
-	_shader_type_decal,
-	_shader_type_environment,
-	_shader_type_model,
-	_shader_type_transparent_generic,
-	_shader_type_transparent_chicago,
-	_shader_type_transparent_water,
-	_shader_type_transparent_glass,
-	_shader_type_transparent_meter,
-	_shader_type_transparent_plasma,
-	NUMBER_OF_SHADER_TYPES,
 
 	/* rasterizer_xbox.c, rasterizer_xbox_transparent_geometry.c */
 	NUMBER_OF_FRAMEBUFFER_BLEND_FUNCTIONS = 8,
@@ -185,58 +173,6 @@ retail's take at least a second */
 
 /* rasterizer_xbox_transparent_geometry.c, shader_transparent_*_preprocessor.c */
 
-struct shader_transparent_generic_map
-{
-	word flags;
-	word pad02;
-	real map_u_scale;
-	real map_v_scale;
-	real map_u_offset;
-	real map_v_offset;
-	real map_rotation;
-	real mipmap_bias;
-	struct tag_reference map;
-	struct shader_texture_animation map_animation;
-};
-
-struct shader_transparent_generic_stage
-{
-	word flags;
-	short pad02;
-	short constant_color0_animation_source;
-	short constant_color0_animation_function;
-	real constant_color0_animation_period;
-	real_argb_color constant_color0_lower_bound;
-	real_argb_color constant_color0_upper_bound;
-	real_argb_color color1;
-	short color_input_A;
-	short color_input_A_mapping;
-	short color_input_B;
-	short color_input_B_mapping;
-	short color_input_C;
-	short color_input_C_mapping;
-	short color_input_D;
-	short color_input_D_mapping;
-	short color_output_AB;
-	short color_output_AB_function;
-	short color_output_CD;
-	short color_output_CD_function;
-	short color_output_AB_CD_mux_sum;
-	short color_output_mapping;
-	short alpha_input_A;
-	short alpha_input_A_mapping;
-	short alpha_input_B;
-	short alpha_input_B_mapping;
-	short alpha_input_C;
-	short alpha_input_C_mapping;
-	short alpha_input_D;
-	short alpha_input_D_mapping;
-	short alpha_output_A;
-	short alpha_output_B;
-	short alpha_output_C;
-	short alpha_output_mapping;
-};
-
 /* a transparent shader's extra layer: a shader drawn before it */
 struct shader_layer
 {
@@ -266,24 +202,6 @@ struct shader_transparent_generic_definition
 	struct tag_block stages;
 };
 
-struct shader_transparent_chicago_map
-{
-	word flags;
-	byte reserved02[42];
-	short color_function;
-	short alpha_function;
-	byte reserved30[36];
-	real map_u_scale;
-	real map_v_scale;
-	real map_u_offset;
-	real map_v_offset;
-	real map_rotation;
-	real mipmap_bias;
-	struct tag_reference map;
-	byte reserved7C[40];
-	struct shader_texture_animation map_animation;
-};
-
 struct shader_transparent_chicago_definition
 {
 	struct shader shader;
@@ -305,20 +223,10 @@ struct shader_transparent_chicago_extended_definition
 };
 
 typedef char verify_shader_size[sizeof(struct shader) == 0x28 ? 1 : -1];
-typedef char verify_shader_transparent_generic_map_size[
-	sizeof(struct shader_transparent_generic_map) == 0x64 ? 1 : -1];
-typedef char verify_shader_transparent_generic_stage_size[
-	sizeof(struct shader_transparent_generic_stage) == 0x70 ? 1 : -1];
-typedef char verify_shader_transparent_generic_stage_inputs_offset[
-	offsetof(struct shader_transparent_generic_stage, color_input_A) == 0x3C ? 1 : -1];
 typedef char verify_shader_transparent_generic_maps_offset[
 	offsetof(struct shader_transparent_generic_definition, transparent.maps) == 0x54 ? 1 : -1];
 typedef char verify_shader_transparent_generic_size[
 	sizeof(struct shader_transparent_generic_definition) == 0x6C ? 1 : -1];
-typedef char verify_shader_transparent_chicago_map_size[
-	sizeof(struct shader_transparent_chicago_map) == 0xDC ? 1 : -1];
-typedef char verify_shader_transparent_chicago_map_map_offset[
-	offsetof(struct shader_transparent_chicago_map, map) == 0x6C ? 1 : -1];
 typedef char verify_shader_transparent_chicago_extra_flags_offset[
 	offsetof(struct shader_transparent_chicago_definition, extra_flags) == 0x60 ? 1 : -1];
 typedef char verify_shader_transparent_chicago_size[
@@ -328,57 +236,7 @@ typedef char verify_shader_transparent_chicago_extended_size[
 
 /* rasterizer_xbox_transparent_geometry.c */
 
-struct shader_transparent_glass_definition
-{
-	struct shader shader;
-	word flags;
-	short pad2A;
-	byte reserved2C[40];
-	real_rgb_color tint_color;
-	real tint_map_scale;
-	struct tag_reference tint_map;
-	byte reserved74[20];
-	word reflection_flags;
-	short reflection_type;
-	real_argb_color reflection_view_perpendicular_color;
-	real_argb_color reflection_view_parallel_color;
-	struct tag_reference reflection_map;
-	real reflection_bump_map_scale;
-	struct tag_reference reflection_bump_map;
-	byte reservedD0[128];
-	word diffuse_flags;
-	word pad152;
-	real diffuse_map_scale;
-	struct tag_reference diffuse_map;
-	real diffuse_detail_map_scale;
-	struct tag_reference diffuse_detail_map;
-	byte reserved17C[100];
-};
-
-struct shader_transparent_meter_definition
-{
-	struct shader shader;
-	word flags;
-	short pad2A;
-	byte reserved2C[32];
-	struct tag_reference map;
-	byte reserved5C[0xA8];
-};
-
 /* rasterizer_xbox_water.c */
-
-struct water_ripple
-{
-	byte reserved00[4];
-	real contribution_factor;
-	byte reserved08[0x20];
-	real animation_angle;
-	real animation_velocity;
-	real_point2d map_offset;
-	short map_repeats;
-	short map_index;
-	byte reserved3C[0x10];
-};
 
 struct shader_transparent_water_definition
 {
@@ -439,18 +297,6 @@ struct shader_transparent_plasma_definition
 	byte reserved12C[0x20];
 };
 
-typedef char verify_shader_transparent_glass_reflection_type_offset[
-	offsetof(struct shader_transparent_glass_definition, reflection_type) == 0x8A ? 1 : -1];
-typedef char verify_shader_transparent_glass_diffuse_detail_map_offset[
-	offsetof(struct shader_transparent_glass_definition, diffuse_detail_map) == 0x16C ? 1 : -1];
-typedef char verify_shader_transparent_glass_size[
-	sizeof(struct shader_transparent_glass_definition) == 0x1E0 ? 1 : -1];
-typedef char verify_shader_transparent_meter_map_offset[
-	offsetof(struct shader_transparent_meter_definition, map) == 0x4C ? 1 : -1];
-typedef char verify_shader_transparent_meter_size[
-	sizeof(struct shader_transparent_meter_definition) == 0x104 ? 1 : -1];
-typedef char verify_water_ripple_size[sizeof(struct water_ripple) == 0x4C ? 1 : -1];
-typedef char verify_water_ripple_map_index_offset[offsetof(struct water_ripple, map_index) == 0x3A ? 1 : -1];
 typedef char verify_shader_transparent_water_ripple_maps_offset[
 	offsetof(struct shader_transparent_water_definition, ripple_maps) == 0xC8 ? 1 : -1];
 typedef char verify_shader_transparent_water_ripples_offset[
@@ -549,48 +395,6 @@ struct shader_environment_definition
 	byte reserved334[0x10];
 };
 
-struct shader_model_definition
-{
-	struct shader shader;
-	word flags;
-	short type;
-	byte reserved2C[0xC];
-	real translucency;
-	byte reserved3C[0x10];
-	short change_color_source;
-	byte reserved4E[0x1E];
-	word self_illumination_flags;
-	short pad6E;
-	short self_illumination_color_source;
-	short self_illumination_animation_function;
-	real self_illumination_animation_period;
-	real_rgb_color self_illumination_color_lower_bound;
-	real_rgb_color self_illumination_color_upper_bound;
-	byte reserved90[0xC];
-	real map_u_scale;
-	real map_v_scale;
-	struct tag_reference base_map;
-	byte reservedB4[0x8];
-	struct tag_reference multipurpose_map;
-	byte reservedCC[0x8];
-	short detail_function;
-	short detail_mask;
-	real detail_map_scale;
-	struct tag_reference detail_map;
-	real detail_map_v_scale;
-	byte reservedF0[0xC];
-	struct shader_texture_animation texture_animation;
-	byte reserved134[0x8];
-	real reflection_falloff_distance;
-	real reflection_cutoff_distance;
-	real perpendicular_brightness;
-	real_rgb_color perpendicular_tint_color;
-	real parallel_brightness;
-	real_rgb_color parallel_tint_color;
-	struct tag_reference reflection_cube_map;
-	byte reserved174[0x44];
-};
-
 typedef char verify_shader_environment_base_map_offset[
 	offsetof(struct shader_environment_definition, base_map) == 0x88 ? 1 : -1];
 typedef char verify_shader_environment_detail_map_function_offset[
@@ -618,23 +422,6 @@ typedef char verify_shader_environment_reflection_flags_offset[
 typedef char verify_shader_environment_reflection_cube_map_offset[
 	offsetof(struct shader_environment_definition, reflection_cube_map) == 0x324 ? 1 : -1];
 typedef char verify_shader_environment_size[sizeof(struct shader_environment_definition) == 0x344 ? 1 : -1];
-typedef char verify_shader_model_translucency_offset[
-	offsetof(struct shader_model_definition, translucency) == 0x38 ? 1 : -1];
-typedef char verify_shader_model_change_color_source_offset[
-	offsetof(struct shader_model_definition, change_color_source) == 0x4C ? 1 : -1];
-typedef char verify_shader_model_self_illumination_animation_function_offset[
-	offsetof(struct shader_model_definition, self_illumination_animation_function) == 0x72 ? 1 : -1];
-typedef char verify_shader_model_base_map_offset[offsetof(struct shader_model_definition, base_map) == 0xA4 ? 1 : -1];
-typedef char verify_shader_model_multipurpose_map_offset[
-	offsetof(struct shader_model_definition, multipurpose_map) == 0xBC ? 1 : -1];
-typedef char verify_shader_model_detail_function_offset[
-	offsetof(struct shader_model_definition, detail_function) == 0xD4 ? 1 : -1];
-typedef char verify_shader_model_detail_map_offset[offsetof(struct shader_model_definition, detail_map) == 0xDC ? 1 : -1];
-typedef char verify_shader_model_texture_animation_offset[
-	offsetof(struct shader_model_definition, texture_animation) == 0xFC ? 1 : -1];
-typedef char verify_shader_model_reflection_cube_map_offset[
-	offsetof(struct shader_model_definition, reflection_cube_map) == 0x164 ? 1 : -1];
-typedef char verify_shader_model_size[sizeof(struct shader_model_definition) == 0x1B8 ? 1 : -1];
 
 /* weather_particle_systems.c */
 
@@ -1857,16 +1644,16 @@ static struct tag_schema_field const shader_environment_fields[] =
 static struct tag_schema_field const shader_model_fields[] =
 {
 	TAG_SCHEMA_STRUCT(struct shader_model_definition, shader, shader_schema),
-	TAG_SCHEMA_ENUM(struct shader_model_definition, self_illumination_animation_function,
+	TAG_SCHEMA_ENUM(struct shader_model_definition, model.self_illumination_animation_function,
 		NUMBER_OF_PERIODIC_FUNCTIONS, 0),
-	TAG_SCHEMA_REFERENCE(struct shader_model_definition, base_map, TAG_SCHEMA_GROUPS('bitm')),
-	TAG_SCHEMA_REFERENCE(struct shader_model_definition, multipurpose_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_REFERENCE(struct shader_model_definition, model.base_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_REFERENCE(struct shader_model_definition, model.multipurpose_map, TAG_SCHEMA_GROUPS('bitm')),
 	/* (indices into set_environment_shader_pixel_shader's tables of 3 and 9) */
-	TAG_SCHEMA_ENUM(struct shader_model_definition, detail_function, NUMBER_OF_SHADER_DETAIL_FUNCTIONS, 0),
-	TAG_SCHEMA_ENUM(struct shader_model_definition, detail_mask, NUMBER_OF_SHADER_MODEL_DETAIL_MASKS, 0),
-	TAG_SCHEMA_REFERENCE(struct shader_model_definition, detail_map, TAG_SCHEMA_GROUPS('bitm')),
-	TAG_SCHEMA_STRUCT(struct shader_model_definition, texture_animation, shader_texture_animation_schema),
-	TAG_SCHEMA_REFERENCE(struct shader_model_definition, reflection_cube_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_ENUM(struct shader_model_definition, model.detail_function, NUMBER_OF_SHADER_DETAIL_FUNCTIONS, 0),
+	TAG_SCHEMA_ENUM(struct shader_model_definition, model.detail_mask, NUMBER_OF_SHADER_MODEL_DETAIL_MASKS, 0),
+	TAG_SCHEMA_REFERENCE(struct shader_model_definition, model.detail_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_STRUCT(struct shader_model_definition, model.texture_animation, shader_texture_animation_schema),
+	TAG_SCHEMA_REFERENCE(struct shader_model_definition, model.reflection_cube_map, TAG_SCHEMA_GROUPS('bitm')),
 	TAG_SCHEMA_CHECK(shader_model_check),
 	TAG_SCHEMA_END
 };

@@ -35,11 +35,6 @@ enum
 
 enum
 {
-	_shader_type_transparent_water = 7
-};
-
-enum
-{
 	_vertex_shader_transparent_water_opacity = 0x14,
 	_vertex_shader_transparent_water_reflection = 0x17,
 	_vertex_shader_transparent_water_bumpmap = 0x26
@@ -73,18 +68,6 @@ struct transparent_geometry_group
 };
 
 #endif
-struct water_ripple
-{
-	byte reserved00[0x4];
-	real contibution_factor;
-	byte reserved08[0x20];
-	real animation_angle;
-	real animation_velocity;
-	real_point2d map_offset;
-	short map_repeats;
-	short map_index;
-	byte reserved3C[0x10];
-};
 
 /* the shader_transparent_water tag definition, from the shader header onwards */
 struct shader_transparent_water_definition
@@ -112,12 +95,6 @@ struct shader_transparent_water_definition
 	struct tag_block ripples;
 };
 
-typedef char verify_water_ripple_size[
-	sizeof(struct water_ripple) == 0x4C ? 1 : -1];
-typedef char verify_water_ripple_animation_angle_offset[
-	offsetof(struct water_ripple, animation_angle) == 0x28 ? 1 : -1];
-typedef char verify_water_ripple_map_repeats_offset[
-	offsetof(struct water_ripple, map_repeats) == 0x38 ? 1 : -1];
 typedef char verify_water_definition_flags_offset[
 	offsetof(struct shader_transparent_water_definition, flags) == 0x28 ? 1 : -1];
 typedef char verify_water_definition_base_map_offset[
@@ -219,12 +196,12 @@ void rasterizer_water_build_bumpmap(
 			}
 		}
 
-		if (ripples[0].contibution_factor == 0.0f &&
-			ripples[1].contibution_factor == 0.0f)
-			ripples[1].contibution_factor = 1.0f;
-		if (ripples[2].contibution_factor == 0.0f &&
-			ripples[3].contibution_factor == 0.0f)
-			ripples[3].contibution_factor = 1.0f;
+		if (ripples[0].contribution_factor == 0.0f &&
+			ripples[1].contribution_factor == 0.0f)
+			ripples[1].contribution_factor = 1.0f;
+		if (ripples[2].contribution_factor == 0.0f &&
+			ripples[3].contribution_factor == 0.0f)
+			ripples[3].contribution_factor = 1.0f;
 
 		for (ripple_index = 0; ripple_index < NUMBER_OF_WATER_RIPPLES; ripple_index++)
 		{
@@ -336,21 +313,21 @@ void rasterizer_water_build_bumpmap(
 		match_assert(
 			"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_water.c",
 			159,
-			ripples[0].contibution_factor + ripples[1].contibution_factor>0.0f);
+			ripples[0].contribution_factor + ripples[1].contribution_factor>0.0f);
 		match_assert(
 			"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_water.c",
 			160,
-			ripples[2].contibution_factor + ripples[3].contibution_factor>0.0f);
+			ripples[2].contribution_factor + ripples[3].contribution_factor>0.0f);
 		pixel_shader.constant_0[0] = real_alpha_to_pixel32(
-			ripples[0].contibution_factor /
-			(ripples[0].contibution_factor + ripples[1].contibution_factor));
+			ripples[0].contribution_factor /
+			(ripples[0].contribution_factor + ripples[1].contribution_factor));
 		pixel_shader.constant_0[1] = real_alpha_to_pixel32(
-			ripples[2].contibution_factor /
-			(ripples[2].contibution_factor + ripples[3].contibution_factor));
+			ripples[2].contribution_factor /
+			(ripples[2].contribution_factor + ripples[3].contribution_factor));
 		pixel_shader.constant_0[2] = real_alpha_to_pixel32(
-			(ripples[0].contibution_factor + ripples[1].contibution_factor) /
-			(ripples[0].contibution_factor + ripples[1].contibution_factor +
-			ripples[2].contibution_factor + ripples[3].contibution_factor));
+			(ripples[0].contribution_factor + ripples[1].contribution_factor) /
+			(ripples[0].contribution_factor + ripples[1].contribution_factor +
+			ripples[2].contribution_factor + ripples[3].contribution_factor));
 		rasterizer_set_pixel_shader(&pixel_shader);
 		rasterizer_set_stencil_mode(0);
 

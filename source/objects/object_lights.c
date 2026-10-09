@@ -93,11 +93,6 @@ enum
 	LENS_FLARE_DEFINITION_TAG = 'lens',
 };
 
-enum
-{
-	_shader_type_environment = 3,
-};
-
 /* ---------- macros */
 
 #define light_get(index) \

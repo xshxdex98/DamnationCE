@@ -11,13 +11,6 @@ SHADER_TRANSPARENT_CHICAGO_PREPROCESSOR.C
 #include "shaders/shader_definitions.h"
 #include "tag_files/tag_groups.h"
 
-/* ---------- constants */
-
-enum
-{
-	_shader_type_transparent_chicago = 6
-};
-
 enum
 {
 	_shader_transparent_chicago_map_flag_alpha_replicate_bit = 1
@@ -34,15 +27,6 @@ enum
 };
 
 /* ---------- structures */
-
-struct shader_transparent_chicago_map
-{
-	word flags;
-	byte reserved_before_functions[42];
-	short color_function;
-	short alpha_function;
-	byte reserved_after_functions[172];
-};
 
 struct shader_transparent_chicago_definition
 {

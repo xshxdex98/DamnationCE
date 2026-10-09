@@ -486,14 +486,14 @@ void _rasterizer_decals_draw(
 			switch (local_framebuffer_blend_function)
 			{
 				case _shader_framebuffer_blend_function_add:
-				case _shader_framebuffer_blend_function_reverse_subtract:
-				case _shader_framebuffer_blend_function_max:
+				case _shader_framebuffer_blend_function_subtract:
+				case _shader_framebuffer_blend_function_component_max:
 					pixel_shader.rgb_inputs[0] = 0x08040000;
 					pixel_shader.rgb_inputs[1] = 0x340c0000;
 					break;
 
 				case _shader_framebuffer_blend_function_multiply:
-				case _shader_framebuffer_blend_function_min:
+				case _shader_framebuffer_blend_function_component_min:
 					pixel_shader.rgb_inputs[0] = 0x28240820;
 					pixel_shader.rgb_inputs[1] = 0x340c1420;
 					pixel_shader.alpha_inputs[1] = 0x341c1420;

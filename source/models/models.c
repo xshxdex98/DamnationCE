@@ -55,35 +55,10 @@ enum
 	NUMBER_OF_MODEL_GEOMETRY_PART_FLAGS
 };
 
-enum
-{
-	_shader_type_screen = 0,
-	_shader_type_effect,
-	_shader_type_decal,
-	_shader_type_environment,
-	_shader_type_model,
-	_shader_type_transparent_generic,
-	_shader_type_transparent_chicago,
-	_shader_type_transparent_water,
-	_shader_type_transparent_glass,
-	_shader_type_transparent_meter,
-	_shader_type_transparent_plasma,
-	NUMBER_OF_SHADER_TYPES
-};
-
 /* ---------- macros */
 
 typedef char verify_model_shader_reference_size[sizeof(struct model_shader_reference) == 0x20 ? 1 : -1];
 typedef char verify_model_geometry_part_size[sizeof(struct model_geometry_part) == 0x68 ? 1 : -1];
-
-struct shader_model_definition
-{
-	struct shader shader;
-	word flags;
-	short type;
-	byte reserved_before_translucency[0xC];
-	real translucency;
-};
 
 #ifndef HALO_64BIT
 
@@ -264,7 +239,7 @@ static void render_model_parts(
 								}
 							}
 							else if (shader->base.type==_shader_type_model &&
-								TEST_FLAG(((struct shader_model_definition *)shader_get_and_verify_type(shader, _shader_type_model))->flags, _shader_model_alpha_blended_decal_bit))
+								TEST_FLAG(((struct shader_model_definition *)shader_get_and_verify_type(shader, _shader_type_model))->model.flags, _shader_model_alpha_blended_decal_bit))
 							{
 								if (pass==_render_model_pass_decal)
 								{

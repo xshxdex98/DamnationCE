@@ -13,24 +13,6 @@ SHADERS.C
 #include "shaders.h"
 #include "shaders/shader_definitions.h"
 
-/* ---------- constants */
-
-enum
-{
-	_shader_type_screen = 0,
-	_shader_type_effect,
-	_shader_type_decal,
-	_shader_type_environment,
-	_shader_type_model,
-	_shader_type_transparent_generic,
-	_shader_type_transparent_chicago,
-	_shader_type_transparent_water,
-	_shader_type_transparent_glass,
-	_shader_type_transparent_meter,
-	_shader_type_transparent_plasma,
-	NUMBER_OF_SHADER_TYPES
-};
-
 enum
 {
 	_shader_transparent_decal_bit = 1,
@@ -106,15 +88,6 @@ struct shader_effect_permutation_definition
 	short secondary_map_anchor;
 };
 
-struct shader_model_definition
-{
-	struct shader shader;
-	word flags;
-	short type;
-	byte reserved_before_translucency[0xC];
-	real translucency;
-};
-
 struct shader_environment_diffuse_properties
 {
 	byte reserved_before_texture_animation[0xE4];
@@ -156,8 +129,6 @@ typedef char shader_effect_secondary_map_offset[
 	offsetof(struct shader_effect_permutation_definition, secondary_map) == 0x4C ? 1 : -1];
 typedef char shader_effect_secondary_map_anchor_offset[
 	offsetof(struct shader_effect_permutation_definition, secondary_map_anchor) == 0x5C ? 1 : -1];
-typedef char shader_model_translucency_offset[
-	offsetof(struct shader_model_definition, translucency) == 0x38 ? 1 : -1];
 typedef char shader_environment_diffuse_offset[
 	offsetof(struct shader_environment_definition, diffuse) == 0x6C ? 1 : -1];
 typedef char shader_environment_u_animation_period_offset[
@@ -194,7 +165,7 @@ short shader_get_vertex_shader_permutation(
 		case _shader_type_model:
 		{
 			struct shader_model_definition *model = SHADER_GET_MODEL(shader);
-			if (model->translucency > 0.0f)
+			if (model->model.translucency > 0.0f)
 			{
 				permutation = 1;
 			}
@@ -294,7 +265,7 @@ boolean shader_is_mirror(
 		case _shader_type_environment:
 			result = TEST_FLAG(
 				SHADER_GET_ENVIRONMENT(shader)->reflection_flags,
-				_shader_environment_dynamic_mirror_bit);
+				_shader_environment_reflection_dynamic_mirror_bit);
 			break;
 
 		case _shader_type_transparent_glass:

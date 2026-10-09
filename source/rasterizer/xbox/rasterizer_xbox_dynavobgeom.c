@@ -28,11 +28,6 @@ RASTERIZER_XBOX_DYNAVOBGEOM.C
 
 enum
 {
-	_shader_type_effect = 1,
-};
-
-enum
-{
 	_shader_effect_sort_bias_bit = 0,
 };
 
@@ -442,14 +437,14 @@ void _rasterizer_psuedo_dynamic_screen_quad_draw(
 					pixel_shader.alpha_outputs[2] = 0x000100C0;
 					break;
 
-				case _shader_framebuffer_blend_function_reverse_subtract:
+				case _shader_framebuffer_blend_function_subtract:
 					pixel_shader.rgb_inputs[2] = 0x0C090000;
 					pixel_shader.rgb_outputs[2] = 0x000020C0;
 					pixel_shader.alpha_inputs[2] = 0x1C190000;
 					pixel_shader.alpha_outputs[2] = 0x000000C0;
 					break;
 
-				case _shader_framebuffer_blend_function_min:
+				case _shader_framebuffer_blend_function_component_min:
 					pixel_shader.alpha_inputs[2] = 0x0820A920;
 					pixel_shader.rgb_inputs[2] = 0x1920B820;
 					pixel_shader.alpha_inputs[3] = 0x1C1C0C0C;
@@ -479,7 +474,7 @@ void _rasterizer_psuedo_dynamic_screen_quad_draw(
 			{
 				case _shader_framebuffer_blend_function_alpha_blend:
 					if (parameters->map0_to_1_blend_function ==
-						_shader_framebuffer_blend_function_min)
+						_shader_framebuffer_blend_function_component_min)
 					{
 						pixel_shader.rgb_inputs[combiner_index] = 0x0C010A00 |
 							(parameters->doing_plasma_effect ? 0x00000004 : 0x00000020);
@@ -514,7 +509,7 @@ void _rasterizer_psuedo_dynamic_screen_quad_draw(
 					pixel_shader.alpha_outputs[combiner_index] = 0x000100C0;
 					break;
 
-				case _shader_framebuffer_blend_function_reverse_subtract:
+				case _shader_framebuffer_blend_function_subtract:
 					pixel_shader.rgb_inputs[combiner_index] = 0x0C0A0000;
 					pixel_shader.rgb_outputs[combiner_index] = 0x000020C0;
 					pixel_shader.alpha_inputs[combiner_index] = 0x1C1A0000;

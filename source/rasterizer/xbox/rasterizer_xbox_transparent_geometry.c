@@ -51,22 +51,6 @@ enum
 
 enum
 {
-	_shader_type_screen = 0,
-	_shader_type_effect,
-	_shader_type_decal,
-	_shader_type_environment,
-	_shader_type_model,
-	_shader_type_transparent_generic,
-	_shader_type_transparent_chicago,
-	_shader_type_transparent_water,
-	_shader_type_transparent_glass,
-	_shader_type_transparent_meter,
-	_shader_type_transparent_plasma,
-	NUMBER_OF_SHADER_TYPES
-};
-
-enum
-{
 	_shader_effect_uses_nonlinear_tint_bit = 1,
 	_shader_effect_flags_dont_overdraw_first_person_weapon_bit,
 };
@@ -238,40 +222,6 @@ enum
 /* the transparent shader fields read here (as the shader preprocessors
  * declare them, with this file's extra fields) */
 
-struct shader_transparent_generic_map
-{
-	word flags;
-	word pad02;
-	real map_u_scale;
-	real map_v_scale;
-	real map_u_offset;
-	real map_v_offset;
-	real map_rotation;
-	real mipmap_bias;
-	struct tag_reference map;
-	struct shader_texture_animation map_animation;
-};
-
-typedef char shader_transparent_generic_map_size_assert[
-	sizeof(struct shader_transparent_generic_map) == 0x64 ? 1 : -1];
-typedef char shader_transparent_generic_map_animation_offset_assert[
-	offsetof(struct shader_transparent_generic_map, map_animation) == 0x2C ? 1 : -1];
-
-struct shader_transparent_generic_stage
-{
-	word flags;
-	short pad02;
-	short constant_color0_animation_source;
-	short constant_color0_animation_function;
-	real constant_color0_animation_period;
-	real_argb_color constant_color0;
-	real_argb_color constant_color1;
-	byte reserved_after_constant_color1[68];
-};
-
-typedef char shader_transparent_generic_stage_size_assert[
-	sizeof(struct shader_transparent_generic_stage) == 0x70 ? 1 : -1];
-
 struct shader_transparent_generic
 {
 	byte numeric_counter_limit;
@@ -296,29 +246,6 @@ struct shader_transparent_generic_definition
 
 typedef char shader_transparent_generic_maps_offset_assert[
 	offsetof(struct shader_transparent_generic_definition, generic.maps) == 0x54 ? 1 : -1];
-
-struct shader_transparent_chicago_map
-{
-	word flags;
-	byte reserved_before_functions[42];
-	short color_function;
-	short alpha_function;
-	byte reserved_before_map_u_scale[36];
-	real map_u_scale;
-	real map_v_scale;
-	real map_u_offset;
-	real map_v_offset;
-	real map_rotation;
-	real mipmap_bias;
-	struct tag_reference map;
-	byte reserved_after_map[40];
-	struct shader_texture_animation map_animation;
-};
-
-typedef char shader_transparent_chicago_map_size_assert[
-	sizeof(struct shader_transparent_chicago_map) == 0xDC ? 1 : -1];
-typedef char shader_transparent_chicago_map_u_scale_offset_assert[
-	offsetof(struct shader_transparent_chicago_map, map_u_scale) == 0x54 ? 1 : -1];
 
 struct shader_transparent_chicago
 {
@@ -345,68 +272,6 @@ struct shader_transparent_chicago_definition
 
 typedef char shader_transparent_chicago_extra_flags_offset_assert[
 	offsetof(struct shader_transparent_chicago_definition, chicago.extra_flags) == 0x60 ? 1 : -1];
-
-struct shader_transparent_glass_definition
-{
-	struct shader shader;
-	word flags;
-	short pad2A;
-	byte reserved_before_tint_color[40];
-	real_rgb_color tint_color;
-	real tint_map_scale;
-	struct tag_reference tint_map;
-	byte reserved_before_reflection_flags[20];
-	word reflection_flags;
-	short reflection_type;
-	real_argb_color reflection_view_perpendicular_color;
-	real_argb_color reflection_view_parallel_color;
-	struct tag_reference reflection_map;
-	real reflection_bump_map_scale;
-	struct tag_reference reflection_bump_map;
-	byte reserved_before_diffuse_flags[128];
-	word diffuse_flags;
-	word pad152;
-	real diffuse_map_scale;
-	struct tag_reference diffuse_map;
-	real diffuse_detail_map_scale;
-	struct tag_reference diffuse_detail_map;
-	byte reserved_after_diffuse_detail_map[100];
-};
-
-typedef char shader_transparent_glass_reflection_type_offset_assert[
-	offsetof(struct shader_transparent_glass_definition, reflection_type) == 0x8A ? 1 : -1];
-typedef char shader_transparent_glass_diffuse_detail_map_offset_assert[
-	offsetof(struct shader_transparent_glass_definition, diffuse_detail_map) == 0x16C ? 1 : -1];
-
-struct shader_transparent_meter_definition
-{
-	struct shader shader;
-	word flags;
-	short pad2A;
-	byte reserved_before_map[32];
-	struct tag_reference map;
-	byte reserved_before_gradient_min_color[32];
-	real_rgb_color gradient_min_color;
-	real_rgb_color gradient_max_color;
-	real_rgb_color background_color;
-	real_rgb_color flash_color;
-	real_rgb_color tint_color;
-	real meter_transparency;
-	real background_transparency;
-	byte reserved_before_meter_brightness_source[24];
-	short meter_brightness_source;
-	short flash_brightness_source;
-	short value_source;
-	short gradient_source;
-	short flash_extension_source;
-	word padE2;
-	byte reserved_after_flash_extension_source[32];
-};
-
-typedef char shader_transparent_meter_gradient_min_color_offset_assert[
-	offsetof(struct shader_transparent_meter_definition, gradient_min_color) == 0x7C ? 1 : -1];
-typedef char shader_transparent_meter_brightness_source_offset_assert[
-	offsetof(struct shader_transparent_meter_definition, meter_brightness_source) == 0xD8 ? 1 : -1];
 
 #ifdef HALO_64BIT
 struct rasterizer_transparent_geometry_hud_globals_prefix
@@ -2137,11 +2002,11 @@ void rasterizer_transparent_geometry_group_draw(
 								for (component_index = 0;
 									component_index < NUMBEROF(color_delta.n);
 									component_index++)
-									color_delta.n[component_index] = stage->constant_color1.n[component_index]-stage->constant_color0.n[component_index];
+									color_delta.n[component_index] = stage->constant_color0_upper_bound.n[component_index]-stage->constant_color0_lower_bound.n[component_index];
 								for (component_index = 0;
 									component_index < NUMBEROF(constant_color0.n);
 									component_index++)
-									constant_color0.n[component_index] = function_value*color_delta.n[component_index] + stage->constant_color0.n[component_index];
+									constant_color0.n[component_index] = function_value*color_delta.n[component_index] + stage->constant_color0_lower_bound.n[component_index];
 
 								match_assert(
 									"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_transparent_geometry.c",

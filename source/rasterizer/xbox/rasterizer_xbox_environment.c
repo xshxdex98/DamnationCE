@@ -91,8 +91,6 @@ enum
 
 enum
 {
-	_shader_type_environment = 3,
-	_shader_type_transparent_water = 7,
 	_rasterizer_statistics_mode_enabled = 2,
 };
 

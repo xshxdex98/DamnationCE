@@ -52,21 +52,6 @@ enum
 
 enum
 {
-	_shader_type_screen = 0,
-	_shader_type_effect,
-	_shader_type_decal,
-	_shader_type_environment,
-	_shader_type_model,
-	_shader_type_transparent_generic,
-	_shader_type_transparent_chicago,
-	_shader_type_transparent_water,
-	_shader_type_transparent_glass,
-	_shader_type_transparent_meter,
-	_shader_type_transparent_plasma,
-};
-
-enum
-{
 	NUMBER_OF_SHADER_ANIMATION_FUNCTIONS = 4,
 	NUMBER_OF_SHADER_ANIMATION_SOURCES = 5,
 };
@@ -88,12 +73,6 @@ enum
 	_model_vertex_shader_permutation_reflection,
 	_model_vertex_shader_permutation_reflection_one_node,
 	NUMBER_OF_MODEL_VERTEX_SHADER_PERMUTATIONS
-};
-
-struct shader_model_definition
-{
-	struct shader shader;
-	struct shader_model_properties model;
 };
 
 struct shader_transparent_plasma_definition
@@ -289,12 +268,6 @@ typedef char verify_shader_plasma_intensity_exponent_source_offset[
 	offsetof(
 		struct shader_transparent_plasma_definition,
 		intensity_exponent_source) == 0x2C ? 1 : -1];
-typedef char verify_shader_model_translucency_offset[
-	offsetof(struct shader_model_definition, model.translucency) == 0x38
-		? 1 : -1];
-typedef char verify_shader_model_change_color_source_offset[
-	offsetof(struct shader_model_definition, model.change_color_source) == 0x4C
-		? 1 : -1];
 typedef char verify_shader_model_self_illumination_flags_offset[
 	offsetof(
 		struct shader_model_definition,
@@ -307,30 +280,6 @@ typedef char verify_shader_model_self_illumination_upper_bound_offset[
 	offsetof(
 		struct shader_model_definition,
 		model.self_illumination_animation_color_upper_bound) == 0x84 ? 1 : -1];
-typedef char verify_shader_model_map_u_scale_offset[
-	offsetof(struct shader_model_definition, model.map_u_scale) == 0x9C
-		? 1 : -1];
-typedef char verify_shader_model_base_map_offset[
-	offsetof(struct shader_model_definition, model.base_map.index) == 0xB0
-		? 1 : -1];
-typedef char verify_shader_model_multipurpose_map_offset[
-	offsetof(struct shader_model_definition, model.multipurpose_map.index) ==
-		0xC8 ? 1 : -1];
-typedef char verify_shader_model_detail_function_offset[
-	offsetof(struct shader_model_definition, model.detail_function) == 0xD4
-		? 1 : -1];
-typedef char verify_shader_model_detail_map_scale_offset[
-	offsetof(struct shader_model_definition, model.detail_map_scale) == 0xD8
-		? 1 : -1];
-typedef char verify_shader_model_detail_map_offset[
-	offsetof(struct shader_model_definition, model.detail_map.index) == 0xE8
-		? 1 : -1];
-typedef char verify_shader_model_detail_map_v_scale_offset[
-	offsetof(struct shader_model_definition, model.detail_map_v_scale) == 0xEC
-		? 1 : -1];
-typedef char verify_shader_model_texture_animation_offset[
-	offsetof(struct shader_model_definition, model.texture_animation) == 0xFC
-		? 1 : -1];
 typedef char verify_shader_model_reflection_falloff_offset[
 	offsetof(
 		struct shader_model_definition,
@@ -339,9 +288,6 @@ typedef char verify_shader_model_perpendicular_brightness_offset[
 	offsetof(
 		struct shader_model_definition,
 		model.perpendicular_brightness) == 0x144 ? 1 : -1];
-typedef char verify_shader_model_parallel_brightness_offset[
-	offsetof(struct shader_model_definition, model.parallel_brightness) ==
-		0x154 ? 1 : -1];
 typedef char verify_shader_model_reflection_cube_map_offset[
 	offsetof(
 		struct shader_model_definition,

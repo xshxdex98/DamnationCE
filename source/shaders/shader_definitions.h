@@ -14,27 +14,62 @@ SHADER_DEFINITIONS.H
 
 /* ---------- constants */
 
-/* environment shader flags */
+/* shader types */
 enum
 {
-	_shader_environment_alpha_tested_bit,
-	_shader_environment_specular_overbright_bit = 0,
-	_shader_environment_reflection_dynamic_mirror_bit = 0,
-	_shader_environment_self_illumination_unfiltered_bit = 0,
-	_shader_environment_diffuse_rescale_detail_maps_bit = 0,
-	_shader_environment_dynamic_mirror_bit = 0,
-	_shader_environment_bump_map_is_specular_mask_bit,
-	_shader_environment_specular_extra_shiny_bit = 1,
-	_shader_environment_diffuse_rescale_bump_map_bit = 1,
-	_shader_environment_true_atmospheric_fog_bit,
-	_shader_environment_specular_lightmap_bit = 2
+	_shader_type_screen,
+	_shader_type_effect,
+	_shader_type_decal,
+	_shader_type_environment,
+	_shader_type_model,
+	_shader_type_transparent_generic,
+	_shader_type_transparent_chicago,
+	_shader_type_transparent_water,
+	_shader_type_transparent_glass,
+	_shader_type_transparent_meter,
+	_shader_type_transparent_plasma,
+	NUMBER_OF_SHADER_TYPES
 };
 
-/* shader model flags */
+/* an environment shader's flags */
 enum
 {
-	_shader_model_detail_after_reflection_bit,
-	_shader_model_self_illumination_no_random_phase_bit = 0,
+	_shader_environment_alpha_tested_bit = 0,
+	_shader_environment_bump_map_is_specular_mask_bit,
+	_shader_environment_true_atmospheric_fog_bit,
+};
+
+/* its diffuse flags */
+enum
+{
+	_shader_environment_diffuse_rescale_detail_maps_bit = 0,
+	_shader_environment_diffuse_rescale_bump_map_bit,
+};
+
+/* its self-illumination flags */
+enum
+{
+	_shader_environment_self_illumination_unfiltered_bit = 0,
+};
+
+/* its specular flags */
+enum
+{
+	_shader_environment_specular_overbright_bit = 0,
+	_shader_environment_specular_extra_shiny_bit,
+	_shader_environment_specular_lightmap_bit,
+};
+
+/* its reflection flags */
+enum
+{
+	_shader_environment_reflection_dynamic_mirror_bit = 0,
+};
+
+/* a model shader's flags */
+enum
+{
+	_shader_model_detail_after_reflection_bit = 0,
 	_shader_model_two_sided_bit,
 	_shader_model_not_alpha_tested_bit,
 	_shader_model_alpha_blended_decal_bit,
@@ -43,19 +78,22 @@ enum
 	NUMBER_OF_SHADER_MODEL_FLAGS
 };
 
+/* its self-illumination flags */
+enum
+{
+	_shader_model_self_illumination_no_random_phase_bit = 0,
+};
+
 /* framebuffer blend functions */
 enum
 {
-	_shader_framebuffer_blend_function_alpha_blend,
+	_shader_framebuffer_blend_function_alpha_blend = 0,
 	_shader_framebuffer_blend_function_multiply,
 	_shader_framebuffer_blend_function_double_multiply,
 	_shader_framebuffer_blend_function_add,
-	_shader_framebuffer_blend_function_reverse_subtract,
-	_shader_framebuffer_blend_function_subtract = 4,
-	_shader_framebuffer_blend_function_min,
-	_shader_framebuffer_blend_function_component_min = 5,
-	_shader_framebuffer_blend_function_max,
-	_shader_framebuffer_blend_function_component_max = 6,
+	_shader_framebuffer_blend_function_subtract,
+	_shader_framebuffer_blend_function_component_min,
+	_shader_framebuffer_blend_function_component_max,
 	_shader_framebuffer_blend_function_alpha_multiply_add,
 	NUMBER_OF_SHADER_FRAMEBUFFER_BLEND_FUNCTIONS
 };
@@ -96,6 +134,50 @@ struct shader
 	struct shader_base base;
 };
 
+struct shader_model_properties
+{
+	word flags;
+	short type;
+	byte reserved04[0xC];
+	real translucency;
+	byte reserved14[0x10];
+	short change_color_source;
+	byte reserved26[0x1E];
+	word self_illumination_flags;
+	short pad46;
+	short self_illumination_color_source;
+	short self_illumination_animation_function;
+	real self_illumination_animation_period;
+	real_rgb_color self_illumination_animation_color_lower_bound;
+	real_rgb_color self_illumination_animation_color_upper_bound;
+	byte reserved68[0xC];
+	real map_u_scale;
+	real map_v_scale;
+	struct tag_reference base_map;
+	byte reserved8C[8];
+	struct tag_reference multipurpose_map;
+	byte reservedA4[8];
+	short detail_function;
+	short detail_mask;
+	real detail_map_scale;
+	struct tag_reference detail_map;
+	real detail_map_v_scale;
+	byte reservedC8[0xC];
+	struct shader_texture_animation texture_animation;
+	byte reserved10C[8];
+	real reflection_falloff_distance;
+	real reflection_cutoff_distance;
+	real perpendicular_brightness;
+	real_rgb_color perpendicular_tint_color;
+	real parallel_brightness;
+	real_rgb_color parallel_tint_color;
+	struct tag_reference reflection_cube_map;
+	long unused14C[17];
+};
+
+typedef char shader_model_properties_size_assert[
+	sizeof(struct shader_model_properties) == 0x190 ? 1 : -1];
+
 struct shader_effect_definition
 {
 	struct shader shader;
@@ -129,6 +211,168 @@ typedef char shader_effect_framebuffer_fade_mode_offset_assert[
 	offsetof(struct shader_effect_definition, framebuffer_fade_mode) == 0x2C ? 1 : -1];
 typedef char shader_effect_definition_size_assert[
 	sizeof(struct shader_effect_definition) == 0xB4 ? 1 : -1];
+
+struct water_ripple
+{
+	byte reserved00[4];
+	real contribution_factor;
+	byte reserved08[0x20];
+	real animation_angle;
+	real animation_velocity;
+	real_point2d map_offset;
+	short map_repeats;
+	short map_index;
+	byte reserved3C[0x10];
+};
+
+typedef char water_ripple_size_assert[
+	sizeof(struct water_ripple) == 0x4C ? 1 : -1];
+
+struct shader_transparent_glass_definition
+{
+	struct shader shader;
+	word flags;
+	short pad2A;
+	byte reserved_before_tint_color[40];
+	real_rgb_color tint_color;
+	real tint_map_scale;
+	struct tag_reference tint_map;
+	byte reserved_before_reflection_flags[20];
+	word reflection_flags;
+	short reflection_type;
+	real_argb_color reflection_view_perpendicular_color;
+	real_argb_color reflection_view_parallel_color;
+	struct tag_reference reflection_map;
+	real reflection_bump_map_scale;
+	struct tag_reference reflection_bump_map;
+	byte reserved_before_diffuse_flags[128];
+	word diffuse_flags;
+	word pad152;
+	real diffuse_map_scale;
+	struct tag_reference diffuse_map;
+	real diffuse_detail_map_scale;
+	struct tag_reference diffuse_detail_map;
+	byte reserved_after_diffuse_detail_map[100];
+};
+
+typedef char shader_transparent_glass_definition_size_assert[
+	sizeof(struct shader_transparent_glass_definition) == 0x1E0 ? 1 : -1];
+
+struct shader_transparent_meter_definition
+{
+	struct shader shader;
+	word flags;
+	short pad2A;
+	byte reserved_before_map[32];
+	struct tag_reference map;
+	byte reserved_before_gradient_min_color[32];
+	real_rgb_color gradient_min_color;
+	real_rgb_color gradient_max_color;
+	real_rgb_color background_color;
+	real_rgb_color flash_color;
+	real_rgb_color tint_color;
+	real meter_transparency;
+	real background_transparency;
+	byte reserved_before_meter_brightness_source[24];
+	short meter_brightness_source;
+	short flash_brightness_source;
+	short value_source;
+	short gradient_source;
+	short flash_extension_source;
+	word padE2;
+	byte reserved_after_flash_extension_source[32];
+};
+
+typedef char shader_transparent_meter_definition_size_assert[
+	sizeof(struct shader_transparent_meter_definition) == 0x104 ? 1 : -1];
+
+struct shader_transparent_generic_map
+{
+	word flags;
+	word pad02;
+	real map_u_scale;
+	real map_v_scale;
+	real map_u_offset;
+	real map_v_offset;
+	real map_rotation;
+	real mipmap_bias;
+	struct tag_reference map;
+	struct shader_texture_animation map_animation;
+};
+
+typedef char shader_transparent_generic_map_size_assert[
+	sizeof(struct shader_transparent_generic_map) == 0x64 ? 1 : -1];
+
+struct shader_transparent_chicago_map
+{
+	word flags;
+	byte reserved_before_functions[42];
+	short color_function;
+	short alpha_function;
+	byte reserved_before_map_u_scale[36];
+	real map_u_scale;
+	real map_v_scale;
+	real map_u_offset;
+	real map_v_offset;
+	real map_rotation;
+	real mipmap_bias;
+	struct tag_reference map;
+	byte reserved_after_map[40];
+	struct shader_texture_animation map_animation;
+};
+
+typedef char shader_transparent_chicago_map_size_assert[
+	sizeof(struct shader_transparent_chicago_map) == 0xDC ? 1 : -1];
+
+struct shader_transparent_generic_stage
+{
+	word flags;
+	short pad02;
+	short constant_color0_animation_source;
+	short constant_color0_animation_function;
+	real constant_color0_animation_period;
+	real_argb_color constant_color0_lower_bound;
+	real_argb_color constant_color0_upper_bound;
+	real_argb_color color1;
+	short color_input_A;
+	short color_input_A_mapping;
+	short color_input_B;
+	short color_input_B_mapping;
+	short color_input_C;
+	short color_input_C_mapping;
+	short color_input_D;
+	short color_input_D_mapping;
+	short color_output_AB;
+	short color_output_AB_function;
+	short color_output_CD;
+	short color_output_CD_function;
+	short color_output_AB_CD_mux_sum;
+	short color_output_mapping;
+	short alpha_input_A;
+	short alpha_input_A_mapping;
+	short alpha_input_B;
+	short alpha_input_B_mapping;
+	short alpha_input_C;
+	short alpha_input_C_mapping;
+	short alpha_input_D;
+	short alpha_input_D_mapping;
+	short alpha_output_A;
+	short alpha_output_B;
+	short alpha_output_C;
+	short alpha_output_mapping;
+};
+
+typedef char shader_transparent_generic_stage_size_assert[
+	sizeof(struct shader_transparent_generic_stage) == 0x70 ? 1 : -1];
+
+struct shader_model_definition
+{
+	struct shader shader;
+	struct shader_model_properties model;
+};
+
+typedef char shader_model_definition_size_assert[
+	sizeof(struct shader_model_definition) == 0x1B8 ? 1 : -1];
 
 /* ---------- prototypes/SHADER_DEFINITIONS.C */
 

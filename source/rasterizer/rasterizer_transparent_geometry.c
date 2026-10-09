@@ -20,13 +20,6 @@ RASTERIZER_TRANSPARENT_GEOMETRY.C
 #include "rasterizer/rasterizer_transparent_geometry.h"
 #endif
 
-/* ---------- constants */
-
-enum
-{
-	_shader_type_transparent_water = 7,
-};
-
 /* ---------- structures */
 
 #ifndef HALO_64BIT

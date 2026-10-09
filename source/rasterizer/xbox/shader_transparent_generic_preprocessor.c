@@ -12,13 +12,6 @@ SHADER_TRANSPARENT_GENERIC_PREPROCESSOR.C
 #include "tag_files/tag_groups.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 
-/* ---------- constants */
-
-enum
-{
-	_shader_type_transparent_generic = 5
-};
-
 enum
 {
 	_shader_transparent_generic_stage_flag_color_mux_bit = 0,
@@ -82,48 +75,6 @@ enum
 #define SHADER_STAGE_REGISTER_MASK 0x0f
 
 /* ---------- structures */
-
-struct shader_transparent_generic_map
-{
-	word flags;
-	byte reserved_before_mipmap_bias[22];
-	real mipmap_bias;
-	struct tag_reference map;
-	byte reserved_after_map[56];
-};
-
-struct shader_transparent_generic_stage
-{
-	word flags;
-	byte reserved_before_color1[42];
-	real_argb_color color1;
-	short color_input_A;
-	short color_input_A_mapping;
-	short color_input_B;
-	short color_input_B_mapping;
-	short color_input_C;
-	short color_input_C_mapping;
-	short color_input_D;
-	short color_input_D_mapping;
-	short color_output_AB;
-	short color_output_AB_function;
-	short color_output_CD;
-	short color_output_CD_function;
-	short color_output_AB_CD_mux_sum;
-	short color_output_mapping;
-	short alpha_input_A;
-	short alpha_input_A_mapping;
-	short alpha_input_B;
-	short alpha_input_B_mapping;
-	short alpha_input_C;
-	short alpha_input_C_mapping;
-	short alpha_input_D;
-	short alpha_input_D_mapping;
-	short alpha_output_A;
-	short alpha_output_B;
-	short alpha_output_C;
-	short alpha_output_mapping;
-};
 
 struct shader_transparent_generic_definition
 {
