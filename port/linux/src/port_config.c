@@ -288,11 +288,6 @@ static const struct config_setting config_settings[] =
 		"The folder holding the game data's maps folder; empty looks in the\n"
 		"working directory and its assets folder. Windows paths are easiest in\n"
 		"single quotes: 'C:\\Games\\Halo'." },
-	{ "paths.custom_edition", _config_string, "\"\"", "HALO_CUSTOM_EDITION_ROOT", _environment_value, _platform_desktop,
-		"A Halo Custom Edition install whose maps folder is looked in after the\n"
-		"game's for Custom Edition maps and their bitmaps.map, sounds.map and\n"
-		"loc.map (game.custom_edition); empty for none: copy those into the\n"
-		"game's maps folder instead." },
 	{ "paths.saves", _config_string, "\"\"", "HALO_SAVE_ROOT", _environment_value, _platform_desktop,
 		"Where saved games and profiles go; empty for the usual place\n"
 		"(~/.local/share/halo-linux, or %APPDATA%\\halo on Windows)." },
@@ -998,6 +993,94 @@ static void config_report_unknown_keys(toml_datum_t table)
 	}
 }
 
+/* the section the line opens, if it is "[section]" (after spaces) */
+static int config_line_section(const char *line, const char *end, char *section, size_t size)
+{
+	const char *close;
+
+	while (line < end && (*line == ' ' || *line == '\t'))
+		line++;
+	if (line >= end || *line != '[')
+		return 0;
+	close = memchr(line, ']', (size_t)(end - line));
+	if (!close || (size_t)(close - line - 1) >= size)
+		return 0;
+	memcpy(section, line + 1, (size_t)(close - line - 1));
+	section[close - line - 1] = 0;
+	return 1;
+}
+
+/* "section.key" for a "key = ..." line (after spaces) of the section, in
+name */
+static int config_line_key_name(const char *line, const char *end, const char *section, char *name, size_t size)
+{
+	const char *key;
+
+	while (line < end && (*line == ' ' || *line == '\t'))
+		line++;
+	key = line;
+	while (line < end && (isalnum((unsigned char)*line) || *line == '_' || *line == '-'))
+		line++;
+	if (line == key)
+		return 0;
+	snprintf(name, size, "%s.%.*s", section, (int)(line - key), key);
+	while (line < end && (*line == ' ' || *line == '\t'))
+		line++;
+	return line < end && *line == '=';
+}
+
+/* the text with each key a section sets again dropped after its first, or
+NULL if none is. TOML refuses a key set twice, and the whole file is then
+ignored: 0.3.33 and 0.3.34 wrote paths.custom_edition twice in a new file,
+so that none of its settings, nor any Settings wrote there, took effect */
+static char *config_drop_repeated_keys(const char *text)
+{
+	static char seen[512][96];
+	struct config_text out = { NULL, 0, 0 };
+	char section[64] = "";
+	const char *line;
+	int seen_count = 0, dropped = 0;
+
+	for (line = text; *line;)
+	{
+		const char *end = line + strcspn(line, "\n");
+		const char *next = *end ? end + 1 : end;
+		char name[96];
+
+		if (!config_line_section(line, end, section, sizeof(section)) &&
+			config_line_key_name(line, end, section, name, sizeof(name)))
+		{
+			int index = 0;
+
+			while (index < seen_count && strcmp(seen[index], name))
+				index++;
+			if (index < seen_count)
+			{
+				platform_log("settings: %s was set twice; the second is dropped", name);
+				dropped = 1;
+				line = next;
+				continue;
+			}
+			if (seen_count < (int)(sizeof(seen) / sizeof(seen[0])))
+				snprintf(seen[seen_count++], sizeof(seen[0]), "%s", name);
+		}
+		{
+			char *copy = config_copy(line, (size_t)(next - line));
+
+			if (copy)
+				config_append(&out, copy);
+			free(copy);
+		}
+		line = next;
+	}
+	if (!dropped)
+	{
+		free(out.buffer);
+		return NULL;
+	}
+	return out.buffer;
+}
+
 static void config_load(void)
 {
 	char path[1024];
@@ -1027,7 +1110,17 @@ static void config_load(void)
 	if (text)
 	{
 		toml_result_t result = toml_parse(text, (int)size);
+		char *repaired = result.ok ? NULL : config_drop_repeated_keys(text);
 
+		if (repaired)
+		{
+			toml_free(result);
+			result = toml_parse(repaired, (int)strlen(repaired));
+			free(text);
+			text = repaired;
+			if (result.ok && !config_write_file(path, text))
+				platform_log("settings: cannot write %s", path);
+		}
 		if (result.ok)
 		{
 			char *completed;
@@ -1117,23 +1210,6 @@ static int config_line_key(const char *line, const char *end, const char *key)
 	while (line < end && (*line == ' ' || *line == '\t'))
 		line++;
 	return line < end && *line == '=';
-}
-
-/* the section the line opens, if it is "[section]" (after spaces) */
-static int config_line_section(const char *line, const char *end, char *section, size_t size)
-{
-	const char *close;
-
-	while (line < end && (*line == ' ' || *line == '\t'))
-		line++;
-	if (line >= end || *line != '[')
-		return 0;
-	close = memchr(line, ']', (size_t)(end - line));
-	if (!close || (size_t)(close - line - 1) >= size)
-		return 0;
-	memcpy(section, line + 1, (size_t)(close - line - 1));
-	section[close - line - 1] = 0;
-	return 1;
 }
 
 /* sets a setting, for now and in config.toml, from its value as text
