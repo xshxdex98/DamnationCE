@@ -2,8 +2,9 @@
 BINK_NULL.C
 
 The Bink video SDK entry points bink_playback.c uses. There is no Bink
-decoder in the native builds (the RAD SDK is proprietary), so BinkOpen reports that a movie cannot be
-opened and the game skips it, exactly as it does for a missing movie file.
+decoder in the native builds (the RAD SDK is proprietary), so BinkOpen
+reports that a movie cannot be opened and the game skips it, as it does a
+missing movie file.
 
 The prototypes match the declarations in bink_playback.c; the RAD SDK's
 RADEXPLINK is __stdcall.
@@ -43,7 +44,9 @@ void __stdcall BinkSetIOSize(unsigned long io_size)
 HBINK __stdcall BinkOpen(const char *name, unsigned long flags)
 {
 	(void)flags;
-	platform_log("Bink video is not supported; skipping \"%s\"", name ? name : "");
+	/* (the game opens "" for a movie it found no file of, and says so) */
+	if (name && *name)
+		platform_log("Bink video is not supported; skipping \"%s\"", name);
 	return NULL;
 }
 
