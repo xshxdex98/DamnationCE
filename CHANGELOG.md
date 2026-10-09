@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.3.35
+
+### New
+
+- Delta Stats (from ChupathingyCE): games you host are recorded and sent to
+  the game list (halo.milenko.org) when they end, for its match pages,
+  heatmaps and leaderboards. Players appear by name and a hash of their
+  hardware ID; no address is ever sent. `network.report_events = false`
+  in the settings turns it off.
+
+### From OpenCE
+
+- Lens flares and other visibility tests read their results a frame later,
+  all at once, which is faster on the GL renderer.
+- A client's copy of a unit carries no grenades until the host says so,
+  and a player the host teleported stays where they landed.
+- A grenade's shock wave is dealt with its explosion.
+- Looping sounds stop cleanly when replaced, and a sound stream that ran
+  dry plays again once it has data.
+- Joining works on maps whose names have `[ ] ( ) +`, and a host's map
+  named like a Windows device (com, lpt) is refused.
+- Many bounded copies and formats of map text, tag names and strings.
+- Scripted first-person cameras are blended again, and a scripted camera
+  that moves with an object is drawn with it.
+- Transparent models sort correctly next to flat BSP glass.
+- Voice chat: a speaker icon beside talking players' name tags and on the
+  scoreboard; leaving during a vote to kick passes it.
+- Linux: the portable build starts on SteamOS and older distributions, and
+  Steam's on-screen keyboard comes up for text fields on the Steam Deck.
+- Profiles: creating a profile goes back to the right screen; Edit
+  Gametypes with no game types no longer picks one.
+- Optional animation enhancements (`game.enhanced_animations`).
+
+### Fixes
+
+- Server Setup and other menus no longer show stale, overlapping co-op
+  rows in the Glassed and Cairo themes.
+- A refused join is told the right reason, and the host reads a client's
+  game start request in full.
+- A mouse pointer freed with F12, or the scoreboard's, stays shown when a
+  menu closes.
+- A large clean-up of the port's code, checked to build to the same game.
+
+Network version 24, as before: 0.3.32 to 0.3.35 play together.
+
 ## 0.3.34
 
 An emergency fix for 0.3.33.
