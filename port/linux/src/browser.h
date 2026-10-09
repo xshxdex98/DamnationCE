@@ -1,12 +1,12 @@
 /*
 BROWSER.H
 
-The game list (configure.py --game-browser,
-HALO_GAME_BROWSER): the system link games hosted by copies of the game
-anywhere, listed on network.browser_url (halo.milenko.org). A host's
-game is listed with its invite (p2p.c); a player picks a listed game, which
-joins its invite, and the host's game then shows in System Link as any
-game reached through an invite. See browser.c.
+The game list (configure.py --game-browser, HALO_GAME_BROWSER): the system
+link games hosted by copies of the game anywhere, listed on
+network.browser_url (halo.milenko.org). A host's game is listed with its
+invite (p2p.c); a player picks a listed game, which joins its invite, and
+the host's game then shows in System Link as any game reached through an
+invite. See browser.c.
 */
 
 #ifndef __BROWSER_H
@@ -16,6 +16,8 @@ game reached through an invite. See browser.c.
 (p2p_internal.h's P2P_LINK_SIZE, without "halo://join/") */
 #define BROWSER_INVITE_LENGTH 64
 #define BROWSER_NAME_LENGTH 16
+/* a player's name (UTF-16, as the game's names) */
+#define BROWSER_PLAYER_NAME_LENGTH 12
 #define BROWSER_MAP_LENGTH 64
 #define BROWSER_GAMETYPE_LENGTH 32
 #define BROWSER_MAXIMUM_GAMES 64
@@ -27,8 +29,7 @@ those a listed game keeps (as many as the Online Games screen shows) */
 /* a player of a game's roster */
 struct browser_roster_player
 {
-	/* (UTF-16, as the game's names) */
-	unsigned short name[12];
+	unsigned short name[BROWSER_PLAYER_NAME_LENGTH];
 	/* its team, -1 in a game without teams */
 	short team;
 };
@@ -60,8 +61,7 @@ struct browser_game
 /* one player's line of a finished game's carnage report */
 struct browser_report_player
 {
-	/* (UTF-16, as the game's names) */
-	unsigned short name[12];
+	unsigned short name[BROWSER_PLAYER_NAME_LENGTH];
 	short team;
 	short place;
 	int score;
@@ -133,7 +133,7 @@ int browser_headless(void);
 /* the local players of a game that just ended, by name: their lines in its
 carnage report confirmed with this copy's player key (browser.c); and the
 public player ID it confirms them as */
-void browser_claim_game(const unsigned short (*names)[12], int count);
+void browser_claim_game(const unsigned short (*names)[BROWSER_PLAYER_NAME_LENGTH], int count);
 int browser_player_id(char *text, int size);
 
 /* the profile page (halo.milenko.org/profile), signed in as this copy's

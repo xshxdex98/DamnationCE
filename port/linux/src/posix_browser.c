@@ -35,6 +35,8 @@ platform.
 #include <wincrypt.h>
 #define strncasecmp _strnicmp
 #define close_socket closesocket
+#define NO_SOCKET INVALID_SOCKET
+typedef SOCKET socket_handle;
 #else
 #include <errno.h>
 #include <fcntl.h>
@@ -46,8 +48,9 @@ platform.
 #include <unistd.h>
 #include <strings.h>
 #define close_socket close
+#define NO_SOCKET (-1)
+typedef int socket_handle;
 #endif
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,76 +58,70 @@ platform.
 #define BROWSER_USER_AGENT "damnationce-browser"
 #define TIMEOUT_MILLISECONDS 10000
 
-#ifndef _WIN32
-/* where systems keep their certificate authorities */
-static const char *const certificate_bundles[] =
-{
-	"/etc/ssl/certs/ca-certificates.crt", /* Debian, Ubuntu, Arch, Gentoo */
-	"/etc/pki/tls/certs/ca-bundle.crt", /* Fedora, RHEL */
-	"/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
-	"/etc/ssl/ca-bundle.pem", /* openSUSE */
-	"/etc/ssl/cert.pem", /* Alpine, Arch, Void, macOS */
-};
-#endif
-
 static mbedtls_x509_crt certificates;
 static int certificates_loaded;
 static int crypto_ready;
 
-static void load_certificates(void)
-{
-	const char *environment = getenv("SSL_CERT_FILE");
-	size_t index;
-
-	crypto_ready = psa_crypto_init() == PSA_SUCCESS;
-	mbedtls_x509_crt_init(&certificates);
-	if (environment && *environment && mbedtls_x509_crt_parse_file(&certificates, environment) >= 0)
-	{
-		certificates_loaded = 1;
-		return;
-	}
 #ifdef _WIN32
-	/* Windows' certificate authorities: its store's (a certificate it
-	cannot read skipped) */
-	{
-		HCERTSTORE store = CertOpenSystemStoreW(0, L"ROOT");
-		PCCERT_CONTEXT certificate = NULL;
+/* Windows' certificate authorities: its store's (a certificate it cannot
+read skipped) */
+static int load_system_certificates(void)
+{
+	HCERTSTORE store = CertOpenSystemStoreW(0, L"ROOT");
+	PCCERT_CONTEXT certificate = NULL;
+	int loaded = 0;
 
-		if (store)
+	if (!store)
+		return 0;
+	while ((certificate = CertEnumCertificatesInStore(store, certificate)) != NULL)
+	{
+		if (certificate->dwCertEncodingType & X509_ASN_ENCODING &&
+			mbedtls_x509_crt_parse_der(&certificates, certificate->pbCertEncoded, certificate->cbCertEncoded) == 0)
 		{
-			while ((certificate = CertEnumCertificatesInStore(store, certificate)) != NULL)
-			{
-				if (certificate->dwCertEncodingType & X509_ASN_ENCODING &&
-					mbedtls_x509_crt_parse_der(&certificates, certificate->pbCertEncoded,
-						certificate->cbCertEncoded) == 0)
-				{
-					certificates_loaded = 1;
-				}
-			}
-			CertCloseStore(store, 0);
+			loaded = 1;
 		}
 	}
-	(void)index;
+	CertCloseStore(store, 0);
+	return loaded;
+}
 #else
+/* the system's certificate authorities, where systems keep them */
+static int load_system_certificates(void)
+{
+	static const char *const bundles[] =
+	{
+		"/etc/ssl/certs/ca-certificates.crt", /* Debian, Ubuntu, Arch, Gentoo */
+		"/etc/pki/tls/certs/ca-bundle.crt", /* Fedora, RHEL */
+		"/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+		"/etc/ssl/ca-bundle.pem", /* openSUSE */
+		"/etc/ssl/cert.pem", /* Alpine, Arch, Void, macOS */
+	};
+	size_t index;
+
 #ifdef __ANDROID__
 	/* Android's: a folder of them (the app runs the requests in its host,
 	port/android) */
 	if (mbedtls_x509_crt_parse_path(&certificates, "/system/etc/security/cacerts") >= 0)
-	{
-		certificates_loaded = 1;
-		return;
-	}
+		return 1;
 #endif
-	for (index = 0; index < sizeof(certificate_bundles) / sizeof(certificate_bundles[0]); index++)
+	for (index = 0; index < sizeof(bundles) / sizeof(bundles[0]); index++)
 	{
 		/* (a bundle with a few certificates it cannot read still counts) */
-		if (mbedtls_x509_crt_parse_file(&certificates, certificate_bundles[index]) >= 0)
-		{
-			certificates_loaded = 1;
-			return;
-		}
+		if (mbedtls_x509_crt_parse_file(&certificates, bundles[index]) >= 0)
+			return 1;
 	}
+	return 0;
+}
 #endif
+
+static void load_certificates(void)
+{
+	const char *environment = getenv("SSL_CERT_FILE");
+
+	crypto_ready = psa_crypto_init() == PSA_SUCCESS;
+	mbedtls_x509_crt_init(&certificates);
+	certificates_loaded = (environment && *environment &&
+		mbedtls_x509_crt_parse_file(&certificates, environment) >= 0) || load_system_certificates();
 }
 
 /* the certificate authorities and the crypto, set up once */
@@ -230,9 +227,7 @@ struct connection
 static void connection_free(struct connection *connection)
 {
 	if (connection->secure)
-	{
 		mbedtls_ssl_close_notify(&connection->ssl);
-	}
 	mbedtls_ssl_free(&connection->ssl);
 	mbedtls_ssl_config_free(&connection->config);
 	mbedtls_net_free(&connection->net);
@@ -243,13 +238,7 @@ address as their game's host saw it, which internet play (IPv4) has */
 static int connect_ipv4(mbedtls_net_context *net, const char *host, const char *port)
 {
 	struct addrinfo hints, *addresses, *address;
-#ifdef _WIN32
-	SOCKET descriptor = INVALID_SOCKET;
-#define NO_SOCKET INVALID_SOCKET
-#else
-	int descriptor = -1;
-#define NO_SOCKET (-1)
-#endif
+	socket_handle descriptor = NO_SOCKET;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -289,9 +278,7 @@ static int connection_open(struct connection *connection, const char *host, cons
 		return 0;
 	}
 	if (!connection->secure)
-	{
 		return 1;
-	}
 	if ((result = mbedtls_ssl_config_defaults(&connection->config, MBEDTLS_SSL_IS_CLIENT,
 		MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
 	{
@@ -374,15 +361,14 @@ int posix_browser_request(const char *url, const char *form, const char *content
 	int response_size, char *error, int error_size)
 {
 	char host[256], port[16], path[512];
-	char request[4096];
-	char *long_request = NULL;
-	char *buffer;
+	/* (the headers, and the body: a carnage report's may be long) */
+	size_t request_size = (form ? strlen(form) : 0) + 1024;
+	char *request, *buffer, *body;
 	size_t capacity = 65536, used = 0;
 	struct connection connection;
 	int secure;
 	int status = 0;
 	int length;
-	char *body;
 
 	error[0] = 0;
 	if (response_size > 0)
@@ -401,36 +387,32 @@ int posix_browser_request(const char *url, const char *form, const char *content
 			return 0;
 		}
 	}
+	request = malloc(request_size);
+	buffer = malloc(capacity + 1);
+	if (!request || !buffer)
+	{
+		set_error(error, error_size, "out of memory", 0);
+		free(request);
+		free(buffer);
+		return 0;
+	}
 	if (form)
 	{
-		/* (a long body, as a carnage report: a request of its own size) */
-		size_t size = strlen(form) + 1024;
-
-		long_request = malloc(size);
-		if (!long_request)
-		{
-			set_error(error, error_size, "out of memory", 0);
-			return 0;
-		}
-		length = snprintf(long_request, size,
+		length = snprintf(request, request_size,
 			"POST %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: " BROWSER_USER_AGENT "\r\n"
 			"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n%s",
 			path, host, content_type ? content_type : "application/x-www-form-urlencoded", strlen(form), form);
-		if (length <= 0 || (size_t)length >= size)
-		{
-			free(long_request);
-			set_error(error, error_size, "the request is too long", 0);
-			return 0;
-		}
 	}
 	else
 	{
-		length = snprintf(request, sizeof(request),
+		length = snprintf(request, request_size,
 			"GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: " BROWSER_USER_AGENT "\r\n\r\n", path, host);
 	}
-	if (!long_request && (length <= 0 || (size_t)length >= sizeof(request)))
+	if (length <= 0 || (size_t)length >= request_size)
 	{
 		set_error(error, error_size, "the request is too long", 0);
+		free(request);
+		free(buffer);
 		return 0;
 	}
 	memset(&connection, 0, sizeof(connection));
@@ -438,17 +420,9 @@ int posix_browser_request(const char *url, const char *form, const char *content
 	mbedtls_net_init(&connection.net);
 	mbedtls_ssl_init(&connection.ssl);
 	mbedtls_ssl_config_init(&connection.config);
-	buffer = malloc(capacity + 1);
-	if (!buffer)
-	{
-		set_error(error, error_size, "out of memory", 0);
-		connection_free(&connection);
-		free(long_request);
-		return 0;
-	}
 	if (connection_open(&connection, host, port, error, error_size))
 	{
-		if (!connection_write(&connection, long_request ? long_request : request, (size_t)length))
+		if (!connection_write(&connection, request, (size_t)length))
 		{
 			set_error(error, error_size, "could not send the request", 0);
 		}
@@ -474,8 +448,8 @@ int posix_browser_request(const char *url, const char *form, const char *content
 		}
 	}
 	connection_free(&connection);
+	free(request);
 	free(buffer);
-	free(long_request);
 	return status;
 }
 

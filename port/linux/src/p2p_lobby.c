@@ -251,11 +251,19 @@ static int put_text(unsigned char *bytes, const char *text, int maximum)
 	return 1 + length;
 }
 
+/* what a listing's signature covers, "hceu-lobby-1" and the signed part,
+in data; its size */
+static int signature_data(unsigned char *data, const unsigned char *signed_part, int size)
+{
+	memcpy(data, signature_label, sizeof(signature_label) - 1);
+	memcpy(data + sizeof(signature_label) - 1, signed_part, (size_t)size);
+	return (int)(sizeof(signature_label) - 1) + size;
+}
+
 /* the listing of the game hosted, signed: flags (_listing_closed for a
 tombstone) */
 static int listing_make(unsigned char *bytes, int flags)
 {
-	unsigned char *signed_part = bytes;
 	unsigned char data[sizeof(signature_label) - 1 + MAXIMUM_LISTING_SIZE];
 	int size = 0;
 
@@ -295,9 +303,7 @@ static int listing_make(unsigned char *bytes, int flags)
 	size += put_text(bytes + size, lobby.gametype, P2P_LISTING_GAMETYPE_SIZE);
 	memset(bytes + size, 0, STAMP_SIZE);
 	size += STAMP_SIZE;
-	memcpy(data, signature_label, sizeof(signature_label) - 1);
-	memcpy(data + sizeof(signature_label) - 1, signed_part, (size_t)size);
-	p2p_sign(data, (int)(sizeof(signature_label) - 1) + size, bytes + size);
+	p2p_sign(data, signature_data(data, bytes, size), bytes + size);
 	return size + P2P_SIGNATURE_SIZE;
 }
 
@@ -318,14 +324,13 @@ static int get_text(const unsigned char *bytes, int size, int *offset, char *tex
 /* reads a listing (not its signature); 0 if it is malformed */
 static int listing_read(const unsigned char *bytes, int size, struct listing *listing)
 {
-	int offset = 0;
+	int offset = 3;
 
 	if (size < MINIMUM_LISTING_SIZE || size > MAXIMUM_LISTING_SIZE || bytes[0] != 'H' || bytes[1] != 'L' ||
 		bytes[2] != LISTING_FORMAT)
 	{
 		return 0;
 	}
-	offset = 3;
 	listing->version = bytes[offset] << 8 | bytes[offset + 1];
 	offset += 2;
 	listing->flags = bytes[offset++];
@@ -369,9 +374,7 @@ static int listing_signed(const unsigned char *bytes, const struct listing *list
 {
 	unsigned char data[sizeof(signature_label) - 1 + MAXIMUM_LISTING_SIZE];
 
-	memcpy(data, signature_label, sizeof(signature_label) - 1);
-	memcpy(data + sizeof(signature_label) - 1, bytes, (size_t)listing->signed_size);
-	return p2p_ed25519_verify(listing->key, data, (int)(sizeof(signature_label) - 1) + listing->signed_size,
+	return p2p_ed25519_verify(listing->key, data, signature_data(data, bytes, listing->signed_size),
 		bytes + listing->signed_size);
 }
 
@@ -566,9 +569,7 @@ static void listing_take(const struct queued *queued, const struct listing *list
 	struct tombstone *tombstone = find_tombstone(queued->key_hash);
 	struct game *game = find_game(queued->key_hash);
 	struct p2p_listing *shown;
-	unsigned char bytes[P2P_KEY_HASH_SIZE + P2P_TOKEN_SIZE];
-	char text[2 * (P2P_KEY_HASH_SIZE + P2P_TOKEN_SIZE) + 1];
-	int index;
+	int index = 0;
 
 	if (tombstone && listing->sequence <= tombstone->sequence)
 		return;
@@ -591,8 +592,8 @@ static void listing_take(const struct queued *queued, const struct listing *list
 	if (!game)
 	{
 		/* the room of one gone longest, if there is none free */
-		for (index = 0; index < MAXIMUM_GAMES && lobby.games[index].used; index++)
-			;
+		while (index < MAXIMUM_GAMES && lobby.games[index].used)
+			index++;
 		if (index == MAXIMUM_GAMES)
 		{
 			int oldest = 0;
@@ -625,10 +626,7 @@ static void listing_take(const struct queued *queued, const struct listing *list
 	}
 	else
 	{
-		memcpy(bytes, queued->key_hash, P2P_KEY_HASH_SIZE);
-		memcpy(bytes + P2P_KEY_HASH_SIZE, listing->token, P2P_TOKEN_SIZE);
-		p2p_hex(bytes, sizeof(bytes), text);
-		snprintf(shown->invite, sizeof(shown->invite), "halo://join/%s", text);
+		p2p_format_invite(shown->invite, sizeof(shown->invite), queued->key_hash, listing->token);
 	}
 	p2p_identifier_from_hash(queued->key_hash, shown->identifier);
 	memcpy(shown->name, listing->name, sizeof(shown->name));
@@ -852,22 +850,17 @@ int p2p_lobby_games(struct p2p_listing *games, int maximum_count)
 int p2p_listing_unlock(struct p2p_listing *listing, const char *password)
 {
 	unsigned char key[P2P_PASSWORD_KEY_SIZE];
-	unsigned char bytes[P2P_KEY_HASH_SIZE + P2P_TOKEN_SIZE];
-	char text[2 * (P2P_KEY_HASH_SIZE + P2P_TOKEN_SIZE) + 1];
+	unsigned char token[P2P_TOKEN_SIZE];
 	int opened;
 
 	if (!listing->locked)
 		return 1;
 	p2p_password_key(password ? password : "", listing->signing_key, key);
-	memcpy(bytes, listing->key_hash, P2P_KEY_HASH_SIZE);
-	opened = p2p_unseal_token(key, listing->signing_key, listing->sealed_token, bytes + P2P_KEY_HASH_SIZE);
+	opened = p2p_unseal_token(key, listing->signing_key, listing->sealed_token, token);
 	if (opened)
-	{
-		p2p_hex(bytes, sizeof(bytes), text);
-		snprintf(listing->invite, sizeof(listing->invite), "halo://join/%s", text);
-	}
+		p2p_format_invite(listing->invite, sizeof(listing->invite), listing->key_hash, token);
 	memset(key, 0, sizeof(key));
-	memset(bytes, 0, sizeof(bytes));
+	memset(token, 0, sizeof(token));
 	return opened;
 }
 

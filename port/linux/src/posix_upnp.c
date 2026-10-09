@@ -11,10 +11,10 @@ The router is looked for (an SSDP search on the local network, two seconds)
 until one is found, and then kept; each forwarding asks for a lease of an
 hour, which p2p.c renews (asking for the port it had), and falls back to a
 permanent one where the router supports no other. p2p.c removes it when
-the game exits normally (not after a crash, nor if a request to the
-router is still under way three seconds after the game starts to exit); so once the router is found, the forwardings to this machine
-that an earlier copy of the game left (to a port no socket here has now)
-are removed. A router whose own internet address is a private one (behind
+the game exits normally (not after a crash, nor if a request to the router
+is still under way three seconds after the game starts to exit); so once
+the router is found, the forwardings to this machine that an earlier copy
+of the game left (to a port no socket here has now) are removed. A router whose own internet address is a private one (behind
 another NAT, such as a carrier's) cannot help, and is not asked.
 
 Built with the host's ABI, as the other posix_*.c (and, on Windows, with

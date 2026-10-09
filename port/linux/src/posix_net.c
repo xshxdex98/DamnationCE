@@ -20,23 +20,26 @@ with the host ABI.
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#ifdef __APPLE__
-#include <crt_externs.h>
-#include <stdlib.h>
-#else
-#include <sys/random.h>
-#include <sys/random.h>
-#endif
-#include <spawn.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <time.h>
 #include <sys/un.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <crt_externs.h>
+#else
+#include <sys/random.h>
+#endif
 
 #include "posix.h"
+
+/* a system without MSG_NOSIGNAL makes its sockets SO_NOSIGPIPE instead
+(socket_prepare) */
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
 
 /* Winsock error codes (winsockx.h) */
 #define WSAEINTR 10004
@@ -128,61 +131,38 @@ static int fail(void)
 }
 
 #ifdef __APPLE__
-static int to_host_address(const void *address, int address_length,
-	struct sockaddr_storage *host_address, socklen_t *host_length)
+/* Winsock's addresses (the game's) begin with a two-byte family, macOS's
+with a length byte and a one-byte family. An address as macOS takes it, in
+host_address; the address itself if it cannot be converted */
+static const void *host_address_of(const void *address, int address_length, struct sockaddr_storage *host_address)
 {
-	if (!address || address_length < 2)
-		return 0;
+	const unsigned char *bytes = address;
+	struct sockaddr *host = (struct sockaddr *)host_address;
+	unsigned short family;
 
-	if ((size_t)address_length > sizeof(struct sockaddr_storage))
-		return 0;
-
+	if (!address || address_length < 2 || (size_t)address_length > sizeof(*host_address))
+		return address;
 	memcpy(host_address, address, (size_t)address_length);
-	*host_length = (socklen_t)address_length;
-
-	const unsigned char *src = (const unsigned char *)address;
-	unsigned short family = (unsigned short)(src[0] | (src[1] << 8));
-
-	struct sockaddr *sa = (struct sockaddr *)host_address;
-	if (family == AF_INET)
+	family = (unsigned short)(bytes[0] | (bytes[1] << 8));
+	/* (one in macOS's layout already is left as it is) */
+	if (family == AF_INET || bytes[0] != sizeof(struct sockaddr_in) || bytes[1] != AF_INET)
 	{
-		sa->sa_len = (unsigned char)address_length;
-		sa->sa_family = AF_INET;
+		host->sa_len = (unsigned char)address_length;
+		host->sa_family = (sa_family_t)family;
 	}
-	else if (src[0] == sizeof(struct sockaddr_in) && src[1] == AF_INET)
-	{
-		sa->sa_len = src[0];
-		sa->sa_family = src[1];
-	}
-	else
-	{
-		sa->sa_len = (unsigned char)address_length;
-		sa->sa_family = (sa_family_t)family;
-	}
-	return 1;
+	return host_address;
 }
 
-static void from_host_address(void *address, int *address_length)
+/* an address macOS gave, put in Winsock's layout in place */
+static void from_host_address(void *address, const int *address_length)
 {
-	if (!address || !address_length || *address_length < 2)
-		return;
+	unsigned char *bytes = address;
 
-	unsigned char *dst = (unsigned char *)address;
-	unsigned char family = dst[1];
-	if (family == AF_INET)
-	{
-		dst[0] = AF_INET;
-		dst[1] = 0;
-	}
-	else if (dst[0] == AF_INET && dst[1] == 0)
-	{
-		/* Already Winsock layout */
-	}
-	else
-	{
-		dst[0] = family;
-		dst[1] = 0;
-	}
+	/* (one in Winsock's layout already is left as it is) */
+	if (!address || !address_length || *address_length < 2 || (bytes[0] == AF_INET && bytes[1] == 0))
+		return;
+	bytes[0] = bytes[1];
+	bytes[1] = 0;
 }
 #endif
 
@@ -199,24 +179,31 @@ int posix_socket_last_error(void)
 	return last_error;
 }
 
+/* a new socket (-1 passed on) closed across exec where it was not made so,
+and never raising SIGPIPE where the system has no MSG_NOSIGNAL */
+static int socket_prepare(int socket)
+{
+	if (socket < 0)
+		return socket;
+#ifndef SOCK_CLOEXEC
+	fcntl(socket, F_SETFD, FD_CLOEXEC);
+#endif
+#ifdef SO_NOSIGPIPE
+	{
+		int set = 1;
+
+		setsockopt(socket, SOL_SOCKET, SO_NOSIGPIPE, &set, sizeof(set));
+	}
+#endif
+	return socket;
+}
+
 int posix_socket(int family, int type, int protocol)
 {
 #ifdef SOCK_CLOEXEC
-	int result = socket(family, type | SOCK_CLOEXEC, protocol);
-#else
-	int result = socket(family, type, protocol);
-
-	if (result >= 0)
-		fcntl(result, F_SETFD, FD_CLOEXEC);
+	type |= SOCK_CLOEXEC;
 #endif
-#ifdef SO_NOSIGPIPE
-	if (result >= 0)
-	{
-		int set = 1;
-		setsockopt(result, SOL_SOCKET, SO_NOSIGPIPE, &set, sizeof(set));
-	}
-#endif
-	return succeed(result);
+	return succeed(socket_prepare(socket(family, type, protocol)));
 }
 
 int posix_socket_close(int socket)
@@ -227,11 +214,9 @@ int posix_socket_close(int socket)
 int posix_socket_bind(int socket, const void *address, int address_length)
 {
 #ifdef __APPLE__
-	struct sockaddr_storage host_address;
-	socklen_t host_length = 0;
+	struct sockaddr_storage host;
 
-	if (to_host_address(address, address_length, &host_address, &host_length))
-		return succeed(bind(socket, (struct sockaddr *)&host_address, host_length));
+	address = host_address_of(address, address_length, &host);
 #endif
 	return succeed(bind(socket, address, (socklen_t)address_length));
 }
@@ -240,15 +225,11 @@ int posix_socket_connect(int socket, const void *address, int address_length)
 {
 	int result;
 #ifdef __APPLE__
-	struct sockaddr_storage host_address;
-	socklen_t host_length = 0;
+	struct sockaddr_storage host;
 
-	if (to_host_address(address, address_length, &host_address, &host_length))
-		result = connect(socket, (struct sockaddr *)&host_address, host_length);
-	else
+	address = host_address_of(address, address_length, &host);
 #endif
-		result = connect(socket, address, (socklen_t)address_length);
-
+	result = connect(socket, address, (socklen_t)address_length);
 	if (result < 0 && errno == EINPROGRESS)
 	{
 		last_error = WSAEWOULDBLOCK;
@@ -266,19 +247,9 @@ int posix_socket_accept(int socket, void *address, int *address_length)
 {
 	socklen_t length = address_length ? (socklen_t)*address_length : 0;
 #ifdef SOCK_CLOEXEC
-	int result = accept4(socket, address, address_length ? &length : NULL, SOCK_CLOEXEC);
+	int result = socket_prepare(accept4(socket, address, address_length ? &length : NULL, SOCK_CLOEXEC));
 #else
-	int result = accept(socket, address, address_length ? &length : NULL);
-
-	if (result >= 0)
-		fcntl(result, F_SETFD, FD_CLOEXEC);
-#endif
-#ifdef SO_NOSIGPIPE
-	if (result >= 0)
-	{
-		int set = 1;
-		setsockopt(result, SOL_SOCKET, SO_NOSIGPIPE, &set, sizeof(set));
-	}
+	int result = socket_prepare(accept(socket, address, address_length ? &length : NULL));
 #endif
 
 	if (address_length)
@@ -300,26 +271,14 @@ int posix_socket_sendto(int socket, const void *buffer, int length, int flags,
 {
 	int result;
 #ifdef __APPLE__
-	struct sockaddr_storage host_address;
-	socklen_t host_length = 0;
+	struct sockaddr_storage host;
 
-	if (to_host_address(address, address_length, &host_address, &host_length))
-	{
-		result = (int)sendto(socket, buffer, (size_t)length, flags | MSG_NOSIGNAL,
-			(struct sockaddr *)&host_address, host_length);
-		if (result < 0 && errno == EISCONN)
-		{
-			result = (int)send(socket, buffer, (size_t)length, flags | MSG_NOSIGNAL);
-		}
-		return succeed(result);
-	}
+	address = host_address_of(address, address_length, &host);
 #endif
-	result = (int)sendto(socket, buffer, (size_t)length, flags | MSG_NOSIGNAL,
-		address, (socklen_t)address_length);
+	result = (int)sendto(socket, buffer, (size_t)length, flags | MSG_NOSIGNAL, address, (socklen_t)address_length);
+	/* (a connected datagram socket takes no destination on some systems) */
 	if (result < 0 && errno == EISCONN)
-	{
 		result = (int)send(socket, buffer, (size_t)length, flags | MSG_NOSIGNAL);
-	}
 	return succeed(result);
 }
 
@@ -711,12 +670,6 @@ posix_ulong posix_resolve_ipv4(const char *host)
 	return address;
 }
 
-/* macOS has no MSG_NOSIGNAL; its sockets are SO_NOSIGPIPE instead
-(posix_socket_create) */
-#ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL 0
-#endif
-
 /* ---------- the process and the desktop */
 
 int posix_command_line_argument(int index, char *buffer, posix_ulong size)
@@ -738,12 +691,14 @@ int posix_command_line_argument(int index, char *buffer, posix_ulong size)
 	return 0;
 #else
 	char command_line[4096];
-	ssize_t length;
-	ssize_t offset = 0;
-	int descriptor = open("/proc/self/cmdline", O_RDONLY);
+	ssize_t length, offset = 0;
+	int descriptor;
 
-	if (descriptor < 0 || !size)
-		return descriptor >= 0 ? (close(descriptor), 0) : 0;
+	if (!size)
+		return 0;
+	descriptor = open("/proc/self/cmdline", O_RDONLY);
+	if (descriptor < 0)
+		return 0;
 	length = read(descriptor, command_line, sizeof(command_line) - 1);
 	close(descriptor);
 	if (length <= 0)
@@ -944,45 +899,29 @@ int posix_discord_connect(void)
 			for (number = 0; number < 10; number++)
 			{
 				struct sockaddr_un address;
+				size_t length = strlen(directories[index]);
+				/* (the directory's separator, where its name has none) */
+				const char *separator = length && directories[index][length - 1] == '/' ? "" : "/";
 				int socket_descriptor;
-				const char *dir = directories[index];
-				const char *subdir = subdirectories[subdirectory];
-				size_t dirlen = strlen(dir);
-				int has_slash = (dirlen > 0 && dir[dirlen - 1] == '/');
 
 				memset(&address, 0, sizeof(address));
 				address.sun_family = AF_UNIX;
-				if (has_slash)
-				{
-					snprintf(address.sun_path, sizeof(address.sun_path), "%s%sdiscord-ipc-%d",
-						dir, subdir, number);
-				}
-				else
-				{
-					snprintf(address.sun_path, sizeof(address.sun_path), "%s/%sdiscord-ipc-%d",
-						dir, subdir, number);
-				}
+				snprintf(address.sun_path, sizeof(address.sun_path), "%s%s%sdiscord-ipc-%d", directories[index],
+					separator, subdirectories[subdirectory], number);
 				if (access(address.sun_path, F_OK) != 0)
 					continue;
 				/* (not blocking: a client that does not take connections is
 				passed over) */
-#ifdef __APPLE__
+#ifdef SOCK_NONBLOCK
+				socket_descriptor = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
+#else
 				socket_descriptor = socket(AF_UNIX, SOCK_STREAM, 0);
 				if (socket_descriptor >= 0)
-				{
-					int nosigpipe = 1;
-
-					setsockopt(socket_descriptor, SOL_SOCKET, SO_NOSIGPIPE, &nosigpipe, sizeof(nosigpipe));
 					fcntl(socket_descriptor, F_SETFL, fcntl(socket_descriptor, F_GETFL) | O_NONBLOCK);
-				}
-#else
-				socket_descriptor = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
 #endif
 				if (socket_descriptor < 0)
 					return -1;
-
-				fcntl(socket_descriptor, F_SETFD, FD_CLOEXEC);
-
+				socket_prepare(socket_descriptor);
 				if (connect(socket_descriptor, (struct sockaddr *)&address, sizeof(address)) == 0)
 				{
 #ifdef SO_PEERCRED
@@ -1019,12 +958,7 @@ int posix_discord_write(int handle, const void *buffer, int length)
 {
 	for (;;)
 	{
-#ifdef MSG_NOSIGNAL
 		ssize_t written = send(handle, buffer, (size_t)length, MSG_NOSIGNAL | MSG_DONTWAIT);
-#else
-		/* (SO_NOSIGPIPE on the socket) */
-		ssize_t written = send(handle, buffer, (size_t)length, MSG_DONTWAIT);
-#endif
 
 		if (written >= 0)
 			return (int)written;

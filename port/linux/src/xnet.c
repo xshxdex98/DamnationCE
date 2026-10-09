@@ -1,7 +1,7 @@
 /*
 XNET.C
 
-Xbox Winsock and XNet for the Linux build, over BSD sockets.
+Xbox Winsock and XNet for the native builds, over BSD sockets.
 
 Game code reaches these under the halo_ws_ names (see
 halo_linux_winsock_names.h), since glibc exports its own cdecl socket(),
@@ -52,11 +52,6 @@ alone peers reach.
 
 #include <stdlib.h>
 #include <string.h>
-#ifdef HALO_64BIT
-/* (snprintf: the 64-bit Windows build reads no C runtime headers ahead of
-this file, as halo_linux_prefix.h has the others do) */
-#include <stdio.h>
-#endif
 
 /* ---------- address settings */
 
@@ -194,6 +189,13 @@ static int local_address_setting(unsigned long *address)
 static unsigned long loopback_address(void)
 {
 	return halo_ws_htonl(0x7F000001);
+}
+
+/* whether an address (network byte order) is an internet play peer's, in
+100.64.0.0/10 (p2p.c) */
+static int peer_address(unsigned long address)
+{
+	return (halo_ws_ntohl(address) & 0xFFC00000) == 0x64400000;
 }
 
 /* a destination of 127.0.0.1 means the network.address address */
@@ -431,7 +433,7 @@ int WSAAPI halo_ws_connect(SOCKET socket, const struct sockaddr *address, int ad
 
 	/* an internet play peer's TCP or UDP port */
 	if (address && address->sa_family == AF_INET &&
-		(halo_ws_ntohl(((const struct sockaddr_in *)address)->sin_addr.s_addr) & 0xFFC00000) == 0x64400000)
+		peer_address(((const struct sockaddr_in *)address)->sin_addr.s_addr))
 	{
 		posix_socket_getsockopt((int)socket, SOL_SOCKET, SO_TYPE, &type, &type_length);
 	}
@@ -588,7 +590,7 @@ int WSAAPI halo_ws_sendto(SOCKET socket, const char *buffer, int length, int fla
 	port (one not bound yet goes through a stand-in, which the system's send
 	binds it for) */
 	if (address && address->sa_family == AF_INET && address_length >= (int)sizeof(struct sockaddr_in) &&
-		(halo_ws_ntohl(((const struct sockaddr_in *)address)->sin_addr.s_addr) & 0xFFC00000) == 0x64400000)
+		peer_address(((const struct sockaddr_in *)address)->sin_addr.s_addr))
 	{
 		switch (source_port ? p2p_send_datagram(source_port, ((const struct sockaddr_in *)address)->sin_addr.s_addr,
 			((const struct sockaddr_in *)address)->sin_port, buffer, length) : 0)
@@ -664,23 +666,26 @@ static struct
 /* (the game's network threads share the queue) */
 static pthread_mutex_t delayed_lock = PTHREAD_MUTEX_INITIALIZER;
 
+/* a test setting from 0 (also for one that is not a number) to maximum */
+static double test_setting(const char *name, double maximum)
+{
+	double value = config_real(name);
+
+	return !(value > 0.0) ? 0.0 : value > maximum ? maximum : value;
+}
+
 /* first from WSAStartup, before the game's network threads */
 static int delayed_enabled(void)
 {
 	if (!delayed.checked)
 	{
-		double latency = config_real("debug.network_latency");
-		double loss = config_real("debug.network_loss");
-		double corrupt = config_real("debug.network_corrupt");
-		double corrupt_stream = config_real("debug.network_corrupt_stream");
-		double corrupt_after = config_real("debug.network_corrupt_after");
+		/* up to ten seconds, shares, and up to a day */
+		double latency = test_setting("debug.network_latency", 10000.0);
+		double loss = test_setting("debug.network_loss", 100.0);
+		double corrupt = test_setting("debug.network_corrupt", 100.0);
+		double corrupt_stream = test_setting("debug.network_corrupt_stream", 100.0);
+		double corrupt_after = test_setting("debug.network_corrupt_after", 86400.0);
 
-		/* up to ten seconds, and shares */
-		latency = !(latency > 0.0) ? 0.0 : latency > 10000.0 ? 10000.0 : latency;
-		loss = !(loss > 0.0) ? 0.0 : loss > 100.0 ? 100.0 : loss;
-		corrupt = !(corrupt > 0.0) ? 0.0 : corrupt > 100.0 ? 100.0 : corrupt;
-		corrupt_stream = !(corrupt_stream > 0.0) ? 0.0 : corrupt_stream > 100.0 ? 100.0 : corrupt_stream;
-		corrupt_after = !(corrupt_after > 0.0) ? 0.0 : corrupt_after > 86400.0 ? 86400.0 : corrupt_after;
 		delayed.latency = (DWORD)latency;
 		delayed.loss_percent = (int)loss;
 		delayed.corrupt_percent = (int)corrupt;
@@ -1104,30 +1109,9 @@ u_short WSAAPI halo_ws_ntohs(u_short value)
 
 unsigned long WSAAPI halo_ws_inet_addr(const char *text)
 {
-	unsigned long parts[4];
-	int count = 0;
+	unsigned long address;
 
-	while (count < 4)
-	{
-		unsigned long value = 0;
-		int digits = 0;
-
-		while (*text >= '0' && *text <= '9')
-		{
-			value = value * 10 + (unsigned long)(*text++ - '0');
-			digits++;
-		}
-		if (!digits || value > 255)
-			return INADDR_NONE;
-		parts[count++] = value;
-		if (*text != '.')
-			break;
-		text++;
-	}
-	if (count != 4 || *text)
-		return INADDR_NONE;
-	/* network byte order on a little-endian host */
-	return parts[0] | (parts[1] << 8) | (parts[2] << 16) | (parts[3] << 24);
+	return parse_ipv4(text, text + strlen(text), &address) ? address : INADDR_NONE;
 }
 
 /* ---------- XNet */
@@ -1174,36 +1158,13 @@ INT WSAAPI XNetXnAddrToInAddr(const XNADDR *address, const XNKID *key_identifier
 	unsigned long peer;
 
 	(void)key_identifier;
-#ifdef HALO_64BIT
 	if (!address || !result)
 		return -1;
-#endif
 	/* an internet play peer's XNADDR carries its identifier */
 	if (p2p_peer_address(address->abEnet, &peer))
-#ifdef HALO_64BIT
-	{
-		char peer_id[16];
-		char peer_addr[32];
-		unsigned long val = halo_ws_ntohl(peer);
-		snprintf(peer_id, sizeof(peer_id), "%02x%02x%02x%02x%02x%02x",
-			address->abEnet[0], address->abEnet[1], address->abEnet[2],
-			address->abEnet[3], address->abEnet[4], address->abEnet[5]);
-		snprintf(peer_addr, sizeof(peer_addr), "%lu.%lu.%lu.%lu",
-			(val >> 24) & 255, (val >> 16) & 255, (val >> 8) & 255, val & 255);
-		platform_log("Internet play: resolving peer identifier %s to virtual address %s", peer_id, peer_addr);
-#endif
 		result->s_addr = peer;
-#ifdef HALO_64BIT
-	}
-#endif
 	else
-#ifdef HALO_64BIT
-	{
-#endif
 		*result = address->ina;
-#ifdef HALO_64BIT
-	}
-#endif
 	return 0;
 }
 

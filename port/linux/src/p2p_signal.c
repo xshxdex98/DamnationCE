@@ -7,6 +7,7 @@ tell each other where they can be reached, through public MQTT brokers
 a broker that refuses 5). Every broker is used at once, so any one of them
 working is enough (an answer goes back through each broker a request came
 through).
+
 They also carry the server browser's listings of public games (p2p_lobby.c):
 retained in each host's slot, published at least once (QoS 1, sent again
 until the broker acknowledges them), expiring at the broker after
@@ -40,8 +41,8 @@ Their tunnel's keys come from their X25519 shared secret and the two
 nonces, and never travel: another holder of the invite reads the messages
 but cannot work them out, and cannot answer as the host (whose key must
 have the hash in the invite: 16 bytes, not only the identifier's 6, which
-a key could be made to have). It can send a JOIN in another
-machine's name, but cannot prove it: the host answers it (to that machine)
+a key could be made to have). It can send a JOIN in another machine's name,
+but cannot prove it: the host answers it (to that machine)
 and makes no session of it. A session no one could complete would keep that
 machine out while it lived (a session with a machine is not replaced while
 it lives, p2p.c), and a JOIN every so often would keep it out for good.
@@ -195,6 +196,14 @@ enum
 	MESSAGE_VERSION = 3,
 };
 
+/* work allowed: some at once, and one more each interval */
+struct budget
+{
+	int left;
+	/* as of when */
+	unsigned long time;
+};
+
 struct broker
 {
 	char host[128];
@@ -218,8 +227,7 @@ struct broker
 	int keep_alive;
 	int receive_maximum;
 	/* the bucket its publishes spend from */
-	int publish_tokens;
-	unsigned long publish_time;
+	struct budget publishes;
 	/* the topics it has been asked for (_topic_*) */
 	char topics[NUMBER_OF_TOPICS][TOPIC_SIZE];
 	/* the listing's version it was given (signalling.lobby_version); and
@@ -270,14 +278,6 @@ struct joiner
 	signed char answered_nonce_brokers[ASKER_NONCES];
 	unsigned long answered_nonce_times[ASKER_NONCES];
 	int used;
-};
-
-/* work allowed: some at once, and one more each interval */
-struct budget
-{
-	int left;
-	/* as of when */
-	unsigned long time;
 };
 
 struct used_request
@@ -360,9 +360,9 @@ static unsigned short network_short(unsigned short value)
 	return (unsigned short)(value << 8 | value >> 8);
 }
 
-/* whether some of a budget is left now (maximum at once, one more each
-interval); spend takes one */
-static int budget_left(struct budget *budget, int maximum, int interval, int spend)
+/* whether more than reserve of a budget is left now (maximum at once, one
+more each interval); spend takes one */
+static int budget_left(struct budget *budget, int maximum, int interval, int reserve, int spend)
 {
 	unsigned long now = p2p_now();
 	unsigned long earned = (now - budget->time) / (unsigned long)interval;
@@ -377,7 +377,7 @@ static int budget_left(struct budget *budget, int maximum, int interval, int spe
 		budget->left += (int)earned;
 		budget->time += earned * (unsigned long)interval;
 	}
-	if (budget->left <= 0)
+	if (budget->left <= reserve)
 		return 0;
 	if (spend)
 		budget->left--;
@@ -529,21 +529,7 @@ static unsigned short next_packet_identifier(struct broker *broker)
 how many must be left after (UNPROVEN_RESERVE for what may wait) */
 static int broker_may_publish(struct broker *broker, int reserve)
 {
-	unsigned long now = p2p_now();
-	int gained = (int)((now - broker->publish_time) / PUBLISH_INTERVAL);
-
-	if (gained > 0)
-	{
-		broker->publish_tokens = broker->publish_tokens + gained > PUBLISH_BURST ? PUBLISH_BURST :
-			broker->publish_tokens + gained;
-		broker->publish_time += (unsigned long)gained * PUBLISH_INTERVAL;
-		if (broker->publish_tokens == PUBLISH_BURST)
-			broker->publish_time = now;
-	}
-	if (broker->publish_tokens <= reserve)
-		return 0;
-	broker->publish_tokens--;
-	return 1;
+	return budget_left(&broker->publishes, PUBLISH_BURST, PUBLISH_INTERVAL, reserve, 1);
 }
 
 static void broker_topic(struct broker *broker, const char *topic, int subscribe, int no_local)
@@ -1000,7 +986,7 @@ static int joiner_base(const unsigned char *public_key, unsigned char *base)
 		}
 	}
 	/* (none left: the request is not answered, and asked again) */
-	if (!budget_left(&signalling.key_work, MAXIMUM_KEY_WORK, KEY_WORK_INTERVAL, 1))
+	if (!budget_left(&signalling.key_work, MAXIMUM_KEY_WORK, KEY_WORK_INTERVAL, 0, 1))
 		return 0;
 	return pair_base(public_key, p2p_public_key(), public_key, base);
 }
@@ -1087,7 +1073,7 @@ static void join_received(struct broker *broker, const unsigned char *message, i
 		if (!elapsed(joiner->answered_broker_times[broker_index], ANSWER_INTERVAL) ||
 			!p2p_peer_reoffered(identifier, joiner->secret, candidates, proven ? count : 0) ||
 			(!proven && !budget_left(&signalling.unproven_answers, MAXIMUM_UNPROVEN_ANSWERS,
-			UNPROVEN_ANSWER_INTERVAL, 1)))
+			UNPROVEN_ANSWER_INTERVAL, 0, 1)))
 		{
 			return;
 		}
@@ -1131,7 +1117,7 @@ static void join_received(struct broker *broker, const unsigned char *message, i
 		/* (checked before the work of the keys, which anyone with the invite
 		can ask for as often as they like) */
 		if (p2p_peer_turned_away(identifier, 0) ||
-			!budget_left(&signalling.unproven_answers, MAXIMUM_UNPROVEN_ANSWERS, UNPROVEN_ANSWER_INTERVAL, 0))
+			!budget_left(&signalling.unproven_answers, MAXIMUM_UNPROVEN_ANSWERS, UNPROVEN_ANSWER_INTERVAL, 0, 0))
 		{
 			return;
 		}
@@ -1147,7 +1133,7 @@ static void join_received(struct broker *broker, const unsigned char *message, i
 			memcpy(asker->base, base, P2P_SHA256_SIZE);
 			asker->used = 1;
 		}
-		budget_left(&signalling.unproven_answers, MAXIMUM_UNPROVEN_ANSWERS, UNPROVEN_ANSWER_INTERVAL, 1);
+		budget_left(&signalling.unproven_answers, MAXIMUM_UNPROVEN_ANSWERS, UNPROVEN_ANSWER_INTERVAL, 0, 1);
 		memcpy(asker->nonce, nonce, NONCE_SIZE);
 		asker->answered_time = p2p_now();
 		memcpy(asker->answered_nonces[slot], nonce, NONCE_SIZE);
@@ -1370,8 +1356,8 @@ static int broker_acknowledged(struct broker *broker, const unsigned char *body,
 	}
 	broker->state = _broker_ready;
 	broker->failures = 0;
-	broker->publish_tokens = PUBLISH_BURST;
-	broker->publish_time = p2p_now();
+	broker->publishes.left = PUBLISH_BURST;
+	broker->publishes.time = p2p_now();
 	broker_sync_topics(broker);
 	/* a joiner's first request need not wait for the next repeat */
 	if (signalling.joining)
@@ -1773,6 +1759,8 @@ void p2p_signal_lobby_topics(int listed, int browsing)
 
 void p2p_signal_lobby_publish(const unsigned char *listing, int size, int closing)
 {
+	int index;
+
 	if (size > MAXIMUM_LISTING_SIZE)
 		return;
 	memcpy(signalling.lobby_listing, listing, (size_t)size);
@@ -1780,12 +1768,8 @@ void p2p_signal_lobby_publish(const unsigned char *listing, int size, int closin
 	signalling.lobby_closing = closing;
 	signalling.lobby_version++;
 	/* (at once where the bucket allows; the rest in the coming passes) */
-	{
-		int index;
-
-		for (index = 0; index < signalling.broker_count; index++)
-			broker_update_lobby(&signalling.brokers[index]);
-	}
+	for (index = 0; index < signalling.broker_count; index++)
+		broker_update_lobby(&signalling.brokers[index]);
 }
 
 void p2p_signal_lobby_query(void)

@@ -27,9 +27,7 @@ disconnected.
 #include "p2p_internal.h"
 
 #include <stdio.h>
-#ifdef HALO_64BIT
 #include <stdlib.h>
-#endif
 #include <string.h>
 
 enum
@@ -336,7 +334,6 @@ void p2p_discord_update(void)
 			snprintf(scheme, sizeof(scheme), "discord-%s", application);
 			/* (it lets go of the p2p lock while it may wait) */
 			p2p_register_url_scheme(scheme, "Halo: Combat Evolved");
-#ifdef HALO_64BIT
 #ifdef __APPLE__
 			/* Discord on macOS opens discord-<application>:// (Info.plist
 			declares it) unless a games/<application>.json names a command,
@@ -354,7 +351,6 @@ void p2p_discord_update(void)
 					remove(path);
 				}
 			}
-#endif
 #endif
 		}
 	}
