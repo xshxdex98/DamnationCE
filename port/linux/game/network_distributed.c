@@ -3014,7 +3014,7 @@ static void distributed_send_pickups(
 /* ---------- statistics */
 
 /* the bytes' checksum (FNV-1a) */
-static unsigned long distributed_checksum(
+unsigned long distributed_checksum(
 	void const *data,
 	long size)
 {
@@ -3109,6 +3109,37 @@ static void distributed_handle_structure_bsp(
 	}
 }
 
+/* a player's statistics added to the message; a full one sent to the
+machine (NONE: every client) and begun again. The entries now in it */
+static short distributed_statistics_add(
+	struct distributed_statistics_message *message,
+	short count,
+	short player_index,
+	struct player_datum const *player,
+	long machine_index)
+{
+	short limit = MIN(MAXIMUM_STATISTICS_PER_MESSAGE, RELIABLE_ENTRIES(struct distributed_player_statistics));
+
+	if (player)
+	{
+		message->players[count].player_index = player_index;
+		message->players[count].pad = 0;
+		message->players[count].statistics = player->statistics;
+		count++;
+	}
+	if (count && (count == limit || !player))
+	{
+		word size = (word)(sizeof(message->header) + count * sizeof(struct distributed_player_statistics));
+
+		if (machine_index == NONE)
+			distributed_send(message, _distributed_message_player_statistics, count, size, _distributed_to_clients);
+		else
+			distributed_send_to_machine(machine_index, message, _distributed_message_player_statistics, count, size);
+		count = 0;
+	}
+	return count;
+}
+
 /* the players' statistics that changed since they were last sent, and when
 refreshing, STATISTICS_REFRESH_PLAYERS more whatever they are, round them
 all (a client that lost a change has it again within eight seconds) */
@@ -3116,7 +3147,6 @@ static void distributed_send_statistics(
 	boolean refresh)
 {
 	struct distributed_statistics_message message;
-	short limit = MIN(MAXIMUM_STATISTICS_PER_MESSAGE, RELIABLE_ENTRIES(struct distributed_player_statistics));
 	short count = 0;
 	short refreshed = refresh ? 0 : STATISTICS_REFRESH_PLAYERS;
 	/* (where this round starts: the cursor moves past the last player it
@@ -3141,24 +3171,9 @@ static void distributed_send_statistics(
 			distributed_statistics_cursor = (short)((player_index + 1) % MAXIMUM_TRACKED_PLAYERS);
 		}
 		distributed_sent_statistics[player_index] = checksum;
-		message.players[count].player_index = player_index;
-		message.players[count].pad = 0;
-		message.players[count].statistics = player->statistics;
-		count++;
-		if (count == limit)
-		{
-			distributed_send(&message, _distributed_message_player_statistics, count,
-				(word)(sizeof(message.header) + count * sizeof(struct distributed_player_statistics)),
-				_distributed_to_clients);
-			count = 0;
-		}
+		count = distributed_statistics_add(&message, count, player_index, player, NONE);
 	}
-	if (count)
-	{
-		distributed_send(&message, _distributed_message_player_statistics, count,
-			(word)(sizeof(message.header) + count * sizeof(struct distributed_player_statistics)),
-			_distributed_to_clients);
-	}
+	distributed_statistics_add(&message, count, NONE, NULL, NONE);
 }
 
 /* every player's statistics, to a machine that has loaded (the others', and
@@ -3167,7 +3182,6 @@ static void distributed_send_all_statistics(
 	long machine_index)
 {
 	struct distributed_statistics_message message;
-	short limit = MIN(MAXIMUM_STATISTICS_PER_MESSAGE, RELIABLE_ENTRIES(struct distributed_player_statistics));
 	short count = 0;
 	short player_index;
 
@@ -3175,24 +3189,10 @@ static void distributed_send_all_statistics(
 	{
 		struct player_datum *player = distributed_player(player_index);
 
-		if (!player)
-			continue;
-		message.players[count].player_index = player_index;
-		message.players[count].pad = 0;
-		message.players[count].statistics = player->statistics;
-		count++;
-		if (count == limit)
-		{
-			distributed_send_to_machine(machine_index, &message, _distributed_message_player_statistics, count,
-				(word)(sizeof(message.header) + count * sizeof(struct distributed_player_statistics)));
-			count = 0;
-		}
+		if (player)
+			count = distributed_statistics_add(&message, count, player_index, player, machine_index);
 	}
-	if (count)
-	{
-		distributed_send_to_machine(machine_index, &message, _distributed_message_player_statistics, count,
-			(word)(sizeof(message.header) + count * sizeof(struct distributed_player_statistics)));
-	}
+	distributed_statistics_add(&message, count, NONE, NULL, machine_index);
 }
 
 /* ---------- the game type's state */
@@ -3437,26 +3437,36 @@ static boolean distributed_message_stale(
 	return FALSE;
 }
 
+/* a text for consoles (_distributed_message_notice) */
+struct distributed_notice_message
+{
+	struct distributed_message_header header;
+	char text[MAXIMUM_NOTICE_LENGTH];
+};
+
+/* a notice of the text, cut to fit; the bytes it is sent in */
+static word distributed_notice_make(
+	struct distributed_notice_message *message,
+	char const *text)
+{
+	long length = MIN(csstrlen(text), MAXIMUM_NOTICE_LENGTH - 1);
+
+	csmemset(message, 0, sizeof(*message));
+	csmemcpy(message->text, text, length);
+	return (word)(sizeof(message->header) + length + 1);
+}
+
 /* (the host) a text shown in red on every machine's console: its own, and
-every client's (_distributed_message_notice) */
+every client's */
 void distributed_send_notice(
 	char const *text)
 {
-	struct
-	{
-		struct distributed_message_header header;
-		char text[MAXIMUM_NOTICE_LENGTH];
-	} message;
-	long length = csstrlen(text);
+	struct distributed_notice_message message;
+	word size = distributed_notice_make(&message, text);
 
-	if (length > MAXIMUM_NOTICE_LENGTH - 1)
-		length = MAXIMUM_NOTICE_LENGTH - 1;
-	csmemset(&message, 0, sizeof(message));
-	csmemcpy(message.text, text, length);
 	console_warning("%s", message.text);
 	error(_error_log, "%s", message.text);
-	distributed_send(&message, _distributed_message_notice, 0, (word)(sizeof(message.header) + length + 1),
-		_distributed_to_clients_reliably);
+	distributed_send(&message, _distributed_message_notice, 0, size, _distributed_to_clients_reliably);
 }
 
 /* (the host) ... on one client's console only, or (NONE) the host's own */
@@ -3464,24 +3474,13 @@ void distributed_send_notice_to_machine(
 	long machine_index,
 	char const *text)
 {
-	struct
-	{
-		struct distributed_message_header header;
-		char text[MAXIMUM_NOTICE_LENGTH];
-	} message;
-	long length = csstrlen(text);
+	struct distributed_notice_message message;
+	word size = distributed_notice_make(&message, text);
 
-	if (length > MAXIMUM_NOTICE_LENGTH - 1)
-		length = MAXIMUM_NOTICE_LENGTH - 1;
-	csmemset(&message, 0, sizeof(message));
-	csmemcpy(message.text, text, length);
 	if (machine_index == NONE)
-	{
 		console_warning("%s", message.text);
-		return;
-	}
-	distributed_send_to_machine_reliably(machine_index, &message, _distributed_message_notice, 0,
-		(word)(sizeof(message.header) + length + 1));
+	else
+		distributed_send_to_machine_reliably(machine_index, &message, _distributed_message_notice, 0, size);
 }
 
 /* (the host) the names of a client machine's players, in ASCII, for a
@@ -4176,16 +4175,16 @@ void network_distributed_handle_message(
 		/* the host's text, in red on the console: printable, and ended */
 		char text[MAXIMUM_NOTICE_LENGTH];
 		long length = size - sizeof(header);
-		long index;
+		long character;
 
 		if (length > MAXIMUM_NOTICE_LENGTH - 1)
 			length = MAXIMUM_NOTICE_LENGTH - 1;
 		csmemcpy(text, entries, length);
 		text[length] = 0;
-		for (index = 0; index < length && text[index]; index++)
+		for (character = 0; character < length && text[character]; character++)
 		{
-			if (text[index] < 32 || text[index] > 126)
-				text[index] = '?';
+			if (text[character] < 32 || text[character] > 126)
+				text[character] = '?';
 		}
 		console_warning("%s", text);
 		error(_error_log, "the host: %s", text);

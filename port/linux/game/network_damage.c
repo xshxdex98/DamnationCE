@@ -1292,6 +1292,17 @@ static real distributed_distance_squared(
 	return dx * dx + dy * dy + dz * dz;
 }
 
+/* the history's tick that many ticks back, or NULL if it was not noted
+(too old, or before the game) */
+static struct damage_history_tick const *distributed_history_back(
+	long back)
+{
+	long time = game_time_get() - back;
+	struct damage_history_tick const *tick = &damage_history[time & (TARGET_HISTORY_TICKS - 1)];
+
+	return tick->time == time ? tick : NULL;
+}
+
 /* where each player's unit and vehicle are this tick (and whether they
 drive it), noted; and every few ticks where their unit is */
 static void distributed_note_targets(
@@ -1382,10 +1393,9 @@ static short distributed_target_seen(
 
 	for (back = 0; back <= ticks && back < TARGET_HISTORY_TICKS; back++)
 	{
-		long time = game_time_get() - back;
-		struct damage_history_tick const *tick = &damage_history[time & (TARGET_HISTORY_TICKS - 1)];
+		struct damage_history_tick const *tick = distributed_history_back(back);
 
-		if (tick->time != time)
+		if (!tick)
 			break;
 		if (column_player_index == NONE ||
 			tick->objects[column_player_index][column_slot].object_index != object_index)
@@ -1434,10 +1444,9 @@ static boolean distributed_player_was_near(
 
 	for (back = 0; back <= ticks && back < TARGET_HISTORY_TICKS; back++)
 	{
-		long time = game_time_get() - back;
-		struct damage_history_tick const *tick = &damage_history[time & (TARGET_HISTORY_TICKS - 1)];
+		struct damage_history_tick const *tick = distributed_history_back(back);
 
-		if (tick->time != time)
+		if (!tick)
 			break;
 		if (tick->objects[player_index][0].object_index != NONE &&
 			distributed_history_near(&tick->objects[player_index][0].position, tick->objects[player_index][0].speed,
@@ -1465,12 +1474,11 @@ static boolean distributed_player_drove_into(
 
 	for (back = 0; back <= ticks && back < TARGET_HISTORY_TICKS; back++)
 	{
-		long time = game_time_get() - back;
-		struct damage_history_tick const *tick = &damage_history[time & (TARGET_HISTORY_TICKS - 1)];
+		struct damage_history_tick const *tick = distributed_history_back(back);
 		struct object_datum *vehicle;
 		real reach;
 
-		if (tick->time != time)
+		if (!tick)
 			break;
 		if (tick->objects[player_index][1].object_index == NONE || !tick->objects[player_index][1].driving ||
 			!(vehicle = object_try_and_get(tick->objects[player_index][1].object_index)))
@@ -2337,6 +2345,7 @@ void network_damage_note_grenade(
 void network_damage_new_game(
 	void)
 {
+	short tick_index;
 	short player_index;
 
 	damage_event_count = 0;
@@ -2344,8 +2353,8 @@ void network_damage_new_game(
 	damage_dealing_report = FALSE;
 	damage_replaying_kill = FALSE;
 	csmemset(damage_players, 0, sizeof(damage_players));
-	for (player_index = 0; player_index < TARGET_HISTORY_TICKS; player_index++)
-		damage_history[player_index].time = NONE;
+	for (tick_index = 0; tick_index < TARGET_HISTORY_TICKS; tick_index++)
+		damage_history[tick_index].time = NONE;
 	for (player_index = 0; player_index < MAXIMUM_TRACKED_PLAYERS; player_index++)
 	{
 		short index;
