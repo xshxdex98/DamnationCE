@@ -36,34 +36,6 @@ to another value) */
 
 /* ---------- structures */
 
-struct vehicle_definition
-{
-	struct unit_definition unit;
-	unsigned long flags;
-	short vehicle_type;
-	short pad2f6;
-	struct physics_variable_speed_parameters speed;
-	real maximum_left_turn;
-	real maximum_right_turn;
-	real wheel_circumference;
-	real turn_rate;
-	real unknown318;
-	short function_modes[4];
-	byte unknown324[0xc];
-	real maximum_left_slide;
-	real maximum_right_slide;
-	byte unused338[8];
-	real unknown340;
-	real unknown344;
-	byte unused348[0x1c];
-	real unknown364;
-	byte unknown368[0x48];
-	struct tag_reference suspension_sound;
-	struct tag_reference crash_sound;
-	struct tag_reference material_effects;
-	struct tag_reference effect;
-};
-
 #include "vehicle_datum.h"
 
 struct physics_mass_point_definition
@@ -791,8 +763,8 @@ static void update_alien_fighter_physics_new(
 				desired_rotation.up = *global_forward3d;
 
 			if (!unit_driven_by_ai(vehicle_index))
-				pitch_vectors(&desired_rotation.forward, &desired_rotation.up, sine(definition->unknown364),
-					cosine(definition->unknown364));
+				pitch_vectors(&desired_rotation.forward, &desired_rotation.up, sine(definition->fixed_gun_pitch),
+					cosine(definition->fixed_gun_pitch));
 
 			yaw = cross_product2d((real_vector2d const *)&desired_rotation.forward,
 				(real_vector2d const *)&vehicle->object.translational_velocity)/

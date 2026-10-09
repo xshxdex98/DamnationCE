@@ -36,6 +36,7 @@ itmc).
 #include "units/bipeds.h"
 #include "ai/actors.h"
 #include "physics/physics_variables.h"
+#include "units/vehicle_definitions.h"
 
 /* ---------- constants */
 
@@ -110,37 +111,6 @@ typedef char verify_unit_dialogue_variant_definition_dialogue_offset[
 		offsetof(struct unit_dialogue_variant, dialogue_index) ? 1 : -1];
 
 typedef char verify_biped_contact_point_size[sizeof(struct biped_contact_point) == 0x40 ? 1 : -1];
-
-/* vehicles.c */
-struct vehicle_definition
-{
-	struct unit_definition unit;
-	unsigned long flags;
-	short vehicle_type;
-	short pad2f6;
-	struct physics_variable_speed_parameters speed;
-	real maximum_left_turn;
-	real maximum_right_turn;
-	real wheel_circumference;
-	real turn_rate;
-	real unknown318;
-	short function_modes[4];
-	byte unknown324[0xc];
-	real maximum_left_slide;
-	real maximum_right_slide;
-	byte unused338[8];
-	real unknown340;
-	real unknown344;
-	byte unused348[0x1c];
-	real unknown364;
-	byte unknown368[0x48];
-	struct tag_reference suspension_sound;
-	struct tag_reference crash_sound;
-	struct tag_reference material_effects;
-	struct tag_reference effect;
-};
-
-typedef char verify_vehicle_definition_size[sizeof(struct vehicle_definition) == 0x3F0 ? 1 : -1];
 
 typedef char verify_actor_variant_change_colors_size[sizeof(struct actor_variant_change_colors) == 0x20 ? 1 : -1];
 

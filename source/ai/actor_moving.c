@@ -65,52 +65,12 @@ enum
 
 /* ---------- structures */
 
-/* the speed and AI driving values of a vehicle definition, which
- * vehicle_definitions.h leaves opaque */
-struct vehicle_definition
-{
-	byte __unknown0[0x2F8];
-	real maximum_forward_speed;
-	real maximum_reverse_speed;
-	real speed_acceleration;
-	real speed_deceleration;
-	byte __unknown308[0x78];
-	real ai_sideslip_distance;
-	byte __unknown384[4];
-	real ai_avoidance_distance;
-	real ai_pathfinding_radius;
-	byte __unknown390[8];
-	real ai_oversteer_angle_lower_bound;
-	real ai_oversteer_angle_upper_bound;
-	real ai_steering_max_angle;
-	real ai_steering_max_throttle;
-};
-
 struct vector_avoidance_ray
 {
 	real length;
 	real_vector3d offset;
 	real_vector3d divergence;
 };
-
-typedef char actor_moving_vehicle_maximum_forward_speed_offset_assert[
-	offsetof(struct vehicle_definition, maximum_forward_speed) == 0x2F8 ? 1 : -1];
-typedef char actor_moving_vehicle_speed_acceleration_offset_assert[
-	offsetof(struct vehicle_definition, speed_acceleration) == 0x300 ? 1 : -1];
-typedef char actor_moving_vehicle_sideslip_distance_offset_assert[
-	offsetof(struct vehicle_definition, ai_sideslip_distance) == 0x380 ? 1 : -1];
-typedef char actor_moving_vehicle_avoidance_distance_offset_assert[
-	offsetof(struct vehicle_definition, ai_avoidance_distance) == 0x388 ? 1 : -1];
-typedef char actor_moving_vehicle_pathfinding_radius_offset_assert[
-	offsetof(struct vehicle_definition, ai_pathfinding_radius) == 0x38C ? 1 : -1];
-typedef char actor_moving_vehicle_oversteer_lower_bound_offset_assert[
-	offsetof(struct vehicle_definition, ai_oversteer_angle_lower_bound) == 0x398 ? 1 : -1];
-typedef char actor_moving_vehicle_oversteer_upper_bound_offset_assert[
-	offsetof(struct vehicle_definition, ai_oversteer_angle_upper_bound) == 0x39C ? 1 : -1];
-typedef char actor_moving_vehicle_steering_max_angle_offset_assert[
-	offsetof(struct vehicle_definition, ai_steering_max_angle) == 0x3A0 ? 1 : -1];
-typedef char actor_moving_vehicle_steering_max_throttle_offset_assert[
-	offsetof(struct vehicle_definition, ai_steering_max_throttle) == 0x3A4 ? 1 : -1];
 
 /* ---------- prototypes */
 
@@ -915,8 +875,8 @@ void actor_get_stopping_distances(
 			current_speed = dot_product3d(
 				&vehicle->object.translational_velocity,
 				&vehicle->object.forward);
-			reference_speed = definition->maximum_forward_speed;
-			deceleration = definition->speed_acceleration;
+			reference_speed = definition->speed.positive_scale;
+			deceleration = definition->speed.acceleration;
 			stopping_deceleration = deceleration;
 			break;
 		}

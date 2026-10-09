@@ -82,22 +82,6 @@ void render_interpolation_correct_object(long object_index, real_vector3d const 
 /* cache_files.c's */
 boolean tag_index_is_group(long tag_index, long group_tag);
 
-/* the vehicle tag's speeds (world units a tick), as actor_moving.c reads
-them: its layout is not the public header's */
-struct vehicle_definition
-{
-	byte __unknown0[0x2F4];
-	short vehicle_type;
-	short __unknown2F6;
-	real maximum_forward_speed;
-	real maximum_reverse_speed;
-};
-
-typedef char network_objects_vehicle_type_offset_assert[
-	offsetof(struct vehicle_definition, vehicle_type) == 0x2F4 ? 1 : -1];
-typedef char network_objects_vehicle_maximum_forward_speed_offset_assert[
-	offsetof(struct vehicle_definition, maximum_forward_speed) == 0x2F8 ? 1 : -1];
-
 enum
 {
 	INVENTORY_INTERVAL_TICKS = 3,
@@ -1863,7 +1847,7 @@ void network_objects_apply_vehicle_predictions(
 		/* (how fast it may go, a tick) */
 		{
 			struct vehicle_definition const *definition = vehicle_specific_definition_get(vehicle->definition_index);
-			real top_speed = 2.0f * MAX(definition->maximum_forward_speed, definition->maximum_reverse_speed);
+			real top_speed = 2.0f * MAX(definition->speed.positive_scale, definition->speed.negative_scale);
 			real_vector3d const *host_velocity = &vehicle->object.translational_velocity;
 			real host_speed = (real)sqrt(host_velocity->i * host_velocity->i + host_velocity->j * host_velocity->j +
 				host_velocity->k * host_velocity->k);

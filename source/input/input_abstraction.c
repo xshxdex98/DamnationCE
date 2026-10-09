@@ -43,17 +43,6 @@ enum
 
 /* ---------- structures */
 
-/* the start of a vehicle definition, enough for the aircraft check */
-struct vehicle_definition
-{
-	struct unit_definition unit;
-	unsigned long flags;
-	short vehicle_type;
-};
-
-typedef char verify_input_vehicle_type_offset[
-	offsetof(struct vehicle_definition, vehicle_type) == 0x2F4 ? 1 : -1];
-
 struct input_abstraction_runtime_globals
 {
 	struct game_input_preferences player_control_preferences[MAXIMUM_GAMEPADS];
