@@ -28,22 +28,6 @@ enum
 
 /* ---------- structures */
 
-struct shader_transparent_chicago_definition
-{
-	struct shader shader;
-	byte numeric_counter_limit;
-	byte flags;
-	short first_map_type;
-	short framebuffer_blend_function;
-	short framebuffer_fade_mode;
-	short framebuffer_fade_source;
-	short pad;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	struct tag_block extra_layers;
-	struct tag_block maps;
-};
-
 struct shader_transparent_chicago_combiner_table
 {
 	unsigned long rgb_inputs[2][NUMBER_OF_SHADER_FUNCTIONS];
@@ -113,8 +97,8 @@ boolean shader_transparent_chicago_create(
 	csmemset(pixel_shader, 0, sizeof(*pixel_shader));
 
 	/* port: no more maps than the texture stages hold (a map's count) */
-	map_count = (short)MIN(chicago->maps.count, MAXIMUM_SHADER_TRANSPARENT_CHICAGO_MAPS);
-	if (chicago->maps.count > map_count)
+	map_count = (short)MIN(chicago->transparent.maps.count, MAXIMUM_SHADER_TRANSPARENT_CHICAGO_MAPS);
+	if (chicago->transparent.maps.count > map_count)
 	{
 		shader_transparent_chicago_data_error();
 	}
@@ -126,12 +110,12 @@ boolean shader_transparent_chicago_create(
 		pixel_shader->texture_modes =
 			((((map_count > 3) << 5 | (map_count > 2)) << 5 |
 			(map_count > 1)) << 5) |
-			(2 * (chicago->first_map_type != 0) + 1);
+			(2 * (chicago->transparent.first_map_type != 0) + 1);
 
 		for (map_index = 0; map_index < map_count; map_index++)
 		{
 			struct shader_transparent_chicago_map *map = TAG_BLOCK_GET_ELEMENT(
-				&chicago->maps,
+				&chicago->transparent.maps,
 				map_index,
 				struct shader_transparent_chicago_map);
 

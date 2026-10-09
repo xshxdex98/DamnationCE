@@ -374,6 +374,45 @@ struct shader_model_definition
 typedef char shader_model_definition_size_assert[
 	sizeof(struct shader_model_definition) == 0x1B8 ? 1 : -1];
 
+struct shader_transparent
+{
+	byte numeric_counter_limit;
+	byte flags;
+	short first_map_type;
+	short framebuffer_blend_function;
+	short framebuffer_fade_mode;
+	short framebuffer_fade_source;
+	short pad32;
+	real lens_flare_spacing;
+	struct tag_reference lens_flare;
+	struct tag_block extra_layers;
+	struct tag_block maps;
+};
+
+typedef char shader_transparent_size_assert[
+	sizeof(struct shader_transparent) == 0x38 ? 1 : -1];
+
+struct shader_transparent_generic_definition
+{
+	struct shader shader;
+	struct shader_transparent transparent;
+	struct tag_block stages;
+};
+
+typedef char shader_transparent_generic_definition_size_assert[
+	sizeof(struct shader_transparent_generic_definition) == 0x6C ? 1 : -1];
+
+struct shader_transparent_chicago_definition
+{
+	struct shader shader;
+	struct shader_transparent transparent;
+	unsigned long extra_flags;
+	byte reserved64[8];
+};
+
+typedef char shader_transparent_chicago_definition_size_assert[
+	sizeof(struct shader_transparent_chicago_definition) == 0x6C ? 1 : -1];
+
 /* ---------- prototypes/SHADER_DEFINITIONS.C */
 
 struct shader *shader_get_and_verify_type(struct shader *shader, short shader_type);

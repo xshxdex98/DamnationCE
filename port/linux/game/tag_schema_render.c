@@ -179,37 +179,6 @@ struct shader_layer
 	struct tag_reference shader;
 };
 
-/* (the part of a generic and a chicago shader after their shader) */
-struct shader_transparent
-{
-	byte numeric_counter_limit;
-	byte flags;
-	short first_map_type;
-	short framebuffer_blend_function;
-	short framebuffer_fade_mode;
-	short framebuffer_fade_source;
-	short pad32;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	struct tag_block extra_layers;
-	struct tag_block maps;
-};
-
-struct shader_transparent_generic_definition
-{
-	struct shader shader;
-	struct shader_transparent transparent;
-	struct tag_block stages;
-};
-
-struct shader_transparent_chicago_definition
-{
-	struct shader shader;
-	struct shader_transparent transparent;
-	unsigned long extra_flags;
-	byte reserved64[8];
-};
-
 /* a chicago shader with two-stage maps (Custom Edition's scex): the game
 has no such type, and reads it as a chicago shader, whose maps are its
 four-stage maps */
@@ -223,14 +192,6 @@ struct shader_transparent_chicago_extended_definition
 };
 
 typedef char verify_shader_size[sizeof(struct shader) == 0x28 ? 1 : -1];
-typedef char verify_shader_transparent_generic_maps_offset[
-	offsetof(struct shader_transparent_generic_definition, transparent.maps) == 0x54 ? 1 : -1];
-typedef char verify_shader_transparent_generic_size[
-	sizeof(struct shader_transparent_generic_definition) == 0x6C ? 1 : -1];
-typedef char verify_shader_transparent_chicago_extra_flags_offset[
-	offsetof(struct shader_transparent_chicago_definition, extra_flags) == 0x60 ? 1 : -1];
-typedef char verify_shader_transparent_chicago_size[
-	sizeof(struct shader_transparent_chicago_definition) == 0x6C ? 1 : -1];
 typedef char verify_shader_transparent_chicago_extended_size[
 	sizeof(struct shader_transparent_chicago_extended_definition) == 0x78 ? 1 : -1];
 

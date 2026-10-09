@@ -74,25 +74,6 @@ enum
 
 #define SHADER_STAGE_REGISTER_MASK 0x0f
 
-/* ---------- structures */
-
-struct shader_transparent_generic_definition
-{
-	struct shader shader;
-	byte numeric_counter_limit;
-	byte flags;
-	short first_map_type;
-	short framebuffer_blend_function;
-	short framebuffer_fade_mode;
-	short framebuffer_fade_source;
-	short pad;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	struct tag_block extra_layers;
-	struct tag_block maps;
-	struct tag_block stages;
-};
-
 /* ---------- prototypes */
 
 static long shader_stage_color_input(
@@ -444,19 +425,19 @@ boolean shader_transparent_generic_create(
 
 	csmemset(pixel_shader, 0, sizeof(*pixel_shader));
 
-	if (generic->maps.count > 0 || generic->stages.count > 0)
+	if (generic->transparent.maps.count > 0 || generic->stages.count > 0)
 	{
 		pixel_shader->texture_modes =
-			((((generic->maps.count > 3) << 5 | (generic->maps.count > 2)) << 5 |
-			(generic->maps.count > 1)) << 5) |
-			(generic->maps.count > 0 ?
-			(generic->first_map_type != 0 ? _xbox_texture_mode_cube_map : _xbox_texture_mode_2d) :
+			((((generic->transparent.maps.count > 3) << 5 | (generic->transparent.maps.count > 2)) << 5 |
+			(generic->transparent.maps.count > 1)) << 5) |
+			(generic->transparent.maps.count > 0 ?
+			(generic->transparent.first_map_type != 0 ? _xbox_texture_mode_cube_map : _xbox_texture_mode_2d) :
 			_xbox_texture_mode_none);
 
-		for (map_index = 0; map_index < generic->maps.count; map_index++)
+		for (map_index = 0; map_index < generic->transparent.maps.count; map_index++)
 		{
 			struct shader_transparent_generic_map *map = TAG_BLOCK_GET_ELEMENT(
-				&generic->maps,
+				&generic->transparent.maps,
 				map_index,
 				struct shader_transparent_generic_map);
 

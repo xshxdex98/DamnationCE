@@ -50,22 +50,6 @@ enum
 
 /* ---------- structures */
 
-struct shader_transparent_generic_definition
-{
-	struct shader shader;
-	byte numeric_counter_limit;
-	byte flags;
-	short first_map_type;
-};
-
-struct shader_transparent_chicago_definition
-{
-	struct shader shader;
-	byte numeric_counter_limit;
-	byte flags;
-	short first_map_type;
-};
-
 struct shader_glass_definition
 {
 	struct shader shader;
@@ -121,8 +105,6 @@ struct numeric_countdown_timer_state
 	long previous_game_time;
 };
 
-typedef char shader_transparent_flags_offset[
-	offsetof(struct shader_transparent_generic_definition, flags) == 0x29 ? 1 : -1];
 typedef char shader_glass_reflection_type_offset[
 	offsetof(struct shader_glass_definition, reflection_type) == 0x8A ? 1 : -1];
 typedef char shader_effect_secondary_map_offset[
@@ -196,7 +178,7 @@ short shader_get_vertex_shader_permutation(
 		{
 			struct shader_transparent_generic_definition *generic =
 				SHADER_GET_TRANSPARENT_GENERIC(shader);
-			permutation = generic->first_map_type + 1;
+			permutation = generic->transparent.first_map_type + 1;
 			if (permutation != 1)
 			{
 				if (TEST_FLAG(shader->base.radiosity.flags, _shader_transparent_lit_bit))
@@ -207,7 +189,7 @@ short shader_get_vertex_shader_permutation(
 			}
 			generic = SHADER_GET_TRANSPARENT_GENERIC(shader);
 			if (!TEST_FLAG(
-					generic->flags,
+					generic->transparent.flags,
 					_shader_transparent_first_map_is_in_screenspace_bit))
 			{
 				permutation = 0;
@@ -219,14 +201,14 @@ short shader_get_vertex_shader_permutation(
 		{
 			struct shader_transparent_chicago_definition *chicago =
 				SHADER_GET_TRANSPARENT_CHICAGO(shader);
-			permutation = chicago->first_map_type + 1;
+			permutation = chicago->transparent.first_map_type + 1;
 			if (permutation != 1)
 			{
 				goto test_lit;
 			}
 			chicago = SHADER_GET_TRANSPARENT_CHICAGO(shader);
 			if (!TEST_FLAG(
-					chicago->flags,
+					chicago->transparent.flags,
 					_shader_transparent_first_map_is_in_screenspace_bit))
 			{
 				permutation = 0;
@@ -289,13 +271,13 @@ boolean shader_is_decal(
 		{
 		case _shader_type_transparent_generic:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_GENERIC(shader)->flags,
+				SHADER_GET_TRANSPARENT_GENERIC(shader)->transparent.flags,
 				_shader_transparent_decal_bit);
 			break;
 
 		case _shader_type_transparent_chicago:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_CHICAGO(shader)->flags,
+				SHADER_GET_TRANSPARENT_CHICAGO(shader)->transparent.flags,
 				_shader_transparent_decal_bit);
 			break;
 
@@ -327,13 +309,13 @@ boolean shader_is_water_decal(
 		{
 		case _shader_type_transparent_generic:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_GENERIC(shader)->flags,
+				SHADER_GET_TRANSPARENT_GENERIC(shader)->transparent.flags,
 				_shader_transparent_draw_before_water_bit);
 			break;
 
 		case _shader_type_transparent_chicago:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_CHICAGO(shader)->flags,
+				SHADER_GET_TRANSPARENT_CHICAGO(shader)->transparent.flags,
 				_shader_transparent_draw_before_water_bit);
 			break;
 		}
@@ -353,13 +335,13 @@ boolean shader_ignores_effect(
 		{
 		case _shader_type_transparent_generic:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_GENERIC(shader)->flags,
+				SHADER_GET_TRANSPARENT_GENERIC(shader)->transparent.flags,
 				_shader_transparent_ignore_effect_bit);
 			break;
 
 		case _shader_type_transparent_chicago:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_CHICAGO(shader)->flags,
+				SHADER_GET_TRANSPARENT_CHICAGO(shader)->transparent.flags,
 				_shader_transparent_ignore_effect_bit);
 			break;
 		}
