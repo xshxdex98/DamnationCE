@@ -50,10 +50,11 @@ static int skip_polls;
 static float pixels_per_dp(void)
 {
 	const char *density = getenv("HALO_DISPLAY_DENSITY");
+	float given = density ? (float)atof(density) : 0.0f;
 	int width = 0, height = 0;
 
-	if (density && atof(density) > 0.0)
-		return (float)atof(density);
+	if (given > 0.0f)
+		return given;
 	platform_video_drawable_size(&width, &height);
 	/* a phone held in landscape is about 360 dp high, whatever its density */
 	return height > 0 ? (float)height / 360.0f : 0.0f;
@@ -62,24 +63,24 @@ static float pixels_per_dp(void)
 /* sets up gesture sizes once they can be known; tries again until they are */
 static void menu_setup(void)
 {
-	if (!menu_ready)
-	{
-		struct touch_menu_settings settings;
-		float dp = pixels_per_dp();
-		int width = 0, height = 0;
+	struct touch_menu_settings settings;
+	float dp, scale;
+	int width = 0, height = 0;
 
-		platform_video_drawable_size(&width, &height);
-
-		settings.slop = TOUCH_TAP_SLOP_DP * (dp > 0.0f ? dp : 1.0f);
-		settings.step = TOUCH_SCROLL_STEP_DP * (dp > 0.0f ? dp : 1.0f);
-		settings.steps_per_read = TOUCH_STEPS_PER_READ;
-		/* no zones until a finger goes down: touch_input_event reads them */
-		settings.edge_left = settings.edge_top = settings.edge_right = settings.edge_bottom = 0.0f;
-		settings.width = (float)width;
-		settings.height = (float)height;
-		touch_menu_init(&menu, &settings);
-		menu_ready = dp > 0.0f && width > 0 && height > 0;
-	}
+	if (menu_ready)
+		return;
+	dp = pixels_per_dp();
+	scale = dp > 0.0f ? dp : 1.0f;
+	platform_video_drawable_size(&width, &height);
+	settings.slop = TOUCH_TAP_SLOP_DP * scale;
+	settings.step = TOUCH_SCROLL_STEP_DP * scale;
+	settings.steps_per_read = TOUCH_STEPS_PER_READ;
+	/* no zones until a finger goes down: touch_input_event reads them */
+	settings.edge_left = settings.edge_top = settings.edge_right = settings.edge_bottom = 0.0f;
+	settings.width = (float)width;
+	settings.height = (float)height;
+	touch_menu_init(&menu, &settings);
+	menu_ready = dp > 0.0f && width > 0 && height > 0;
 }
 
 /* updates gesture zones at every finger down: the phone rotates after startup
@@ -242,7 +243,7 @@ void touch_input_controls(XINPUT_GAMEPAD *pad, int menus)
 		XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y
 	};
 	static int last_scene = -1;
-	SHORT *sticks[4];
+	SHORT *sticks[4] = { &pad->sThumbLX, &pad->sThumbLY, &pad->sThumbRX, &pad->sThumbRY };
 	int state[7];
 	int scene;
 	int index;
@@ -258,10 +259,6 @@ void touch_input_controls(XINPUT_GAMEPAD *pad, int menus)
 		last_scene = scene;
 	}
 	host_touch_scene(scene);
-	sticks[0] = &pad->sThumbLX;
-	sticks[1] = &pad->sThumbLY;
-	sticks[2] = &pad->sThumbRX;
-	sticks[3] = &pad->sThumbRY;
 	host_touch_read(state);
 	for (index = 0; index < 4; index++)
 	{
