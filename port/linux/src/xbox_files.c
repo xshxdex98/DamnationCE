@@ -1,19 +1,23 @@
 /*
 XBOX_FILES.C
 
-Win32 file API for the Linux build, over POSIX descriptors.
+Win32 file API for the native builds, over POSIX descriptors.
 
-Xbox paths are translated below two roots. d:\ is the data root, the
-directory holding the game's maps/ folder: paths.data (port_config.c), else the current
-directory when it has maps/, else assets/ in the current directory or two
-levels above the executable (the repository root for build/linux/halo).
-h:\ is the Halo Custom Edition install paths.custom_edition names, if any
-(its maps folder holds the resource maps Custom Edition maps need, and more
-maps).
-Every other drive letter X:\ is the subdirectory X/ of the save root (z:\ holds the persistent cache and saves,
-u:\ user data, t:\ title data): paths.saves, else
-$XDG_DATA_HOME/halo-linux or ~/.local/share/halo-linux. Path components are
-matched case-insensitively, like the Xbox's FATX volumes.
+Xbox paths are translated below these roots, their components matched
+case-insensitively, like the Xbox's FATX volumes:
+
+- d:\ is the data root, the directory holding the game's maps/ folder:
+  paths.data (port_config.c), else the current directory when it has maps/,
+  else the executable's directory, assets/ in the current directory, the
+  assets/ folder of the repository the executable was built in, or (the
+  desktop builds) the folder the first start puts the game's data in
+  (platform_offer_game_data).
+- h:\ is the Halo Custom Edition install paths.custom_edition names, if any
+  (its maps folder holds the resource maps Custom Edition maps need, and
+  more maps).
+- Every other drive letter X:\ is the subdirectory X/ of the save root (z:\
+  holds the persistent cache and saves, u:\ user data, t:\ title data):
+  paths.saves, else $XDG_DATA_HOME/halo-linux or ~/.local/share/halo-linux.
 */
 
 #include "platform.h"
@@ -456,8 +460,8 @@ static BOOL read_at(struct platform_file *file, LPVOID buffer, DWORD count, LPDW
 	faulting. Guest memory is therefore filled through a bounce buffer: the
 	copy faults like any other write, at the moment the data really lands,
 	so a texture uploaded while the read is in flight is refreshed. */
-	BOOL bounce = platform_is_contiguous(buffer) ||
-		platform_is_contiguous((char *)buffer + (count ? count - 1 : 0));
+	BOOL bounce = count &&
+		(platform_is_contiguous(buffer) || platform_is_contiguous((char *)buffer + count - 1));
 	char *staging = bounce ? malloc(count < READ_BOUNCE_SIZE ? count : READ_BOUNCE_SIZE) : NULL;
 
 	if (bounce && !staging)

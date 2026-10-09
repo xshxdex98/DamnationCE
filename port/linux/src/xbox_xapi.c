@@ -1,17 +1,14 @@
 /*
 XBOX_XAPI.C
 
-Xbox-specific XAPI services for the Linux build: launch information,
-language, save game containers, content signatures, nicknames and the
-controller/memory unit device interfaces.
+Xbox-specific XAPI services for the native builds: launch information,
+language, save game containers, content signatures and nicknames (the
+controllers and memory units are xinput_sdl.c's).
 
 Save games follow the Xbox layout: each save is a directory
 <root>\UDATA\<id>\ whose display name is kept in SaveMeta.xbx. Content
 signatures are SHA-1 digests keyed with a fixed title key, which is what the
 game needs (a stable, content-dependent signature it can verify later).
-
-There is no controller backend yet: no gamepad or memory unit is ever
-reported as inserted, so the game runs with no input devices.
 */
 
 #include "platform.h"
@@ -75,13 +72,19 @@ static unsigned long long save_name_hash(LPCWSTR name)
 	return hash;
 }
 
+/* what goes between a root folder and a folder in it: nothing if the root
+ends in a separator */
+static const char *root_separator(LPCSTR root)
+{
+	size_t length = strlen(root);
+
+	return length && (root[length - 1] == '\\' || root[length - 1] == '/') ? "" : "\\";
+}
+
 static void save_directory_for(LPCSTR root, LPCWSTR name, char *directory, unsigned long size)
 {
-	unsigned long long hash = save_name_hash(name);
-	unsigned long length = (unsigned long)strlen(root);
-	const char *separator = (length && (root[length - 1] == '\\' || root[length - 1] == '/')) ? "" : "\\";
-
-	snprintf(directory, size, "%s%s" SAVE_DATA_DIRECTORY "\\%012llX\\", root, separator, hash & 0xffffffffffffULL);
+	snprintf(directory, size, "%s%s" SAVE_DATA_DIRECTORY "\\%012llX\\", root, root_separator(root),
+		save_name_hash(name) & 0xffffffffffffULL);
 }
 
 static BOOL save_read_name(const char *directory, WCHAR *name, unsigned long name_count)
@@ -107,7 +110,6 @@ DWORD WINAPI XCreateSaveGame(LPCSTR root_path_name, LPCWSTR save_game_name, DWOR
 	char directory[MAX_PATH];
 	char data_directory[MAX_PATH];
 	char meta_path[MAX_PATH + 32];
-	unsigned long root_length = (unsigned long)strlen(root_path_name);
 	DWORD attributes;
 	HANDLE file;
 	DWORD written;
@@ -125,7 +127,7 @@ DWORD WINAPI XCreateSaveGame(LPCSTR root_path_name, LPCWSTR save_game_name, DWOR
 		if (creation_disposition == OPEN_EXISTING)
 			return ERROR_PATH_NOT_FOUND;
 		snprintf(data_directory, sizeof(data_directory), "%s%s" SAVE_DATA_DIRECTORY, root_path_name,
-			(root_length && (root_path_name[root_length - 1] == '\\' || root_path_name[root_length - 1] == '/')) ? "" : "\\");
+			root_separator(root_path_name));
 		CreateDirectoryA(root_path_name, NULL);
 		CreateDirectoryA(data_directory, NULL);
 		if (!CreateDirectoryA(directory, NULL))
@@ -228,7 +230,6 @@ HANDLE WINAPI XFindFirstSaveGame(LPCSTR root_path_name, PXGAME_FIND_DATA find_ga
 {
 	struct save_game_find *find = calloc(1, sizeof(*find));
 	struct platform_handle *handle;
-	unsigned long root_length = (unsigned long)strlen(root_path_name);
 	char pattern[MAX_PATH + 4];
 	WIN32_FIND_DATAA entry;
 
@@ -238,7 +239,7 @@ HANDLE WINAPI XFindFirstSaveGame(LPCSTR root_path_name, PXGAME_FIND_DATA find_ga
 		return INVALID_HANDLE_VALUE;
 	}
 	snprintf(find->data_directory, sizeof(find->data_directory), "%s%s" SAVE_DATA_DIRECTORY "\\", root_path_name,
-		(root_length && (root_path_name[root_length - 1] == '\\' || root_path_name[root_length - 1] == '/')) ? "" : "\\");
+		root_separator(root_path_name));
 	snprintf(pattern, sizeof(pattern), "%s*", find->data_directory);
 	find->directory_find = FindFirstFileA(pattern, &entry);
 	if (find->directory_find == INVALID_HANDLE_VALUE || !save_game_find_fill(find, &entry, find_game_data))

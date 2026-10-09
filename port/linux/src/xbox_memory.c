@@ -1,43 +1,27 @@
 /*
 XBOX_MEMORY.C
 
-#ifdef HALO_64BIT
-The Xbox address space, Xbox contiguous memory (XPhysicalAlloc) and page
-protection for the modern 64-bit build.
-#else
-Xbox contiguous memory (XPhysicalAlloc) and page protection for the Linux
-build.
-#endif
+Xbox contiguous memory (XPhysicalAlloc) and page protection; on the 64-bit
+builds, the Xbox address space too.
 
-#ifdef HALO_64BIT
-At start-up the layer reserves 4 GB at XBOX_ADDRESS_SPACE_BASE
-(halo_xbox_address.h), so Xbox address X is host address base + X. On the
-Xbox, physical memory at address P is visible at virtual address
-0x80000000 + P; the game asks for its game state and tag cache at fixed
-#else
 On the Xbox, physical memory at address P is visible at virtual address
 0x80000000 + P. The game asks for its game state and tag cache at fixed
-#endif
 addresses that way (physical_memory_map.c), and Direct3D resources carry
-#ifdef HALO_64BIT
-physical addresses in their Data fields. That contiguous window is committed
-read-write up front and handed out in 4 KB Xbox pages: placed requests at
-exactly the address asked for, the rest top-down as the Xbox kernel does.
+physical addresses in their Data fields. The layer reserves that window at
+start-up and hands it out in 4 KB Xbox pages: placed requests at exactly the
+address asked for, the rest top-down as the Xbox kernel does.
 
-Host pages may be larger than the Xbox's (16 KB on Apple silicon), so page
-protection is applied to the host pages a range covers completely, and a
-freshly allocated block is remapped where it covers host pages completely
-and cleared where it shares them.
-#else
-physical addresses in their Data fields. A 32-bit Linux process on a 64-bit
-kernel owns the whole 4 GB address space, so the layer reserves the same
-virtual window at start-up and allocates page-granular blocks inside it:
-placed requests at exactly the address asked for, the rest top-down as the
-Xbox kernel does.
-
-Halo Custom Edition maps need the window their tag data is linked to,
-0x40440000, reserved the same way when the game.custom_edition setting is on
-(port/linux/game/custom_edition_cache.c).
+- The 32-bit builds: a 32-bit process on a 64-bit kernel owns the whole
+  4 GB address space, so the window is reserved at its own addresses, and
+  each block is mapped as it is allocated. Halo Custom Edition maps need the
+  window their tag data is linked to, 0x40440000, reserved the same way when
+  the game.custom_edition setting is on (port/linux/game/custom_edition_cache.c).
+- The 64-bit builds reserve 4 GB at XBOX_ADDRESS_SPACE_BASE
+  (halo_xbox_address.h), so Xbox address X is host address base + X, and
+  commit the window read-write up front. Host pages may be larger than the
+  Xbox's (16 KB on Apple silicon): a host page takes the protection its Xbox
+  pages share, and a new block is remapped where it covers host pages
+  completely and cleared where it shares them.
 */
 
 #include "platform.h"
@@ -45,15 +29,12 @@ Halo Custom Edition maps need the window their tag data is linked to,
 #include "../game/cache_file_formats.h"
 
 #include <errno.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
-#ifdef HALO_64BIT
 #define PAGE_SIZE_BYTES 0x1000U
-#else
-#define PAGE_SIZE_BYTES 0x1000UL
-#endif
 #define CONTIGUOUS_PAGE_COUNT (PLATFORM_CONTIGUOUS_SIZE / PAGE_SIZE_BYTES)
 
 /* per page: 0 free, otherwise the protection of the block (PAGE_*); the
@@ -62,11 +43,10 @@ static DWORD page_protection[CONTIGUOUS_PAGE_COUNT];
 static unsigned long block_page_count[CONTIGUOUS_PAGE_COUNT];
 static BOOL arena_reserved = FALSE;
 static pthread_mutex_t arena_lock = PTHREAD_MUTEX_INITIALIZER;
+static void *custom_edition_tag_cache = NULL;
 #ifdef HALO_64BIT
-
 unsigned int platform_host_page_size = PAGE_SIZE_BYTES;
 #endif
-static void *custom_edition_tag_cache = NULL;
 
 static int protection_to_host(DWORD protect)
 {
@@ -81,39 +61,22 @@ static int protection_to_host(DWORD protect)
 	}
 }
 
-/* Reserve the window before anything else can map into it. */
+/* ---------- the window, reserved before anything else can map into it */
+
+#ifdef HALO_64BIT
 __attribute__((constructor(101)))
-#ifdef HALO_64BIT
 static void xbox_address_space_reserve(void)
-#else
-static void contiguous_arena_reserve(void)
-#endif
 {
-#ifdef HALO_64BIT
 	void *wanted = (void *)XBOX_ADDRESS_SPACE_BASE;
 	void *result;
 	long host_page_size = sysconf(_SC_PAGESIZE);
-#else
-	void *wanted = (void *)PLATFORM_CONTIGUOUS_BASE;
-	void *result = mmap(wanted, PLATFORM_CONTIGUOUS_SIZE, PROT_NONE,
-		MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED_NOREPLACE, -1, 0);
-#endif
 
-#ifdef HALO_64BIT
 	if (host_page_size > 0)
 		platform_host_page_size = (unsigned int)host_page_size;
 	result = mmap(wanted, XBOX_ADDRESS_SPACE_SIZE, PROT_NONE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
 	if (result != wanted)
-#else
-	if (result == wanted)
 	{
-		arena_reserved = TRUE;
-	}
-	else
-#endif
-	{
-#ifdef HALO_64BIT
 		const char *reason = result == MAP_FAILED ? strerror(errno) :
 			"the system put it elsewhere: its address space is smaller than this build needs";
 
@@ -121,14 +84,7 @@ static void contiguous_arena_reserve(void)
 			munmap(result, XBOX_ADDRESS_SPACE_SIZE);
 		platform_log("cannot reserve the Xbox address space at %p (%s)", wanted, reason);
 		abort();
-#else
-		if (result != MAP_FAILED)
-			munmap(result, PLATFORM_CONTIGUOUS_SIZE);
-		platform_log("cannot reserve the Xbox contiguous memory window at %p (%s)",
-			wanted, strerror(errno));
-#endif
 	}
-#ifdef HALO_64BIT
 	if (mmap(xbox_pointer(PLATFORM_CONTIGUOUS_BASE), PLATFORM_CONTIGUOUS_SIZE, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0) != xbox_pointer(PLATFORM_CONTIGUOUS_BASE))
 	{
@@ -142,8 +98,28 @@ void xbox_address_out_of_range(void const *pointer)
 {
 	platform_log("pointer %p is outside the Xbox address space and cannot be stored in 32 bits", pointer);
 	abort();
-#endif
 }
+#else
+__attribute__((constructor(101)))
+static void contiguous_arena_reserve(void)
+{
+	void *wanted = (void *)PLATFORM_CONTIGUOUS_BASE;
+	void *result = mmap(wanted, PLATFORM_CONTIGUOUS_SIZE, PROT_NONE,
+		MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED_NOREPLACE, -1, 0);
+
+	if (result == wanted)
+	{
+		arena_reserved = TRUE;
+	}
+	else
+	{
+		if (result != MAP_FAILED)
+			munmap(result, PLATFORM_CONTIGUOUS_SIZE);
+		platform_log("cannot reserve the Xbox contiguous memory window at %p (%s)",
+			wanted, strerror(errno));
+	}
+}
+#endif
 
 /* The Custom Edition tag cache, reserved and committed (lazily, pages are
 backed when touched) before anything else can map into it; only when asked
@@ -184,31 +160,46 @@ void *halo_custom_edition_tag_cache(void)
 	return custom_edition_tag_cache;
 }
 
+/* ---------- pages */
+
 BOOL platform_is_contiguous(const void *address)
 {
 #ifdef HALO_64BIT
 	unsigned long long offset = (unsigned long long)(uintptr_t)address - XBOX_ADDRESS_SPACE_BASE;
-#else
-	unsigned long value = (unsigned long)address;
-#endif
 
-#ifdef HALO_64BIT
 	return offset >= PLATFORM_CONTIGUOUS_BASE && offset - PLATFORM_CONTIGUOUS_BASE < PLATFORM_CONTIGUOUS_SIZE;
 #else
+	unsigned long value = (unsigned long)address;
+
 	return value >= PLATFORM_CONTIGUOUS_BASE && value - PLATFORM_CONTIGUOUS_BASE < PLATFORM_CONTIGUOUS_SIZE;
 #endif
 }
 
-#ifdef HALO_64BIT
+/* the index of the Xbox page of a contiguous address */
 static unsigned int contiguous_page(const void *address)
-#else
-static BOOL pages_free(unsigned long first, unsigned long count)
-#endif
 {
 #ifdef HALO_64BIT
 	return (xbox_address(address) - PLATFORM_CONTIGUOUS_BASE) / PAGE_SIZE_BYTES;
+#else
+	return ((unsigned long)address - PLATFORM_CONTIGUOUS_BASE) / PAGE_SIZE_BYTES;
+#endif
 }
 
+static BOOL pages_free(unsigned int first, unsigned int count)
+{
+	unsigned int page;
+
+	if (first + count > CONTIGUOUS_PAGE_COUNT)
+		return FALSE;
+	for (page = first; page < first + count; page++)
+	{
+		if (page_protection[page])
+			return FALSE;
+	}
+	return TRUE;
+}
+
+#ifdef HALO_64BIT
 /* Change the host protection of the host pages that [address, address +
 size) covers completely; returns FALSE (with errno) on failure. */
 static BOOL protect_host_pages(void *address, size_t size, int protection)
@@ -276,23 +267,9 @@ static void clear_block(void *address, size_t size)
 	memset(address, 0, start - (uintptr_t)address);
 	memset((void *)end, 0, (uintptr_t)address + size - end);
 }
-
-static BOOL pages_free(unsigned int first, unsigned int count)
-{
-	unsigned int page;
-#else
-	unsigned long page;
 #endif
 
-	if (first + count > CONTIGUOUS_PAGE_COUNT)
-		return FALSE;
-	for (page = first; page < first + count; page++)
-	{
-		if (page_protection[page])
-			return FALSE;
-	}
-	return TRUE;
-}
+/* ---------- blocks */
 
 void *platform_contiguous_alloc(unsigned long size, unsigned long alignment,
 	unsigned long physical_address, DWORD protect)
@@ -353,16 +330,14 @@ void *platform_contiguous_alloc(unsigned long size, unsigned long alignment,
 	forgets it; else zeroing the block faults where no watch is left to
 	take the fault) */
 	memory_watch_prepare_write(address, count * PAGE_SIZE_BYTES);
-#else
-	address = (void *)(PLATFORM_CONTIGUOUS_BASE + first * PAGE_SIZE_BYTES);
-#endif
 	memory_watch_forget(address, count * PAGE_SIZE_BYTES);
-#ifdef HALO_64BIT
 	/* a block starts out zeroed (its pages still free, so read-write), then
 	takes its protection */
 	reprotect_host_pages(address, count * PAGE_SIZE_BYTES);
 	clear_block(address, count * PAGE_SIZE_BYTES);
 #else
+	address = (void *)(PLATFORM_CONTIGUOUS_BASE + first * PAGE_SIZE_BYTES);
+	memory_watch_forget(address, count * PAGE_SIZE_BYTES);
 	/* map fresh zeroed pages over the reservation */
 	if (mmap(address, count * PAGE_SIZE_BYTES, protection_to_host(protect),
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0) != address)
@@ -388,11 +363,7 @@ void platform_contiguous_free(void *address)
 
 	if (!platform_is_contiguous(address))
 		return;
-#ifdef HALO_64BIT
 	first = contiguous_page(address);
-#else
-	first = ((unsigned long)address - PLATFORM_CONTIGUOUS_BASE) / PAGE_SIZE_BYTES;
-#endif
 	pthread_mutex_lock(&arena_lock);
 	count = block_page_count[first];
 	if (count)
@@ -407,13 +378,16 @@ void platform_contiguous_free(void *address)
 		block_page_count[first] = 0;
 #ifdef HALO_64BIT
 		reprotect_host_pages(address, count * PAGE_SIZE_BYTES);
+#endif
 	}
 	pthread_mutex_unlock(&arena_lock);
 }
 
+#ifdef HALO_64BIT
 /* Write into contiguous memory the way the Xbox's DVD and hard disk do:
 by DMA, regardless of the CPU's page protection (the game guards its read
-buffers PAGE_READONLY while the drive fills them). */
+buffers PAGE_READONLY while the drive fills them). The 64-bit builds'
+(xbox_files.c's reads). */
 void platform_contiguous_write(void *destination, const void *source, size_t size)
 {
 	uintptr_t mask = platform_host_page_size - 1;
@@ -433,10 +407,10 @@ void platform_contiguous_write(void *destination, const void *source, size_t siz
 
 		if (protection != (PROT_READ | PROT_WRITE))
 			mprotect((void *)page, platform_host_page_size, protection);
-#endif
 	}
 	pthread_mutex_unlock(&arena_lock);
 }
+#endif
 
 /* ---------- XAPI */
 
@@ -525,8 +499,7 @@ BOOL WINAPI VirtualProtect(LPVOID address, SIZE_T size, DWORD new_protect, PDWOR
 	unsigned long end = ((unsigned long)address + size + PAGE_SIZE_BYTES - 1) & ~(PAGE_SIZE_BYTES - 1);
 
 	if (old_protect)
-		*old_protect = platform_is_contiguous(address) ?
-			page_protection[(start - PLATFORM_CONTIGUOUS_BASE) / PAGE_SIZE_BYTES] : PAGE_READWRITE;
+		*old_protect = platform_is_contiguous(address) ? page_protection[contiguous_page((void *)start)] : PAGE_READWRITE;
 	memory_watch_forget((void *)start, end - start);
 	if (mprotect((void *)start, end - start, protection_to_host(new_protect)) != 0)
 	{
@@ -538,7 +511,7 @@ BOOL WINAPI VirtualProtect(LPVOID address, SIZE_T size, DWORD new_protect, PDWOR
 		unsigned long page;
 
 		pthread_mutex_lock(&arena_lock);
-		for (page = (start - PLATFORM_CONTIGUOUS_BASE) / PAGE_SIZE_BYTES;
+		for (page = contiguous_page((void *)start);
 			page < (end - PLATFORM_CONTIGUOUS_BASE) / PAGE_SIZE_BYTES && page < CONTIGUOUS_PAGE_COUNT;
 			page++)
 		{
@@ -563,11 +536,7 @@ DWORD WINAPI XQueryMemoryProtect(LPVOID address)
 	if (platform_is_contiguous(address))
 	{
 		pthread_mutex_lock(&arena_lock);
-#ifdef HALO_64BIT
 		protect = page_protection[contiguous_page(address)];
-#else
-		protect = page_protection[((unsigned long)address - PLATFORM_CONTIGUOUS_BASE) / PAGE_SIZE_BYTES];
-#endif
 		pthread_mutex_unlock(&arena_lock);
 		if (!protect)
 			protect = PAGE_NOACCESS;
