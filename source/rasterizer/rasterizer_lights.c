@@ -28,6 +28,7 @@ RASTERIZER_LIGHTS.C
 #include "main/main.h"
 #include "rasterizer/rasterizer.h"
 #include "structures/structure_lens_flares.h"
+#include "structures/structure_bsp_definitions.h"
 
 enum
 {
@@ -112,103 +113,12 @@ enum
 
 /* ---------- structures */
 
-struct lens_flare_definition
-{
-	real falloff_angle;
-	real cutoff_angle;
-	real runtime_cosine_falloff_angle;
-	real runtime_cosine_cutoff_angle;
-	real occlusion_radius;
-	short occlusion_offset_direction;
-	word pad16;
-	real near_fade_distance;
-	real far_fade_distance;
-	struct tag_reference primary_map;
-	word flags;
-	word pad32;
-	byte reserved34[0x4C];
-	short corona_rotation_function;
-	word pad82;
-	real corona_rotation_function_scale;
-	byte reserved88[0x18];
-	real_vector2d corona_radius_scale;
-	byte reservedA8[0x1C];
-	struct tag_block reflections;
-	byte reservedD0[0x20];
-};
-
-struct lens_flare_reflection
-{
-	word flags;
-	short type;
-	short bitmap_index;
-	word pad06;
-	byte reserved08[0x14];
-	real offset;
-	real rotation_offset;
-	byte reserved24[0x4];
-	real radius_lower_bounds;
-	real radius_upper_bounds;
-	short radius_scale_function;
-	word pad32;
-	real brightness_lower_bounds;
-	real brightness_upper_bounds;
-	short brightness_scale_function;
-	word pad3E;
-	real_argb_color tint_color;
-	real_argb_color animation_color_lower_bound;
-	real_argb_color animation_color_upper_bound;
-	word animation_flags;
-	short animation_function;
-	real animation_period;
-	real animation_phase;
-	byte reserved7C[0x4];
-};
-
-typedef char verify_lens_flare_definition_size[
-	sizeof(struct lens_flare_definition) == 0xF0 ? 1 : -1];
-typedef char verify_lens_flare_reflection_size[
-	sizeof(struct lens_flare_reflection) == 0x80 ? 1 : -1];
-
-struct structure_bsp
-{
-	byte reserved000[0x11C];
-	struct tag_block lens_flares;
-	struct tag_block lens_flare_markers;
-	struct tag_block clusters;
-};
-
-struct structure_cluster
-{
-	byte reserved00[0x40];
-	word first_lens_flare_marker_index;
-	word lens_flare_marker_count;
-	byte reserved44[0x24];
-};
-
 struct lens_flare_occlusion_test_results
 {
 	short light_identifier;
 	byte data[MAXIMUM_LENS_FLARES_PER_LIGHT][MAXIMUM_WINDOWS];
 };
 
-struct rasterizer_lens_flare_submit_parameters
-{
-	struct lens_flare_definition *definition;
-	real_point3d position;
-	unsigned long compressed_direction;
-	unsigned long compressed_up;
-	unsigned long compressed_light_color;
-	short light_identifier;
-	short light_index;
-	short lens_flare_index;
-	byte compressed_window_index;
-	byte compressed_light_scale;
-	long internal__occlusion_pixels;
-};
-
-typedef char verify_structure_cluster_size[
-	sizeof(struct structure_cluster) == 0x68 ? 1 : -1];
 typedef char verify_structure_cluster_lens_flare_marker_count_offset[
 	offsetof(
 		struct structure_cluster,
@@ -542,10 +452,10 @@ void rasterizer_lights_begin_for_new_frame(
 			byte *occlusion_test_result= lens_flare_occlusion_test_results_get(lens_flare_parameters);
 			byte latest_visibility;
 
-			if (lens_flare_parameters->internal__occlusion_pixels>0)
+			if (lens_flare_parameters->internal_occlusion_pixels>0)
 			{
 				long visible_pixels= rasterizer_widget_get_occlusion_test_result(lens_flare_index);
-				long occlusion_pixels= lens_flare_parameters->internal__occlusion_pixels;
+				long occlusion_pixels= lens_flare_parameters->internal_occlusion_pixels;
 
 				latest_visibility= (byte)MIN(255, (255*visible_pixels + (occlusion_pixels>>1))/occlusion_pixels);
 			}
@@ -778,7 +688,7 @@ void rasterizer_lens_flares_submit_occlusion_tests(
 					break;
 				}
 
-				lens_flare_parameters->internal__occlusion_pixels =
+				lens_flare_parameters->internal_occlusion_pixels =
 					rasterizer_widget_submit_occlusion_test(
 						&occlusion_point,
 						occlusion_radius,
@@ -819,7 +729,7 @@ void rasterizer_lens_flares_draw(
 			{
 				struct lens_flare_definition *definition = lens_flare_parameters->definition;
 
-				if (lens_flare_parameters->internal__occlusion_pixels > 0 &&
+				if (lens_flare_parameters->internal_occlusion_pixels > 0 &&
 					LENS_FLARE_LIGHT_COLOR_ALPHA(lens_flare_parameters->compressed_light_color) > 0 &&
 					definition->reflections.count > 0)
 				{
@@ -902,11 +812,11 @@ void rasterizer_lens_flares_draw(
 								&definition->reflections,
 								reflection_index,
 								struct lens_flare_reflection);
-							real brightness_lower_bound = reflection->brightness_lower_bounds;
+							real brightness_lower_bound = reflection->brightness_lower_bound;
 							/* port: a scale function the table doesn't have (a map's)
 							scales it to nothing */
 							real brightness = (brightness_lower_bound+
-								(reflection->brightness_upper_bounds-brightness_lower_bound)*light_scale)*
+								(reflection->brightness_upper_bound-brightness_lower_bound)*light_scale)*
 								(VALID_INDEX(reflection->brightness_scale_function, NUMBER_OF_LENS_FLARE_REFLECTION_SCALE_FUNCTIONS) ?
 									scale_functions[reflection->brightness_scale_function] :
 									0.0f)*
@@ -919,9 +829,9 @@ void rasterizer_lens_flares_draw(
 
 							if (brightness > 0.0f)
 							{
-								real radius_lower_bound = reflection->radius_lower_bounds;
+								real radius_lower_bound = reflection->radius_lower_bound;
 								real radius = radius_lower_bound+
-									(reflection->radius_upper_bounds-radius_lower_bound)*light_scale;
+									(reflection->radius_upper_bound-radius_lower_bound)*light_scale;
 								real_argb_color color;
 								real_vector2d scale;
 								real rotation;
@@ -1072,7 +982,7 @@ void rasterizer_lens_flares_draw(
 				struct rasterizer_lens_flare_submit_parameters *lens_flare_parameters =
 					lens_flare_parameters_get(lens_flare_index);
 
-				if (lens_flare_parameters->internal__occlusion_pixels > 0 &&
+				if (lens_flare_parameters->internal_occlusion_pixels > 0 &&
 					(lens_flare_parameters->compressed_window_index & _lens_flare_window_index_mask) ==
 						global_window_parameters.window_index &&
 					(lens_flare_parameters->definition->occlusion_radius == 50.0f ||
