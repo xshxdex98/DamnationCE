@@ -462,6 +462,8 @@ static struct loose_sound *loose_sound_new(
 	long encoded_rate;
 	long channels;
 	real longest = 0.f;
+	/* a pitch range's permutations' lengths, while it is read */
+	real *lengths = NULL;
 
 	*reason = "not a sound tag file of this version";
 	if (memcmp(file + TAG_FILE_GROUP_OFFSET, "snd!", 4) ||
@@ -612,7 +614,6 @@ static struct loose_sound *loose_sound_new(
 			struct sound_permutation *permutations = sound->permutations + sound->permutation_count;
 			byte const *permutation_bytes = file + cursor;
 			unsigned long permutation_index;
-			real *lengths;
 
 			*reason = "a pitch range's permutations are not in the file";
 			if (count < 1 || count > MAXIMUM_PERMUTATIONS_PER_PITCH_RANGE ||
@@ -680,7 +681,6 @@ static struct loose_sound *loose_sound_new(
 					!in_file(cursor + samples_size, mouth_size, file_size) ||
 					!in_file(cursor + samples_size + mouth_size, subtitle_size, file_size))
 				{
-					free(lengths);
 					goto refused;
 				}
 				*reason = "a permutation's values are out of range";
@@ -694,7 +694,6 @@ static struct loose_sound *loose_sound_new(
 					(compression == SOUND_COMPRESSION_XBOX_ADPCM && samples_size % (ADPCM_BLOCK_BYTES * channels)) ||
 					(compression == SOUND_COMPRESSION_NONE && samples_size % (2 * channels)))
 				{
-					free(lengths);
 					goto refused;
 				}
 				permutation->next_permutation_index = linked ? next : NONE;
@@ -721,7 +720,6 @@ static struct loose_sound *loose_sound_new(
 					*reason = permutation->samples.address ?
 						"a permutation is longer than a sound cache block takes" :
 						"a permutation's samples cannot be decoded";
-					free(lengths);
 					goto refused;
 				}
 				permutation->samples.size = (long)encoded_bytes;
@@ -760,7 +758,6 @@ static struct loose_sound *loose_sound_new(
 					if (++steps > count)
 					{
 						*reason = "a chain of permutations never ends";
-						free(lengths);
 						goto refused;
 					}
 					permutations[link].gain = first->gain;
@@ -778,6 +775,7 @@ static struct loose_sound *loose_sound_new(
 				}
 			}
 			free(lengths);
+			lengths = NULL;
 		}
 	}
 	*reason = "the file goes on past its last permutation";
@@ -798,6 +796,9 @@ static struct loose_sound *loose_sound_new(
 	return sound;
 
 refused:
+	/* (the game's free, debug_free, does not take NULL) */
+	if (lengths)
+		free(lengths);
 	loose_sound_free(sound);
 
 	return NULL;

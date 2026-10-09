@@ -1631,68 +1631,6 @@ static boolean effect_part_check(
 	return TRUE;
 }
 
-/* the tag index of the tag of group_tag whose root is at root, from the
-tags' header (where the tags start: the region the checks may look in
-begins with it), or NONE */
-static long tag_index_get(
-	struct tag_validation *validation,
-	void const *root,
-	unsigned long group_tag)
-{
-	/* (cache_files.c's struct cache_file_tag_instance and the start of its
-	struct cache_file_tag_header, as tag_validate.c has them) */
-	struct tag_instance
-	{
-		unsigned long group_tag;
-		unsigned long parent_group_tags[2];
-		long tag_index;
-		char *name;
-		void *base_address;
-		unsigned long unused[2];
-	};
-	struct tag_header
-	{
-		struct tag_instance *instances;
-		long scenario_tag_index;
-		unsigned long checksum;
-		long tag_count;
-	};
-	unsigned long low = 0;
-	unsigned long high = (unsigned long)root;
-	struct tag_header const *header;
-	long index;
-
-	if (!tag_validate_contains(validation, root, 1))
-		return NONE;
-	/* (the region's first byte) */
-	while (low < high)
-	{
-		unsigned long middle = low + (high - low) / 2;
-
-		if (tag_validate_contains(validation, (void const *)middle, 1))
-			high = middle;
-		else
-			low = middle + 1;
-	}
-	header = (struct tag_header const *)low;
-	if (!tag_validate_contains(validation, header, sizeof(*header)) ||
-		header->tag_count <= 0 || header->tag_count > UNSIGNED_SHORT_MAX ||
-		!tag_validate_contains(validation, header->instances,
-			(unsigned long)header->tag_count * sizeof(struct tag_instance)))
-	{
-		return NONE;
-	}
-	for (index = 0; index < header->tag_count; index++)
-	{
-		struct tag_instance const *instance = &header->instances[index];
-
-		if (instance->base_address == root && instance->group_tag == group_tag)
-			return instance->tag_index;
-	}
-
-	return NONE;
-}
-
 /* a sound: its permutations' tag indices are its own (the sound cache reads
 their samples as the tag's, and names it by them); samples of less than a
 block of each channel cannot be played (the first packet would end past
@@ -1742,7 +1680,7 @@ static boolean sound_check(
 			{
 				if (!tag_index_known)
 				{
-					tag_index = tag_index_get(validation, base, SOUND_DEFINITION_TAG);
+					tag_index = tag_validate_tag_index(validation, base, SOUND_DEFINITION_TAG);
 					tag_index_known = TRUE;
 				}
 				tag_validate_correct(validation, "has permutation %ld of pitch range %ld of tag %08lx, not %08lx",

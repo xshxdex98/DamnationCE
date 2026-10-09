@@ -116,7 +116,6 @@ typedef char verify_actor_variant_change_colors_size[sizeof(struct actor_variant
 
 /* ---------- globals */
 
-static struct tag_schema_definition const predicted_resource_schema;
 
 /* ---------- checks */
 
@@ -382,7 +381,7 @@ static struct tag_schema_field const object_fields[] =
 		NUMBER_OF_OUTGOING_OBJECT_FUNCTIONS),
 	TAG_SCHEMA_BLOCK(struct _object_definition, change_colors, object_change_color_schema,
 		MAXIMUM_CHANGE_COLORS_PER_MODEL),
-	TAG_SCHEMA_BLOCK(struct _object_definition, predicted_resources, predicted_resource_schema,
+	TAG_SCHEMA_BLOCK(struct _object_definition, predicted_resources, tag_schema_predicted_resource,
 		MAXIMUM_PREDICTED_RESOURCES),
 	TAG_SCHEMA_END
 };
@@ -406,7 +405,7 @@ static struct tag_schema_field const predicted_resource_fields[] =
 	TAG_SCHEMA_END
 };
 
-static struct tag_schema_definition const predicted_resource_schema =
+struct tag_schema_definition const tag_schema_predicted_resource =
 	TAG_SCHEMA_DEFINITION(predicted_resource, struct predicted_resource, predicted_resource_fields);
 
 /* units */
@@ -692,7 +691,7 @@ static struct tag_schema_field const weapon_fields[] =
 	TAG_SCHEMA_REFERENCE(struct _weapon_definition, zoom_in_sound, TAG_SCHEMA_GROUPS('snd!')),
 	TAG_SCHEMA_REFERENCE(struct _weapon_definition, zoom_out_sound, TAG_SCHEMA_GROUPS('snd!')),
 	TAG_SCHEMA_ENUM(struct _weapon_definition, weapon_type, NUMBER_OF_WEAPON_TYPES, 0),
-	TAG_SCHEMA_BLOCK(struct _weapon_definition, predicted_resources, predicted_resource_schema,
+	TAG_SCHEMA_BLOCK(struct _weapon_definition, predicted_resources, tag_schema_predicted_resource,
 		MAXIMUM_PREDICTED_RESOURCES),
 	TAG_SCHEMA_BLOCK(struct _weapon_definition, magazines, weapon_magazine_schema,
 		MAXIMUM_NUMBER_OF_MAGAZINES_PER_WEAPON),

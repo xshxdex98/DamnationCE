@@ -147,7 +147,7 @@ static struct
 	long first_person_graphs[NUMBEROF(pal_first_person_animations)];
 	/* each local player's first-person animation and how far through its
 	next frame it is (pal_tags_first_person_advance) */
-	struct
+	struct pal_tags_advancing
 	{
 		long graph_index;
 		short animation_index;
@@ -411,29 +411,29 @@ boolean pal_tags_first_person_advance(
 	short animation_index,
 	short frame_index)
 {
+	struct pal_tags_advancing *advancing;
 	short index;
 
 	if (local_player_index < 0 || local_player_index >= MAXIMUM_LOCAL_PLAYERS)
 		return TRUE;
+	advancing = &pal_tags.advancing[local_player_index];
 	/* (another animation, or this one again from its start; not a state
 	holding its last frame, first_person_weapon_next_state) */
-	if (pal_tags.advancing[local_player_index].graph_index != graph_index ||
-		pal_tags.advancing[local_player_index].animation_index != animation_index ||
-		(frame_index == 0 && pal_tags.advancing[local_player_index].frame_index > 0))
+	if (advancing->graph_index != graph_index || advancing->animation_index != animation_index ||
+		(frame_index == 0 && advancing->frame_index > 0))
 	{
-		pal_tags.advancing[local_player_index].graph_index = graph_index;
-		pal_tags.advancing[local_player_index].animation_index = animation_index;
-		pal_tags.advancing[local_player_index].fraction = 0.0f;
+		advancing->graph_index = graph_index;
+		advancing->animation_index = animation_index;
+		advancing->fraction = 0.0f;
 	}
-	pal_tags.advancing[local_player_index].frame_index = frame_index;
+	advancing->frame_index = frame_index;
 	index = pal_tags_first_person_entry(graph_index, animation_index);
 	if (index == NONE)
 		return TRUE;
-	pal_tags.advancing[local_player_index].fraction +=
-		(real)pal_first_person_animations[index].pal_frames / pal_first_person_animations[index].ntsc_frames;
-	if (pal_tags.advancing[local_player_index].fraction < 1.0f)
+	advancing->fraction += (real)pal_first_person_animations[index].pal_frames / pal_first_person_animations[index].ntsc_frames;
+	if (advancing->fraction < 1.0f)
 		return FALSE;
-	pal_tags.advancing[local_player_index].fraction -= 1.0f;
+	advancing->fraction -= 1.0f;
 	return TRUE;
 }
 

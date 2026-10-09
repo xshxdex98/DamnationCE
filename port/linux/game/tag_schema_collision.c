@@ -545,18 +545,6 @@ static struct tag_schema_definition const structure_lens_flare_marker_schema =
 	TAG_SCHEMA_DEFINITION(structure_lens_flare_marker, struct structure_lens_flare_marker,
 		structure_lens_flare_marker_fields);
 
-/* predicted resources (predicted_resources.c) */
-
-static struct tag_schema_field const predicted_resource_fields[] =
-{
-	TAG_SCHEMA_ENUM(struct predicted_resource, type, _predicted_resource_sound + 1, 0),
-	TAG_SCHEMA_TAG_INDEX(struct predicted_resource, tag_index, TAG_SCHEMA_GROUPS('bitm', 'snd!')),
-	TAG_SCHEMA_END
-};
-
-static struct tag_schema_definition const predicted_resource_schema =
-	TAG_SCHEMA_DEFINITION(predicted_resource, struct predicted_resource, predicted_resource_fields);
-
 static struct tag_schema_field const structure_subcluster_fields[] =
 {
 	/* (a surface index past the surfaces is skipped: structure_visibility.c) */
@@ -597,7 +585,7 @@ static struct tag_schema_field const structure_cluster_fields[] =
 		offsetof(struct structure_bsp, sound_environment_palette), FLAG(_tag_schema_none_bit)),
 	TAG_SCHEMA_BLOCK_INDEX(struct structure_cluster_schema, weather_palette_index, TAG_SCHEMA_ROOT,
 		offsetof(struct structure_bsp, weather_palette), FLAG(_tag_schema_none_bit)),
-	TAG_SCHEMA_BLOCK(struct structure_cluster_schema, predicted_resources, predicted_resource_schema,
+	TAG_SCHEMA_BLOCK(struct structure_cluster_schema, predicted_resources, tag_schema_predicted_resource,
 		MAXIMUM_PREDICTED_RESOURCES_PER_CLUSTER),
 	TAG_SCHEMA_BLOCK(struct structure_cluster_schema, subclusters, structure_subcluster_schema,
 		MAXIMUM_SUBCLUSTERS_PER_CLUSTER),

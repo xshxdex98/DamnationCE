@@ -282,6 +282,10 @@ extern struct tag_schema_group const tag_schema_collision_groups[];
 extern struct tag_schema_group const tag_schema_render_groups[];
 extern struct tag_schema_group const tag_schema_effect_groups[];
 extern struct tag_schema_group const tag_schema_scenario_groups[];
+/* the predicted resources' block, which objects, weapons and bsp clusters
+have (tag_schema_objects.c) */
+extern struct tag_schema_definition const tag_schema_predicted_resource;
+
 /* the groups a Custom Edition map's tags are of where they are laid out
 otherwise than this build's, as they are checked (tag_schema_models.c:
 gbxmodels, 'mod2', which the game takes as models, 'mode') */
@@ -377,6 +381,12 @@ otherwise NULL */
 void *tag_validate_tag_get(
 	struct tag_validation *validation,
 	long tag_index,
+	unsigned long group_tag);
+/* the tag index of the tag of group_tag whose root is at root (in the region
+being checked), or NONE */
+long tag_validate_tag_index(
+	struct tag_validation *validation,
+	void const *root,
 	unsigned long group_tag);
 /* the vertex or index buffer (D3DVertexBuffer, D3DIndexBuffer) a model's or
 bsp's buffer points at, if it is one of its header's: its data's address,

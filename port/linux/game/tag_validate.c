@@ -220,35 +220,33 @@ static void validate_fields(struct tag_validation *validation, byte *base,
 
 /* ---------- private code */
 
+/* the group of group_tag in a list of groups (ending with a 0 tag), or NULL */
+static struct tag_schema_group const *group_find(
+	struct tag_schema_group const *groups,
+	unsigned long group_tag)
+{
+	for (; groups->group_tag; groups++)
+	{
+		if (groups->group_tag == group_tag)
+			return groups;
+	}
+
+	return NULL;
+}
+
 static struct tag_schema_group const *schema_group_get(
 	unsigned long group_tag)
 {
 	struct tag_schema_group const *const *list;
+	struct tag_schema_group const *group = NULL;
 
 	/* (a Custom Edition map's groups laid out otherwise come first) */
 	if (tag_validate_globals.custom_edition)
-	{
-		struct tag_schema_group const *group;
+		group = group_find(tag_schema_custom_edition_groups, group_tag);
+	for (list = tag_schema_group_lists; *list && !group; list++)
+		group = group_find(*list, group_tag);
 
-		for (group = tag_schema_custom_edition_groups; group->group_tag; group++)
-		{
-			if (group->group_tag == group_tag)
-				return group;
-		}
-	}
-
-	for (list = tag_schema_group_lists; *list; list++)
-	{
-		struct tag_schema_group const *group;
-
-		for (group = *list; group->group_tag; group++)
-		{
-			if (group->group_tag == group_tag)
-				return group;
-		}
-	}
-
-	return NULL;
+	return group;
 }
 
 static char *tag_to_text(
@@ -955,7 +953,21 @@ static boolean definition_fits(
 	return TRUE;
 }
 
-/* whether every group's schema fits (definition_fits), found once */
+/* whether the schemas of a list of groups fit (definition_fits) */
+static boolean groups_fit(
+	struct tag_schema_group const *groups)
+{
+	for (; groups->group_tag; groups++)
+	{
+		if (groups->definition && !definition_fits(groups->definition, 0))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+/* whether every group's schema fits, the Custom Edition maps' too, found
+once */
 static boolean schemas_fit(
 	void)
 {
@@ -965,17 +977,9 @@ static boolean schemas_fit(
 	{
 		struct tag_schema_group const *const *list;
 
-		fit = TRUE;
+		fit = groups_fit(tag_schema_custom_edition_groups);
 		for (list = tag_schema_group_lists; *list && fit; list++)
-		{
-			struct tag_schema_group const *group;
-
-			for (group = *list; group->group_tag && fit; group++)
-			{
-				if (group->definition && !definition_fits(group->definition, 0))
-					fit = FALSE;
-			}
-		}
+			fit = groups_fit(*list);
 	}
 
 	return (boolean)fit;
@@ -1459,6 +1463,27 @@ void *tag_validate_tag_get(
 		return NULL;
 
 	return instance->base_address;
+}
+
+long tag_validate_tag_index(
+	struct tag_validation *validation,
+	void const *root,
+	unsigned long group_tag)
+{
+	struct tag_validate_header *header = tag_validate_globals.header;
+	long index;
+
+	if (!header || !region_contains(validation, root, 1))
+		return NONE;
+	for (index = 0; index < header->tag_count; index++)
+	{
+		struct tag_validate_instance const *instance = &header->instances[index];
+
+		if (instance->base_address == root && instance->group_tag == group_tag)
+			return instance->tag_index;
+	}
+
+	return NONE;
 }
 
 static void *buffer_data(
