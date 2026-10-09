@@ -1441,9 +1441,8 @@ void hud_messaging_update(
 								}
 								else
 								{
-									/* Help text has no custom icons. Leave this one out.
-									The button icon list is the wrong list, and its index
-									is still NONE. */
+									/* port: help text has no custom icons: this one is
+									left out (icon_index is still NONE), said once */
 									static boolean help_custom_icon_reported = FALSE;
 
 									if (!help_custom_icon_reported)
