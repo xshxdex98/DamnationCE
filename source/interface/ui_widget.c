@@ -482,7 +482,7 @@ static __inline real widget_instance_get_cumulative_alpha_modifier(
 static boolean widget_instance_text_box_is_focused(
 	struct widget_instance *widget);
 static boolean string_has_icons_to_draw(
-	wchar_t *string);
+	wchar_t const *string);
 static long search_and_replace(
 	wchar_t *search,
 	wchar_t *replace,
@@ -4375,7 +4375,7 @@ static boolean widget_instance_text_box_is_focused(
 }
 
 static boolean string_has_icons_to_draw(
-	wchar_t *string)
+	wchar_t const *string)
 {
 	match_assert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget.c",
@@ -4383,7 +4383,7 @@ static boolean string_has_icons_to_draw(
 		string);
 	while (string)
 	{
-		wchar_t *icon_spec = wcschr(string, L'%');
+		wchar_t const *icon_spec = wcschr(string, L'%');
 
 		if (!icon_spec)
 			break;
