@@ -386,45 +386,42 @@ static int reclaim_art_overlap(uint64_t address, uint64_t size)
 	return reclaimed;
 }
 
-/* reclaim_art: the fixed ranges the guest was built for may take ART's
-idle large object space (reclaim_art_overlap); the pools, placed in free
-gaps, never do: a mapping in the way there is one ART just made, maybe live */
-static int reserve(uint64_t address, uint64_t size, int reclaim_art)
+/* the range reserved at its address: 0; -1 when something is in the way
+(errno); 1 when the kernel put it elsewhere (one older than 4.17 takes
+MAP_FIXED_NOREPLACE as a hint), errno EEXIST */
+static int reserve_once(uint64_t address, uint64_t size)
 {
 	void *result = mmap((void *)address, size, PROT_NONE,
 		MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED_NOREPLACE, -1, 0);
 
 	if (result == (void *)address)
 		return 0;
-	if (result != MAP_FAILED)
+	if (result == MAP_FAILED)
+		return -1;
+	munmap(result, size);
+	errno = EEXIST;
+	return 1;
+}
+
+/* reclaim_art: the fixed ranges the guest was built for may take ART's
+idle large object space (reclaim_art_overlap); the pools, placed in free
+gaps, never do: a mapping in the way there is one ART just made, maybe live */
+static int reserve(uint64_t address, uint64_t size, int reclaim_art)
+{
+	int status = reserve_once(address, size);
+	int error = errno;
+
+	if (status == 0)
+		return 0;
+	if (status > 0 || !reclaim_art || error != EEXIST)
+		return -1;
+	/* (the caller reports the first failure if nothing was reclaimed) */
+	if (!reclaim_art_overlap(address, size))
 	{
-		/* (a kernel older than 4.17 takes MAP_FIXED_NOREPLACE as a hint) */
-		munmap(result, size);
-		errno = EEXIST;
+		errno = error;
 		return -1;
 	}
-	if (reclaim_art && errno == EEXIST)
-	{
-		int error = errno;
-
-		/* (the caller reports the first failure if nothing was reclaimed) */
-		if (!reclaim_art_overlap(address, size))
-		{
-			errno = error;
-			return -1;
-		}
-		result = mmap((void *)address, size, PROT_NONE,
-			MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED_NOREPLACE,
-			-1, 0);
-		if (result == (void *)address)
-			return 0;
-		if (result != MAP_FAILED)
-		{
-			munmap(result, size);
-			errno = EEXIST;
-		}
-	}
-	return -1;
+	return reserve_once(address, size) == 0 ? 0 : -1;
 }
 
 /* the mappings below 4 GB, for a report of why the fixed ranges could not
