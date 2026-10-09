@@ -2766,11 +2766,7 @@ void _rasterizer_environment_transparent_geometry_submit(
 		group->effect.type = 0;
 		group->shader_permutation_index = shader_permutation_index;
 		group->dynamic_triangle_buffer_index = dynamic_triangle_buffer_index;
-#ifdef HALO_64BIT
 		group->triangle_buffer = NULL;
-#else
-		group->dynamic_triangle_buffer_index = 0;
-#endif
 		group->first_triangle_index = first_triangle_index;
 		group->triangle_count = triangle_count;
 		group->dynamic_vertex_buffer_index = NONE;
