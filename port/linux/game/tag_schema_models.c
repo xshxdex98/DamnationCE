@@ -555,43 +555,8 @@ static struct tag_schema_field const model_fields[] =
 
 /* Custom Edition's gbxmodels ('mod2': cache_file_formats.c), which the game
 takes as models once port/linux/game/custom_edition_geometry.c has made
-their parts this build's: a model, but for its parts. Where this build's
-part has its buffers, a gbxmodel part has where its strip and vertices are
-in the map's model data (the loader checked that they lie in it), and after
-them the model's nodes its vertices name by their place in its table, when
-the model's parts have local nodes. */
-
-struct gbxmodel_geometry_part
-{
-	unsigned long flags;
-	short shader_index;
-	char previous_part_index;
-	char next_part_index;
-	short centroid_primary_node_index;
-	short centroid_secondary_node_index;
-	real centroid_primary_node_weight;
-	real centroid_secondary_node_weight;
-	real_point3d centroid;
-	struct tag_block uncompressed_vertices;
-	struct tag_block compressed_vertices;
-	struct tag_block triangles;
-	short strip_type;
-	word pad1;
-	long strip_triangle_count;
-	unsigned long strip_offset;
-	unsigned long unused1;
-	short vertex_type;
-	word pad2;
-	long vertex_count;
-	unsigned long unused2[2];
-	unsigned long vertex_offset;
-	byte pad3[3];
-	byte local_node_count;
-	byte local_node_indices[MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART];
-	word pad4;
-};
-
-typedef char verify_gbxmodel_geometry_part_size[sizeof(struct gbxmodel_geometry_part) == 0x84 ? 1 : -1];
+their parts this build's: a model, but for its parts (tag_schema.h,
+struct gbxmodel_geometry_part). */
 
 /* its local nodes are the model's (the game's skinning names them through
 the table, custom_edition_geometry.c) */

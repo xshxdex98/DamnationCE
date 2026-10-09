@@ -174,6 +174,19 @@ static int succeed(int result)
 	return result;
 }
 
+/* as succeed, the address the call filled in handed back: its length, and
+on macOS Winsock's layout */
+static int succeed_with_address(int result, void *address, int *address_length, socklen_t length)
+{
+	if (address_length)
+		*address_length = (int)length;
+#ifdef __APPLE__
+	if (result >= 0)
+		from_host_address(address, address_length);
+#endif
+	return succeed(result);
+}
+
 int posix_socket_last_error(void)
 {
 	return last_error;
@@ -252,13 +265,7 @@ int posix_socket_accept(int socket, void *address, int *address_length)
 	int result = socket_prepare(accept(socket, address, address_length ? &length : NULL));
 #endif
 
-	if (address_length)
-		*address_length = (int)length;
-#ifdef __APPLE__
-	if (result >= 0 && address && address_length)
-		from_host_address(address, address_length);
-#endif
-	return succeed(result);
+	return succeed_with_address(result, address, address_length, length);
 }
 
 int posix_socket_send(int socket, const void *buffer, int length, int flags)
@@ -312,7 +319,7 @@ int posix_socket_recvfrom(int socket, void *buffer, int length, int flags,
 		return -1;
 	}
 #ifdef __APPLE__
-	if (result >= 0 && address && address_length)
+	if (result >= 0)
 		from_host_address(address, address_length);
 #endif
 	return succeed(result);
@@ -408,13 +415,7 @@ int posix_socket_getsockname(int socket, void *address, int *address_length)
 	socklen_t length = address_length ? (socklen_t)*address_length : 0;
 	int result = getsockname(socket, address, address_length ? &length : NULL);
 
-	if (address_length)
-		*address_length = (int)length;
-#ifdef __APPLE__
-	if (result >= 0 && address && address_length)
-		from_host_address(address, address_length);
-#endif
-	return succeed(result);
+	return succeed_with_address(result, address, address_length, length);
 }
 
 int posix_socket_getpeername(int socket, void *address, int *address_length)
@@ -422,13 +423,7 @@ int posix_socket_getpeername(int socket, void *address, int *address_length)
 	socklen_t length = address_length ? (socklen_t)*address_length : 0;
 	int result = getpeername(socket, address, address_length ? &length : NULL);
 
-	if (address_length)
-		*address_length = (int)length;
-#ifdef __APPLE__
-	if (result >= 0 && address && address_length)
-		from_host_address(address, address_length);
-#endif
-	return succeed(result);
+	return succeed_with_address(result, address, address_length, length);
 }
 
 int posix_socket_select(int *read, int *read_count, int *write, int *write_count,
