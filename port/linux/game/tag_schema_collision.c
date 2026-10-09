@@ -24,12 +24,7 @@ surfaces and detail objects.
 #include "physics/collision_bsp_definitions.h"
 #include "physics/collision_model_definitions.h"
 #include "physics/physics_definitions.h"
-/* (which names its group tag as physics_definitions.h does phys's) */
-#define POINT_PHYSICS_DEFINITION_TAG POINT_PHYSICS_POINT_DEFINITION_TAG
-#define POINT_PHYSICS_DEFINITION_VERSION POINT_PHYSICS_POINT_DEFINITION_VERSION
 #include "physics/point_physics.h"
-#undef POINT_PHYSICS_DEFINITION_TAG
-#undef POINT_PHYSICS_DEFINITION_VERSION
 #include "rasterizer/rasterizer_geometry.h"
 #include "render/render.h"
 #include "structures/leaf_map.h"

@@ -323,7 +323,7 @@ static void pal_tags_restore_warthog(
 	void)
 {
 	byte *vehicle = pal_tags_get(VEHICLE_DEFINITION_TAG, "vehicles\\warthog\\warthog");
-	struct physics_definition *physics = pal_tags_get(POINT_PHYSICS_DEFINITION_TAG, "vehicles\\warthog\\warthog");
+	struct physics_definition *physics = pal_tags_get(PHYSICS_DEFINITION_TAG, "vehicles\\warthog\\warthog");
 
 	if (vehicle)
 	{
