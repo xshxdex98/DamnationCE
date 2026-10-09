@@ -85,14 +85,12 @@ static void editor_play_reply_camera(
 static void editor_play_play(
 	void)
 {
-	real_point3d position;
 	real_euler_angles2d angles;
 
 	if (editor_play.playing)
 		return;
-	editor_play_camera(&position, &angles);
 	csmemset(&editor_play.spawn, 0, sizeof(editor_play.spawn));
-	editor_play.spawn.position = position;
+	editor_play_camera(&editor_play.spawn.position, &angles);
 	editor_play.spawn.position.z -= PLAY_EYE_HEIGHT;
 	editor_play.spawn.facing = angles.yaw;
 	editor_play.spawn_pending = TRUE;
@@ -105,16 +103,15 @@ static void editor_play_stop(
 	void)
 {
 	long player_index = local_player_get_player_index(0);
+	long unit_index = player_index != NONE ? player_get(player_index)->unit_index : NONE;
 	real_point3d position;
 	real_euler_angles2d angles;
 
 	if (!editor_play.playing)
 		return;
 	editor_play_camera(&position, &angles);
-	if (player_index != NONE && player_get(player_index)->unit_index != NONE)
+	if (unit_index != NONE)
 	{
-		long unit_index = player_get(player_index)->unit_index;
-
 		network_player_detach_unit(player_index);
 		object_delete(unit_index);
 	}
@@ -131,8 +128,6 @@ static void editor_play_reload(
 	real_point3d position;
 	real_euler_angles2d angles;
 
-	if (!map_name || !*map_name)
-		return;
 	/* (the flying camera keeps its place on the new map: editor_camera_new) */
 	editor_play_camera(&position, &angles);
 	editor_camera_set_focus(&position, &angles);

@@ -75,7 +75,7 @@ static boolean model_rigid_render_radius(
 			struct model_geometry_part const *part = TAG_BLOCK_GET_ELEMENT(&geometry->parts, part_index, struct model_geometry_part);
 			struct vertex_buffer const *buffer = &part->vertex_buffer;
 			byte *vertices = NULL;
-			boolean valid = TRUE;
+			boolean valid;
 			IDirect3DVertexBuffer8 *hardware_format;
 			long stride;
 			long vertex_index;
@@ -156,6 +156,4 @@ void powerup_render_bounds_tags_loaded(
 			equipment->object.render_bounding_radius = radius;
 		}
 	}
-
-	return;
 }

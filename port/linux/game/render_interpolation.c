@@ -168,24 +168,30 @@ static real vector_length(real_vector3d const *v)
 	return (real)sqrt(v->i * v->i + v->j * v->j + v->k * v->k);
 }
 
-static void vector_nlerp(real_vector3d const *a, real_vector3d const *b, real t, real_vector3d *result)
+/* the vector made unit length, else (too short, or not a number) the
+fallback */
+static void vector_normalize(real_vector3d *v, real_vector3d const *fallback)
 {
-	real length;
+	real length = vector_length(v);
 
-	result->i = lerp(a->i, b->i, t);
-	result->j = lerp(a->j, b->j, t);
-	result->k = lerp(a->k, b->k, t);
-	length = vector_length(result);
 	if (length > 1e-6f)
 	{
-		result->i /= length;
-		result->j /= length;
-		result->k /= length;
+		v->i /= length;
+		v->j /= length;
+		v->k /= length;
 	}
 	else
 	{
-		*result = *b;
+		*v = *fallback;
 	}
+}
+
+static void vector_nlerp(real_vector3d const *a, real_vector3d const *b, real t, real_vector3d *result)
+{
+	result->i = lerp(a->i, b->i, t);
+	result->j = lerp(a->j, b->j, t);
+	result->k = lerp(a->k, b->k, t);
+	vector_normalize(result, b);
 }
 
 /* an orthonormal right-handed basis, which a quaternion can represent */
@@ -345,14 +351,17 @@ static void correction_advance(real_vector3d *correction, real_vector3d *pending
 }
 
 /* a correction as drawn this frame: fading through the tick as it does tick
-to tick, and those since the tick whole */
-static void correction_drawn(real_vector3d const *correction, real_vector3d const *pending, real_vector3d *drawn)
+to tick, and those since the tick whole; FALSE when there is none */
+static boolean correction_drawn(real_vector3d const *correction, real_vector3d const *pending, real_vector3d *drawn)
 {
 	real fade = lerp(1.0f, CORRECTION_DECAY, interpolation_fraction);
 
+	if (!correction_significant(correction) && !correction_significant(pending))
+		return FALSE;
 	drawn->i = correction->i * fade + pending->i;
 	drawn->j = correction->j * fade + pending->j;
 	drawn->k = correction->k * fade + pending->k;
+	return TRUE;
 }
 
 /* a correction added (offset): all of it dropped when the sum is too large
@@ -374,14 +383,15 @@ static void correction_add(real_vector3d *correction, real_vector3d *pending, re
 	}
 }
 
-static real distance_squared(real_point3d const *a, real_point3d const *b)
-{
-	real x = a->x - b->x, y = a->y - b->y, z = a->z - b->z;
-
-	return x * x + y * y + z * z;
-}
-
 /* ---------- ticks */
+
+static void interpolated_objects_clear(void)
+{
+	long index;
+
+	for (index = 0; index < MAXIMUM_INTERPOLATED_OBJECTS; index++)
+		interpolated_objects[index].object_index = NONE;
+}
 
 void render_interpolation_tick(void)
 {
@@ -405,13 +415,10 @@ void render_interpolation_tick(void)
 	}
 	if (!interpolated_objects)
 	{
-		long index;
-
 		interpolated_objects = calloc(MAXIMUM_INTERPOLATED_OBJECTS, sizeof(*interpolated_objects));
 		if (!interpolated_objects)
 			return;
-		for (index = 0; index < MAXIMUM_INTERPOLATED_OBJECTS; index++)
-			interpolated_objects[index].object_index = NONE;
+		interpolated_objects_clear();
 	}
 
 	object_iterator_new(&iterator, _object_mask_all, 0);
@@ -481,13 +488,10 @@ void render_interpolation_tick(void)
 nothing of theirs is drawn from */
 void render_interpolation_reset(void)
 {
-	long index;
+	short index;
 
 	if (interpolated_objects)
-	{
-		for (index = 0; index < MAXIMUM_INTERPOLATED_OBJECTS; index++)
-			interpolated_objects[index].object_index = NONE;
-	}
+		interpolated_objects_clear();
 	memset(interpolated_cameras, 0, sizeof(interpolated_cameras));
 	for (index = 0; index < MAXIMUM_LOCAL_PLAYERS; index++)
 	{
@@ -533,9 +537,10 @@ real_matrix4x3 *render_interpolation_object_node_matrices(long object_index)
 		real_matrix4x3 const *previous = record->nodes + (record->latest ^ 1) * record->node_capacity;
 		real_matrix4x3 const *latest = record->nodes + record->latest * record->node_capacity;
 		real_matrix4x3 *blended = record->nodes + 2 * record->node_capacity;
+		real_vector3d drawn;
 		short node_index;
 		/* (so written that a position not a number snaps) */
-		boolean snap = !(distance_squared(&previous[0].position, &latest[0].position) <=
+		boolean snap = !(distance_squared3d(&previous[0].position, &latest[0].position) <=
 			OBJECT_SNAP_DISTANCE * OBJECT_SNAP_DISTANCE);
 
 		/* a node moved further in the root's frame than a tick allows: the
@@ -547,7 +552,7 @@ real_matrix4x3 *render_interpolation_object_node_matrices(long object_index)
 
 			matrix4x3_inverse_transform_point(&previous[0], &previous[node_index].position, &previous_local);
 			matrix4x3_inverse_transform_point(&latest[0], &latest[node_index].position, &latest_local);
-			snap = !(distance_squared(&previous_local, &latest_local) <= NODE_SNAP_DISTANCE * NODE_SNAP_DISTANCE);
+			snap = !(distance_squared3d(&previous_local, &latest_local) <= NODE_SNAP_DISTANCE * NODE_SNAP_DISTANCE);
 		}
 		if (!snap)
 		{
@@ -580,17 +585,10 @@ real_matrix4x3 *render_interpolation_object_node_matrices(long object_index)
 		}
 		if (snap)
 			memcpy(blended, latest, record->node_count * sizeof(real_matrix4x3));
-		if (correction_significant(&record->correction) || correction_significant(&record->correction_pending))
+		if (correction_drawn(&record->correction, &record->correction_pending, &drawn))
 		{
-			real_vector3d drawn;
-
-			correction_drawn(&record->correction, &record->correction_pending, &drawn);
 			for (node_index = 0; node_index < record->node_count; node_index++)
-			{
-				blended[node_index].position.x += drawn.i;
-				blended[node_index].position.y += drawn.j;
-				blended[node_index].position.z += drawn.k;
-			}
+				point_from_line3d(&blended[node_index].position, &drawn, 1.0f, &blended[node_index].position);
 		}
 		record->blended_frame = interpolation_frame;
 	}
@@ -609,7 +607,7 @@ void render_interpolation_correct_object(long object_index, real_vector3d const 
 
 	/* (so written that an offset not a number is none) */
 	if (!interpolated_objects || object_index == NONE ||
-		!(offset->i * offset->i + offset->j * offset->j + offset->k * offset->k <= OBJECT_SNAP_DISTANCE * OBJECT_SNAP_DISTANCE))
+		!(dot_product3d(offset, offset) <= OBJECT_SNAP_DISTANCE * OBJECT_SNAP_DISTANCE))
 	{
 		return;
 	}
@@ -627,11 +625,7 @@ void render_interpolation_correct_object(long object_index, real_vector3d const 
 			real_matrix4x3 *nodes = record->nodes + snapshot * record->node_capacity;
 
 			for (node_index = 0; node_index < record->node_count; node_index++)
-			{
-				nodes[node_index].position.x -= offset->i;
-				nodes[node_index].position.y -= offset->j;
-				nodes[node_index].position.z -= offset->k;
-			}
+				point_from_line3d(&nodes[node_index].position, offset, -1.0f, &nodes[node_index].position);
 		}
 		correction_add(&record->correction, &record->correction_pending, offset);
 		record->blended_frame = NONE;
@@ -647,12 +641,8 @@ void render_interpolation_correct_object(long object_index, real_vector3d const 
 
 			if (!camera->valid || player_control_get_unit_index(local_player_index) != object_index)
 				continue;
-			camera->previous.position.x -= offset->i;
-			camera->previous.position.y -= offset->j;
-			camera->previous.position.z -= offset->k;
-			camera->latest.position.x -= offset->i;
-			camera->latest.position.y -= offset->j;
-			camera->latest.position.z -= offset->k;
+			point_from_line3d(&camera->previous.position, offset, -1.0f, &camera->previous.position);
+			point_from_line3d(&camera->latest.position, offset, -1.0f, &camera->latest.position);
 			correction_add(&camera->correction, &camera->correction_pending, offset);
 		}
 	}
@@ -667,10 +657,6 @@ void render_interpolation_correct_object(long object_index, real_vector3d const 
 /* ---------- camera */
 
 static struct observer_result direct_cameras[MAXIMUM_LOCAL_PLAYERS];
-
-static struct observer_result const *render_interpolation_blended_camera(
-	short local_player_index,
-	struct observer_result const *observer);
 
 /* A first-person view is posed from the player's facing, which the input
 turns every frame (player_control.c), but the observer keeps it as of the
@@ -716,21 +702,12 @@ static struct observer_result const *render_interpolation_direct_camera(
 #endif
 }
 
-struct observer_result const *render_interpolation_camera(
-	short local_player_index,
-	struct observer_result const *observer)
-{
-	if (local_player_index < 0 || local_player_index >= MAXIMUM_LOCAL_PLAYERS)
-		return observer;
-	return render_interpolation_direct_camera(local_player_index,
-		render_interpolation_blended_camera(local_player_index, observer));
-}
-
 static struct observer_result const *render_interpolation_blended_camera(
 	short local_player_index,
 	struct observer_result const *observer)
 {
 	struct interpolated_camera *camera;
+	real_vector3d drawn;
 	real t = interpolation_fraction;
 
 	if (!interpolation_rendering || !observer)
@@ -756,52 +733,42 @@ static struct observer_result const *render_interpolation_blended_camera(
 	}
 	/* (so written that a position or direction not a number cuts) */
 	if (!camera->has_previous ||
-		!(distance_squared(&camera->previous.position, &camera->latest.position) <=
+		!(distance_squared3d(&camera->previous.position, &camera->latest.position) <=
 			CAMERA_CUT_DISTANCE * CAMERA_CUT_DISTANCE) ||
-		!(camera->previous.forward.i * camera->latest.forward.i +
-			camera->previous.forward.j * camera->latest.forward.j +
-			camera->previous.forward.k * camera->latest.forward.k >= CAMERA_CUT_COSINE))
+		!(dot_product3d(&camera->previous.forward, &camera->latest.forward) >= CAMERA_CUT_COSINE))
 	{
 		return observer;
 	}
 
 	camera->blended = camera->latest;
 	point_lerp(&camera->previous.position, &camera->latest.position, t, &camera->blended.position);
-	if (correction_significant(&camera->correction) || correction_significant(&camera->correction_pending))
-	{
-		real_vector3d drawn;
-
-		correction_drawn(&camera->correction, &camera->correction_pending, &drawn);
-		camera->blended.position.x += drawn.i;
-		camera->blended.position.y += drawn.j;
-		camera->blended.position.z += drawn.k;
-	}
+	if (correction_drawn(&camera->correction, &camera->correction_pending, &drawn))
+		point_from_line3d(&camera->blended.position, &drawn, 1.0f, &camera->blended.position);
 	vector_nlerp(&camera->previous.forward, &camera->latest.forward, t, &camera->blended.forward);
 	vector_nlerp(&camera->previous.up, &camera->latest.up, t, &camera->blended.up);
 	{
 		/* keep up perpendicular to forward */
 		real_vector3d *forward = &camera->blended.forward;
 		real_vector3d *up = &camera->blended.up;
-		real along = up->i * forward->i + up->j * forward->j + up->k * forward->k;
-		real length;
+		real along = dot_product3d(up, forward);
 
 		up->i -= forward->i * along;
 		up->j -= forward->j * along;
 		up->k -= forward->k * along;
-		length = vector_length(up);
-		if (length > 1e-6f)
-		{
-			up->i /= length;
-			up->j /= length;
-			up->k /= length;
-		}
-		else
-		{
-			*up = camera->latest.up;
-		}
+		vector_normalize(up, &camera->latest.up);
 	}
 	camera->blended.field_of_view = lerp(camera->previous.field_of_view, camera->latest.field_of_view, t);
 	return &camera->blended;
+}
+
+struct observer_result const *render_interpolation_camera(
+	short local_player_index,
+	struct observer_result const *observer)
+{
+	if (local_player_index < 0 || local_player_index >= MAXIMUM_LOCAL_PLAYERS)
+		return observer;
+	return render_interpolation_direct_camera(local_player_index,
+		render_interpolation_blended_camera(local_player_index, observer));
 }
 
 /* ---------- first-person weapon */
@@ -854,7 +821,7 @@ void render_interpolation_first_person(
 		real_matrix4x3 const *previous = &first_person->previous[node_index];
 		real_matrix4x3 const *latest = &first_person->latest[node_index];
 
-		if (!(distance_squared(&previous->position, &latest->position) <=
+		if (!(distance_squared3d(&previous->position, &latest->position) <=
 			FIRST_PERSON_SNAP_DISTANCE * FIRST_PERSON_SNAP_DISTANCE))
 		{
 			return;
