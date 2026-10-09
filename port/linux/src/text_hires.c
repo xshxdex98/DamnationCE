@@ -5,9 +5,8 @@ The game's text drawn with fonts at the display's resolution (text_hires.h).
 
 Each font tag the fonts draw (port/assets/fonts/fonts.json) gets its font
 (the menus' theme's own, if it has one) sized so that its capitals are as
-tall as the tag's: the game's layout,
-from the tag's character widths, is kept, and the fonts were chosen to fit
-those widths. A glyph is rasterized when first drawn, at the display's
+tall as the tag's: the game's layout, from the tag's character widths, is
+kept, and the fonts were chosen to fit those widths. A glyph is rasterized when first drawn, at the display's
 pixels per unit of the 480 lines, into an 8-bit atlas; the GL texture the
 game's placeholder bitmap stands for (xbox_textures.c) is the atlas, its new
 rows uploaded when the placeholder is bound. A change of the display's
@@ -212,6 +211,7 @@ int text_hires_glyph(long font, unsigned long code, struct text_hires_glyph *gly
 		int index = stbtt_FindGlyphIndex(&fonts[font].info, (int)code);
 		int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
 		int width, height, advance = 0, bearing = 0;
+		BOOL drawn;
 
 		if (index)
 		{
@@ -220,7 +220,9 @@ int text_hires_glyph(long font, unsigned long code, struct text_hires_glyph *gly
 		}
 		width = x1 - x0;
 		height = y1 - y0;
-		if (width > 0 && height > 0)
+		/* (a space has no pixels, only its advance) */
+		drawn = width > 0 && height > 0;
+		if (drawn)
 		{
 			if (width + 2 * ATLAS_PADDING > ATLAS_SIZE || height + 2 * ATLAS_PADDING > ATLAS_SIZE)
 				return 0;
@@ -247,12 +249,12 @@ int text_hires_glyph(long font, unsigned long code, struct text_hires_glyph *gly
 		glyphs[slot].code = code;
 		glyphs[slot].x = (short)(pack_x + ATLAS_PADDING);
 		glyphs[slot].y = (short)(pack_y + ATLAS_PADDING);
-		glyphs[slot].width = (short)(width > 0 && height > 0 ? width : 0);
-		glyphs[slot].height = (short)(width > 0 && height > 0 ? height : 0);
+		glyphs[slot].width = (short)(drawn ? width : 0);
+		glyphs[slot].height = (short)(drawn ? height : 0);
 		glyphs[slot].left = (short)x0;
 		glyphs[slot].top = (short)y0;
 		glyphs[slot].advance = advance * fonts[font].scale;
-		if (width > 0 && height > 0)
+		if (drawn)
 		{
 			pack_x += width + 2 * ATLAS_PADDING;
 			if (height + 2 * ATLAS_PADDING > pack_row_height)

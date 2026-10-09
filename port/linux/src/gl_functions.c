@@ -18,12 +18,6 @@ int gl_functions_load(void)
 {
 	int success = TRUE;
 
-/* newer than OpenGL 4.1 (macOS's newest); callers check for NULL */
-#define GL_OPTIONAL_FUNCTION(name) \
-	(!strcmp(#name, "glClipControl") || !strcmp(#name, "glCopyImageSubData") || \
-		!strcmp(#name, "glDebugMessageCallback") || !strcmp(#name, "glBufferStorage") || \
-		!strcmp(#name, "glMemoryBarrier") || !strcmp(#name, "glGetQueryBufferObjectuiv") || \
-		GL_UNCALLED_FUNCTION(name))
 /* OpenGL 4.3's vertex attribute binding and 4.4's multi-bind: macOS points
 at each attribute and binds each texture unit on its own, elsewhere these
 are called unchecked */
@@ -35,6 +29,12 @@ are called unchecked */
 #else
 #define GL_UNCALLED_FUNCTION(name) FALSE
 #endif
+/* newer than OpenGL 4.1 (macOS's newest); callers check for NULL */
+#define GL_OPTIONAL_FUNCTION(name) \
+	(!strcmp(#name, "glClipControl") || !strcmp(#name, "glCopyImageSubData") || \
+		!strcmp(#name, "glDebugMessageCallback") || !strcmp(#name, "glBufferStorage") || \
+		!strcmp(#name, "glMemoryBarrier") || !strcmp(#name, "glGetQueryBufferObjectuiv") || \
+		GL_UNCALLED_FUNCTION(name))
 #define GL_LOAD_FUNCTION(name) \
 	halo_##name = (__typeof__(halo_##name))SDL_GL_GetProcAddress(#name); \
 	if (!halo_##name && !GL_OPTIONAL_FUNCTION(name)) \

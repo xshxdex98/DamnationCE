@@ -400,12 +400,8 @@ static void texture_bind(GLuint unit, GLuint texture)
 color_only keeps the framebuffer's alpha */
 static void pass_draw(int which, GLuint framebuffer, const GLint corners[4], BOOL color_only)
 {
-	float metrics[4];
+	float metrics[4] = { 1.0f / (float)post.width, 1.0f / (float)post.height, (float)post.width, (float)post.height };
 
-	metrics[0] = 1.0f / (float)post.width;
-	metrics[1] = 1.0f / (float)post.height;
-	metrics[2] = (float)post.width;
-	metrics[3] = (float)post.height;
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 	glViewport(corners[0], corners[1], corners[2] - corners[0], corners[3] - corners[1]);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, color_only ? GL_FALSE : GL_TRUE);
@@ -494,13 +490,13 @@ BOOL xgpu_post_anti_alias(BOOL smaa, GLuint framebuffer, unsigned long width, un
 
 	if (!smaa)
 	{
-		float bounds[4];
-
 		/* (split screen: no texel of the next window is read) */
-		bounds[0] = ((float)corners[0] + 0.5f) / (float)width;
-		bounds[1] = ((float)corners[1] + 0.5f) / (float)height;
-		bounds[2] = ((float)corners[2] - 0.5f) / (float)width;
-		bounds[3] = ((float)corners[3] - 0.5f) / (float)height;
+		float bounds[4] =
+		{
+			((float)corners[0] + 0.5f) / (float)width, ((float)corners[1] + 0.5f) / (float)height,
+			((float)corners[2] - 0.5f) / (float)width, ((float)corners[3] - 0.5f) / (float)height,
+		};
+
 		texture_bind(0, post.color);
 		glUseProgram(post.programs[_post_program_fxaa]);
 		glUniform4fv(post.bounds, 1, bounds);

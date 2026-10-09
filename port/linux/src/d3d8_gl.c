@@ -1,7 +1,8 @@
 /*
 D3D8_GL.C
 
-The Xbox Direct3D 8 device, implemented with OpenGL 4.5.
+The Xbox Direct3D 8 device, implemented with OpenGL 4.5 (4.1 on macOS,
+OpenGL ES 3 on Android).
 
 The game drives the device through the XDK's inline functions, which keep
 the "simple" render states in D3D__RenderState and call into this file for
@@ -147,13 +148,10 @@ static void anti_aliasing_prepare(void);
 static void anti_aliasing_read(void)
 {
 	const char *setting = config_string("display.anti_aliasing");
-	int value;
+	int value = NUMBER_OF_ANTI_ALIASING_VALUES - 1;
 
-	for (value = NUMBER_OF_ANTI_ALIASING_VALUES - 1;
-		value > 0 && strcmp(setting, anti_aliasing_values[value].name);
-		value--)
-	{
-	}
+	while (value > 0 && strcmp(setting, anti_aliasing_values[value].name))
+		value--;
 	if (value == anti_aliasing_value)
 		return;
 	anti_aliasing_value = value;
@@ -1210,13 +1208,12 @@ static struct render_target_entry *render_target_get(const D3DSurface *surface)
 {
 	struct render_target_entry *entry;
 	unsigned long width, height, slot;
+	float scale[2] = { 1.0f, 1.0f };
 	long screen;
 	BOOL depth;
 
 	if (!surface || !surface->Data)
 		return NULL;
-	float scale[2] = { 1.0f, 1.0f };
-
 	/* (the entries are never freed) */
 	screen = halo_screen_width();
 	for (slot = 0; slot < RECENT_RENDER_TARGET_COUNT; slot++)
@@ -1232,7 +1229,7 @@ static struct render_target_entry *render_target_get(const D3DSurface *surface)
 	surface_dimensions(surface, &width, &height, &depth);
 	/* the screen's targets are drawn at the screen's scale, and the shadow
 	maps at display.shadow_resolution's (halo_shadow_map_scale) */
-	if (width == (unsigned long)halo_screen_width() && height == SCREEN_HEIGHT)
+	if (width == (unsigned long)screen && height == SCREEN_HEIGHT)
 	{
 		scale[0] = screen_scale[0];
 		scale[1] = screen_scale[1];
@@ -1361,6 +1358,26 @@ stops being multisampled. */
 /* the samples a pixel of the bound targets: their renderbuffers' (or 1) */
 static int target_samples = 1;
 
+/* the framebuffer of a target's texture, or of its multisampled
+renderbuffer */
+static GLuint target_framebuffer(const struct xgpu_render_target *target, BOOL multisampled)
+{
+	GLuint attachment = multisampled ? target->multisample : target->texture;
+
+	return target->depth ? framebuffer_find(0, attachment, multisampled) : framebuffer_find(attachment, 0, multisampled);
+}
+
+/* a target's pixels copied whole from one of its framebuffers to the other */
+static void target_blit(const struct xgpu_render_target *target, GLuint read, GLuint draw)
+{
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, read);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw);
+	glDisable(GL_SCISSOR_TEST);
+	glBlitFramebuffer(0, 0, (GLint)target->gl_width, (GLint)target->gl_height,
+		0, 0, (GLint)target->gl_width, (GLint)target->gl_height,
+		target->depth ? GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT : GL_COLOR_BUFFER_BIT, GL_NEAREST);
+}
+
 /* the multisampled pixels of a target drawn into since into its texture */
 static void render_target_resolve(struct xgpu_render_target *target)
 {
@@ -1370,15 +1387,9 @@ static void render_target_resolve(struct xgpu_render_target *target)
 		return;
 	target->unresolved = FALSE;
 	/* (both found first: making a framebuffer binds it) */
-	read = target->depth ? framebuffer_find(0, target->multisample, TRUE) :
-		framebuffer_find(target->multisample, 0, TRUE);
-	draw = target->depth ? framebuffer_get(0, target->texture) : framebuffer_get(target->texture, 0);
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, read);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw);
-	glDisable(GL_SCISSOR_TEST);
-	glBlitFramebuffer(0, 0, (GLint)target->gl_width, (GLint)target->gl_height,
-		0, 0, (GLint)target->gl_width, (GLint)target->gl_height,
-		target->depth ? GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT : GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	read = target_framebuffer(target, TRUE);
+	draw = target_framebuffer(target, FALSE);
+	target_blit(target, read, draw);
 	xgpu_gl_state_invalidate();
 }
 
@@ -1402,8 +1413,7 @@ static void render_target_multisample(struct xgpu_render_target *target, int sam
 	target->samples = samples;
 	if (!samples)
 		return;
-	draw = target->depth ? framebuffer_find(0, target->multisample, TRUE) :
-		framebuffer_find(target->multisample, 0, TRUE);
+	draw = target_framebuffer(target, TRUE);
 #ifdef HALO_ANDROID
 	/* (ES blits into no multisampled framebuffer: it is cleared instead. A
 	change of the setting is taken up between frames, and the frame clears
@@ -1418,16 +1428,7 @@ static void render_target_multisample(struct xgpu_render_target *target, int sam
 	glClearStencil(0);
 	glClear(target->depth ? GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT : GL_COLOR_BUFFER_BIT);
 #else
-	{
-		GLuint read = target->depth ? framebuffer_get(0, target->texture) : framebuffer_get(target->texture, 0);
-
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, read);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw);
-		glDisable(GL_SCISSOR_TEST);
-		glBlitFramebuffer(0, 0, (GLint)target->gl_width, (GLint)target->gl_height,
-			0, 0, (GLint)target->gl_width, (GLint)target->gl_height,
-			target->depth ? GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT : GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	}
+	target_blit(target, target_framebuffer(target, FALSE), draw);
 #endif
 	xgpu_gl_state_invalidate();
 }
@@ -1578,8 +1579,7 @@ static void gl_initialize(void)
 		device.stream_buffer = device.stream_buffers[0];
 		device.index_buffer = device.index_buffers[0];
 	}
-#endif
-#ifndef HALO_ANDROID
+#else
 	glGenBuffers(1, &device.stream_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, device.stream_buffer);
 	glBufferData(GL_ARRAY_BUFFER, STREAM_BUFFER_SIZE, NULL, GL_STREAM_DRAW);
@@ -1747,8 +1747,6 @@ static void viewport_update_constants(void)
 	/* Direct3D's reserved constants c[-38] and c[-37] map clip space to
 	the screen; zscale is the depth buffer's range */
 	float zscale = 16777215.0f;
-	unsigned long width, height;
-	BOOL depth;
 
 	if (device.depth_stencil)
 	{
@@ -1761,7 +1759,6 @@ static void viewport_update_constants(void)
 			zscale = 65535.0f;
 		}
 	}
-	(void)width; (void)height; (void)depth;
 	device.viewport_scale[0] = device.viewport.Width * 0.5f;
 	device.viewport_scale[1] = -(float)device.viewport.Height * 0.5f;
 	device.viewport_scale[2] = zscale * (device.viewport.MaxZ - device.viewport.MinZ);
@@ -1863,6 +1860,20 @@ HRESULT WINAPI Direct3D_CreateDevice(UINT adapter, D3DDEVTYPE device_type, void 
 
 /* ---------- the menus' pointer */
 
+/* the back buffer's picture fitted to a drawable of this size, its shape
+kept */
+static void letterbox(const struct xgpu_render_target *target, int drawable_width, int drawable_height, int *width,
+	int *height)
+{
+	*width = drawable_width;
+	*height = (int)((long)drawable_width * target->gl_height / target->gl_width);
+	if (*height > drawable_height)
+	{
+		*height = drawable_height;
+		*width = (int)((long)drawable_height * target->gl_width / target->gl_height);
+	}
+}
+
 /* a point in the window, as SDL reports it, in the menus' coordinates: the
 inverse of the letterboxed display blit at presentation, the screen's
 width and the menus' centering (halo_screen_ui_offset); or, not centered,
@@ -1881,13 +1892,7 @@ static void ui_point_from_window_on(float window_x, float window_y, int centered
 	platform_video_drawable_size(&pixel_width, &pixel_height);
 	if (window_width <= 0 || window_height <= 0)
 		return;
-	width = pixel_width;
-	height = (int)((long)pixel_width * back_buffer->target.gl_height / back_buffer->target.gl_width);
-	if (height > pixel_height)
-	{
-		height = pixel_height;
-		width = (int)((long)pixel_height * back_buffer->target.gl_width / back_buffer->target.gl_height);
-	}
+	letterbox(&back_buffer->target, pixel_width, pixel_height, &width, &height);
 	left = (pixel_width - width) / 2;
 	top = (pixel_height - height) / 2;
 	screen_x = (window_x * pixel_width / window_width - left) * (float)back_buffer->target.width / (float)width;
@@ -2226,8 +2231,8 @@ static GLuint visibility_unscaled(GLuint samples, DWORD index)
 
 	return area > 1.0f ? (GLuint)(samples / area + 0.5f) : samples;
 }
-
 #endif
+
 static void visibility_test_result(DWORD index, UINT *result, ULONGLONG *time_stamp)
 {
 	GLuint available = 0, samples = 0;
@@ -2249,8 +2254,7 @@ static void visibility_test_result(DWORD index, UINT *result, ULONGLONG *time_st
 			*result = device.visibility_latest[index];
 		return;
 	}
-#endif
-#ifndef HALO_ANDROID
+#else
 	if (device.visibility_results)
 	{
 		/* the latest count the GPU has written: from this test, or while
@@ -2310,16 +2314,6 @@ void D3DFASTCALL D3DDevice_SetRenderState_Deferred(D3DRENDERSTATETYPE state, DWO
 		D3D__RenderState[state] = value;
 }
 
-void WINAPI D3DDevice_SetRenderState_ZBias(DWORD value);
-
-void WINAPI D3DDevice_SetRenderStateNotInline(D3DRENDERSTATETYPE state, DWORD value)
-{
-	if (state == D3DRS_ZBIAS)
-		D3DDevice_SetRenderState_ZBias(value);
-	else if ((unsigned long)state < D3DRS_MAX)
-		D3D__RenderState[state] = value;
-}
-
 /* As the Xbox's D3D8 does it: a z bias is a polygon offset of -bias depth
 units plus -bias/4 times the polygon's depth slope, enabled for every fill
 mode. Without the slope term, decals (biased by 8) fight with the surface
@@ -2336,6 +2330,14 @@ void WINAPI D3DDevice_SetRenderState_ZBias(DWORD value)
 	D3D__RenderState[D3DRS_WIREFRAMEOFFSETENABLE] = enable;
 	D3D__RenderState[D3DRS_SOLIDOFFSETENABLE] = enable;
 	D3D__RenderState[D3DRS_ZBIAS] = value;
+}
+
+void WINAPI D3DDevice_SetRenderStateNotInline(D3DRENDERSTATETYPE state, DWORD value)
+{
+	if (state == D3DRS_ZBIAS)
+		D3DDevice_SetRenderState_ZBias(value);
+	else if ((unsigned long)state < D3DRS_MAX)
+		D3D__RenderState[state] = value;
 }
 
 #define COMPLEX_RENDER_STATE(name, state) \
@@ -2555,6 +2557,11 @@ HRESULT WINAPI D3DDevice_CreateVertexShader(CONST DWORD *declaration, CONST DWOR
 		/* header: program type in the low word, instruction count in the high */
 		object->instruction_count = function[0] >> 16;
 		object->instructions = malloc(object->instruction_count * 4 * sizeof(DWORD));
+		if (!object->instructions && object->instruction_count)
+		{
+			free(object);
+			return E_OUTOFMEMORY;
+		}
 		memcpy(object->instructions, function + 1, object->instruction_count * 4 * sizeof(DWORD));
 	}
 	parse_declaration(object, declaration);
@@ -2668,6 +2675,18 @@ static unsigned long hash_words(const void *data, unsigned long size)
 	return hash;
 }
 
+/* debug.gpu_dump_shaders: a generated shader written to its file */
+static void shader_dump(const char *path, const char *source)
+{
+	FILE *file = fopen(path, "w");
+
+	if (file)
+	{
+		fputs(source, file);
+		fclose(file);
+	}
+}
+
 /* lit: the shader that hands the lighting's normal and position on
 (vertex_shader_object lit_shader) */
 static GLuint vertex_shader_get(struct vertex_shader_object *program, BOOL immediate, BOOL lit)
@@ -2686,15 +2705,10 @@ static GLuint vertex_shader_get(struct vertex_shader_object *program, BOOL immed
 		if (debug_settings.dump_shaders)
 		{
 			char path[512];
-			FILE *file;
 
 			snprintf(path, sizeof(path), "%s/vs%03lu_%d%s.glsl", debug_settings.dump_shaders, program->id, variant,
 				lit ? "_lit" : "");
-			if ((file = fopen(path, "w")) != NULL)
-			{
-				fputs(source, file);
-				fclose(file);
-			}
+			shader_dump(path, source);
 		}
 		free(source);
 	}
@@ -2738,14 +2752,9 @@ static GLuint fragment_shader_get(const struct nv2a_pixel_shader_key *key)
 	if (debug_settings.dump_shaders)
 	{
 		char path[512];
-		FILE *file;
 
 		snprintf(path, sizeof(path), "%s/ps_%08lx.glsl", debug_settings.dump_shaders, hash);
-		if ((file = fopen(path, "w")) != NULL)
-		{
-			fputs(source, file);
-			fclose(file);
-		}
+		shader_dump(path, source);
 	}
 	free(source);
 	entry->next = *bucket;
@@ -3017,8 +3026,6 @@ static struct mip_composite *mip_composites;
 #else
 #define HOST_GL_COPY_IMAGE (glCopyImageSubData != NULL)
 #endif
-static GLuint framebuffer_get(GLuint color, GLuint depth);
-
 /* glCopyImageSubData for ES 3.0/3.1 contexts without the extension, and
 macOS's OpenGL 4.1 */
 static void copy_level_by_blit(GLuint source, GLuint destination, GLint level, GLsizei width, GLsizei height)
@@ -3076,8 +3083,8 @@ static GLuint mip_composite_get(const struct xgpu_texture_description *descripti
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, (GLint)description->levels - 1);
 		for (level = 0; level < description->levels; level++)
 		{
-			GLsizei width = (GLsizei)(description->width >> level ? description->width >> level : 1);
-			GLsizei height = (GLsizei)(description->height >> level ? description->height >> level : 1);
+			GLsizei width = (GLsizei)xgpu_level_dimension(description->width, level);
+			GLsizei height = (GLsizei)xgpu_level_dimension(description->height, level);
 
 			glTexImage2D(GL_TEXTURE_2D, (GLint)level, GL_RGBA8, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 		}
@@ -3087,8 +3094,8 @@ static GLuint mip_composite_get(const struct xgpu_texture_description *descripti
 	}
 	for (level = 0; level < description->levels && level < MIP_COMPOSITE_LEVELS; level++)
 	{
-		unsigned long width = description->width >> level ? description->width >> level : 1;
-		unsigned long height = description->height >> level ? description->height >> level : 1;
+		unsigned long width = xgpu_level_dimension(description->width, level);
+		unsigned long height = xgpu_level_dimension(description->height, level);
 		struct xgpu_render_target *target =
 			xgpu_render_target_find(data + xgpu_texture_level_offset(description, level));
 
@@ -3854,7 +3861,7 @@ static void heavy_frame_note(const char *kind, unsigned long vertices)
 
 	for (stage = 0; stage < D3DTSS_MAXSTAGES && !texture; stage++)
 	{
-		if (device.textures[stage] && ((D3D__RenderState[D3DRS_PSTEXTUREMODES] >> (5 * stage)) & 0x1f))
+		if (device.textures[stage] && stage_texture_mode(stage))
 			texture = device.textures[stage]->Data;
 	}
 	heavy_frame.draws++;
@@ -3874,12 +3881,7 @@ static void heavy_frame_note(const char *kind, unsigned long vertices)
 		heavy_frame.others++;
 		return;
 	}
-	heavy_frame.groups[heavy_frame.group_count].kind = kind;
-	heavy_frame.groups[heavy_frame.group_count].vertex_shader = vertex_shader;
-	heavy_frame.groups[heavy_frame.group_count].texture = texture;
-	heavy_frame.groups[heavy_frame.group_count].draws = 1;
-	heavy_frame.groups[heavy_frame.group_count].vertices = vertices;
-	heavy_frame.group_count++;
+	heavy_frame.groups[heavy_frame.group_count++] = (struct heavy_group){ kind, vertex_shader, texture, 1, vertices };
 }
 
 static int heavy_group_compare(const void *a, const void *b)
@@ -3904,11 +3906,7 @@ static void heavy_frame_end(void)
 		for (index = 0; index < heavy_frame.group_count && index < HEAVY_GROUPS_LOGGED; index++)
 		{
 			const struct heavy_group *group = &heavy_frame.groups[index];
-#ifdef HALO_64BIT
-			unsigned long address = group->texture ? (unsigned int)group->texture | PLATFORM_CONTIGUOUS_BASE : 0;
-#else
-			unsigned long address = group->texture ? (unsigned long)PLATFORM_PHYSICAL_TO_VIRTUAL(group->texture) : 0;
-#endif
+			unsigned long address = group->texture ? (unsigned long)group->texture | PLATFORM_CONTIGUOUS_BASE : 0;
 			const char *name = address ? bitmap_tag_name_at(address) : NULL;
 
 			platform_log("    %4lu %-9s draws, %6lu vertices, vertex shader %lu, texture %s",
@@ -3959,7 +3957,7 @@ static void trace_draw(const char *kind, D3DPRIMITIVETYPE type, unsigned long co
 			D3DBaseTexture *texture = device.textures[stage];
 			struct xgpu_texture_description description;
 
-			if (!texture || !((D3D__RenderState[D3DRS_PSTEXTUREMODES] >> (5 * stage)) & 0x1f))
+			if (!texture || !stage_texture_mode(stage))
 				continue;
 			xgpu_texture_describe(texture->Format, texture->Size, &description);
 			platform_log("    t%d: data %08lx format %08lx size %08lx -> fmt %02lx %lux%lux%lu levels %lu linear %d cube %d rt %d min %lu mip %lu bias %g maxmip %lu",
@@ -4333,6 +4331,18 @@ static void buffer_append(GLenum target, unsigned long offset, unsigned long siz
 }
 #endif
 
+/* bytes written into the bound buffer, each GL's fastest way */
+static void buffer_write(GLenum target, unsigned long offset, unsigned long length, const void *data)
+{
+#ifdef HALO_ANDROID
+	host_gl_buffer_write(target, (unsigned int)offset, (unsigned int)length, data);
+#elif defined(__APPLE__)
+	buffer_append(target, offset, length, data);
+#else
+	buffer_upload(target, offset, length, data);
+#endif
+}
+
 static void stream_reserve(unsigned long size)
 {
 	if (device.stream_offset + size > STREAM_BUFFER_SIZE)
@@ -4354,13 +4364,7 @@ static unsigned long stream_upload(const void *data, unsigned long size)
 	stream_reserve(size);
 	offset = device.stream_offset;
 	state_array_buffer(device.stream_buffer);
-#ifdef HALO_ANDROID
-	host_gl_buffer_write(GL_ARRAY_BUFFER, (unsigned int)offset, (unsigned int)length, data);
-#elif defined(__APPLE__)
-	buffer_append(GL_ARRAY_BUFFER, offset, length, data);
-#else
-	buffer_upload(GL_ARRAY_BUFFER, offset, length, data);
-#endif
+	buffer_write(GL_ARRAY_BUFFER, offset, length, data);
 	device.stream_offset += size;
 	return offset;
 }
@@ -4388,8 +4392,11 @@ static unsigned long stream_upload_swizzled(const struct vertex_shader_object *d
 	if (scratch_size < size)
 	{
 		free(scratch);
-		scratch_size = size + 65536;
-		scratch = malloc(scratch_size);
+		scratch = malloc(size + 65536);
+		scratch_size = scratch ? size + 65536 : 0;
+		/* (no memory: the colours go as they are) */
+		if (!scratch)
+			return stream_upload(data, size);
 	}
 	memcpy(scratch, data, size);
 	for (vertex = 0; vertex + stride <= size; vertex += stride)
@@ -4423,13 +4430,7 @@ static unsigned long index_upload(const void *data, unsigned long size)
 		device.index_offset = 0;
 	}
 	offset = device.index_offset;
-#ifdef HALO_ANDROID
-	host_gl_buffer_write(GL_ELEMENT_ARRAY_BUFFER, (unsigned int)offset, (unsigned int)length, data);
-#elif defined(__APPLE__)
-	buffer_append(GL_ELEMENT_ARRAY_BUFFER, offset, length, data);
-#else
-	buffer_upload(GL_ELEMENT_ARRAY_BUFFER, offset, length, data);
-#endif
+	buffer_write(GL_ELEMENT_ARRAY_BUFFER, offset, length, data);
 	device.index_offset += size;
 	return offset;
 }
@@ -4675,7 +4676,7 @@ void WINAPI D3DDevice_DrawVertices(D3DPRIMITIVETYPE primitive_type, UINT start_v
 
 void WINAPI D3DDevice_DrawIndexedVertices(D3DPRIMITIVETYPE primitive_type, UINT vertex_count, CONST WORD *index_data)
 {
-	unsigned long minimum, maximum, index, count, generation = 0, index_offset = 0;
+	unsigned long minimum, maximum, count, generation = 0, index_offset = 0;
 	WORD *indices = NULL;
 	const WORD *source = index_data;
 	GLuint index_buffer = 0;
@@ -4713,6 +4714,7 @@ void WINAPI D3DDevice_DrawIndexedVertices(D3DPRIMITIVETYPE primitive_type, UINT 
 	{
 		/* the indices are copied anyway: rebase them */
 		WORD *rebased = malloc(count * sizeof(WORD) + 2);
+		unsigned long index;
 
 		for (index = 0; index < count; index++)
 			rebased[index] = (WORD)(source[index] - minimum);
@@ -4723,7 +4725,6 @@ void WINAPI D3DDevice_DrawIndexedVertices(D3DPRIMITIVETYPE primitive_type, UINT 
 		return;
 	}
 #endif
-	(void)index;
 	glDrawElementsBaseVertex(primitive_mode(primitive_type), (GLsizei)count, GL_UNSIGNED_SHORT,
 		(const void *)(uintptr_t)index_upload(source, count * sizeof(WORD)), -(GLint)minimum);
 	free(indices);
@@ -4971,8 +4972,7 @@ void halo_screen_anti_alias(short x0, short y0, short x1, short y1)
 
 static void write_screenshot(struct render_target_entry *target)
 {
-	const char *directory = *config_string("debug.screenshot_directory") ?
-		config_string("debug.screenshot_directory") : NULL;
+	const char *directory = config_string("debug.screenshot_directory");
 	unsigned long width = target->target.gl_width, height = target->target.gl_height;
 	unsigned char *pixels;
 	char path[512];
@@ -4981,9 +4981,11 @@ static void write_screenshot(struct render_target_entry *target)
 	unsigned char header[54] = { 'B', 'M' };
 	unsigned long image_size = width * height * 4;
 
-	if (!directory)
+	if (!*directory)
 		return;
 	pixels = malloc(image_size);
+	if (!pixels)
+		return;
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_get(target->target.texture, 0));
 	glReadPixels(0, 0, (GLsizei)width, (GLsizei)height, GL_BGRA, GL_UNSIGNED_BYTE, pixels);
 	/* the display ignores destination alpha, which the game uses as scratch;
@@ -5043,14 +5045,7 @@ void WINAPI D3DDevice_Present(CONST RECT *source_rectangle, CONST RECT *destinat
 			write_screenshot(back_buffer);
 
 		platform_video_drawable_size(&window_width, &window_height);
-		/* letterbox to the back buffer's aspect ratio */
-		width = window_width;
-		height = (int)((long)window_width * back_buffer->target.gl_height / back_buffer->target.gl_width);
-		if (height > window_height)
-		{
-			height = window_height;
-			width = (int)((long)window_height * back_buffer->target.gl_width / back_buffer->target.gl_height);
-		}
+		letterbox(&back_buffer->target, window_width, window_height, &width, &height);
 		x = (window_width - width) / 2;
 		y = (window_height - height) / 2;
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

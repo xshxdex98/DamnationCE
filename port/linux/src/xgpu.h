@@ -202,6 +202,9 @@ void xgpu_texture_describe(DWORD format_word, DWORD size_word, struct xgpu_textu
 unsigned long xgpu_texture_face_size(const struct xgpu_texture_description *description);
 unsigned long xgpu_texture_level_offset(const struct xgpu_texture_description *description, unsigned long level);
 unsigned long xgpu_texture_level_pitch(const struct xgpu_texture_description *description, unsigned long level);
+/* the whole log2 of a size, and a size at a mip level (at least 1) */
+unsigned long xgpu_floor_log2(unsigned long value);
+unsigned long xgpu_level_dimension(unsigned long base, unsigned long level);
 
 /* the GL texture for an Xbox texture header, uploading or refreshing it
 from guest memory as needed; *target receives GL_TEXTURE_2D etc. */

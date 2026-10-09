@@ -21,12 +21,14 @@ memory_watch.c detects that by write-protecting the pages.
 #include "port_config.h"
 #include "../game/cache_file_formats.h"
 
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #ifdef HALO_ANDROID
 #define GL_BGRA GL_RGBA
 #endif
-#include <stdlib.h>
-#include <string.h>
 
 #ifndef GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
 #define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x83f1
@@ -126,7 +128,7 @@ static BOOL kind_compressed(unsigned char kind)
 
 /* ---------- geometry of a texture in memory */
 
-static unsigned long floor_log2(unsigned long value)
+unsigned long xgpu_floor_log2(unsigned long value)
 {
 	unsigned long result = 0;
 
@@ -138,7 +140,7 @@ static unsigned long floor_log2(unsigned long value)
 	return result;
 }
 
-static unsigned long level_dimension(unsigned long base, unsigned long level)
+unsigned long xgpu_level_dimension(unsigned long base, unsigned long level)
 {
 	unsigned long value = base >> level;
 
@@ -181,9 +183,9 @@ void xgpu_texture_describe(DWORD format_word, DWORD size_word, struct xgpu_textu
 static unsigned long level_bytes(const struct xgpu_texture_description *description, unsigned long level)
 {
 	struct format_information information = format_information(description->format);
-	unsigned long width = level_dimension(description->width, level);
-	unsigned long height = level_dimension(description->height, level);
-	unsigned long depth = level_dimension(description->depth, level);
+	unsigned long width = xgpu_level_dimension(description->width, level);
+	unsigned long height = xgpu_level_dimension(description->height, level);
+	unsigned long depth = xgpu_level_dimension(description->depth, level);
 
 	if (description->compressed)
 		return ((width + 3) / 4) * ((height + 3) / 4) * information.bytes * depth;
@@ -227,8 +229,8 @@ unsigned long xgpu_texture_level_pitch(const struct xgpu_texture_description *de
 	if (description->linear)
 		return description->pitch;
 	if (description->compressed)
-		return ((level_dimension(description->width, level) + 3) / 4) * information.bytes;
-	return level_dimension(description->width, level) * information.bytes;
+		return ((xgpu_level_dimension(description->width, level) + 3) / 4) * information.bytes;
+	return xgpu_level_dimension(description->width, level) * information.bytes;
 }
 
 /* ---------- swizzling */
@@ -369,9 +371,9 @@ static BOOL decode_level(const struct xgpu_texture_description *description, uns
 	const unsigned char *source, const D3DCOLOR *palette, unsigned long *destination)
 {
 	struct format_information information = format_information(description->format);
-	unsigned long width = level_dimension(description->width, level);
-	unsigned long height = level_dimension(description->height, level);
-	unsigned long depth = level_dimension(description->depth, level);
+	unsigned long width = xgpu_level_dimension(description->width, level);
+	unsigned long height = xgpu_level_dimension(description->height, level);
+	unsigned long depth = xgpu_level_dimension(description->depth, level);
 	unsigned long x, y, z;
 
 	if (description->linear)
@@ -561,24 +563,25 @@ static GLenum compressed_format(unsigned char kind)
 /* ---------- upload */
 
 /* debug.texture_dump_directory writes level 0 of every upload as a TGA, read back from GL */
+#ifdef HALO_ANDROID
+/* (ES cannot read textures back) */
 static void texture_dump(GLenum target, const struct xgpu_texture_description *description)
 {
-#ifdef HALO_ANDROID
-	/* ES cannot read textures back */
 	(void)target;
 	(void)description;
 }
 #else
+static void texture_dump(GLenum target, const struct xgpu_texture_description *description)
+{
 	static unsigned long dump_index = 0;
-	const char *directory = *config_string("debug.texture_dump_directory") ?
-		config_string("debug.texture_dump_directory") : NULL;
+	const char *directory = config_string("debug.texture_dump_directory");
 	unsigned long width = description->width, height = description->height;
 	unsigned char header[18];
 	unsigned char *pixels;
 	char path[512];
 	FILE *file;
 
-	if (!directory || target != GL_TEXTURE_2D)
+	if (!*directory || target != GL_TEXTURE_2D)
 		return;
 	pixels = malloc(width * height * 4);
 	if (!pixels)
@@ -653,12 +656,9 @@ static unsigned char custom_edition_texels_order(unsigned long address)
 
 void halo_custom_edition_texels_channels(const void *texels, unsigned char channel_order)
 {
-#ifdef HALO_64BIT
-	unsigned long address = xbox_address(texels); /* (an Xbox address, as the cache's entries keep) */
-#else
-	unsigned long address = (unsigned long)texels;
-#endif
-	unsigned long index;
+	/* (an Xbox address, as the cache's entries keep) */
+	unsigned long address = (unsigned long)(uintptr_t)xbox_address(texels);
+	unsigned long index = 0;
 
 	if (channel_order >= NUMBER_OF_CUSTOM_EDITION_CHANNEL_ORDERS)
 	{
@@ -666,9 +666,8 @@ void halo_custom_edition_texels_channels(const void *texels, unsigned char chann
 			address, (unsigned)channel_order);
 		channel_order = _custom_edition_channels_xbox;
 	}
-	for (index = 0; index < custom_edition_texel_count && custom_edition_texels[index].address != address; index++)
-	{
-	}
+	while (index < custom_edition_texel_count && custom_edition_texels[index].address != address)
+		index++;
 	if (index < custom_edition_texel_count)
 	{
 		if (channel_order == _custom_edition_channels_xbox)
@@ -795,9 +794,9 @@ static void upload(GLuint texture, GLenum target, const struct xgpu_texture_desc
 		for (level = 0; level < description->levels; level++)
 		{
 			const unsigned char *source = base + face * face_size + xgpu_texture_level_offset(description, level);
-			GLsizei width = (GLsizei)level_dimension(description->width, level);
-			GLsizei height = (GLsizei)level_dimension(description->height, level);
-			GLsizei depth = (GLsizei)level_dimension(description->depth, level);
+			GLsizei width = (GLsizei)xgpu_level_dimension(description->width, level);
+			GLsizei height = (GLsizei)xgpu_level_dimension(description->height, level);
+			GLsizei depth = (GLsizei)xgpu_level_dimension(description->depth, level);
 
 			if (description->compressed && !decode_compressed)
 			{
@@ -1023,11 +1022,7 @@ GLuint xgpu_texture_get(const DWORD *resource, const D3DCOLOR *palette, GLenum *
 		xgpu_texture_describe(format_word, size_word, &entry->description);
 		entry->target = entry->description.cube_map ? GL_TEXTURE_CUBE_MAP :
 			entry->description.depth > 1 ? GL_TEXTURE_3D : GL_TEXTURE_2D;
-#ifdef HALO_64BIT
-		entry->address = (unsigned int)data | PLATFORM_CONTIGUOUS_BASE; /* an Xbox address */
-#else
-		entry->address = (unsigned long)PLATFORM_PHYSICAL_TO_VIRTUAL(data);
-#endif
+		entry->address = (unsigned long)data | PLATFORM_CONTIGUOUS_BASE; /* an Xbox address */
 		/* (a size beyond D3DDevice_GetDeviceCaps' is never uploaded: its
 		byte counts would not fit in 32 bits) */
 		entry->size = texture_size_supported(&entry->description) ?
@@ -1076,23 +1071,13 @@ GLuint xgpu_texture_get(const DWORD *resource, const D3DCOLOR *palette, GLenum *
 			if (entry->override >= 0 && !hud_hires_override_texture(entry->override, &levels))
 				entry->override = -1;
 		}
-#ifdef HALO_64BIT
 		if (entry->override < 0 && entry->size && platform_is_contiguous(xbox_pointer(entry->address)) &&
 			platform_is_contiguous(xbox_pointer(entry->address + entry->size - 1)))
-#else
-		if (entry->override < 0 && entry->size && platform_is_contiguous((void *)entry->address) &&
-			platform_is_contiguous((void *)(entry->address + entry->size - 1)))
-#endif
 		{
 			if (config_boolean("debug.texture_log"))
 			{
-#ifdef HALO_64BIT
 				const unsigned char *bytes = xbox_pointer(entry->address);
-				unsigned int index, ones = 0, zeros = 0;
-#else
-				const unsigned char *bytes = (const unsigned char *)entry->address;
 				unsigned long index, ones = 0, zeros = 0;
-#endif
 
 				for (index = 0; index < entry->size; index++)
 				{
