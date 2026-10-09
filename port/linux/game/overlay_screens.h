@@ -93,6 +93,9 @@ overlay_button_at returns the button at a point, or NONE. */
 float overlay_buttons_width(
 	char const *const *labels,
 	short count);
+/* the buttons' colors in the theme's palette (their text its prompt's) */
+void overlay_button_colors_get(
+	struct overlay_button_colors *colors);
 void overlay_buttons_draw(
 	char const *const *labels,
 	short count,
@@ -165,6 +168,10 @@ void overlay_text_fitted(
 	unsigned int color,
 	char const *text);
 
+/* An Xbox multiplayer level's display name by its index in the game's
+level order, or NULL past them */
+char const *overlay_xbox_level_name(
+	short level);
 /* An Xbox multiplayer level's display name by its file name ("bloodgulch":
 "Blood Gulch"), or NULL for any other map. */
 char const *overlay_xbox_map_name(

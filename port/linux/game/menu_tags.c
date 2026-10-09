@@ -15,10 +15,10 @@ the map's tags (a path, with its backslashes), the game's event handler and
 game data functions, and the port's own (menu_functions.c, from
 PC_MENU_FUNCTION_BASE), which include the PC version's (most of which do
 nothing yet). Its mouse events are kept, though this engine never sends
-them (the port's mouse support clicks with A). Anything that does not resolve, or that the widget
-code would stop the game for (a spinner's children, a list from strings
-with children), is logged with its file and line and nothing is added: the
-game keeps its own menus.
+them (the port's mouse support clicks with A). Anything that does not
+resolve, or that the widget code would stop the game for (a spinner's
+children, a list from strings with children), is logged with its file and
+line and nothing is added: the game keeps its own menus.
 
 The tag table cannot grow where it is (the tags' names follow it), so it
 is copied, with ours after it; every existing tag keeps its index. All of it
@@ -364,11 +364,9 @@ static struct
 	long setting_count;
 	boolean loaded;
 	char root[300];
-#ifdef HALO_64BIT
-	/* the name of an empty reference, inside the Xbox address space as the
-	map's names are */
+	/* an empty name, in the game's memory as the map's names are (which a
+	64-bit build's tag fields can address) */
 	char *empty_name;
-#endif
 } menu_tags;
 
 /* the build under way */
@@ -438,26 +436,37 @@ static long name_index(char const *name, char const *const *names, long count)
 	return NONE;
 }
 
+/* the words of a flags or events attribute: the next into word (cut short
+to its size); its length, 0 when there are no more */
+static long attribute_word(char const **text, char *word, long size)
+{
+	long length;
+
+	if (!*text)
+		return 0;
+	*text += strspn(*text, " \t\r\n");
+	length = (long)strcspn(*text, " \t\r\n");
+	if (length)
+	{
+		long kept = length < size ? length : size - 1;
+
+		memcpy(word, *text, kept);
+		word[kept] = 0;
+		*text += length;
+	}
+	return length;
+}
+
 /* the bits of the space-separated names */
 static long flags_parse(char const *text, char const *const *names, long count, char const *file, long line)
 {
 	long flags = 0;
+	char word[64];
 
-	while (text && *text)
+	while (attribute_word(&text, word, sizeof(word)))
 	{
-		char word[64];
-		long length, bit;
+		long bit = name_index(word, names, count);
 
-		text += strspn(text, " \t\r\n");
-		length = (long)strcspn(text, " \t\r\n");
-		if (!length)
-			break;
-		if (length >= (long)sizeof(word))
-			length = sizeof(word) - 1;
-		memcpy(word, text, length);
-		word[length] = 0;
-		text += strcspn(text, " \t\r\n");
-		bit = name_index(word, names, count);
 		if (bit == NONE)
 			problem(file, line, "there is no flag", word);
 		else
@@ -466,16 +475,30 @@ static long flags_parse(char const *text, char const *const *names, long count, 
 	return flags;
 }
 
+static char *empty_name(void)
+{
+	if (!menu_tags.empty_name)
+		menu_tags.empty_name = allocate(1);
+	return menu_tags.empty_name;
+}
+
+/* a menu's name as a tag's: pc\ before it, and backslashes for its slashes */
+static void tag_name_of(char *name, size_t size, char const *menu_name, char const *suffix)
+{
+	char *character;
+
+	snprintf(name, size, "%s%s%s", PC_MENU_TAG_PREFIX, menu_name, suffix);
+	for (character = name; *character; character++)
+	{
+		if (*character == '/')
+			*character = '\\';
+	}
+}
+
 static void reference_clear(struct tag_reference *reference, long group_tag)
 {
 	reference->group_tag = group_tag;
-#ifdef HALO_64BIT
-	if (!menu_tags.empty_name)
-		menu_tags.empty_name = allocate(1);
-	reference->name = XBOX_ADDRESS(menu_tags.empty_name);
-#else
-	reference->name = "";
-#endif
+	reference->name = XBOX_ADDRESS(empty_name());
 	reference->name_length = 0;
 	reference->index = NONE;
 }
@@ -551,6 +574,16 @@ static long tag_named(long group_tag, char const *name, char const *file, long l
 	return index;
 }
 
+/* a reference to the tag of that name (tag_named), or none if there is
+no name */
+static void reference_named(struct tag_reference *reference, long group_tag, char const *name, char const *file,
+	long line)
+{
+	reference_clear(reference, group_tag);
+	if (name)
+		reference_set(reference, group_tag, tag_named(group_tag, name, file, line));
+}
+
 /* "unwired <name>": a function the PC version has for these widgets, not
 yet written for this engine (port/assets/menus/UNWIRED.md), which does
 nothing */
@@ -559,9 +592,22 @@ static boolean unwired(char const *name)
 	return !strncmp(name, "unwired ", 8);
 }
 
-static long function_index(char const *name, char const *file, long line)
+/* the game's event handler function of that name, else NONE */
+static long game_function_named(char const *name)
 {
 	char const *function_name;
+	long index;
+
+	for (index = 0; (function_name = ui_widget_event_handler_function_name(index)) != NULL; index++)
+	{
+		if (!strcmp(name, function_name))
+			return index;
+	}
+	return NONE;
+}
+
+static long function_index(char const *name, char const *file, long line)
+{
 	long index;
 
 	if (unwired(name))
@@ -569,13 +615,10 @@ static long function_index(char const *name, char const *file, long line)
 	index = name_index(name, port_function_names, NUMBEROF(port_function_names));
 	if (index != NONE)
 		return PC_MENU_FUNCTION_BASE + index;
-	for (index = 0; (function_name = ui_widget_event_handler_function_name(index)) != NULL; index++)
-	{
-		if (!strcmp(name, function_name))
-			return index;
-	}
-	problem(file, line, "there is no event handler function", name);
-	return NONE;
+	index = game_function_named(name);
+	if (index == NONE)
+		problem(file, line, "there is no event handler function", name);
+	return index;
 }
 
 static long game_data_input_index(char const *name, char const *file, long line)
@@ -863,8 +906,20 @@ static void *bitmap_build(struct halo_menu_bitmap const *source, long tag_index)
 		}
 		bitmap->width = (short)width;
 		bitmap->height = (short)height;
-		menu_tags.bitmaps = realloc(menu_tags.bitmaps, (menu_tags.bitmap_count + 1) * sizeof(*menu_tags.bitmaps));
-		menu_tags.bitmaps[menu_tags.bitmap_count++] = bitmap;
+		{
+			struct bitmap_data **grown = realloc(menu_tags.bitmaps,
+				(menu_tags.bitmap_count + 1) * sizeof(*menu_tags.bitmaps));
+
+			/* (not in the list, whose textures the release deletes: its own now) */
+			if (!grown)
+			{
+				rasterizer_bitmap_delete(bitmap);
+				problem(source->file, source->line, "out of memory for bitmap", source->name);
+				return group;
+			}
+			menu_tags.bitmaps = grown;
+			menu_tags.bitmaps[menu_tags.bitmap_count++] = bitmap;
+		}
 		/* (none without a renderer: debug.null_renderer) */
 		if (bitmap->hardware_format)
 			halo_menus_art_register(xbox_pointer(bitmap->hardware_format), png);
@@ -992,9 +1047,16 @@ static void handler_build(struct ui_widget_event_handler_reference *handler, str
 
 static void setting_add(struct halo_menu_widget const *source, long definition_index)
 {
+	struct pc_menu_setting *settings = realloc(menu_tags.settings,
+		(menu_tags.setting_count + 1) * sizeof(*menu_tags.settings));
 	struct pc_menu_setting *setting;
 
-	menu_tags.settings = realloc(menu_tags.settings, (menu_tags.setting_count + 1) * sizeof(*menu_tags.settings));
+	if (!settings)
+	{
+		problem(source->file, source->line, "out of memory for setting", source->setting);
+		return;
+	}
+	menu_tags.settings = settings;
 	setting = &menu_tags.settings[menu_tags.setting_count++];
 	memset(setting, 0, sizeof(*setting));
 	setting->definition_index = definition_index;
@@ -1054,12 +1116,7 @@ static void *widget_build(long widget_index)
 	definition->flags &= ~FLAG(1); /* pause_game, widget_flag_names[1] */
 	definition->milliseconds_to_auto_close = source->auto_close;
 	definition->auto_close_fade_time = source->auto_close_fade;
-	reference_clear(&definition->background_bitmap, BITMAP_GROUP_TAG);
-	if (source->bitmap)
-	{
-		reference_set(&definition->background_bitmap, BITMAP_GROUP_TAG,
-			tag_named(BITMAP_GROUP_TAG, source->bitmap, source->file, source->line));
-	}
+	reference_named(&definition->background_bitmap, BITMAP_GROUP_TAG, source->bitmap, source->file, source->line);
 	/* the game data inputs */
 	for (count = 0, input = source->first_input; input != HALO_MENU_NONE; input = menus->inputs[input].next)
 		count++;
@@ -1160,28 +1217,16 @@ static void *widget_build(long widget_index)
 		else
 			setting_add(source, build.widget_tags[widget_index]);
 	}
-	reference_clear(&definition->list_header_bitmap, BITMAP_GROUP_TAG);
-	reference_clear(&definition->list_footer_bitmap, BITMAP_GROUP_TAG);
-	if (source->header_bitmap)
-	{
-		reference_set(&definition->list_header_bitmap, BITMAP_GROUP_TAG,
-			tag_named(BITMAP_GROUP_TAG, source->header_bitmap, source->file, source->line));
-	}
-	if (source->footer_bitmap)
-	{
-		reference_set(&definition->list_footer_bitmap, BITMAP_GROUP_TAG,
-			tag_named(BITMAP_GROUP_TAG, source->footer_bitmap, source->file, source->line));
-	}
+	reference_named(&definition->list_header_bitmap, BITMAP_GROUP_TAG, source->header_bitmap, source->file,
+		source->line);
+	reference_named(&definition->list_footer_bitmap, BITMAP_GROUP_TAG, source->footer_bitmap, source->file,
+		source->line);
 	parse_bounds(source->header_bounds, &definition->list_header_bounds, source->file, source->line);
 	parse_bounds(source->footer_bounds, &definition->list_footer_bounds, source->file, source->line);
-	reference_clear(&definition->extended_description_widget, UI_WIDGET_DEFINITION_TAG);
-	if (source->description)
-	{
-		if (definition->type != _widget_type_column_list)
-			problem(source->file, source->line, "a description is for a column list:", source->name);
-		reference_set(&definition->extended_description_widget, UI_WIDGET_DEFINITION_TAG,
-			tag_named(UI_WIDGET_DEFINITION_TAG, source->description, source->file, source->line));
-	}
+	if (source->description && definition->type != _widget_type_column_list)
+		problem(source->file, source->line, "a description is for a column list:", source->name);
+	reference_named(&definition->extended_description_widget, UI_WIDGET_DEFINITION_TAG, source->description,
+		source->file, source->line);
 	/* the children */
 	for (count = 0, child = source->first_child; child != HALO_MENU_NONE; child = menus->children[child].next)
 		count++;
@@ -1226,59 +1271,33 @@ static void *widget_build(long widget_index)
 	}
 	/* the event handlers: one for each of each <on>'s events */
 	for (count = 0, handler = source->first_handler; handler != HALO_MENU_NONE; handler = menus->handlers[handler].next)
-		count++;
+	{
+		char const *text = menus->handlers[handler].event;
+		char word[64];
+
+		while (attribute_word(&text, word, sizeof(word)))
+			count++;
+	}
 	if (count)
 	{
-		long total = 0;
+		struct ui_widget_event_handler_reference *handlers = allocate(count * sizeof(*handlers));
 
-		/* (count the events) */
-		for (handler = source->first_handler; handler != HALO_MENU_NONE; handler = menus->handlers[handler].next)
+		definition->event_handlers.count = count;
+		definition->event_handlers.address = XBOX_ADDRESS(handlers);
+		for (count = 0, handler = source->first_handler; handlers && handler != HALO_MENU_NONE;
+			handler = menus->handlers[handler].next)
 		{
-			char const *text = menus->handlers[handler].event;
+			struct halo_menu_handler const *on = &menus->handlers[handler];
+			char const *text = on->event;
+			char word[64];
 
-			while (text && *text)
+			while (attribute_word(&text, word, sizeof(word)))
 			{
-				long length;
+				long event = name_index(word, event_names, NUMBEROF(event_names));
 
-				text += strspn(text, " \t\r\n");
-				length = (long)strcspn(text, " \t\r\n");
-				if (!length)
-					break;
-				total++;
-				text += length;
-			}
-		}
-		if (total)
-		{
-			struct ui_widget_event_handler_reference *handlers = allocate(total * sizeof(*handlers));
-
-			definition->event_handlers.count = total;
-			definition->event_handlers.address = XBOX_ADDRESS(handlers);
-			for (count = 0, handler = source->first_handler; handlers && handler != HALO_MENU_NONE;
-				handler = menus->handlers[handler].next)
-			{
-				struct halo_menu_handler const *on = &menus->handlers[handler];
-				char const *text = on->event;
-
-				while (text && *text)
-				{
-					char word[64];
-					long length, event;
-
-					text += strspn(text, " \t\r\n");
-					length = (long)strcspn(text, " \t\r\n");
-					if (!length)
-						break;
-					if (length >= (long)sizeof(word))
-						length = sizeof(word) - 1;
-					memcpy(word, text, length);
-					word[length] = 0;
-					text += strcspn(text, " \t\r\n");
-					event = name_index(word, event_names, NUMBEROF(event_names));
-					if (event == NONE)
-						problem(on->file, on->line, "there is no event", word);
-					handler_build(&handlers[count++], on, event, definition);
-				}
+				if (event == NONE)
+					problem(on->file, on->line, "there is no event", word);
+				handler_build(&handlers[count++], on, event, definition);
 			}
 		}
 	}
@@ -1332,22 +1351,11 @@ static void instance_set(struct cache_file_tag_instance *instances, long group_t
 	char const *suffix, void *definition)
 {
 	struct cache_file_tag_instance *instance = &instances[DATUM_INDEX_TO_ABSOLUTE_INDEX(tag_index)];
-	char *copy = allocate((long)strlen(PC_MENU_TAG_PREFIX) + (long)strlen(name) + (long)strlen(suffix) + 1);
+	long size = (long)strlen(PC_MENU_TAG_PREFIX) + (long)strlen(name) + (long)strlen(suffix) + 1;
+	char *copy = allocate(size);
 
 	if (copy)
-	{
-		char *character;
-
-		strcpy(copy, PC_MENU_TAG_PREFIX);
-		strcat(copy, name);
-		strcat(copy, suffix);
-		/* (named as the map's tags are) */
-		for (character = copy; *character; character++)
-		{
-			if (*character == '/')
-				*character = '\\';
-		}
-	}
+		tag_name_of(copy, (size_t)size, name, suffix);
 	instance->group_tag = group_tag;
 	instance->parent_group_tags[0] = NONE;
 	instance->parent_group_tags[1] = NONE;
@@ -1432,8 +1440,6 @@ static void recolor_map_widgets(enum halo_menu_theme theme)
 	}
 }
 
-/* ---------- public code */
-
 /* ---------- the in-game pause menu (a multiplayer map's)
 
 Its list (RESUME GAME, LEAVE GAME; a custom map's own buttons too) gets
@@ -1449,22 +1455,6 @@ what is below the list moves down. */
 #define PAUSE_SETTINGS_SCREEN "main_menu/settings_select/player_setup/player_profile_edit/player_profile_edit_screen"
 #define PAUSE_BUTTON_SPACING 35
 #define PAUSE_BOX_FIRST_BUTTONS 3
-
-static long ui_function_named(char const *name)
-{
-	long index;
-
-	for (index = 0; index < 512; index++)
-	{
-		char const *function = ui_widget_event_handler_function_name(index);
-
-		if (!function)
-			break;
-		if (!strcmp(function, name))
-			return index;
-	}
-	return NONE;
-}
 
 static boolean tag_name_ends(long tag_index, char const *end)
 {
@@ -1653,7 +1643,7 @@ static void pause_box_redraw(struct ui_widget_definition const *box, long button
 static void pause_patch(struct cache_file_tag_instance *instances)
 {
 	long collection = tag_loaded('Soul', MULTIPLAYER_COLLECTION);
-	long quit_function = ui_function_named("mp game player quit");
+	long quit_function = game_function_named("mp game player quit");
 	boolean host = global_network_game_server_get() != NULL;
 	struct tag_block const *screens;
 	long patched_list = NONE, added = 0, buttons = 0, screen;
@@ -1749,6 +1739,8 @@ static boolean menus_pc_chosen(void)
 	return FALSE;
 }
 
+/* ---------- public code */
+
 void menu_tags_loaded(
 	char const *map_name)
 {
@@ -1756,7 +1748,7 @@ void menu_tags_loaded(
 	struct cache_file_tag_instance *instances;
 	long widget_count, own_lists = 0, total, index;
 	boolean game_map = strcmp(map_name, "ui") != 0;
-	char *empty_name;
+	char *slot_name;
 
 	if (!menus_pc_chosen())
 		return;
@@ -1837,16 +1829,15 @@ void menu_tags_loaded(
 	}
 	if (build.failed)
 		goto failed;
-	/* (pause_patch's, until it makes them: nothing a name finds; the name
-	is the game's memory, which the 64-bit builds' tag fields can address) */
-	empty_name = allocate(1);
+	/* (pause_patch's, until it makes them: nothing a name finds) */
+	slot_name = empty_name();
 	if (build.failed)
 		goto failed;
 	for (index = build.first_index + build.next; index < build.first_index + total; index++)
 	{
 		instances[index].group_tag = NONE;
 		instances[index].tag_index = NONE;
-		instances[index].name = XBOX_ADDRESS(empty_name);
+		instances[index].name = XBOX_ADDRESS(slot_name);
 	}
 	cache_files_set_tag_instances(instances, build.first_index + total);
 	for (index = 0; index < widget_count && !build.failed; index++)
@@ -1863,12 +1854,7 @@ void menu_tags_loaded(
 	}
 	else if (widget_named(menus->root) != NONE)
 	{
-		snprintf(menu_tags.root, sizeof(menu_tags.root), "%s%s", PC_MENU_TAG_PREFIX, menus->root);
-		for (index = 0; menu_tags.root[index]; index++)
-		{
-			if (menu_tags.root[index] == '/')
-				menu_tags.root[index] = '\\';
-		}
+		tag_name_of(menu_tags.root, sizeof(menu_tags.root), menus->root, "");
 	}
 	else
 	{
@@ -1944,14 +1930,8 @@ char const *pc_menus_root_name(
 	if (menu_tags.loaded && *open && build.menus == NULL)
 	{
 		static char name[300];
-		long index;
 
-		snprintf(name, sizeof(name), "%s%s", PC_MENU_TAG_PREFIX, open);
-		for (index = 0; name[index]; index++)
-		{
-			if (name[index] == '/')
-				name[index] = '\\';
-		}
+		tag_name_of(name, sizeof(name), open, "");
 		if (tag_loaded(UI_WIDGET_DEFINITION_TAG, name) != NONE)
 		{
 			extern boolean pc_menu_profile_edit_begin(void);
