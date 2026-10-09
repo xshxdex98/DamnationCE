@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.36
+
+A hotfix for 0.3.35.
+
+### Fixes
+
+- A grenade's detonation no longer crashes the game on Android (#124).
+  0.3.35's Delta Stats read a damaged object's material even for objects
+  that have none, such as the weapons and projectiles an explosion
+  reaches. Other platforms read the same stale value without crashing,
+  and are fixed too.
+
+### Improvements
+
+- When the server browser finds no games for your version, it says how
+  many are on a newer one and to update DamnationCE.
+
+Network version 24, as before: 0.3.32 to 0.3.36 play together.
+
 ## 0.3.35
 
 ### New
