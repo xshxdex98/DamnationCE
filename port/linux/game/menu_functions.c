@@ -97,6 +97,8 @@ void browser_screen_open(void);
 boolean map_screen_open(void);
 void map_screen_note_online_games(void);
 void map_screen_go_back(void);
+/* the game list's games of a newer network version (browser.c) */
+int browser_newer_games(void);
 #endif
 char const *pc_menu_function_name(long function_index);
 char const *pc_menu_game_data_input_name(long function_index);
@@ -3511,8 +3513,21 @@ static void lobby_browser_update(struct widget_instance *list)
 		}
 		else if (!lobby_browser.count)
 		{
-			usnprintf(text, NUMBEROF(text) - 1, L"%s", now - lobby_browser.begin_time < LOBBY_BROWSER_LOOK_TIME ?
-				L"Looking for public games..." : L"No public games found");
+			int newer = 0;
+
+#ifdef HALO_GAME_BROWSER
+			/* (an old build sees none of the games: it says why) */
+			newer = browser_newer_games();
+#endif
+			if (now - lobby_browser.begin_time < LOBBY_BROWSER_LOOK_TIME)
+				usnprintf(text, NUMBEROF(text) - 1, L"Looking for public games...");
+			else if (newer)
+			{
+				usnprintf(text, NUMBEROF(text) - 1, L"%d %s on a newer version: update DamnationCE", newer,
+					newer == 1 ? L"game is" : L"games are");
+			}
+			else
+				usnprintf(text, NUMBEROF(text) - 1, L"No public games found");
 		}
 		else if (chosen < lobby_browser.count)
 		{

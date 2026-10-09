@@ -1090,9 +1090,23 @@ void browser_screen_render(
 	render_columns();
 	if (!browser_screen.count)
 	{
+		int newer = browser_newer_games();
+
 		ui_overlay_text(UI_FONT_BOLD, 12.0f, layout.list_x + 10, LIST_Y + 20, UI_ALIGN_LEFT, COLOR_TEXT, "No games right now");
-		ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 10, LIST_Y + 38, UI_ALIGN_LEFT, COLOR_DIM,
-			"Host one with Create Game, and it shows here for everyone.");
+		/* (an old build sees none of the games: it says why) */
+		if (newer)
+		{
+			char text[96];
+
+			snprintf(text, sizeof(text), "%d %s on a newer version: update DamnationCE to join.", newer,
+				newer == 1 ? "game is" : "games are");
+			ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 10, LIST_Y + 38, UI_ALIGN_LEFT, COLOR_DIM, text);
+		}
+		else
+		{
+			ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.list_x + 10, LIST_Y + 38, UI_ALIGN_LEFT, COLOR_DIM,
+				"Host one with Create Game, and it shows here for everyone.");
+		}
 	}
 	for (row = 0; row < ROWS_PER_PAGE && page_first + row < browser_screen.count; row++)
 		render_row(&browser_screen.games[page_first + row], row, page_first + row == browser_screen.selected);

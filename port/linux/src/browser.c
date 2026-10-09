@@ -119,6 +119,8 @@ static struct
 	int list_failed;
 	int game_count;
 	struct browser_game games[BROWSER_MAXIMUM_GAMES];
+	/* the listed games of a newer network version, left out */
+	int newer_count;
 } browser;
 
 /* ---------- text */
@@ -703,7 +705,7 @@ static void update_list(void)
 	char url[512], error[256];
 	char own[BROWSER_INVITE_LENGTH + 1];
 	struct browser_game *games;
-	int count = 0;
+	int count = 0, newer = 0;
 	int status;
 	char *line;
 	int wanted;
@@ -727,12 +729,12 @@ static void update_list(void)
 	{
 		for (line = strtok(response, "\n"); line && count < BROWSER_MAXIMUM_GAMES; line = strtok(NULL, "\n"))
 		{
-			if (parse_game(line, &games[count]) && games[count].version >= HALO_PORT_NETWORK_VERSION_MINIMUM &&
-				games[count].version <= HALO_PORT_NETWORK_VERSION_MAXIMUM &&
-				strcmp(games[count].invite, own))
-			{
+			if (!parse_game(line, &games[count]))
+				continue;
+			if (games[count].version > HALO_PORT_NETWORK_VERSION_MAXIMUM)
+				newer++;
+			else if (games[count].version >= HALO_PORT_NETWORK_VERSION_MINIMUM && strcmp(games[count].invite, own))
 				count++;
-			}
 		}
 	}
 	else
@@ -745,6 +747,7 @@ static void update_list(void)
 	if (status == 200)
 	{
 		memcpy(browser.games, games, sizeof(*games) * (size_t)count);
+		browser.newer_count = newer;
 		browser.game_count = count;
 	}
 	pthread_mutex_unlock(&browser_lock);
@@ -1008,6 +1011,18 @@ int browser_get_games(struct browser_game *games, int maximum_count)
 	browser.list_wanted = 1;
 	count = browser.game_count < maximum_count ? browser.game_count : maximum_count;
 	memcpy(games, browser.games, sizeof(*games) * (size_t)count);
+	pthread_mutex_unlock(&browser_lock);
+	return count;
+}
+
+int browser_newer_games(void)
+{
+	int count;
+
+	pthread_once(&browser_once, start_thread);
+	pthread_mutex_lock(&browser_lock);
+	browser.list_wanted = 1;
+	count = browser.newer_count;
 	pthread_mutex_unlock(&browser_lock);
 	return count;
 }
