@@ -1,7 +1,7 @@
 /*
 SDL_PLATFORM.C
 
-The SDL3 window, OpenGL context and event loop behind the Linux build.
+The SDL3 window, OpenGL context and event loop behind the native builds.
 
 The window is created with the Direct3D device (d3d8_gl.c) on the game's
 main thread, which is also the only thread that pumps events. Keyboard and
@@ -465,6 +465,13 @@ static void platform_window_size_setting(long *width, long *height)
 	}
 }
 
+/* a display mode's size in pixels */
+static void platform_mode_size(const SDL_DisplayMode *mode, long *width, long *height)
+{
+	*width = (long)(mode->w * mode->pixel_density + 0.5f);
+	*height = (long)(mode->h * mode->pixel_density + 0.5f);
+}
+
 /* a display's own size in pixels (its desktop mode) */
 static BOOL platform_display_size(SDL_DisplayID display, long *width, long *height)
 {
@@ -472,8 +479,7 @@ static BOOL platform_display_size(SDL_DisplayID display, long *width, long *heig
 
 	if (!mode)
 		return FALSE;
-	*width = (long)(mode->w * mode->pixel_density + 0.5f);
-	*height = (long)(mode->h * mode->pixel_density + 0.5f);
+	platform_mode_size(mode, width, height);
 	return TRUE;
 }
 
@@ -527,20 +533,15 @@ flag unset, so the game drew 640x480 and gamescope stretched it. A window
 that was asked to be fullscreen and covers its display counts too. */
 static BOOL platform_window_fullscreen(void)
 {
-	SDL_DisplayID display;
-	const SDL_DisplayMode *mode;
+	long display_width, display_height;
 	int width, height;
 
 	if (SDL_GetWindowFlags(platform_window) & SDL_WINDOW_FULLSCREEN)
 		return TRUE;
-	if (!platform_fullscreen_requested)
-		return FALSE;
-	display = SDL_GetDisplayForWindow(platform_window);
-	mode = display ? SDL_GetDesktopDisplayMode(display) : NULL;
-	if (!mode || !SDL_GetWindowSizeInPixels(platform_window, &width, &height))
-		return FALSE;
-	return width >= (int)(mode->w * mode->pixel_density + 0.5f) &&
-		height >= (int)(mode->h * mode->pixel_density + 0.5f);
+	return platform_fullscreen_requested &&
+		platform_display_size(SDL_GetDisplayForWindow(platform_window), &display_width, &display_height) &&
+		SDL_GetWindowSizeInPixels(platform_window, &width, &height) &&
+		width >= display_width && height >= display_height;
 }
 
 /* the size in pixels the game draws its picture at (d3d8_gl.c): the
@@ -630,8 +631,7 @@ int platform_display_resolutions(long *widths, long *heights, int maximum)
 	modes = SDL_GetFullscreenDisplayModes(display, &mode_count);
 	for (index = 0; modes && index < mode_count; index++)
 	{
-		width = (long)(modes[index]->w * modes[index]->pixel_density + 0.5f);
-		height = (long)(modes[index]->h * modes[index]->pixel_density + 0.5f);
+		platform_mode_size(modes[index], &width, &height);
 		if (width >= 640 && height >= 480 && width <= display_width && height <= display_height &&
 			(width != display_width || height != display_height))
 		{
@@ -750,7 +750,8 @@ int platform_audio_devices(int recording, char (*names)[PLATFORM_AUDIO_DEVICE_NA
 SDL_AudioDeviceID platform_audio_device(int recording, const char *name)
 {
 	SDL_AudioDeviceID *devices;
-	SDL_AudioDeviceID found = recording ? SDL_AUDIO_DEVICE_DEFAULT_RECORDING : SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
+	SDL_AudioDeviceID system_default = recording ? SDL_AUDIO_DEVICE_DEFAULT_RECORDING : SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
+	SDL_AudioDeviceID found = system_default;
 	int device_count = 0, index;
 
 	if (!name || !name[0] || !strcmp(name, "default"))
@@ -767,7 +768,7 @@ SDL_AudioDeviceID platform_audio_device(int recording, const char *name)
 		}
 	}
 	SDL_free(devices);
-	if (found == (recording ? SDL_AUDIO_DEVICE_DEFAULT_RECORDING : SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK))
+	if (found == system_default)
 		platform_log("audio: no %s device named \"%s\": the system's default", recording ? "input" : "output", name);
 	return found;
 }
@@ -793,9 +794,26 @@ or last resized: platform_display_apply */
 static long platform_window_width = -1, platform_window_height = -1;
 #endif
 
+#ifdef __APPLE__
+/* port/macos/src/macos_video.c */
+void macos_set_swap_interval(int interval);
+#endif
+
+/* display.vsync, as the swap interval (on macOS the context's own: SDL's
+stays off) */
+static void platform_vsync_apply(void)
+{
+	int interval = config_boolean("display.vsync") ? 1 : 0;
+
+#ifdef __APPLE__
+	macos_set_swap_interval(interval);
+#else
+	SDL_GL_SetSwapInterval(interval);
+#endif
+}
+
 BOOL platform_video_initialize(unsigned long width, unsigned long height)
 {
-	int version;
 	char title[64];
 
 	if (platform_window)
@@ -901,17 +919,9 @@ BOOL platform_video_initialize(unsigned long width, unsigned long height)
 	if (!gl_functions_load())
 		return FALSE;
 #ifdef __APPLE__
-	{
-		/* port/macos/src/macos_video.c */
-		void macos_set_swap_interval(int interval);
-
-		version = SDL_GL_SetSwapInterval(0);
-		macos_set_swap_interval(config_boolean("display.vsync") ? 1 : 0);
-	}
-#else
-	version = SDL_GL_SetSwapInterval(config_boolean("display.vsync") ? 1 : 0);
+	SDL_GL_SetSwapInterval(0);
 #endif
-	(void)version;
+	platform_vsync_apply();
 	platform_event_thread = SDL_GetCurrentThreadID();
 	platform_log("OpenGL %s on %s", (const char *)glGetString(GL_VERSION), (const char *)glGetString(GL_RENDERER));
 #ifndef HALO_ANDROID
@@ -947,16 +957,7 @@ void platform_display_apply(void)
 	if (!platform_window)
 		return;
 #endif
-#ifdef __APPLE__
-	{
-		/* (the context's own interval, as at start-up: SDL's stays off) */
-		void macos_set_swap_interval(int interval);
-
-		macos_set_swap_interval(config_boolean("display.vsync") ? 1 : 0);
-	}
-#else
-	SDL_GL_SetSwapInterval(config_boolean("display.vsync") ? 1 : 0);
-#endif
+	platform_vsync_apply();
 }
 
 void platform_video_drawable_size(int *width, int *height)
@@ -995,17 +996,13 @@ static Uint64 frame_interval_ns(void)
 	return (Uint64)(1e9f / rate);
 }
 
-#endif
-void platform_video_swap(void)
+/* after a swap, the wait the frame limit (frame_interval_ns) asks for */
+static void frame_limit(void)
 {
-#ifndef HALO_ANDROID
 	static Uint64 next_frame;
-	Uint64 interval, now;
+	Uint64 interval = frame_interval_ns();
+	Uint64 now;
 
-#endif
-	SDL_GL_SwapWindow(platform_window);
-#ifndef HALO_ANDROID
-	interval = frame_interval_ns();
 	if (!interval)
 		return;
 	now = SDL_GetTicksNS();
@@ -1016,6 +1013,14 @@ void platform_video_swap(void)
 	}
 	/* (a frame more than an interval late starts the count again) */
 	next_frame = now - next_frame > interval ? now + interval : next_frame + interval;
+}
+#endif
+
+void platform_video_swap(void)
+{
+	SDL_GL_SwapWindow(platform_window);
+#ifndef HALO_ANDROID
+	frame_limit();
 #endif
 }
 
@@ -1177,6 +1182,17 @@ BOOL platform_next_keystroke(struct platform_keystroke *keystroke)
 bool SDL_ShowAndroidToast(const char *message, int duration, int gravity, int xoffset, int yoffset);
 #endif
 
+/* a moment's note on the screen: Android's toast (the desktop's go to the
+log alone) */
+static void platform_toast(const char *message)
+{
+#ifdef HALO_ANDROID
+	SDL_ShowAndroidToast(message, 1, -1, 0, 0);
+#else
+	(void)message;
+#endif
+}
+
 /* whether the text has an invite link in it (its prefix, in any case) */
 static BOOL platform_text_has_invite_link(const char *text)
 {
@@ -1232,9 +1248,7 @@ static void platform_invite_clipboard(BOOL look)
 		SDL_SetClipboardText(invite);
 		snprintf(seen, sizeof(seen), "%s", invite);
 		platform_log("Internet play: the invite link is on the clipboard");
-#ifdef HALO_ANDROID
-		SDL_ShowAndroidToast("Hosting: the invite link is on the clipboard", 1, -1, 0, 0);
-#endif
+		platform_toast("Hosting: the invite link is on the clipboard");
 	}
 	if (look && config_boolean("network.join_from_clipboard"))
 	{
@@ -1246,11 +1260,7 @@ static void platform_invite_clipboard(BOOL look)
 			/* (a link, not a bare code: 64 hex digits alone are as often a
 			checksum copied for something else) */
 			if (platform_text_has_invite_link(text) && p2p_join_invite(text))
-			{
-#ifdef HALO_ANDROID
-				SDL_ShowAndroidToast("Joining the invite on the clipboard", 1, -1, 0, 0);
-#endif
-			}
+				platform_toast("Joining the invite on the clipboard");
 		}
 		SDL_free(text);
 	}
@@ -1390,12 +1400,31 @@ void platform_request_quit(void)
 }
 
 #ifndef HALO_ANDROID
+/* (under input_lock) what a pointer did since it was last taken */
+static void pointer_take(struct platform_ui_pointer *pointer, struct platform_ui_pointer *taken)
+{
+	*taken = *pointer;
+	pointer->moved = FALSE;
+	pointer->left_clicks = 0;
+	pointer->right_clicks = 0;
+	pointer->wheel_steps = 0;
+}
+
+/* the mouse put at the window's middle; where that is */
+static void pointer_center(float *x, float *y)
+{
+	int width, height;
+
+	SDL_GetWindowSize(platform_window, &width, &height);
+	*x = width * 0.5f;
+	*y = height * 0.5f;
+	SDL_WarpMouseInWindow(platform_window, *x, *y);
+}
+
 /* (under input_lock, on the event thread) the scoreboard's pointer on: the
 mouse freed, at the window's middle, and nothing held for the triggers */
 static void scoreboard_pointer_start(void)
 {
-	int width, height;
-
 	scoreboard_pointer_active = TRUE;
 	memset(&scoreboard_pointer, 0, sizeof(scoreboard_pointer));
 	memset(input_state.mouse_buttons, 0, sizeof(input_state.mouse_buttons));
@@ -1403,10 +1432,7 @@ static void scoreboard_pointer_start(void)
 	input_state.mouse_dx = input_state.mouse_dy = 0.0f;
 	platform_mouse_capture(FALSE);
 	show_pointer(TRUE);
-	SDL_GetWindowSize(platform_window, &width, &height);
-	SDL_WarpMouseInWindow(platform_window, width * 0.5f, height * 0.5f);
-	scoreboard_pointer.x = width * 0.5f;
-	scoreboard_pointer.y = height * 0.5f;
+	pointer_center(&scoreboard_pointer.x, &scoreboard_pointer.y);
 }
 
 /* ... off: the mouse the aim's again (unless freed: F12, or the menus) */
@@ -1427,11 +1453,7 @@ BOOL platform_scoreboard_pointer(BOOL offered, struct platform_ui_pointer *point
 	pthread_mutex_lock(&input_lock);
 	scoreboard_pointer_offered = offered;
 	active = scoreboard_pointer_active && offered;
-	*pointer = scoreboard_pointer;
-	scoreboard_pointer.moved = FALSE;
-	scoreboard_pointer.left_clicks = 0;
-	scoreboard_pointer.right_clicks = 0;
-	scoreboard_pointer.wheel_steps = 0;
+	pointer_take(&scoreboard_pointer, pointer);
 	pthread_mutex_unlock(&input_lock);
 	return active;
 }
@@ -1460,6 +1482,26 @@ void platform_scoreboard_scroll(int open, long *notches, long *pages)
 	scoreboard_notches = 0;
 	scoreboard_pages = 0;
 	pthread_mutex_unlock(&input_lock);
+}
+
+/* (under input_lock) the input a rebinding waited for: result as
+platform_binding_capture_poll gives it */
+static void binding_take(int result, int input)
+{
+	binding_capture = _binding_capture_taken;
+	binding_taken_ms = SDL_GetTicks();
+	binding_capture_result = result;
+	binding_captured_input = input;
+}
+
+/* the whole notches of a wheel's turning, taken from it (smooth-scrolling
+wheels send fractions) */
+static long whole_notches(float *wheel)
+{
+	long notches = (long)*wheel;
+
+	*wheel -= (float)notches;
+	return notches;
 }
 
 void platform_pump_events(void)
@@ -1535,11 +1577,8 @@ void platform_pump_events(void)
 			if (binding_capture == _binding_capture_waiting && event.key.down && !event.key.repeat &&
 				event.key.scancode != SDL_SCANCODE_F11 && event.key.scancode != SDL_SCANCODE_F12)
 			{
-				binding_capture = _binding_capture_taken;
-				binding_taken_ms = SDL_GetTicks();
-				binding_capture_result = event.key.scancode == SDL_SCANCODE_ESCAPE ? 3 :
-					event.key.scancode == SDL_SCANCODE_DELETE ? 2 : 1;
-				binding_captured_input = event.key.scancode;
+				binding_take(event.key.scancode == SDL_SCANCODE_ESCAPE ? 3 :
+					event.key.scancode == SDL_SCANCODE_DELETE ? 2 : 1, event.key.scancode);
 				break;
 			}
 			queue_keystroke(&event.key);
@@ -1600,10 +1639,7 @@ void platform_pump_events(void)
 			if (binding_capture == _binding_capture_waiting && event.button.down &&
 				event.button.button < PLATFORM_MOUSE_BUTTON_COUNT)
 			{
-				binding_capture = _binding_capture_taken;
-				binding_taken_ms = SDL_GetTicks();
-				binding_capture_result = 1;
-				binding_captured_input = INPUT_MOUSE + event.button.button;
+				binding_take(1, INPUT_MOUSE + event.button.button);
 				break;
 			}
 #ifndef HALO_ANDROID
@@ -1655,43 +1691,21 @@ void platform_pump_events(void)
 		case SDL_EVENT_MOUSE_WHEEL:
 			if (binding_capture == _binding_capture_waiting && event.wheel.y != 0.0f)
 			{
-				binding_capture = _binding_capture_taken;
-				binding_taken_ms = SDL_GetTicks();
-				binding_capture_result = 1;
-				binding_captured_input = event.wheel.y > 0.0f ? INPUT_WHEEL_UP : INPUT_WHEEL_DOWN;
+				binding_take(1, event.wheel.y > 0.0f ? INPUT_WHEEL_UP : INPUT_WHEEL_DOWN);
 				break;
 			}
 			if (SDL_GetTicks() < scoreboard_open_until_ms)
 			{
-				/* whole notches, up (away) scrolling up */
+				/* (up, away, scrolls up) */
 				scoreboard_wheel -= event.wheel.y;
-				while (scoreboard_wheel >= 1.0f)
-				{
-					scoreboard_notches++;
-					scoreboard_wheel -= 1.0f;
-				}
-				while (scoreboard_wheel <= -1.0f)
-				{
-					scoreboard_notches--;
-					scoreboard_wheel += 1.0f;
-				}
+				scoreboard_notches += whole_notches(&scoreboard_wheel);
 				break;
 			}
 #ifndef HALO_ANDROID
 			if (input_state.ui_pointer)
 			{
-				/* whole notches: smooth-scrolling wheels send fractions */
 				ui_pointer_wheel += event.wheel.y;
-				while (ui_pointer_wheel >= 1.0f)
-				{
-					ui_pointer.wheel_steps++;
-					ui_pointer_wheel -= 1.0f;
-				}
-				while (ui_pointer_wheel <= -1.0f)
-				{
-					ui_pointer.wheel_steps--;
-					ui_pointer_wheel += 1.0f;
-				}
+				ui_pointer.wheel_steps += (int)whole_notches(&ui_pointer_wheel);
 				break;
 			}
 #endif
@@ -1809,14 +1823,13 @@ void platform_ui_pointer_set_active(BOOL active)
 	platform_mouse_capture(!active && !input_state.mouse_released);
 	if (active)
 	{
-		int width, height;
+		float x, y;
 
-		SDL_GetWindowSize(platform_window, &width, &height);
-		SDL_WarpMouseInWindow(platform_window, width * 0.5f, height * 0.5f);
+		pointer_center(&x, &y);
 		show_pointer(TRUE);
 		pthread_mutex_lock(&input_lock);
-		ui_pointer.x = width * 0.5f;
-		ui_pointer.y = height * 0.5f;
+		ui_pointer.x = x;
+		ui_pointer.y = y;
 		pthread_mutex_unlock(&input_lock);
 	}
 	else
@@ -1832,11 +1845,7 @@ BOOL platform_ui_pointer_read(struct platform_ui_pointer *pointer)
 
 	pthread_mutex_lock(&input_lock);
 	active = input_state.ui_pointer;
-	*pointer = ui_pointer;
-	ui_pointer.moved = FALSE;
-	ui_pointer.left_clicks = 0;
-	ui_pointer.right_clicks = 0;
-	ui_pointer.wheel_steps = 0;
+	pointer_take(&ui_pointer, pointer);
 	pthread_mutex_unlock(&input_lock);
 	return active;
 }
@@ -1881,19 +1890,21 @@ void platform_video_window_size(int *width, int *height)
 }
 
 #endif
+
 void platform_input_read(struct platform_input_state *state, BOOL consume_motion)
 {
+	int index;
+
 	pthread_mutex_lock(&input_lock);
 	*state = input_state;
 	/* (rebinding: nothing reaches the controller until the input is taken
 	and every key and button is up again) */
 	if (binding_capture != _binding_capture_idle || binding_settling)
 	{
-		int scancode;
 		BOOL held = mouse_buttons_down != 0;
 
-		for (scancode = 0; scancode < SDL_SCANCODE_COUNT && !held; scancode++)
-			held = input_state.keys[scancode] != 0;
+		for (index = 0; index < SDL_SCANCODE_COUNT && !held; index++)
+			held = input_state.keys[index] != 0;
 		if (binding_capture == _binding_capture_taken && SDL_GetTicks() - binding_taken_ms > BINDING_UNCLAIMED_MS)
 			binding_capture = _binding_capture_idle;
 		if (binding_capture == _binding_capture_waiting && SDL_GetTicks() - binding_polled_ms > BINDING_ABANDONED_MS)
@@ -1908,34 +1919,25 @@ void platform_input_read(struct platform_input_state *state, BOOL consume_motion
 		/* (and the motion of the while, which would otherwise pile up for
 		the aim) */
 		state->mouse_dx = state->mouse_dy = 0.0f;
-		if (consume_motion)
-		{
-			input_state.mouse_dx = input_state.mouse_dy = 0.0f;
-			input_state.mouse_wheel = 0.0f;
-		}
-		pthread_mutex_unlock(&input_lock);
-		return;
 	}
-	if (consume_motion)
+	else if (consume_motion)
 	{
-		int scancode;
-
-		for (scancode = 0; scancode < SDL_SCANCODE_COUNT; scancode++)
+		/* (and the keys and buttons pressed and let go since the last read) */
+		for (index = 0; index < SDL_SCANCODE_COUNT; index++)
 		{
-			state->keys[scancode] |= keys_pressed[scancode];
-			keys_pressed[scancode] = 0;
+			state->keys[index] |= keys_pressed[index];
+			keys_pressed[index] = 0;
 		}
-		for (scancode = 0; scancode < PLATFORM_MOUSE_BUTTON_COUNT; scancode++)
+		for (index = 0; index < PLATFORM_MOUSE_BUTTON_COUNT; index++)
 		{
-			state->mouse_buttons[scancode] |= mouse_buttons_pressed[scancode];
-			mouse_buttons_pressed[scancode] = 0;
+			state->mouse_buttons[index] |= mouse_buttons_pressed[index];
+			mouse_buttons_pressed[index] = 0;
 		}
 	}
 	if (consume_motion)
 	{
-		input_state.mouse_dx = 0;
-		input_state.mouse_dy = 0;
-		input_state.mouse_wheel = 0;
+		input_state.mouse_dx = input_state.mouse_dy = 0.0f;
+		input_state.mouse_wheel = 0.0f;
 	}
 	pthread_mutex_unlock(&input_lock);
 }
