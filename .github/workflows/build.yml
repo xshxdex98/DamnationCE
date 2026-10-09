@@ -188,6 +188,9 @@ jobs:
         if: ${{ !inputs.release }}
         run: python3 tools/ci_build.py android debug
 
+      - name: Touch layout tests
+        run: python3 tools/test_touch_layout.py
+
       - name: Release
         run: python3 tools/ci_build.py android release
 
