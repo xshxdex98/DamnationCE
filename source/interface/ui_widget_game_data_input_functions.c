@@ -24,10 +24,8 @@ UI_WIDGET_GAME_DATA_INPUT_FUNCTIONS.C
 #include "saved games/playlist_profile.h"
 #include "text/text_group.h"
 #include "text/unicode.h"
-#ifdef HALO_64BIT
 #include "cseries/errors.h"
 #include "interface/ui_widget_instance.h"
-#endif
 #include "custom_edition_maps.h" /* port: port/linux/game/custom_edition_maps.c */
 #include "halo_menus.h" /* port: PC_MENU_FUNCTION_BASE */
 
@@ -99,69 +97,6 @@ machines, and clang warns about the always-true char comparison */
 	(long)(machine)->machine_index < MAXIMUM_NETWORK_MACHINE_COUNT)
 
 /* ---------- structures */
-#ifndef HALO_64BIT
-
-struct ui_widget_text_box_parameters
-{
-	wchar_t *text;
-	short string_list_index;
-	byte padding06[0x0E];
-};
-
-struct ui_widget_list_parameters
-{
-	short selected_list_item_index;
-	short list_item_top_index;
-	void *list_items;
-	word number_of_items;
-	word padding0E;
-	struct widget_instance *extended_description;
-	wchar_t *item_text;
-};
-
-union ui_widget_parameters
-{
-	struct ui_widget_text_box_parameters text_box;
-	struct ui_widget_list_parameters list;
-};
-
-struct ui_widget_animation_data
-{
-	short current_frame_index;
-	short first_frame_index;
-	short last_frame_index;
-	short number_of_sprite_frames;
-};
-
-struct widget_instance
-{
-	long definition_tag_index;
-	char const *name;
-	short local_player_index;
-	short horizontal_offset;
-	short vertical_offset;
-	short type;
-	boolean visible;
-	boolean render_regardless_of_controller_index;
-	boolean never_receive_events;
-	boolean pause_game_time;
-	boolean delete_recursion_lock;
-	boolean error_dialog;
-	boolean close_if_local_player_controller_present;
-	byte padding17;
-	unsigned long creation_time;
-	unsigned long milliseconds_to_auto_close;
-	unsigned long auto_close_fade_time;
-	real alpha_modifier;
-	struct widget_instance *previous;
-	struct widget_instance *next;
-	struct widget_instance *parent;
-	struct widget_instance *child;
-	struct widget_instance *focused_child;
-	union ui_widget_parameters parameters;
-	struct ui_widget_animation_data animation;
-};
-#endif
 
 struct network_advertised_game
 {
@@ -410,7 +345,7 @@ static void settings_menu_update_extended_description(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x12D,
-		description_definition->child_count == 2,
+		description_definition->child_widgets.count == 2,
 		"this doesn't look like the settings select widget to me");
 
 	description_picture = list_widget->parameters.list.extended_description->child;
@@ -463,7 +398,7 @@ static void playlist_settings_menu_update_extended_description(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x15B,
-			description_definition->child_count == 2,
+			description_definition->child_widgets.count == 2,
 			"expected a container widget w/ 2 children for the playlist settings list extended description");
 
 		description_child = list_widget->parameters.list.extended_description->child;
@@ -498,7 +433,7 @@ static void playlist_gametype_select_menu_update_extended_description(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x181,
-			description_definition->child_count == 2,
+			description_definition->child_widgets.count == 2,
 			"expected a container widget w/ 2 children for the playlist settings list extended description");
 
 		description_child = list_widget->parameters.list.extended_description->child;
@@ -564,8 +499,8 @@ static void difficulty_select_menu_update_extended_description(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x238,
 		/* port: the PC version's (port/assets/menus) has the profile's name too */
-		description_definition->child_count == 2 ||
-			(description_definition->child_count == 3 && pc_menu_tag(list_widget->definition_tag_index)),
+		description_definition->child_widgets.count == 2 ||
+			(description_definition->child_widgets.count == 3 && pc_menu_tag(list_widget->definition_tag_index)),
 		"this doesn't look like the difficulty select widget to me");
 
 	description_picture = list_widget->parameters.list.extended_description->child;
@@ -622,7 +557,7 @@ static void server_list_menu_update(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x297,
 			definition->type == _ui_widget_type_column_list &&
-				definition->child_count == 9,
+				definition->child_widgets.count == 9,
 			"this doesn't look like the net game server list widget");
 
 		for (game_index = 0;
@@ -653,8 +588,8 @@ static void server_list_menu_update(
 
 		widget->parameters.list.list_items = displayed_servers;
 		widget->parameters.list.number_of_items = (word)displayed_server_count;
-		widget->parameters.list.selected_list_item_index = (short)CEILING(
-			widget->parameters.list.selected_list_item_index,
+		widget->parameters.list.selected_index = (short)CEILING(
+			widget->parameters.list.selected_index,
 			displayed_server_count - 1);
 
 		for (item = widget->child, item_index = 0;
@@ -695,9 +630,9 @@ static void server_list_menu_update(
 		}
 
 		if (displayed_server_count > 0 &&
-			widget->parameters.list.selected_list_item_index < 0)
+			widget->parameters.list.selected_index < 0)
 		{
-			widget->parameters.list.selected_list_item_index = 0;
+			widget->parameters.list.selected_index = 0;
 		}
 
 		milliseconds_since_creation = system_milliseconds() - widget->creation_time;
@@ -705,7 +640,7 @@ static void server_list_menu_update(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x2F7,
 			ui_widget_definition_get(
-				widget->parameters.list.extended_description->definition_tag_index)->child_count == 5,
+				widget->parameters.list.extended_description->definition_tag_index)->child_widgets.count == 5,
 			"this doesn't look like the server list extended description widget");
 
 		{
@@ -766,10 +701,10 @@ static void server_list_menu_update(
 					score_limit_type_text->type == _ui_widget_type_text_box,
 				"expected 'score limit type' textbox");
 
-			if (widget->parameters.list.selected_list_item_index >= 0)
+			if (widget->parameters.list.selected_index >= 0)
 			{
 				struct network_advertised_game *server = displayed_servers[
-					widget->parameters.list.selected_list_item_index];
+					widget->parameters.list.selected_index];
 				char const *map_name;
 
 				switch (server->engine_type)
@@ -935,7 +870,7 @@ static void server_list_menu_update(
 
 				if (!widget->focused_child)
 				{
-					widget->parameters.list.selected_list_item_index = 0;
+					widget->parameters.list.selected_index = 0;
 					widget->focused_child = widget->child;
 				}
 			}
@@ -983,7 +918,7 @@ static void network_pregame_status_screen_update(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x3FC,
-		ui_widget_definition_get(widget->definition_tag_index)->child_count == 6,
+		ui_widget_definition_get(widget->definition_tag_index)->child_widgets.count == 6,
 		"this doesn't look like the net pregame status screen to me");
 
 	if (game)
@@ -1081,7 +1016,7 @@ static void network_pregame_status_screen_update(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x44C,
-			ui_widget_definition_get(local_machine_widget->definition_tag_index)->child_count == 6,
+			ui_widget_definition_get(local_machine_widget->definition_tag_index)->child_widgets.count == 6,
 			"this doesn't look like the net pregame status screen to me");
 
 		local_machine_found = FALSE;
@@ -1152,7 +1087,7 @@ static void network_pregame_status_screen_update(
 				"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 				0x485,
 				ui_widget_definition_get(
-					player_widgets[local_player_index]->definition_tag_index)->child_count == 3,
+					player_widgets[local_player_index]->definition_tag_index)->child_widgets.count == 3,
 				"this doesn't look like the net pregame status screen to me");
 
 			controller_bitmap = player_widgets[local_player_index]->child;
@@ -1189,7 +1124,7 @@ static void network_pregame_status_screen_update(
 					0x49D);
 				if (name_text->parameters.text_box.text)
 					name_text->parameters.text_box.text[0] = 0;
-				team_list->parameters.list.selected_list_item_index = 2;
+				team_list->parameters.list.selected_index = 2;
 			}
 			else
 			{
@@ -1221,17 +1156,17 @@ static void network_pregame_status_screen_update(
 					case _team_red:
 						controller_bitmap->animation.current_frame_index =
 							local_player_controller_bitmap_frames[0][local_player_index][2];
-						team_list->parameters.list.selected_list_item_index = 0;
+						team_list->parameters.list.selected_index = 0;
 						break;
 					case _team_blue:
 						controller_bitmap->animation.current_frame_index =
 							local_player_controller_bitmap_frames[0][local_player_index][1];
-						team_list->parameters.list.selected_list_item_index = 1;
+						team_list->parameters.list.selected_index = 1;
 						break;
 					default:
 						controller_bitmap->animation.current_frame_index =
 							local_player_controller_bitmap_frames[0][local_player_index][0];
-						team_list->parameters.list.selected_list_item_index = 2;
+						team_list->parameters.list.selected_index = 2;
 						break;
 					}
 				}
@@ -1279,7 +1214,7 @@ static void network_pregame_status_screen_update(
 					"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 					0x4DD,
 					ui_widget_definition_get(
-						machine_widgets[machine_widget_index]->definition_tag_index)->child_count == 6,
+						machine_widgets[machine_widget_index]->definition_tag_index)->child_widgets.count == 6,
 					"this doesn't look like the net pregame status screen to me");
 
 				remote_machine_icon = machine_widgets[machine_widget_index]->child;
@@ -1392,7 +1327,7 @@ static void splitscreen_pregame_status_screen_update(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x550,
-		ui_widget_definition_get(widget->definition_tag_index)->child_count == 3,
+		ui_widget_definition_get(widget->definition_tag_index)->child_widgets.count == 3,
 		"this doesn't look like the net pregame status screen to me");
 
 	if (game)
@@ -1479,7 +1414,7 @@ static void splitscreen_pregame_status_screen_update(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x592,
-			ui_widget_definition_get(status_container->definition_tag_index)->child_count == 6,
+			ui_widget_definition_get(status_container->definition_tag_index)->child_widgets.count == 6,
 			"this doesn't look like the net pregame status screen to me");
 
 		local_machine_found = FALSE;
@@ -1551,7 +1486,7 @@ static void splitscreen_pregame_status_screen_update(
 				"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 				0x5CC,
 				ui_widget_definition_get(
-					player_widgets[local_player_index]->definition_tag_index)->child_count == 3,
+					player_widgets[local_player_index]->definition_tag_index)->child_widgets.count == 3,
 				"this doesn't look like the net pregame status screen to me");
 
 			controller_bitmap = player_widgets[local_player_index]->child;
@@ -1571,7 +1506,7 @@ static void splitscreen_pregame_status_screen_update(
 					0x5DB);
 				if (name_text->parameters.text_box.text)
 					name_text->parameters.text_box.text[0] = 0;
-				team_list->parameters.list.selected_list_item_index = 0;
+				team_list->parameters.list.selected_index = 0;
 			}
 			else
 			{
@@ -1603,17 +1538,17 @@ static void splitscreen_pregame_status_screen_update(
 					case _team_red:
 						controller_bitmap->animation.current_frame_index =
 							local_player_controller_bitmap_frames[1][local_player_index][1];
-						team_list->parameters.list.selected_list_item_index = 0;
+						team_list->parameters.list.selected_index = 0;
 						break;
 					case _team_blue:
 						controller_bitmap->animation.current_frame_index =
 							local_player_controller_bitmap_frames[1][local_player_index][2];
-						team_list->parameters.list.selected_list_item_index = 1;
+						team_list->parameters.list.selected_index = 1;
 						break;
 					default:
 						controller_bitmap->animation.current_frame_index =
 							local_player_controller_bitmap_frames[1][local_player_index][0];
-						team_list->parameters.list.selected_list_item_index = 0;
+						team_list->parameters.list.selected_index = 0;
 						break;
 					}
 				}
@@ -1760,7 +1695,7 @@ static void main_menu_animation_fakery(
 		"expected a picture (container) for main menu options list extended description");
 
 	widget->parameters.list.extended_description->animation.current_frame_index =
-		widget->parameters.list.selected_list_item_index;
+		widget->parameters.list.selected_index;
 	widget->parameters.list.extended_description->animation.current_frame_index = (short)FLOOR(
 		widget->parameters.list.extended_description->animation.current_frame_index,
 		0);
@@ -1919,7 +1854,7 @@ static void player_profile_edit_select_menu_update_extended_description(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x844,
-			description_definition->child_count == 2,
+			description_definition->child_widgets.count == 2,
 			"expected a container widget w/ 2 children for the player profile edit settings list extended description");
 
 		description_child = list_widget->parameters.list.extended_description->child;
@@ -1955,7 +1890,7 @@ static void game_options_menu_update_text_desc(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x8FE,
-		definition->child_count > 0,
+		definition->child_widgets.count > 0,
 		"expected some list items for multiplayer game settings list");
 
 	extended_description = widget->parameters.list.extended_description;
@@ -1979,7 +1914,7 @@ static void game_options_menu_update_text_desc(
 			{
 				/* port: an extra item's own description (ui_widget.c) */
 				short extra_description = ui_widget_spinner_extra_description(spinner_list,
-					spinner_list->parameters.list.selected_list_item_index);
+					spinner_list->parameters.list.selected_index);
 
 				if (extra_description != NONE)
 				{
@@ -1987,7 +1922,7 @@ static void game_options_menu_update_text_desc(
 						extra_description;
 					return;
 				}
-				description_index += spinner_list->parameters.list.selected_list_item_index;
+				description_index += spinner_list->parameters.list.selected_index;
 				break;
 			}
 
@@ -2028,7 +1963,7 @@ static void game_options_menu_update_pic_desc(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x988,
-		definition->child_count > 0,
+		definition->child_widgets.count > 0,
 		"expected some list items for game settings list");
 
 	extended_description = widget->parameters.list.extended_description;
@@ -2051,7 +1986,7 @@ static void game_options_menu_update_pic_desc(
 			if (column == widget->focused_child)
 			{
 				/* port: an extra item shows its spinner's last picture of its own */
-				description_index += MIN(spinner_list->parameters.list.selected_list_item_index,
+				description_index += MIN(spinner_list->parameters.list.selected_index,
 					ui_widget_spinner_own_item_count(spinner_list) - 1);
 				break;
 			}
@@ -2690,7 +2625,7 @@ static void warn_if_difficulty_will_nuke_saved_game(
 		_stricmp(persistant_game_data_info.map_name, main_get_map_name()) == 0)
 	{
 		warning_widget->visible =
-			difficulty_list->parameters.list.selected_list_item_index !=
+			difficulty_list->parameters.list.selected_index !=
 				persistant_game_data_info.difficulty;
 	}
 	else
@@ -2720,7 +2655,7 @@ static void spinner_list_3wide_determine_displayed_item_indices(
 
 	if (focused_child == first_child)
 	{
-		displayed_item_indices[0] = list_widget->parameters.list.selected_list_item_index;
+		displayed_item_indices[0] = list_widget->parameters.list.selected_index;
 		displayed_item_indices[1] = displayed_item_indices[0] + 1;
 		if (displayed_item_indices[1] == list_widget->parameters.list.number_of_items)
 			displayed_item_indices[1] = 0;
@@ -2730,7 +2665,7 @@ static void spinner_list_3wide_determine_displayed_item_indices(
 	}
 	else if (focused_child == first_child->next)
 	{
-		displayed_item_indices[1] = list_widget->parameters.list.selected_list_item_index;
+		displayed_item_indices[1] = list_widget->parameters.list.selected_index;
 		displayed_item_indices[0] = displayed_item_indices[1] - 1;
 		if (displayed_item_indices[0] < 0)
 		{
@@ -2743,7 +2678,7 @@ static void spinner_list_3wide_determine_displayed_item_indices(
 	}
 	else
 	{
-		displayed_item_indices[2] = list_widget->parameters.list.selected_list_item_index;
+		displayed_item_indices[2] = list_widget->parameters.list.selected_index;
 		displayed_item_indices[1] = displayed_item_indices[2] - 1;
 		if (displayed_item_indices[1] < 0)
 		{
@@ -2911,7 +2846,7 @@ static void mutliplayer_settings_select_list_update_displayed_items(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x67E,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 children (list items) for 'multiplayer settings select' widget");
 
 	spinner_list_3wide_determine_displayed_item_indices(
@@ -2951,7 +2886,7 @@ static void mutliplayer_settings_select_list_update_displayed_items(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x69E,
-			definition->child_count != 0,
+			definition->child_widgets.count != 0,
 			"expected 3 children in multiplayer settings list item (name, pic, desc)");
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
@@ -3215,7 +3150,7 @@ static void player_profile_3wide_list_update(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x78B,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 children (list items) for 'player settings select' widget");
 
 	spinner_list_3wide_determine_displayed_item_indices(
@@ -3451,14 +3386,14 @@ static void player_profile_1wide_list_update(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x865,
-		definition->child_count == 0,
+		definition->child_widgets.count == 0,
 		"expected 0 children (1-wide spinner) for 'mp player settings select' widget");
 
 	definition = ui_widget_definition_get(list_widget->parent->definition_tag_index);
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x867,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected qtr-screen profile select wrapper screen to have 3 child widgets (pic, description, list... in that order)");
 
 	name_bitmap = list_widget->parent->child;
@@ -3472,20 +3407,20 @@ static void player_profile_1wide_list_update(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x86F,
-		list_widget->parameters.list.selected_list_item_index >= 0 &&
-			list_widget->parameters.list.selected_list_item_index <
+		list_widget->parameters.list.selected_index >= 0 &&
+			list_widget->parameters.list.selected_index <
 				list_widget->parameters.list.number_of_items,
 		"qtr-screen profile list has invalid list item index");
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x872,
-		list_widget->parameters.list.selected_list_item_index >= 0 &&
-			list_widget->parameters.list.selected_list_item_index <
+		list_widget->parameters.list.selected_index >= 0 &&
+			list_widget->parameters.list.selected_index <
 				list_widget->parameters.list.number_of_items,
 		"invalid list item index");
 
 	profile_index = ((long *)list_widget->parameters.list.list_items)
-		[list_widget->parameters.list.selected_list_item_index];
+		[list_widget->parameters.list.selected_index];
 	player_profile_update_cache_for_nwide_list(&profile_index, 1);
 	profile = NULL;
 
@@ -3619,8 +3554,8 @@ static void player_profile_1wide_list_update(
 		list_widget->parameters.list.number_of_items = (word)filter_invalid_list_indices(
 			(long *)list_widget->parameters.list.list_items,
 			list_widget->parameters.list.number_of_items);
-		list_widget->parameters.list.selected_list_item_index = (short)PIN(
-			list_widget->parameters.list.selected_list_item_index,
+		list_widget->parameters.list.selected_index = (short)PIN(
+			list_widget->parameters.list.selected_index,
 			0,
 			list_widget->parameters.list.number_of_items - 1);
 		player_profile_1wide_list_update(list_widget);
@@ -3672,7 +3607,7 @@ static void solo_level_select_list_update_displayed_items(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x1E1,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 children (list items) for 'level select' widget");
 
 	spinner_list_3wide_determine_displayed_item_indices(
@@ -3706,7 +3641,7 @@ static void solo_level_select_list_update_displayed_items(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x1F6,
-			definition->child_count,
+			definition->child_widgets.count,
 			"expected 3 children in solo level list item (name, pic, desc)");
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
@@ -3799,7 +3734,7 @@ static void player_profile_color_picker_update(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x94A,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 children (list items) for 'player color picker' widget");
 
 	spinner_list_3wide_determine_displayed_item_indices(
@@ -3822,7 +3757,7 @@ static void player_profile_color_picker_update(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x95B,
-			definition->child_count == 2,
+			definition->child_widgets.count == 2,
 			"expected 2 children in player color picker list item (name, pic)");
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
@@ -3861,7 +3796,7 @@ static void mp_level_select_list_update_displayed_items(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x9C0,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 children (list items) for 'level select' widget");
 
 	spinner_list_3wide_determine_displayed_item_indices(
@@ -3884,7 +3819,7 @@ static void mp_level_select_list_update_displayed_items(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x9D2,
-			definition->child_count,
+			definition->child_widgets.count,
 			"expected 3 children in solo level list item (name, pic, desc)");
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",

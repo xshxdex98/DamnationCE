@@ -35,14 +35,9 @@ boolean playlist_profile_get_options(long playlist_profile_index, struct game_va
 #include "halo_menus.h" /* port: PC_MENU_FUNCTION_BASE */
 #include "custom_edition_maps.h"
 #include "interface/ui_widget_game_data_input_functions.h"
+#include "interface/event_manager.h"
 
 /* ---------- structures */
-
-struct event_record
-{
-	short type;
-	short controller_index;
-};
 
 struct network_game_join_descriptor
 {
@@ -1815,7 +1810,7 @@ static boolean delete_player_profile_request(
 	long profile_index;
 
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 4111,
-		definition->type == 0 && definition->child_count >= 3,
+		definition->type == 0 && definition->child_widgets.count >= 3,
 		"expected the multiplayer profile select screen to be a container w/ 3+ children");
 	{
 		struct ui_widget_definition *list_definition = ui_widget_definition_get(widget->child->definition_tag_index);
@@ -1823,7 +1818,7 @@ static boolean delete_player_profile_request(
 			list_definition->type == 2,
 			"expected a spinner list widget for 'multiplayer profile list' widget");
 		match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 4115,
-			list_definition->child_count == 3,
+			list_definition->child_widgets.count == 3,
 			"expected 3 list items for 'multiplayer profile list' widget");
 	}
 	widget = widget->child;
@@ -1856,7 +1851,7 @@ static boolean player_profile_color_picker_select_color(
 			definition->type == 2,
 			"expected a spinner list widget for 'player color picker list' widget");
 		match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 3638,
-			definition->child_count == 3,
+			definition->child_widgets.count == 3,
 			"expected 3 list items for 'player color picker list' widget");
 	}
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 3644,
@@ -2079,7 +2074,7 @@ static boolean multiplayer_level_list_initialize(
 		definition->type == 2,
 		"expected a spinner list widget for 'multiplayer level list' widget");
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1229,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 list items for 'multiplayer level list' widget");
 	/* port: the Xbox levels, then the Custom Edition maps, looked for again
 	as the list opens (port/linux/game/custom_edition_maps.c) */
@@ -2126,7 +2121,7 @@ static boolean playlist_profile_begin_editing(
 		event_handler_functions.profile_index = NONE;
 		definition = ui_widget_definition_get(definition_tag_index);
 		match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1896,
-			definition->type == 0 && definition->child_count >= 3,
+			definition->type == 0 && definition->child_widgets.count >= 3,
 			"expected the multiplayer profile select screen to be a container w/ 3+ children");
 	}
 	{
@@ -2135,7 +2130,7 @@ static boolean playlist_profile_begin_editing(
 			list_definition->type == 2,
 			"expected a spinner list widget for 'multiplayer profile list' widget");
 		match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1900,
-			list_definition->child_count == 3,
+			list_definition->child_widgets.count == 3,
 			"expected 3 list items for 'multiplayer profile list' widget");
 	}
 	widget = widget->child;
@@ -2182,7 +2177,7 @@ static boolean player_profile_begin_editing(
 			definition->type == 2,
 			"expected a spinner list widget for 'player profile list' widget");
 		match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 3678,
-			definition->child_count == 3,
+			definition->child_widgets.count == 3,
 			"expected 3 list items for 'player profile list' widget");
 	}
 	widget = widget->child;
@@ -2221,7 +2216,7 @@ static boolean delete_playlist_profile_request(
 		long definition_tag_index = widget->definition_tag_index;
 		struct ui_widget_definition *definition = ui_widget_definition_get(definition_tag_index);
 		match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 4157,
-			definition->type == 0 && definition->child_count >= 3,
+			definition->type == 0 && definition->child_widgets.count >= 3,
 			"expected the playlist profile select screen to be a container w/ 3+ children");
 	}
 	{
@@ -2230,7 +2225,7 @@ static boolean delete_playlist_profile_request(
 			list_definition->type == 2,
 			"expected a spinner list widget for 'playlist profile list' widget");
 		match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 4161,
-			list_definition->child_count == 3,
+			list_definition->child_widgets.count == 3,
 			"expected 3 list items for 'playlist profile list' widget");
 	}
 	widget = widget->child;
@@ -2269,7 +2264,7 @@ static boolean player_profile_color_picker_menu_initialize(
 		definition->type == 2,
 		"expected a spinner list widget for 'player color picker list' widget");
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 3577,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 list items for 'player color picker list' widget");
 	widget->parameters.list.list_items = ui_widget_realloc(widget->parameters.list.list_items, color_count,
 		"c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 3581);
@@ -2426,7 +2421,7 @@ static boolean multiplayer_profiles_list_initialize(
 		definition->type == 2,
 		"expected a spinner list widget for 'multiplayer settings list' widget");
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1385,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 list items for 'multiplayer settings list' widget");
 	widget->parameters.list.list_items = ui_widget_realloc(widget->parameters.list.list_items, 0x190,
 		"c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1390);
@@ -3121,7 +3116,7 @@ static boolean player_profile_set_for_game_1wide(
 		spinner_list = spinner_list->next;
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1838, spinner_list, "failed to find the 1-wide spinner list for player profiles (expected it to be a child of this widget)");
 	definition = ui_widget_definition_get(spinner_list->definition_tag_index);
-	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1845, definition->child_count == 0, "expected a code-generated 1-wide spinner list for 'mp player profile list' widget");
+	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1845, definition->child_widgets.count == 0, "expected a code-generated 1-wide spinner list for 'mp player profile list' widget");
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1851, spinner_list->parameters.list.selected_index >= 0 && spinner_list->parameters.list.selected_index < (word)spinner_list->parameters.list.number_of_items, "invalid multiplayer profile specified from 'mp player profile list' list widget");
 	available_profiles = spinner_list->parameters.list.list_items;
 	if (!(available_profiles[spinner_list->parameters.list.selected_index] & 0x80000000))
@@ -3264,7 +3259,7 @@ static boolean solo_level_initialize_list_coop(
 
 	definition = ui_widget_definition_get(widget->definition_tag_index);
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 689, definition->type == 2, "expected a spinner list widget for 'solo level list' widget");
-	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 690, definition->child_count == 3, "expected 3 list items for 'solo level list' widget");
+	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 690, definition->child_widgets.count == 3, "expected 3 list items for 'solo level list' widget");
 	widget->parameters.list.list_items = single_player_level_data;
 	widget->parameters.list.number_of_items = 10;
 	widget->parameters.list.selected_index = PIN(player_ui_get_last_single_player_level_played(0), 0, 9);
@@ -3464,13 +3459,13 @@ static boolean player_profiles_list_initialize(
 		"expected a spinner list widget for 'player settings list' widget");
 	required_profile_count = 3;
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1688,
-		definition->child_count == 0 || definition->child_count == required_profile_count,
+		definition->child_widgets.count == 0 || definition->child_widgets.count == required_profile_count,
 		"expected either 1 or 3 list items for 'player settings list' widget");
 	widget->parameters.list.list_items = ui_widget_realloc(widget->parameters.list.list_items, 400,
 		"c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1693);
 	if (widget->parameters.list.list_items)
 	{
-		if (definition->child_count != required_profile_count)
+		if (definition->child_widgets.count != required_profile_count)
 		{
 			profile_count = 100;
 			include_default = TRUE;
@@ -3485,7 +3480,7 @@ static boolean player_profiles_list_initialize(
 			&profile_count,
 			widget->parameters.list.list_items,
 			include_default);
-		if (definition->child_count == required_profile_count && (word)profile_count < (word)required_profile_count)
+		if (definition->child_widgets.count == required_profile_count && (word)profile_count < (word)required_profile_count)
 		{
 			long remaining_profile_count;
 			long profile_offset;
@@ -3535,7 +3530,7 @@ static boolean player_profile_set_for_game_3wide(
 		"setting a player profile requires a valid controller index");
 	definition = ui_widget_definition_get(widget->definition_tag_index);
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1772,
-		definition->type == 0 && definition->child_count >= 3,
+		definition->type == 0 && definition->child_widgets.count >= 3,
 		"expected the player profile select screen to be a container w/ 3 or more children");
 	{
 		struct widget_instance *child = widget->child;
@@ -3545,7 +3540,7 @@ static boolean player_profile_set_for_game_3wide(
 		definition->type == 2,
 		"expected a spinner list widget for 'player profile list' widget");
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1776,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 list items for 'player profile list' widget");
 	spinner = widget->child;
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1784,
@@ -4723,12 +4718,12 @@ static boolean multiplayer_level_select(
 
 	definition = ui_widget_definition_get(widget->definition_tag_index);
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1280,
-		definition->child_count == 1,
+		definition->child_widgets.count == 1,
 		"expected a wrapper widget around the multiplayer level select screen");
 	level_select_screen = widget->child;
 	definition = ui_widget_definition_get(level_select_screen->definition_tag_index);
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1285,
-		definition->type == 0 && definition->child_count == 3,
+		definition->type == 0 && definition->child_widgets.count == 3,
 		"expected the multiplayer level select screen to be a container w/ 3 children");
 	level_list = level_select_screen->child;
 	definition = ui_widget_definition_get(level_list->definition_tag_index);
@@ -4736,7 +4731,7 @@ static boolean multiplayer_level_select(
 		definition->type == 2,
 		"expected a spinner list widget for 'multiplayer level list' widget");
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1289,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 list items for 'multiplayer level list' widget");
 	level_list = widget->child->child;
 	/* the levels the list offers: the Xbox levels, then the Custom Edition
@@ -4815,12 +4810,12 @@ static boolean multiplayer_profile_set_for_game(
 
 	definition = ui_widget_definition_get(widget->definition_tag_index);
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1465,
-		definition->child_count == 1,
+		definition->child_widgets.count == 1,
 		"expected a wrapper widget around the multiplayer profile select screen");
 	profile_select_screen = widget->child;
 	definition = ui_widget_definition_get(profile_select_screen->definition_tag_index);
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1470,
-		definition->type == 0 && definition->child_count == 3,
+		definition->type == 0 && definition->child_widgets.count == 3,
 		"expected the multiplayer profile select screen to be a container w/ 3 children");
 	profile_list = profile_select_screen->child;
 	definition = ui_widget_definition_get(profile_list->definition_tag_index);
@@ -4828,7 +4823,7 @@ static boolean multiplayer_profile_set_for_game(
 		definition->type == 2,
 		"expected a spinner list widget for 'multiplayer profile list' widget");
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1474,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 list items for 'multiplayer profile list' widget");
 	profile_list = widget->child->child;
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 1483,
@@ -4927,7 +4922,7 @@ static boolean solo_level_initialize_list_single_player(
 		definition->type == 2,
 		"expected a spinner list widget for 'solo level list' widget");
 	match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 604,
-		definition->child_count == 3,
+		definition->child_widgets.count == 3,
 		"expected 3 list items for 'solo level list' widget");
 	widget->parameters.list.list_items = single_player_level_data;
 	widget->parameters.list.number_of_items = 10;

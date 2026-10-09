@@ -40,6 +40,7 @@ fonts and strings (font, str#, ustr); matg and mply.
 
 #include <string.h>
 #include "interface/hud_definitions.h"
+#include "interface/ui_widget_definitions.h"
 
 /* ---------- constants */
 
@@ -198,49 +199,11 @@ struct font_character_index
 
 typedef char verify_font_header_size[sizeof(struct font_header) == 0x9C ? 1 : -1];
 
-struct ui_widget_definition
-{
-	short type;
-	short controller_index;
-	char name[32];
-	rectangle2d bounds;
-	long flags;
-	long milliseconds_to_auto_close;
-	long auto_close_fade_time;
-	struct tag_reference background_bitmap;
-	struct tag_block game_data_inputs;
-	struct tag_block event_handlers;
-	struct tag_block search_and_replace_functions;
-	byte unknown06C[0xEC - 0x6C];
-	struct tag_reference text_label_string_list;
-	struct tag_reference text_font;
-	real_argb_color text_color;
-	short justification;
-	word text_box_flags;
-	byte unknown120[0x12E - 0x120];
-	short string_list_index;
-	short horizontal_offset;
-	short vertical_offset;
-	byte unknown134[0x150 - 0x134];
-	long list_flags;
-	struct tag_reference list_header_bitmap;
-	struct tag_reference list_footer_bitmap;
-	rectangle2d list_header_bounds;
-	rectangle2d list_footer_bounds;
-	byte unknown184[0x1A4 - 0x184];
-	struct tag_reference extended_description_widget;
-	byte unknown1B4[0x2D4 - 0x1B4];
-	struct tag_block conditional_widgets;
-	byte unknown2E0[0x3E0 - 0x2E0];
-	struct tag_block child_widgets;
-};
-
 typedef char verify_ui_widget_event_handler_reference_size[sizeof(struct ui_widget_event_handler_reference) == 0x48 ? 1 : -1];
 typedef char verify_ui_widget_child_reference_size[sizeof(struct ui_widget_child_reference) == 0x50 ? 1 : -1];
 typedef char verify_ui_widget_conditional_reference_size[sizeof(struct ui_widget_conditional_reference) == 0x50 ? 1 : -1];
 typedef char verify_ui_widget_game_data_input_reference_size[sizeof(struct ui_widget_game_data_input_reference) == 0x24 ? 1 : -1];
 typedef char verify_ui_widget_search_and_replace_reference_size[sizeof(struct ui_widget_search_and_replace_reference) == 0x22 ? 1 : -1];
-typedef char verify_ui_widget_definition_size[sizeof(struct ui_widget_definition) == 0x3EC ? 1 : -1];
 
 /* (a ui widget collection: the engine has no structure of it; menu_tags.c
 reads it as a block of tag references) */
