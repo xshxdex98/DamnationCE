@@ -44,6 +44,10 @@ jobs:
     needs: check
     if: ${{ needs.check.outputs.build == 'true' }}
     uses: ./.github/workflows/build.yml
+    # (build.yml's publish-latest asks to write, though it never runs
+    # here: a called workflow is refused more than its caller grants)
+    permissions:
+      contents: write
     # (the Android signing key's)
     secrets: inherit
     with:
