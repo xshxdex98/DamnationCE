@@ -1,7 +1,7 @@
 /*
 DSOUND_SDL.C
 
-Xbox DirectSound for the Linux build: a software mixer on an SDL3 audio
+Xbox DirectSound for the native builds: a software mixer on an SDL3 audio
 stream.
 
 The game plays everything through DirectSound streams: 16-bit stereo PCM
@@ -149,10 +149,7 @@ static struct
 	float front[3];
 	float top[3];
 	float rolloff_factor;
-	/* meters a unit (SetDistanceFactor): the game sets 3.048, a world unit
-	being 10 feet. Only Doppler, which is not modelled, would use it */
-	float distance_factor;
-} listener = { { 0, 0, 0 }, { 0, 0, 1 }, { 0, 1, 0 }, 1.0f, 1.0f };
+} listener = { { 0, 0, 0 }, { 0, 0, 1 }, { 0, 1, 0 }, 1.0f };
 
 static float master_volume = 1.0f;
 
@@ -374,9 +371,10 @@ static void spatialize(const struct sdl_stream *stream, float *left, float *righ
 		if (distance < stream->minimum_distance && stream->minimum_distance > 0.0f)
 			pan *= distance / stream->minimum_distance;
 		pan *= 0.75f;
+		/* (0.71 each when centred: a 3D voice is 3 dB under a 2D one there) */
 		angle = (pan + 1.0f) * 0.25f * 3.14159265f;
-		*left = cosf(angle) * 1.41421356f * 0.70710678f;
-		*right = sinf(angle) * 1.41421356f * 0.70710678f;
+		*left = cosf(angle);
+		*right = sinf(angle);
 	}
 	*left *= attenuation * gain_from_millibels(stream->direct);
 	*right *= attenuation * gain_from_millibels(stream->direct);
@@ -389,64 +387,56 @@ muffle it) and of the send */
 static void voice_gains(const struct sdl_stream *stream, float *left, float *right, float *room,
 	float *direct_lowpass, float *room_lowpass)
 {
+	float volume = stream->volume * master_volume;
+	float rolloff, cosine;
+
 	*room = 0.0f;
 	*direct_lowpass = 0.0f;
 	*room_lowpass = 0.0f;
 	if (stream->has_3d && stream->mode != DS3DMODE_DISABLE)
 	{
-		float rolloff, cosine = frequency_cosine(environment.flHFReference);
-
 		spatialize(stream, left, right, &rolloff);
-		if (stream->direct_hf < stream->direct)
-			*direct_lowpass = lowpass_coefficient(gain_from_millibels(stream->direct_hf - stream->direct), cosine);
-		if (reverb_enabled)
-		{
-			LONG level = environment.lRoom + stream->room;
-			LONG high_level = environment.lRoom + environment.lRoomHF + stream->room_hf;
-
-			*room = gain_from_millibels(level) * rolloff;
-			if (*room > 0.0f && high_level < level)
-				*room_lowpass = lowpass_coefficient(gain_from_millibels(high_level - level), cosine);
-		}
 	}
 	else if (stream->channels == 2 && stream->stereo_positioned)
 	{
 		/* the equal power pan of a 3D voice, at the gains of a 2D one when
-		centred (the game fades it with distance), its direct path muffled
-		and its room send made as a 3D voice's are (SetI3DL2Source) */
+		centred (the game fades it with distance) */
 		float angle = (stream->stereo_pan + 1.0f) * 0.25f * 3.14159265f;
 		float direct = gain_from_millibels(stream->direct);
-		float cosine = frequency_cosine(environment.flHFReference);
 
 		*left = cosf(angle) * 1.41421356f * stream->mix_left * direct;
 		*right = sinf(angle) * 1.41421356f * stream->mix_right * direct;
-		if (stream->direct_hf < stream->direct)
-			*direct_lowpass = lowpass_coefficient(gain_from_millibels(stream->direct_hf - stream->direct), cosine);
-		if (reverb_enabled)
-		{
-			LONG level = environment.lRoom + stream->room;
-			LONG high_level = environment.lRoom + environment.lRoomHF + stream->room_hf;
-
-			/* the room's rolloff with distance, a 3D voice's; the volume
-			holds the game's fade with it, which a 3D voice's room send does
-			not take, so it is taken back out (no further than a twentieth:
-			past that the send fades out with the sound) */
-			*room = gain_from_millibels(level) *
-				distance_attenuation(stream, stream->stereo_distance,
-					environment.flRoomRolloffFactor + stream->room_rolloff_factor) /
-				(stream->stereo_distance_fade > 0.05f ? stream->stereo_distance_fade : 0.05f);
-			if (*room > 0.0f && high_level < level)
-				*room_lowpass = lowpass_coefficient(gain_from_millibels(high_level - level), cosine);
-		}
+		/* the room's rolloff with distance, a 3D voice's; the volume holds
+		the game's fade with it, which a 3D voice's room send does not take,
+		so it is taken back out (no further than a twentieth: past that the
+		send fades out with the sound) */
+		rolloff = distance_attenuation(stream, stream->stereo_distance,
+			environment.flRoomRolloffFactor + stream->room_rolloff_factor) /
+			(stream->stereo_distance_fade > 0.05f ? stream->stereo_distance_fade : 0.05f);
 	}
 	else
 	{
-		*left = stream->mix_left;
-		*right = stream->mix_right;
+		*left = stream->mix_left * volume;
+		*right = stream->mix_right * volume;
+		return;
 	}
-	*left *= stream->volume * master_volume;
-	*right *= stream->volume * master_volume;
-	*room *= stream->volume * master_volume;
+	/* a voice in the world: its direct path muffled, and its room send
+	(SetI3DL2Source) */
+	cosine = frequency_cosine(environment.flHFReference);
+	if (stream->direct_hf < stream->direct)
+		*direct_lowpass = lowpass_coefficient(gain_from_millibels(stream->direct_hf - stream->direct), cosine);
+	if (reverb_enabled)
+	{
+		LONG level = environment.lRoom + stream->room;
+		LONG high_level = environment.lRoom + environment.lRoomHF + stream->room_hf;
+
+		*room = gain_from_millibels(level) * rolloff;
+		if (*room > 0.0f && high_level < level)
+			*room_lowpass = lowpass_coefficient(gain_from_millibels(high_level - level), cosine);
+	}
+	*left *= volume;
+	*right *= volume;
+	*room *= volume;
 }
 
 /* ---------- resampling
@@ -1252,10 +1242,31 @@ static void *silent_clock_thread(void *parameter)
 	return NULL;
 }
 
+static void silent_clock_start(void)
+{
+	pthread_t thread;
+
+	pthread_create(&thread, NULL, silent_clock_thread, NULL);
+	pthread_detach(thread);
+}
+
+/* the output on audio_device_name, else on the system's default, playing;
+NULL if neither opens */
+static SDL_AudioStream *audio_open(void)
+{
+	SDL_AudioSpec spec = { SDL_AUDIO_F32, OUTPUT_CHANNELS, OUTPUT_RATE };
+	SDL_AudioStream *stream = SDL_OpenAudioDeviceStream(platform_audio_device(FALSE, audio_device_name), &spec,
+		audio_callback, NULL);
+
+	if (!stream && strcmp(audio_device_name, "default"))
+		stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, audio_callback, NULL);
+	if (stream)
+		SDL_ResumeAudioStreamDevice(stream);
+	return stream;
+}
+
 static void audio_start(void)
 {
-	SDL_AudioSpec spec;
-
 	if (audio_started)
 		return;
 	audio_started = TRUE;
@@ -1267,9 +1278,6 @@ static void audio_start(void)
 
 	if (config_boolean("audio.enabled") && platform_sdl_initialize())
 	{
-		spec.format = SDL_AUDIO_F32;
-		spec.channels = OUTPUT_CHANNELS;
-		spec.freq = OUTPUT_RATE;
 #ifdef HALO_ANDROID
 		/* frames per callback: on Android each callback is handed to a thread
 		that can run the guest (host_sdl.c): 512 left it too little time and
@@ -1281,23 +1289,12 @@ static void audio_start(void)
 #endif
 		snprintf(audio_device_name, sizeof(audio_device_name), "%s", audio_device_setting());
 		audio_device_read_at = config_changes();
-		audio_stream = SDL_OpenAudioDeviceStream(platform_audio_device(FALSE, audio_device_name), &spec,
-			audio_callback, NULL);
-		if (!audio_stream && strcmp(audio_device_name, "default"))
-			audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, audio_callback, NULL);
+		audio_stream = audio_open();
 		if (audio_stream)
-		{
-			SDL_ResumeAudioStreamDevice(audio_stream);
 			return;
-		}
 		platform_log("cannot open an audio device (%s); sound is silent", SDL_GetError());
 	}
-	{
-		pthread_t thread;
-
-		pthread_create(&thread, NULL, silent_clock_thread, NULL);
-		pthread_detach(thread);
-	}
+	silent_clock_start();
 }
 
 /* (the event thread, each frame: sdl_platform.c) audio.output_device
@@ -1305,36 +1302,23 @@ changed (Settings > Audio): the sound goes on on the new device, else the
 system's default */
 void dsound_sdl_output_device_check(void)
 {
-	SDL_AudioSpec spec;
-	SDL_AudioStream *stream;
-
 	if (!audio_stream || audio_device_read_at == config_changes())
 		return;
 	audio_device_read_at = config_changes();
 	if (!strcmp(audio_device_name, audio_device_setting()))
 		return;
 	snprintf(audio_device_name, sizeof(audio_device_name), "%s", audio_device_setting());
-	spec.format = SDL_AUDIO_F32;
-	spec.channels = OUTPUT_CHANNELS;
-	spec.freq = OUTPUT_RATE;
 	SDL_DestroyAudioStream(audio_stream);
-	stream = SDL_OpenAudioDeviceStream(platform_audio_device(FALSE, audio_device_name), &spec, audio_callback, NULL);
-	if (!stream)
-		stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, audio_callback, NULL);
-	audio_stream = stream;
+	audio_stream = audio_open();
 	if (audio_stream)
 	{
-		SDL_ResumeAudioStreamDevice(audio_stream);
 		platform_log("audio: playing on %s", audio_device_name);
 	}
 	else
 	{
-		pthread_t thread;
-
 		/* (none at all: the voices drained in real time, as at the start) */
 		platform_log("audio: cannot open an audio device (%s); sound is silent", SDL_GetError());
-		pthread_create(&thread, NULL, silent_clock_thread, NULL);
-		pthread_detach(thread);
+		silent_clock_start();
 	}
 }
 
@@ -1647,13 +1631,13 @@ HRESULT WINAPI IDirectSound_SetI3DL2Listener(LPDIRECTSOUND sound, LPCDSI3DL2LIST
 	return DS_OK;
 }
 
+/* meters a unit: the game sets 3.048, a world unit being 10 feet. Only
+Doppler, which is not modelled, would use it */
 HRESULT WINAPI IDirectSound_SetDistanceFactor(LPDIRECTSOUND sound, FLOAT factor, DWORD apply)
 {
 	(void)sound;
+	(void)factor;
 	(void)apply;
-	pthread_mutex_lock(&mixer_lock);
-	listener.distance_factor = factor > 0.0f ? factor : 1.0f;
-	pthread_mutex_unlock(&mixer_lock);
 	return DS_OK;
 }
 
@@ -1881,9 +1865,6 @@ processor busy; it needs no mixing. */
 struct null_buffer
 {
 	ULONG reference_count;
-	LPVOID data;
-	DWORD size;
-	BOOL playing;
 };
 
 HRESULT WINAPI DirectSoundCreateBuffer(LPCDSBUFFERDESC description, LPDIRECTSOUNDBUFFER *result)
@@ -1916,29 +1897,9 @@ ULONG WINAPI IDirectSoundBuffer_Release(LPDIRECTSOUNDBUFFER buffer)
 	return count;
 }
 
-HRESULT WINAPI IDirectSoundBuffer_SetBufferData(LPDIRECTSOUNDBUFFER buffer, LPVOID data, DWORD size)
-{
-	struct null_buffer *record = (struct null_buffer *)buffer;
-
-	record->data = data;
-	record->size = size;
-	return DS_OK;
-}
-
-HRESULT WINAPI IDirectSoundBuffer_Play(LPDIRECTSOUNDBUFFER buffer, DWORD reserved1, DWORD reserved2, DWORD flags)
-{
-	(void)reserved1;
-	(void)reserved2;
-	(void)flags;
-	((struct null_buffer *)buffer)->playing = TRUE;
-	return DS_OK;
-}
-
-HRESULT WINAPI IDirectSoundBuffer_Stop(LPDIRECTSOUNDBUFFER buffer)
-{
-	((struct null_buffer *)buffer)->playing = FALSE;
-	return DS_OK;
-}
+HRESULT WINAPI IDirectSoundBuffer_SetBufferData(LPDIRECTSOUNDBUFFER buffer, LPVOID data, DWORD size) { (void)buffer; (void)data; (void)size; return DS_OK; }
+HRESULT WINAPI IDirectSoundBuffer_Play(LPDIRECTSOUNDBUFFER buffer, DWORD reserved1, DWORD reserved2, DWORD flags) { (void)buffer; (void)reserved1; (void)reserved2; (void)flags; return DS_OK; }
+HRESULT WINAPI IDirectSoundBuffer_Stop(LPDIRECTSOUNDBUFFER buffer) { (void)buffer; return DS_OK; }
 
 HRESULT WINAPI IDirectSoundBuffer_SetCurrentPosition(LPDIRECTSOUNDBUFFER buffer, DWORD play_cursor) { (void)buffer; (void)play_cursor; return DS_OK; }
 HRESULT WINAPI IDirectSoundBuffer_SetLoopRegion(LPDIRECTSOUNDBUFFER buffer, DWORD loop_start, DWORD loop_length) { (void)buffer; (void)loop_start; (void)loop_length; return DS_OK; }

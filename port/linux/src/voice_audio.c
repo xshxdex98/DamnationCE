@@ -94,13 +94,10 @@ static double voice_test_phase;
 
 static void *microphone_open_thread(void *parameter)
 {
-	SDL_AudioSpec spec;
+	SDL_AudioSpec spec = { SDL_AUDIO_F32, 1, VOICE_RATE };
 	SDL_AudioStream *stream;
 
 	(void)parameter;
-	spec.format = SDL_AUDIO_F32;
-	spec.channels = 1;
-	spec.freq = VOICE_RATE;
 	stream = SDL_OpenAudioDeviceStream(platform_audio_device(TRUE, microphone_opening_device), &spec, NULL, NULL);
 	if (!stream && strcmp(microphone_opening_device, "default"))
 		stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_RECORDING, &spec, NULL, NULL);
@@ -137,6 +134,7 @@ static BOOL voice_testing(void)
 int voice_audio_microphone(int open)
 {
 	SDL_AudioStream *closing = NULL;
+	const char *device;
 	BOOL start = FALSE;
 	BOOL ready;
 
@@ -153,42 +151,26 @@ int voice_audio_microphone(int open)
 	}
 	if (!platform_sdl_initialize())
 		return FALSE;
-	{
-		/* (audio.input_device: Settings > Audio's, none on Android) */
-		const char *device = config_string("audio.input_device");
-
-		device = device && device[0] ? device : "default";
-		pthread_mutex_lock(&voice_lock);
-		/* (another device chosen: the one open closed, and the new opened) */
-		if (microphone && strcmp(microphone_device, device))
-		{
-			closing = microphone;
-			microphone = NULL;
-			microphone_failed = FALSE;
-		}
-		if (!microphone_opening)
-			snprintf(microphone_opening_device, sizeof(microphone_opening_device), "%s", device);
-		pthread_mutex_unlock(&voice_lock);
-		if (closing)
-		{
-			SDL_DestroyAudioStream(closing);
-			closing = NULL;
-			capture_count = 0;
-		}
-	}
+	/* (audio.input_device: Settings > Audio's, none on Android) */
+	device = config_string("audio.input_device");
+	device = device && device[0] ? device : "default";
 	pthread_mutex_lock(&voice_lock);
+	/* (closed when it is not wanted, or when another device is chosen,
+	which is then opened) */
+	if (microphone && (!open || strcmp(microphone_device, device)))
+	{
+		closing = microphone;
+		microphone = NULL;
+		microphone_failed = FALSE;
+	}
+	if (!microphone_opening)
+		snprintf(microphone_opening_device, sizeof(microphone_opening_device), "%s", device);
 	microphone_wanted = open;
 	if (open && !microphone && !microphone_opening &&
 		(!microphone_failed || SDL_GetTicks() - microphone_failed_ms >= VOICE_RETRY_MS))
 	{
 		microphone_opening = TRUE;
 		start = TRUE;
-	}
-	if (!open && microphone)
-	{
-		closing = microphone;
-		microphone = NULL;
-		microphone_failed = FALSE;
 	}
 	ready = microphone != NULL;
 	pthread_mutex_unlock(&voice_lock);
@@ -365,6 +347,14 @@ static struct voice_slot *voice_slot_for(int speaker, BOOL create)
 	return oldest;
 }
 
+/* (under voice_lock) a slot no speaker has */
+static void voice_slot_free(struct voice_slot *slot)
+{
+	slot->used = FALSE;
+	slot->count = 0;
+	slot->playing = FALSE;
+}
+
 /* (under voice_lock) samples into a slot's buffer, the oldest dropped when
 it is full */
 static void voice_slot_put(struct voice_slot *slot, const float *samples, int count)
@@ -465,11 +455,7 @@ void voice_audio_forget(int speaker)
 	pthread_mutex_lock(&voice_lock);
 	slot = voice_slot_for(speaker, FALSE);
 	if (slot)
-	{
-		slot->used = FALSE;
-		slot->count = 0;
-		slot->playing = FALSE;
-	}
+		voice_slot_free(slot);
 	pthread_mutex_unlock(&voice_lock);
 }
 
@@ -479,11 +465,7 @@ void voice_audio_forget_all(void)
 
 	pthread_mutex_lock(&voice_lock);
 	for (index = 0; index < VOICE_SLOTS; index++)
-	{
-		voice_slots[index].used = FALSE;
-		voice_slots[index].count = 0;
-		voice_slots[index].playing = FALSE;
-	}
+		voice_slot_free(&voice_slots[index]);
 	pthread_mutex_unlock(&voice_lock);
 }
 
