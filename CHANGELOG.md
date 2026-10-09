@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.34
+
+An emergency fix for 0.3.33.
+
+### Fixes
+
+- Hosting no longer crashes on maps with water and other transparent
+  surfaces (Battle Creek's creek among them), which also left the other
+  players frozen on the loading screen.
+- Escape with the console open closes the console, as on Halo PC; it no
+  longer takes down the main menu or freezes a game.
+
+### From ChupathingyCE
+
+- A host that starts its next game by itself (the dedicated servers) no
+  longer refuses every join after a game ends.
+- A banned player trying to join is told they are banned, not that the
+  game is closed.
+- Hosts' map names and co-op hosts' messages are checked more strictly.
+
+Network version 24, as before: 0.3.32, 0.3.33 and 0.3.34 play together.
+
 ## 0.3.33
 
 ### From OpenCE
