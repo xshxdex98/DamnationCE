@@ -805,8 +805,10 @@ static short sort_heading_at(short x, short y)
 	return NONE;
 }
 
-/* The mouse: hovering a row selects it and clicking joins it; the wheel
-moves the selection; the buttons and column headings are clicked. */
+/* The mouse: hovering a row selects it and clicking joins it. A finger has
+no hover: a tap selects a row and a tap on the selected row joins it. The
+wheel (a drag on the touchscreen) moves the selection; the buttons and
+column headings are clicked. */
 void browser_screen_pointer(
 	struct halo_ui_pointer const *pointer)
 {
@@ -854,15 +856,19 @@ void browser_screen_pointer(
 		browser_screen.selected = (short)PIN(browser_screen.selected + (pointer->wheel_steps > 0 ? -1 : 1),
 			0, MAX(0, browser_screen.count - 1));
 	}
-	row = pointer->moved ? row_at(pointer->x, pointer->y) : NONE;
+	row = pointer->moved && !pointer->touch ? row_at(pointer->x, pointer->y) : NONE;
 	if (row != NONE && page_first + row < browser_screen.count)
 		browser_screen.selected = (short)(page_first + row);
 	row = pointer->left_clicks ? row_at(pointer->click_x, pointer->click_y) : NONE;
 	if (row != NONE && page_first + row < browser_screen.count &&
 		system_milliseconds() - browser_screen.opened_time > OPEN_SETTLE)
 	{
-		browser_screen.selected = (short)(page_first + row);
-		join_selected();
+		short game = (short)(page_first + row);
+		boolean join = !pointer->touch || game == browser_screen.selected;
+
+		browser_screen.selected = game;
+		if (join)
+			join_selected();
 	}
 }
 
