@@ -35,13 +35,47 @@
 
 ### Fixes
 
+- Settings take effect again: 0.3.33 and 0.3.34 wrote one setting twice
+  in every new config.toml, which made the whole file be ignored (every
+  setting at its default). A file with a repeated setting is now read,
+  keeping the first, and written back repaired.
 - Server Setup and other menus no longer show stale, overlapping co-op
   rows in the Glassed and Cairo themes.
+- Map scripts and the console list a map's HUD message names correctly
+  (they read past the tag's entries before).
 - A refused join is told the right reason, and the host reads a client's
   game start request in full.
 - A mouse pointer freed with F12, or the scoreboard's, stays shown when a
   menu closes.
-- A large clean-up of the port's code, checked to build to the same game.
+- The gametype editor's log says which menu function failed and on which
+  widget, instead of the same line fifteen times.
+
+### Clean-up
+
+The third and last pass of the code clean-up: every file the fork added or
+changed, made shorter and plainer, with duplicates merged. Each change was
+checked to compile to the same game code before it went in, so nothing
+should play differently. The comparison is also what found the bugs above.
+
+- Port core: the Xbox emulation layer.
+- Platform: the window, input and touch layers, the menus, overlay,
+  updater and file helpers, and the Windows and Android layers (Android
+  reserves its address space through one function).
+- Renderer: the GL device, shader translators, resources and textures.
+- Audio: the mixer, voice chat and the Bink stub.
+- Networking: internet play, the game list and sockets, the invite link,
+  the port's game networking, the engine's networking and the host's
+  object change messages. Join refusals use the protocol's own codes.
+- Menus and settings: the menu tags, menu functions and overlay screens,
+  and one reader for settings lines.
+- Custom Edition maps and tags: the loader, converters, map list,
+  validator, schemas, PAL and loose sound tags.
+- Engine: the fork's game code, frame interpolation, the editor view and
+  the dedicated server.
+- Definitions repeated across files are now shared, and names that
+  clashed with the engine's are renamed.
+- Tools: shared build constants and a shared test harness for the report
+  tools, with unused code removed.
 
 Network version 24, as before: 0.3.32 to 0.3.35 play together.
 
