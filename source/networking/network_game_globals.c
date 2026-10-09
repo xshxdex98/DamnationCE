@@ -17,9 +17,7 @@ NETWORK_GAME_GLOBALS.C
 #include "network_game_manager.h"
 #include "network_game_globals.h"
 #include "network_server_manager_internal.h"
-#ifdef HALO_64BIT
 #include "cseries/cseries_windows.h"
-#endif
 
 /* ---------- macros */
 

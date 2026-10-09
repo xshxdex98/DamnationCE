@@ -1609,6 +1609,27 @@ static boolean network_game_server_handle_message_client_ping(
 	return result;
 }
 
+/* port: a joining machine told it is refused, and why */
+static void network_game_server_reject_joining_machine(
+	struct network_game_server_client_machine *server_client_machine,
+	short reason)
+{
+	struct message_server_machine_rejected rejection;
+	struct network_message *reply;
+
+	rejection.reason = reason;
+	reply = create_network_game_message(_message_server_machine_rejected, &rejection, sizeof(rejection));
+	if (!reply)
+	{
+		network_event("failed to create a message_server_machine_rejected message");
+	}
+	else if (!network_game_server_write(network_game_server_get_client_connection(server_client_machine), reply,
+		GET_MESSAGE_SIZE(reply->header), NULL, 1))
+	{
+		network_event("network_game_server_write() failed while sending a rejection reply");
+	}
+}
+
 static boolean network_game_server_handle_message_client_join_game_request(
 	struct network_game_server *server,
 	struct network_game_server_client_machine *server_client_machine,
@@ -1715,14 +1736,10 @@ static boolean network_game_server_handle_message_client_join_game_request(
 							sizeof(acceptance));
 						if (reply)
 						{
-							word message_size = GET_MESSAGE_SIZE(reply->header);
-							struct network_connection *connection =
-								network_game_server_get_client_connection(server_client_machine);
-
 							result = network_game_server_write(
-								connection,
+								network_game_server_get_client_connection(server_client_machine),
 								reply,
-								message_size,
+								GET_MESSAGE_SIZE(reply->header),
 								NULL,
 								1);
 							if (!result)
@@ -1768,115 +1785,36 @@ static boolean network_game_server_handle_message_client_join_game_request(
 					}
 					else
 					{
-						struct message_server_machine_rejected rejection;
-						struct network_message *reply;
-
-						/* port: a banned machine is told so (it was told the
-						game is not open) */
-						rejection.reason = network_game_server_last_refusal_code();
 						network_event(
 							"server failed to accept valid client machine '%s' @%s into the game",
 							join_game_request.machine_name,
 							transport_address_to_string(&source_address));
-						reply = create_network_game_message(
-							_message_server_machine_rejected,
-							&rejection,
-							sizeof(rejection));
-						if (reply)
-						{
-							word message_size = GET_MESSAGE_SIZE(reply->header);
-							struct network_connection *connection =
-								network_game_server_get_client_connection(server_client_machine);
-
-							if (!network_game_server_write(
-								connection,
-								reply,
-								message_size,
-								NULL,
-								1))
-							{
-								network_event(
-									"network_game_server_write() failed while sending a rejection reply");
-							}
-						}
-
+						/* port: a banned machine is told so (it was told the
+						game is not open) */
+						network_game_server_reject_joining_machine(server_client_machine,
+							network_game_server_last_refusal_code());
 						result = FALSE;
 					}
 				}
 				else
 				{
-					struct message_server_machine_rejected rejection;
-					struct network_message *reply;
-
-					rejection.reason = _network_game_server_rejection_reason_bad_join_token;
 					network_event(
 						"client machine '%s' @%s tried to join game with a bad join token",
 						join_game_request.machine_name,
 						transport_address_to_string(&source_address));
-					reply = create_network_game_message(
-						_message_server_machine_rejected,
-						&rejection,
-						sizeof(rejection));
-					if (reply)
-					{
-						word message_size = GET_MESSAGE_SIZE(reply->header);
-						struct network_connection *connection =
-							network_game_server_get_client_connection(server_client_machine);
-
-						if (!network_game_server_write(
-							connection,
-							reply,
-							message_size,
-							NULL,
-							1))
-						{
-							network_event(
-								"network_game_server_write() failed while sending a rejection reply");
-						}
-					}
-					else
-					{
-						network_event("failed to create a message_server_machine_rejected message");
-					}
-
+					network_game_server_reject_joining_machine(server_client_machine,
+						_network_game_server_rejection_reason_bad_join_token);
 					result = FALSE;
 				}
 			}
 			else
 			{
-				struct message_server_machine_rejected rejection;
-				struct network_message *reply;
-
-				rejection.reason = full ? _rejection_code_game_is_full : _network_game_server_rejection_reason_game_not_open;
 				network_event(
 					"client machine '%s' @%s tried to join game when they should not be",
 					join_game_request.machine_name,
 					transport_address_to_string(&source_address));
-				reply = create_network_game_message(
-					_message_server_machine_rejected,
-					&rejection,
-					sizeof(rejection));
-				if (reply)
-				{
-					word message_size = GET_MESSAGE_SIZE(reply->header);
-					struct network_connection *connection =
-						network_game_server_get_client_connection(server_client_machine);
-
-					if (!network_game_server_write(
-						connection,
-						reply,
-						message_size,
-						NULL,
-						1))
-					{
-						network_event(
-							"network_game_server_write() failed while sending a rejection reply");
-					}
-				}
-				else
-				{
-					network_event("failed to create a message_server_machine_rejected message");
-				}
+				network_game_server_reject_joining_machine(server_client_machine,
+					full ? _rejection_code_game_is_full : _network_game_server_rejection_reason_game_not_open);
 
 				result = FALSE;
 			}
