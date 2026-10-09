@@ -18,9 +18,8 @@ import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .version import build_commit, release_build, update_channel, version
-from .linux_build import (LINUX_PROFILE, MBEDTLS_DIR, MINIUPNPC_DIR, OPTIMISATION, STB_DIR, WINDOWS_PROFILE,
-                          XDK_INCLUDE, game_browser_defines, lto_mode, march_flag, miniupnpc_sources, pgo_mode, compile_launcher, game_defines_and_includes,
+from .linux_build import (KCP_DIR, LINUX_PROFILE, MBEDTLS_DIR, MINIUPNPC_DIR, MONOCYPHER_DIR, OPTIMISATION, STB_DIR,
+                          TOML_DIR, WINDOWS_PROFILE, XDK_INCLUDE, ZLIB_DEFINES, ZLIB_DIR, ZLIB_SOURCES, updater_defines, game_browser_defines, lto_mode, march_flag, miniupnpc_sources, pgo_mode, compile_launcher, game_defines_and_includes,
                           game_sources, musl_math_cflags, musl_math_sources, opus_cflags, opus_sources, pgo_profile, profile_use_flags,
                           xdk_headers)
 from .embed_assets import hud_assets_build, hud_configure_inputs, ui_fonts_build
@@ -48,31 +47,9 @@ SDL_DIR = THIRD_PARTY / f"SDL3-{SDL_VERSION}"
 #  - no optimisations that assume the absence of MSVC-tolerated UB,
 #  - EBP frames (MSVC /Oy-): get_return_eip and the stack walker follow the
 #    frame chain.
-# the TOML parser the platform layer reads config.toml with (port_config.c)
-TOML_DIR = Path("port/third_party/tomlc17")
 EXPAT_DIR = Path("port/third_party/expat")
+# (and Windows's entropy source, rand_s)
 EXPAT_SOURCES = ("xmlparse.c", "xmlrole.c", "xmltok.c", "random_rand_s.c")
-KCP_DIR = Path("port/third_party/kcp")
-MONOCYPHER_DIR = Path("port/third_party/monocypher")
-# the port's zlib (port/third_party/zlib/zlib_prefixed.h), which inflates
-# the maps, the menus' and the HUD's PNGs and the updates
-ZLIB_DIR = Path("port/third_party/zlib")
-ZLIB_SOURCES = ("adler32.c", "crc32.c", "inffast.c", "inflate.c", "inftrees.c", "uncompr.c", "zutil.c")
-# (its names prefixed, and the one Z_PREFIX leaves, its error messages, which
-# the game's zlib names the same)
-ZLIB_DEFINES = ("-DZ_PREFIX", "-Dz_errmsg=z_port_errmsg")
-
-
-def updater_defines(release: bool) -> str:
-    """the version's defines (port/linux/src/updater.c, the self-updater, has
-    them, and gives the version to the rest): the version (tools/version.py),
-    whether this build is a release's (those look for newer releases), its
-    update channel and commit (a build of main looks for newer pushes), and
-    its configuration"""
-    flavor = "release" if release else "debug"
-    return (f'-DHALO_VERSION=\\"{version()}\\" -DHALO_RELEASE_BUILD={int(release_build())} '
-            f'-DHALO_UPDATE_CHANNEL=\\"{update_channel()}\\" -DHALO_BUILD_COMMIT=\\"{build_commit()}\\" '
-            f'-DHALO_BUILD_FLAVOR=\\"{flavor}\\"')
 
 WINDOWS_ABI_FLAGS = [
     "--target=i686-pc-windows-msvc",

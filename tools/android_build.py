@@ -19,14 +19,14 @@ port/android/app, which ``ninja android_apk`` then assembles.
 """
 
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .linux_build import (LINUX_PROFILE, MBEDTLS_DIR, MINIUPNPC_DEFINES, MINIUPNPC_DIR, MUSL_MATH_DIR, STB_DIR,
-                          XDK_INCLUDE, compile_launcher, game_browser_defines, game_defines_and_includes, game_sources, miniupnpc_sources,
+from .linux_build import (EXPAT_DIR, EXPAT_SOURCES, KCP_DIR, LINUX_PROFILE, MBEDTLS_DIR, MINIUPNPC_DEFINES,
+                          MINIUPNPC_DIR, MONOCYPHER_DIR, MUSL_MATH_DIR, STB_DIR, TOML_DIR, XDK_INCLUDE, ZLIB_DEFINES,
+                          ZLIB_DIR, ZLIB_SOURCES, compile_launcher, game_browser_defines, game_defines_and_includes, game_sources, miniupnpc_sources,
                           musl_math_sources, opus_cflags, opus_sources, pgo_mode, pgo_profile,
                           profile_use_flags, updater_defines, xdk_headers)
 from .embed_assets import hud_assets_build, hud_configure_inputs, ui_fonts_build
@@ -36,20 +36,6 @@ PORT_DIR = Path("port/android")
 LINUX_DIR = Path("port/linux")
 BUILD = Path("build/android")
 THIRD_PARTY = BUILD / "third_party"
-# the TOML parser config.toml is read with (port/linux/src/port_config.c)
-TOML_DIR = Path("port/third_party/tomlc17")
-EXPAT_DIR = Path("port/third_party/expat")
-EXPAT_SOURCES = ("xmlparse.c", "xmlrole.c", "xmltok.c")
-KCP_DIR = Path("port/third_party/kcp")
-MONOCYPHER_DIR = Path("port/third_party/monocypher")
-# the port's zlib (port/third_party/zlib/zlib_prefixed.h): what inflates the
-# maps, the menus' and the HUD's PNGs and the updates, data from anywhere,
-# instead of the game's own 1.1.3 (its inflate only, its names prefixed z_)
-ZLIB_DIR = Path("port/third_party/zlib")
-ZLIB_SOURCES = ("adler32.c", "crc32.c", "inffast.c", "inflate.c", "inftrees.c", "uncompr.c", "zutil.c")
-# (its names prefixed, and the one Z_PREFIX leaves, its error messages, which
-# the game's zlib names the same)
-ZLIB_DEFINES = ("-DZ_PREFIX", "-Dz_errmsg=z_port_errmsg")
 MUSL_VERSION = "1.2.5"
 MUSL_DIR = THIRD_PARTY / f"musl-{MUSL_VERSION}"
 MUSL_URL = f"https://musl.libc.org/releases/musl-{MUSL_VERSION}.tar.gz"

@@ -19,7 +19,6 @@ build/macos/DamnationCE.app. See port/macos/README.md.
 import json
 import os
 import platform
-import shlex
 import subprocess
 from pathlib import Path
 from typing import Any, Dict, List
