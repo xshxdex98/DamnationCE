@@ -14,6 +14,15 @@ RENDER.H
 
 /* ---------- constants */
 
+/* planar fog modes */
+enum
+{
+	_render_planar_fog_mode_off,
+	_render_planar_fog_mode_normal,
+	_render_planar_fog_mode_fully_fogged,
+	NUMBER_OF_RENDER_PLANAR_FOG_MODES
+};
+
 /* model render flags */
 enum
 {

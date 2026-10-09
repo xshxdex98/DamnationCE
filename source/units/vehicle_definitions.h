@@ -13,6 +13,16 @@ VEHICLE_DEFINITIONS.H
 
 /* ---------- constants */
 
+/* a vehicle definition's AI flags */
+enum
+{
+	_vehicle_ai_weapon_cannot_rotate_bit = 8,
+	_vehicle_ai_driver_enable_bit = 11,
+	_vehicle_ai_driver_flying_bit,
+	_vehicle_ai_driver_nondirectional_bit,
+	_vehicle_ai_driver_hovering_bit
+};
+
 enum
 {
 	VEHICLE_DEFINITION_TAG = 'vehi'

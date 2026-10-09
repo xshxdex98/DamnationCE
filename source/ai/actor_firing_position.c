@@ -23,6 +23,7 @@ ACTOR_FIRING_POSITION.C
 #include "scenario/scenario.h"
 #include "scenario/scenario_definitions.h"
 #include "ai/actors.h"
+#include "ai/actor_definitions.h"
 #ifdef HALO_64BIT
 #include "cseries/sort.h"
 #endif
@@ -35,12 +36,6 @@ enum
 	_firing_position_attack_vector_friend_player,
 	_firing_position_attack_vector_dangerous_enemy,
 	NUMBER_OF_FIRING_POSITION_ATTACK_VECTOR_TYPES,
-};
-
-enum
-{
-	_actor_definition_flags2_avoid_all_enemy_attack_vectors_bit = 0,
-	_actor_definition_flags2_pathfinding_ignores_danger_bit = 4,
 };
 
 enum

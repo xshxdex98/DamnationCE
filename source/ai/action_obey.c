@@ -68,26 +68,6 @@ enum
 	number_of_actor_fire_targets = 3,
 };
 
-/* unit animation impulses (no header declares them yet) */
-enum
-{
-	_unit_animation_impulse_berserk = 0,
-	_unit_animation_impulse_signal_move = 1,
-	_unit_animation_impulse_signal_attack = 2,
-	_unit_animation_impulse_signal_warn = 3,
-	_unit_animation_impulse_surprise_front = 4,
-	_unit_animation_impulse_surprise_back = 5,
-	_unit_animation_impulse_evade_left = 6,
-	_unit_animation_impulse_evade_right = 7,
-	_unit_animation_impulse_dive_front = 8,
-	_unit_animation_impulse_dive_back = 9,
-	_unit_animation_impulse_dive_left = 10,
-	_unit_animation_impulse_dive_right = 11,
-	_unit_animation_impulse_vehicle_celebrate = 12,
-	_unit_animation_impulse_vehicle_panic = 13,
-	NUMBER_OF_UNIT_ANIMATION_IMPULSES = 14,
-};
-
 typedef char action_obey_simple_control_size_assert[
 	sizeof(struct obey_individual_simple_control) == 0x24 ? 1 : -1];
 typedef char action_obey_complex_control_size_assert[

@@ -15,6 +15,19 @@ PROJECTILES.H
 		(index), \
 		_object_mask_projectile))
 
+/* a projectile's flags */
+enum
+{
+	_projectile_has_nonzero_angular_velocity_bit,
+	_projectile_tracer_bit,
+	_projectile_collided_once_bit,
+	_projectile_attached_bit,
+	_projectile_stopped_after_collision_bit,
+	_projectile_counting_down_bit,
+	_projectile_already_super_exploded_bit,
+	_projectile_will_super_explode_bit,
+	NUMBER_OF_PROJECTILE_DATUM_FLAGS
+};
 /* ---------- structures */
 
 struct projectile_definition;

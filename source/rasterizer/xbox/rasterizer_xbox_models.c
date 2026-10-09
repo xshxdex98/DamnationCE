@@ -30,6 +30,7 @@ RASTERIZER_XBOX_MODELS.C
 #include "rasterizer/xbox/rasterizer_xbox_internal.h"
 #include "rasterizer/xbox/rasterizer_xbox_models.h"
 #include "models/models.h"
+#include "scenario/fog_definitions.h"
 #ifdef HALO_64BIT
 #include "rasterizer/rasterizer_model_types.h"
 
@@ -43,8 +44,6 @@ int rasterizer_frame_statistics_count_static_vertices(
 
 enum
 {
-	_rasterizer_statistics_mode_summary = 1,
-	_rasterizer_statistics_mode_enabled = 2,
 	_rasterizer_vertex_shader_model = 10,
 	NUMBER_OF_SHADER_MODEL_DETAIL_FUNCTIONS = 3,
 	NUMBER_OF_SHADER_MODEL_DETAIL_MASKS = 9,
@@ -52,18 +51,7 @@ enum
 
 enum
 {
-	NUMBER_OF_SHADER_ANIMATION_FUNCTIONS = 4,
-	NUMBER_OF_SHADER_ANIMATION_SOURCES = 5,
-};
-
-enum
-{
 	_shader_detail_mask_none = 0,
-};
-
-enum
-{
-	_fog_definition_atmosphere_dominant_bit = 1,
 };
 
 enum
@@ -378,7 +366,7 @@ void _rasterizer_model_begin(
 		}
 
 		if (rasterizer_debug_options.statistics_mode ==
-			_rasterizer_statistics_mode_enabled)
+			_rasterizer_statistics_mode_geometry)
 		{
 			rasterizer_frame_statistics.model_count++;
 		}
@@ -716,7 +704,7 @@ static void set_environment_shader_pixel_shader(
 			pixel_shader.final_combiner_inputs_efg);
 
 		if (rasterizer_debug_options.statistics_mode ==
-			_rasterizer_statistics_mode_enabled)
+			_rasterizer_statistics_mode_geometry)
 		{
 			rasterizer_frame_statistics.pixel_shader_pushbuffer_bytes += 44;
 		}
@@ -956,7 +944,7 @@ void rasterizer_model_draw_environment_shader(
 			vertex_shader_permutation);
 
 		if (rasterizer_debug_options.statistics_mode >=
-			_rasterizer_statistics_mode_summary)
+			_rasterizer_statistics_mode_objects)
 		{
 			rasterizer_frame_statistics.vertices_by_permutation[
 				vertex_shader_permutation] += vertex_buffer->count;
@@ -1244,7 +1232,7 @@ void rasterizer_model_draw_environment_shader(
 				0));
 
 		if (rasterizer_debug_options.statistics_mode ==
-			_rasterizer_statistics_mode_enabled)
+			_rasterizer_statistics_mode_geometry)
 		{
 			rasterizer_frame_statistics.pixel_shader_pushbuffer_bytes += 24;
 			rasterizer_frame_statistics.model_draw_count++;
@@ -1733,7 +1721,7 @@ void _rasterizer_model_draw(
 					vertex_shader_permutation);
 
 				if (rasterizer_debug_options.statistics_mode >=
-					_rasterizer_statistics_mode_summary)
+					_rasterizer_statistics_mode_objects)
 				{
 					rasterizer_frame_statistics.model_vertex_shader_work_accumulated +=
 						rasterizer_frame_statistics.vertex_shader_instruction_count -
@@ -2008,7 +1996,7 @@ void _rasterizer_model_draw(
 					dynamic_vertex_buffer_index);
 
 				if (rasterizer_debug_options.statistics_mode ==
-					_rasterizer_statistics_mode_enabled)
+					_rasterizer_statistics_mode_geometry)
 				{
 					rasterizer_frame_statistics.model_draw_count++;
 					rasterizer_frame_statistics.model_triangle_count +=
@@ -2071,7 +2059,7 @@ void _rasterizer_model_draw(
 						dynamic_vertex_buffer_index);
 
 					if (rasterizer_debug_options.statistics_mode ==
-						_rasterizer_statistics_mode_enabled)
+						_rasterizer_statistics_mode_geometry)
 					{
 						rasterizer_frame_statistics.model_draw_count++;
 						rasterizer_frame_statistics.model_triangle_count +=
@@ -2334,7 +2322,7 @@ struct transparent_geometry_group *_rasterizer_model_transparent_geometry_submit
 				}
 
 				if (rasterizer_debug_options.statistics_mode==
-					_rasterizer_statistics_mode_enabled)
+					_rasterizer_statistics_mode_geometry)
 				{
 					rasterizer_frame_statistics.transparent_model_submit_count++;
 					rasterizer_frame_statistics.transparent_model_triangle_count +=

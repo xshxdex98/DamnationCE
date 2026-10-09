@@ -28,11 +28,6 @@ enum
 	RASTERIZER_DYNAMIC_BUFFER_POOL = D3DPOOL_DEFAULT,
 };
 
-enum
-{
-	_rasterizer_stats_geometry = 2,
-};
-
 #define RASTERIZER_XBOX_DRAW_PRIMITIVES_FILE \
 	"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_draw_primitives.c"
 
@@ -414,7 +409,7 @@ long _rasterizer_dynamic_triangles_new(
 			dynamic_triangles.triangle_count += count;
 			dynamic_triangles.buffer_count++;
 
-			if (rasterizer_debug_options.statistics_mode==_rasterizer_stats_geometry)
+			if (rasterizer_debug_options.statistics_mode==_rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.dynamic_triangle_count += count;
 				rasterizer_frame_statistics.dynamic_triangle_buffer_count++;
@@ -564,7 +559,7 @@ long _rasterizer_dynamic_vertices_new(
 			group->vertex_count += count;
 			dynamic_vertices.buffer_count++;
 
-			if (rasterizer_debug_options.statistics_mode==_rasterizer_stats_geometry)
+			if (rasterizer_debug_options.statistics_mode==_rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.dynamic_vertex_count += count;
 				rasterizer_frame_statistics.dynamic_vertex_buffer_count++;

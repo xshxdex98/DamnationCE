@@ -15,6 +15,12 @@ file has inline function assertions.
 
 /* ---------- constants */
 
+/* AI reference flags */
+enum
+{
+	_ai_reference_squad_bit = 15
+};
+
 /* encounter follow targets */
 enum
 {

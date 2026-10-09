@@ -41,7 +41,6 @@ void dsound_port_set_channel_stereo_position(short virtual_channel_index, boolea
 
 enum
 {
-	MAXIMUM_SOUND_CHANNELS = 256,
 	MAXIMUM_SOUND_CALLBACK_DATA = 0x30,
 };
 
@@ -97,13 +96,6 @@ enum sound_datum_flags
 	_sound_inaudible_bit,
 	_sound_waiting_for_cache_bit,
 	NUMBER_OF_SOUND_FLAGS,
-};
-
-enum sound_channel_state
-{
-	_sound_channel_idle,
-	_sound_channel_playing,
-	_sound_channel_queued,
 };
 
 enum looping_sound_track_flags

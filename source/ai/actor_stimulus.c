@@ -52,11 +52,6 @@ enum
 
 enum
 {
-	_actor_definition_flags2_panic_in_groups_bit = 5,
-};
-
-enum
-{
 	_prop_facing_central = 2,
 };
 

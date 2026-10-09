@@ -25,7 +25,6 @@ SOUND_DSOUND_XBOX.C
 enum
 {
 	NUMBER_OF_SOUND_SAMPLE_RATES = 2,
-	MAXIMUM_SOUND_CHANNELS = 256,
 	NUMBER_OF_SOUND_CHANNEL_TYPES = 4,
 	MAXIMUM_DSOUND_ERROR_STRING_LENGTH = 256,
 	MAXIMUM_DSOUND_ERROR_MESSAGE_LENGTH = 4096,
@@ -37,13 +36,6 @@ enum
 	SOUND_COMPRESSED_BLOCK_SIZE = 36,
 	SOUND_COMPRESSED_SAMPLES_PER_BLOCK = 64,
 	MAXIMUM_DSOUND_MIXBINS = 8
-};
-
-enum sound_channel_state
-{
-	_sound_channel_idle,
-	_sound_channel_playing,
-	_sound_channel_queued,
 };
 
 /* ---------- macros */

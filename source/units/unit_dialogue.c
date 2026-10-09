@@ -22,19 +22,10 @@ UNIT_DIALOGUE.C
 #include "sound/sound_definitions.h"
 #include "tag_files/tag_groups.h"
 #include "unit_definitions.h"
+#include "units/units.h"
 
 /* port: the AI's speech goes to the clients' copies (port/linux/game/network_actors.c) */
 void network_actors_note_speech(long unit_index, long sound_definition_index);
-
-/* ---------- constants */
-
-enum unit_play_speech_type
-{
-	_unit_play_speech_none = 0,
-	_unit_play_speech_queue,
-	_unit_play_speech_immediate,
-	_unit_play_speech_immediate_dequeue,
-};
 
 enum unit_dialogue_vocalization_type
 {

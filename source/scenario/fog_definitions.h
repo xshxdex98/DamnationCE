@@ -13,6 +13,15 @@ FOG_DEFINITIONS.H
 
 /* ---------- constants */
 
+/* fog flags */
+enum
+{
+	_fog_definition_is_water_bit,
+	_fog_definition_atmosphere_dominant_bit,
+	_fog_definition_screen_effect_only_bit,
+	NUMBER_OF_FOG_DEFINITION_FLAGS
+};
+
 enum
 {
 	FOG_TAG = 'fog ',

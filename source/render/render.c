@@ -42,11 +42,6 @@ enum
 	_render_target_secondary,
 };
 
-enum
-{
-	_render_planar_fog_mode_fully_fogged = 2,
-};
-
 /* ---------- macros */
 
 #define RASTERIZER_TARGET_RENDER_PRIMARY_WIDTH halo_screen_width()

@@ -29,11 +29,6 @@ RASTERIZER_XBOX_SHADOWS.C
 
 enum
 {
-	_rasterizer_statistics_mode_enabled = 2,
-};
-
-enum
-{
 	_shadow_convolution_vertex_shader_index = 0x26,
 	_shadow_vertex_shader_index = 0x1d,
 	_shadow_model_vertex_shader_index = 0x27,
@@ -208,7 +203,7 @@ boolean _rasterizer_environment_shadow_begin(
 		shadow_restored = FALSE;
 
 		if (rasterizer_debug_options.statistics_mode ==
-			_rasterizer_statistics_mode_enabled)
+			_rasterizer_statistics_mode_geometry)
 		{
 			rasterizer_frame_statistics.shadow_count++;
 		}
@@ -240,7 +235,7 @@ void _rasterizer_environment_shadow_model_begin(
 		shadow_used = TRUE;
 
 		if (rasterizer_debug_options.statistics_mode ==
-			_rasterizer_statistics_mode_enabled)
+			_rasterizer_statistics_mode_geometry)
 		{
 			rasterizer_frame_statistics.model_shadow_count++;
 		}
@@ -389,7 +384,7 @@ void _rasterizer_environment_shadow_model_draw(
 				vertex_buffer);
 
 			if (rasterizer_debug_options.statistics_mode ==
-				_rasterizer_statistics_mode_enabled)
+				_rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.model_shadow_draw_count++;
 				rasterizer_frame_statistics.model_shadow_triangle_count +=
@@ -708,7 +703,7 @@ void _rasterizer_environment_shadow_draw(
 			vertex_buffer);
 
 		if (rasterizer_debug_options.statistics_mode ==
-			_rasterizer_statistics_mode_enabled)
+			_rasterizer_statistics_mode_geometry)
 		{
 			rasterizer_frame_statistics.shadow_draw_count++;
 			rasterizer_frame_statistics.shadow_triangle_count += triangle_count;

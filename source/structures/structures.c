@@ -28,9 +28,6 @@ STRUCTURES.C
 
 enum
 {
-	_render_planar_fog_mode_off = 0,
-	_render_planar_fog_mode_normal = 1,
-	_render_planar_fog_mode_fully_fogged,
 	_render_fog_runtime_screen_use_sky_interpolator_bit = 0,
 };
 

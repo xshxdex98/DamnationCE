@@ -23,6 +23,7 @@ ACTION_CHARGE.C
 #include "physics/collision_usage.h"
 #include "units/units.h"
 #include "ai_debug.h"
+#include "ai/actor_definitions.h"
 
 /* ---------- constants */
 
@@ -32,7 +33,6 @@ enum
 	_action_charge_primary_priority_exact_facing = 4,
 	_action_charge_primary_priority_aiming = 5,
 	_action_charge_primary_priority_locked_aiming = 7,
-	_actor_special_fire_situation_strafing = 3,
 	_action_charge_combat_status_clear_line_of_sight = 5,
 	_action_charge_prop_facing_central = 2,
 	_action_charge_prop_closing_speed_slow = 1,

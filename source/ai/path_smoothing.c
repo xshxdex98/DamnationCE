@@ -15,13 +15,6 @@ PATH_SMOOTHING.C
 #include "physics/collision_bsp_definitions.h"
 #include "structures/structure_bsp_definitions.h"
 
-/* ---------- constants */
-
-enum
-{
-	_path_test_pill_endpoint_near_wall_ok_bit = 0,
-};
-
 /* ---------- prototypes */
 
 static boolean path_smoothing_edge_valid(

@@ -36,23 +36,6 @@ RASTERIZER_XBOX_ENVIRONMENT.C
 #include "rasterizer/xbox/rasterizer_xbox_internal.h"
 #include "objects/light_definitions.h"
 
-/* ---------- constants */
-
-enum
-{
-	_rasterizer_drawing_mode_normal = 0,
-	_rasterizer_drawing_mode_overdraw,
-	_rasterizer_drawing_mode_bump_color,
-	_rasterizer_drawing_mode_specular_mask,
-	_rasterizer_drawing_mode_specular_mask_times_bump_color,
-	_rasterizer_drawing_mode_diffuse_texture_times_bump_color,
-	_rasterizer_drawing_mode_bump_edge,
-	_rasterizer_drawing_mode_specular_mask_times_bump_edge,
-	_rasterizer_drawing_mode_diffuse_texture_times_bump_edge,
-	_rasterizer_drawing_mode_vectors,
-	NUMBER_OF_RASTERIZER_DRAWING_MODES,
-};
-
 enum
 {
 	_rasterizer_environment_vector_mode_test_pattern = 50,
@@ -87,11 +70,6 @@ enum
 	_detail_map_function_multiply,
 	_detail_map_function_double_biased_add,
 	NUMBER_OF_DETAIL_MAP_FUNCTIONS,
-};
-
-enum
-{
-	_rasterizer_statistics_mode_enabled = 2,
 };
 
 enum
@@ -652,7 +630,7 @@ void _rasterizer_environment_lightmap_draw(
 			triangle_count,
 			vertex_buffer,
 			vertex_buffer + !rasterizer_environment_globals.lightmap_missing);
-		if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_enabled)
+		if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 		{
 			rasterizer_frame_statistics.lightmap_dynamic_draw_count++;
 			rasterizer_frame_statistics.lightmap_dynamic_triangle_count += triangle_count;
@@ -963,7 +941,7 @@ void _rasterizer_environment_diffuse_light_draw(
 				first_triangle_index,
 				triangle_count,
 				vertex_buffer);
-			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_enabled)
+			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.environment_dynamic_draw_count++;
 				rasterizer_frame_statistics.environment_dynamic_triangle_count += triangle_count;
@@ -1378,7 +1356,7 @@ void _rasterizer_environment_diffuse_texture_draw(
 				first_triangle_index,
 				triangle_count,
 				vertex_buffer);
-			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_enabled)
+			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.diffuse_texture_dynamic_draw_count++;
 				rasterizer_frame_statistics.diffuse_texture_dynamic_triangle_count += triangle_count;
@@ -1685,7 +1663,7 @@ void _rasterizer_environment_specular_light_draw(
 				first_triangle_index,
 				triangle_count,
 				vertex_buffer);
-			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_enabled)
+			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.specular_light_dynamic_draw_count++;
 				rasterizer_frame_statistics.specular_light_dynamic_triangle_count += triangle_count;
@@ -1953,7 +1931,7 @@ void _rasterizer_environment_specular_lightmap_draw(
 				triangle_count,
 				vertex_buffer,
 				vertex_buffer + 1);
-			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_enabled)
+			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.specular_lightmap_dynamic_draw_count++;
 				rasterizer_frame_statistics.specular_lightmap_dynamic_triangle_count += triangle_count;
@@ -2118,7 +2096,7 @@ void _rasterizer_environment_reflection_lightmap_mask_draw(
 				triangle_count,
 				vertex_buffer,
 				vertex_buffer + 1);
-			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_enabled)
+			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.reflection_mask_dynamic_draw_count++;
 				rasterizer_frame_statistics.reflection_mask_dynamic_triangle_count += triangle_count;
@@ -2368,7 +2346,7 @@ void _rasterizer_environment_reflection_mirror_draw(
 				first_triangle_index,
 				triangle_count,
 				vertex_buffer);
-			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_enabled)
+			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.reflection_dynamic_draw_count++;
 				rasterizer_frame_statistics.reflection_dynamic_triangle_count += triangle_count;
@@ -2682,7 +2660,7 @@ void _rasterizer_environment_reflection_draw(
 				vertex_buffer +
 					(rasterizer_globals.lightmap_mode != _rasterizer_lightmap_mode_normal &&
 					reflection_type == _shader_environment_reflection_type_bumped_radiosity));
-			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_enabled)
+			if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.reflection_dynamic_draw_count++;
 				rasterizer_frame_statistics.reflection_dynamic_triangle_count += triangle_count;
@@ -2850,7 +2828,7 @@ void _rasterizer_environment_transparent_geometry_submit(
 			rasterizer_transparent_geometry_group_draw(group, FALSE);
 		}
 
-		if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_enabled)
+		if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 		{
 			rasterizer_frame_statistics.transparent_geometry_dynamic_draw_count++;
 			rasterizer_frame_statistics.transparent_geometry_dynamic_triangle_count += triangle_count;

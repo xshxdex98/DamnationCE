@@ -90,7 +90,6 @@ enum
 
 enum
 {
-	NUMBER_OF_UNIT_ANIMATION_IMPULSES = 14,
 	_unit_seat_unknown8_bit = 8,
 };
 

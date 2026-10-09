@@ -13,6 +13,23 @@ Declarations shared by the Xbox rasterizer's files only.
 #include "shaders/shader_texture_animation.h"
 #include "tag_files/tag_groups.h"
 
+/* ---------- constants */
+
+/* pixel shader stages */
+enum
+{
+	NUMBER_OF_PIXEL_SHADER_STAGES = 8
+};
+
+/* the texture scale vertex shader constants */
+enum
+{
+	VSH_CONSTANTS__TEXSCALE_OFFSET = -84,
+	VSH_CONSTANTS__TEXSCALE_COUNT = 3
+};
+
+/* ---------- structures */
+
 struct bitmap_data;
 struct rasterizer_model_begin_parameters;
 struct shader;

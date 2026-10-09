@@ -32,13 +32,6 @@ RASTERIZER_LIGHTS.C
 
 enum
 {
-	_rasterizer_statistics_mode_none = 0,
-	_rasterizer_statistics_mode_framerate,
-	_rasterizer_statistics_mode_geometry
-};
-
-enum
-{
 	_lens_flare_first_person_weapon_flag = FLAG(7),
 	_lens_flare_window_index_mask = ~_lens_flare_first_person_weapon_flag
 };

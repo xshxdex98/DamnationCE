@@ -33,11 +33,6 @@ enum
 
 enum
 {
-	_rasterizer_statistics_mode_geometry = 2,
-};
-
-enum
-{
 	NUMBER_OF_SCREEN_GEOMETRY_MAPS = 3,
 	SCREEN_GEOMETRY_TRANSFORM_CONSTANT = -68,
 	SCREEN_GEOMETRY_MAP_CONSTANT = -63,

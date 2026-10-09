@@ -13,6 +13,29 @@ ACTOR_DEFINITIONS.H
 
 /* ---------- constants */
 
+/* special fire situations */
+enum
+{
+	_actor_special_fire_situation_never,
+	_actor_special_fire_situation_enemy_visible,
+	_actor_special_fire_situation_enemy_out_of_sight,
+	_actor_special_fire_situation_strafing,
+	NUMBER_OF_ACTOR_SPECIAL_FIRE_SITUATIONS
+};
+
+/* actor definition flags 2 */
+enum
+{
+	_actor_definition_flags2_avoid_all_enemy_attack_vectors_bit,
+	_actor_definition_flags2_must_stand_to_fire_bit,
+	_actor_definition_flags2_must_stop_to_fire_bit,
+	_actor_definition_flags2_disallow_vehicle_combat_bit,
+	_actor_definition_flags2_pathfinding_ignores_danger_bit,
+	_actor_definition_flags2_panic_in_groups_bit,
+	_actor_definition_flags2_no_corpse_shooting_bit,
+	NUMBER_OF_ACTOR_DEFINITION_FLAGS2
+};
+
 enum
 {
 	ACTOR_DEFINITION_TAG = 'actr',

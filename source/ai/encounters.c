@@ -125,11 +125,6 @@ enum
 #define MAXIMUM_FOLLOW_TARGET_UNITS 8
 #define NUMBER_OF_FIRING_POSITION_GROUP_INDICES 26
 
-enum
-{
-	_ai_reference_squad_bit = 15,
-};
-
 // actor_definition.flags2 (no header declares it yet)
 enum
 {

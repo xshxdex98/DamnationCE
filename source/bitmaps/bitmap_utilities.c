@@ -14,13 +14,6 @@ BITMAP_UTILITIES.C
 
 enum
 {
-
-	FIRST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt1,
-	LAST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt5,
-};
-
-enum
-{
 	MAXIMUM_FILTER_SIZE = 10,
 };
 

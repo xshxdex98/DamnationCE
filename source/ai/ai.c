@@ -72,7 +72,6 @@ enum
 	MINIMUM_PLAYER_KILLING_SPREE = 5,
 	AI_DESCRIPTION_BUFFER_SIZE = 512,
 	AI_BSP_TRANSITION_DESCRIPTION_SIZE = 256,
-	MAXIMUM_NUMBER_OF_UNITS_PER_SWARM = MAXIMUM_UNIT_INDICES_PER_SWARM,
 };
 
 /* The shared scenario-AI header does not yet own this source-attested enum. */
@@ -1371,7 +1370,7 @@ void ai_disconnect_from_structure_bsp(
 					{
 						struct swarm_datum *swarm = swarm_get(actor->meta.swarm_cache_index);
 						unsigned long const *combined_pvs = players_get_combined_pvs();
-						long components_outside_pvs[MAXIMUM_NUMBER_OF_UNITS_PER_SWARM];
+						long components_outside_pvs[MAXIMUM_UNIT_INDICES_PER_SWARM];
 						short components_outside_pvs_count = 0;
 						short component_index;
 
@@ -1388,7 +1387,7 @@ void ai_disconnect_from_structure_bsp(
 								match_assert(
 									"c:\\halo\\SOURCE\\ai\\ai.c",
 									0x8EB,
-									components_outside_pvs_count < MAXIMUM_NUMBER_OF_UNITS_PER_SWARM);
+									components_outside_pvs_count < MAXIMUM_UNIT_INDICES_PER_SWARM);
 								components_outside_pvs[components_outside_pvs_count++] = swarm->unit_indices[component_index];
 							}
 						}
