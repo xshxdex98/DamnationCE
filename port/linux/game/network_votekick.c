@@ -514,6 +514,8 @@ static void votekick_send_status(
 {
 	long machine_indices[MAXIMUM_VOTEKICK_MACHINES];
 	short count = distributed_client_machines(machine_indices, MAXIMUM_VOTEKICK_MACHINES);
+	/* (the same for every client; at most VOTE_SECONDS) */
+	long seconds_left = votekick.active ? votekick_seconds_left() : 0;
 	short index;
 
 	for (index = 0; index < count; index++)
@@ -533,7 +535,7 @@ static void votekick_send_status(
 			message.status.player_index = distributed_player_to_byte(votekick.target_player);
 			message.status.votes = (byte)PIN(votekick.votes, 0, 255);
 			message.status.needed = (byte)PIN(votekick.needed, 0, 255);
-			message.status.seconds_left = (byte)MIN(votekick_seconds_left(), 255);
+			message.status.seconds_left = (byte)seconds_left;
 			if (voter.voted)
 				message.status.flags |= FLAG(_votekick_status_voted_bit);
 			if (votekick_may_vote(&voter))
