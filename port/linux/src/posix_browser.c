@@ -357,12 +357,12 @@ static int connection_read(struct connection *connection, unsigned char *buffer,
 	}
 }
 
-int posix_browser_request(const char *url, const char *form, const char *content_type, char *response,
-	int response_size, char *error, int error_size)
+static int send_request(const char *url, const char *body_data, size_t body_length, const char *content_type,
+	const char *headers, char *response, int response_size, char *error, int error_size)
 {
 	char host[256], port[16], path[512];
 	/* (the headers, and the body: a carnage report's may be long) */
-	size_t request_size = (form ? strlen(form) : 0) + 1024;
+	size_t request_size = body_length + (headers ? strlen(headers) : 0) + 1024;
 	char *request, *buffer, *body;
 	size_t capacity = 65536, used = 0;
 	struct connection connection;
@@ -396,24 +396,34 @@ int posix_browser_request(const char *url, const char *form, const char *content
 		free(buffer);
 		return 0;
 	}
-	if (form)
+	if (body_data)
 	{
 		length = snprintf(request, request_size,
 			"POST %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: " BROWSER_USER_AGENT "\r\n"
-			"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n%s",
-			path, host, content_type ? content_type : "application/x-www-form-urlencoded", strlen(form), form);
+			"Content-Type: %s\r\nContent-Length: %zu\r\n%s\r\n",
+			path, host, content_type ? content_type : "application/x-www-form-urlencoded", body_length,
+			headers ? headers : "");
 	}
 	else
 	{
 		length = snprintf(request, request_size,
-			"GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: " BROWSER_USER_AGENT "\r\n\r\n", path, host);
+			"GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: " BROWSER_USER_AGENT "\r\n%s\r\n", path, host,
+			headers ? headers : "");
 	}
-	if (length <= 0 || (size_t)length >= request_size)
+	if (!body_data)
+		body_length = 0;
+	if (length <= 0 || (size_t)length + body_length >= request_size)
 	{
 		set_error(error, error_size, "the request is too long", 0);
 		free(request);
 		free(buffer);
 		return 0;
+	}
+	/* (the body may be any bytes, a gzip member: copied after the headers) */
+	if (body_data)
+	{
+		memcpy(request + length, body_data, body_length);
+		length += (int)body_length;
 	}
 	memset(&connection, 0, sizeof(connection));
 	connection.secure = secure;
@@ -451,6 +461,42 @@ int posix_browser_request(const char *url, const char *form, const char *content
 	free(request);
 	free(buffer);
 	return status;
+}
+
+/* (one request at a time across the program's threads: Mbed TLS, as it is
+built here, has no locks of its own, and the game list's thread and Delta
+Stats' uploads both make requests) */
+#ifdef _WIN32
+static SRWLOCK request_lock = SRWLOCK_INIT;
+#else
+static pthread_mutex_t request_lock = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+int posix_browser_send(const char *url, const char *body_data, size_t body_length, const char *content_type,
+	const char *headers, char *response, int response_size, char *error, int error_size)
+{
+	int status;
+
+#ifdef _WIN32
+	AcquireSRWLockExclusive(&request_lock);
+#else
+	pthread_mutex_lock(&request_lock);
+#endif
+	status = send_request(url, body_data, body_length, content_type, headers, response, response_size, error,
+		error_size);
+#ifdef _WIN32
+	ReleaseSRWLockExclusive(&request_lock);
+#else
+	pthread_mutex_unlock(&request_lock);
+#endif
+	return status;
+}
+
+int posix_browser_request(const char *url, const char *form, const char *content_type, char *response,
+	int response_size, char *error, int error_size)
+{
+	return posix_browser_send(url, form, form ? strlen(form) : 0, content_type, NULL, response, response_size, error,
+		error_size);
 }
 
 #ifdef _WIN32
