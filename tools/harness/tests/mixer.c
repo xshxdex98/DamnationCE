@@ -46,8 +46,15 @@ typedef struct
 #define DS3DMODE_HEADRELATIVE 0x00000001
 #define DS3DMODE_DISABLE 0x00000002
 
-/* the players' voices (voice_audio.c): none */
+/* the players' voices (voice_audio.c) and the menus' song (menu_song.c):
+none */
 static void voice_audio_mix(float *output, unsigned long frames)
+{
+	(void)output;
+	(void)frames;
+}
+
+static void menu_song_mix(float *output, unsigned long frames)
 {
 	(void)output;
 	(void)frames;
