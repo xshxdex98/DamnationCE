@@ -4392,6 +4392,15 @@ void game_engine_player_killed(
 	/* port: a killer who has left the game since is no one's kill */
 	if (killing_player_index != NONE && !player_try_and_get(killing_player_index))
 		killing_player_index = NONE;
+#ifdef HALO_GAME_BROWSER
+	{
+		/* Delta Stats' recorder (port/linux/game/game_events.c): who killed
+		whom, as this machine's game has it; it changes nothing */
+		void game_events_player_killed(long killing_player_index, long dead_player_index, boolean friendly_fire);
+
+		game_events_player_killed(killing_player_index, dead_player_index, friendly_fire);
+	}
+#endif
 	/* the host's kill of a player who quit, ahead of this client's clock
 	(game_update_quit_players has not come to its time yet) */
 	if (network_game_distributed_client() && dead_player->quit_out_of_game_time != NONE &&
