@@ -58,9 +58,7 @@ struct widget_instance;
 #include "text/text_group.h"
 #include "text/unicode.h"
 #include "ui_widget.h"
-#ifdef HALO_64BIT
 #include "interface/ui_widget_instance.h"
-#endif
 #ifdef HALO_GAME_BROWSER
 /* the in-game server browser (port/linux/game/browser_screen.c): a screen of
 code over the widgets, as the virtual keyboard is */
@@ -87,6 +85,8 @@ char const *pc_menus_screen(char const *name);
 #include "custom_edition_maps.h"
 #include "interface/hud_messaging.h"
 #include "interface/ui_widget.h"
+#include "interface/ui_widget_definitions.h"
+#include "text/font_group.h"
 
 /* (port/linux/game/menu_tags.c: a menus theme chosen, put on at the start of
 a frame) */
@@ -124,12 +124,6 @@ enum
 	/* only the icon types below _icon_action name a button bitmap of their own;
 	the rest are resolved through the local player's control preferences */
 	NUM_ICONS = _icon_action
-};
-
-enum
-{
-	UI_WIDGET_DEFINITION_TAG = 'DeLa',
-	FONT_GROUP_TAG = 'font'
 };
 
 enum
@@ -196,15 +190,6 @@ enum
 
 enum
 {
-	_list_items_generated_in_code,
-	_list_items_generated_from_string_list_tag,
-	_list_items_only_one_tooltip_entry,
-	_list_single_preview_box_no_scroll,
-	NUMBER_OF_LIST_FLAGS
-};
-
-enum
-{
 	/* only the bit this file tests is named */
 	_text_box_flashing_text_bit = 2
 };
@@ -264,11 +249,6 @@ enum
 
 #define SIGN(n) ((n) >= 0 ? 1 : -1)
 
-/* the widget definition as this file reads it (the shared header has only
-its start) */
-#define ui_widget_definition_get(tag_index) \
-	((struct ui_widget_definition *)tag_get(UI_WIDGET_DEFINITION_TAG, (tag_index)))
-
 /* ---------- structures */
 
 struct stack_memory_pool_block;
@@ -285,42 +265,6 @@ typedef char verify_hud_globals_button_icons_offset[
 	offsetof(struct hud_globals_definition, messaging.button_icons) == 0xC4 ? 1 : -1];
 typedef char verify_interface_tag_references_definition_size[
 	sizeof(struct game_globals_interface_tag_references) == 0x130 ? 1 : -1];
-struct ui_widget_definition
-{
-	short type;
-	short controller_index;
-	char name[32];
-	rectangle2d bounds;
-	long flags;
-	long milliseconds_to_auto_close;
-	long auto_close_fade_time;
-	struct tag_reference background_bitmap;
-	struct tag_block game_data_inputs;
-	struct tag_block event_handlers;
-	struct tag_block search_and_replace_functions;
-	byte unknown06C[0xEC - 0x6C];
-	struct tag_reference text_label_string_list;
-	struct tag_reference text_font;
-	real_argb_color text_color;
-	short justification;
-	word text_box_flags;
-	byte unknown120[0x12E - 0x120];
-	short string_list_index;
-	short horizontal_offset;
-	short vertical_offset;
-	byte unknown134[0x150 - 0x134];
-	long list_flags;
-	struct tag_reference list_header_bitmap;
-	struct tag_reference list_footer_bitmap;
-	rectangle2d list_header_bounds;
-	rectangle2d list_footer_bounds;
-	byte unknown184[0x1A4 - 0x184];
-	struct tag_reference extended_description_widget;
-	byte unknown1B4[0x2D4 - 0x1B4];
-	struct tag_block conditional_widgets;
-	byte unknown2E0[0x3E0 - 0x2E0];
-	struct tag_block child_widgets;
-};
 
 typedef char verify_ui_widget_game_data_input_reference_size[
 	sizeof(struct ui_widget_game_data_input_reference) == 0x24 ? 1 : -1];
@@ -332,46 +276,6 @@ typedef char verify_ui_widget_conditional_reference_size[
 	sizeof(struct ui_widget_conditional_reference) == 0x50 ? 1 : -1];
 typedef char verify_ui_widget_event_handler_reference_size[
 	sizeof(struct ui_widget_event_handler_reference) == 0x48 ? 1 : -1];
-typedef char verify_ui_widget_definition_bounds_offset[
-	offsetof(struct ui_widget_definition, bounds) == 0x24 ? 1 : -1];
-typedef char verify_ui_widget_definition_flags_offset[
-	offsetof(struct ui_widget_definition, flags) == 0x2C ? 1 : -1];
-typedef char verify_ui_widget_definition_game_data_inputs_offset[
-	offsetof(struct ui_widget_definition, game_data_inputs) == 0x48 ? 1 : -1];
-typedef char verify_ui_widget_definition_search_and_replace_offset[
-	offsetof(struct ui_widget_definition, search_and_replace_functions) == 0x60 ? 1 : -1];
-typedef char verify_ui_widget_definition_text_font_offset[
-	offsetof(struct ui_widget_definition, text_font) == 0xFC ? 1 : -1];
-typedef char verify_ui_widget_definition_text_color_offset[
-	offsetof(struct ui_widget_definition, text_color) == 0x10C ? 1 : -1];
-typedef char verify_ui_widget_definition_justification_offset[
-	offsetof(struct ui_widget_definition, justification) == 0x11C ? 1 : -1];
-typedef char verify_ui_widget_definition_text_box_flags_offset[
-	offsetof(struct ui_widget_definition, text_box_flags) == 0x11E ? 1 : -1];
-typedef char verify_ui_widget_definition_string_list_index_offset[
-	offsetof(struct ui_widget_definition, string_list_index) == 0x12E ? 1 : -1];
-typedef char verify_ui_widget_definition_horizontal_offset_offset[
-	offsetof(struct ui_widget_definition, horizontal_offset) == 0x130 ? 1 : -1];
-typedef char verify_ui_widget_definition_list_header_bitmap_offset[
-	offsetof(struct ui_widget_definition, list_header_bitmap) == 0x154 ? 1 : -1];
-typedef char verify_ui_widget_definition_list_header_bounds_offset[
-	offsetof(struct ui_widget_definition, list_header_bounds) == 0x174 ? 1 : -1];
-typedef char verify_ui_widget_definition_event_handlers_offset[
-	offsetof(struct ui_widget_definition, event_handlers) == 0x54 ? 1 : -1];
-typedef char verify_ui_widget_definition_background_bitmap_offset[
-	offsetof(struct ui_widget_definition, background_bitmap) == 0x38 ? 1 : -1];
-typedef char verify_ui_widget_definition_text_label_string_list_offset[
-	offsetof(struct ui_widget_definition, text_label_string_list) == 0xEC ? 1 : -1];
-typedef char verify_ui_widget_definition_list_flags_offset[
-	offsetof(struct ui_widget_definition, list_flags) == 0x150 ? 1 : -1];
-typedef char verify_ui_widget_definition_extended_description_offset[
-	offsetof(struct ui_widget_definition, extended_description_widget) == 0x1A4 ? 1 : -1];
-typedef char verify_ui_widget_definition_conditional_widgets_offset[
-	offsetof(struct ui_widget_definition, conditional_widgets) == 0x2D4 ? 1 : -1];
-typedef char verify_ui_widget_definition_child_widgets_offset[
-	offsetof(struct ui_widget_definition, child_widgets) == 0x3E0 ? 1 : -1];
-typedef char verify_ui_widget_definition_size[
-	sizeof(struct ui_widget_definition) == 0x3EC ? 1 : -1];
 
 struct ui_widget_deferred_error
 {
@@ -492,78 +396,6 @@ typedef char verify_ui_widget_dpad_event_times_offset[
 	offsetof(
 		struct ui_widget_bss_prefix,
 		dpad_event_times) == 0x870 ? 1 : -1];
-
-struct widget_animation_data
-{
-	short current_frame_index;
-	short first_frame_index;
-	short last_frame_index;
-	short number_of_sprite_frames;
-};
-
-struct widget_instance
-{
-	long definition_tag_index;
-	char const *name;
-	short local_player_index;
-	short horizontal_offset;
-	short vertical_offset;
-	short type;
-	boolean visible;
-	boolean render_regardless_of_controller_index;
-	boolean disabled;
-	boolean pause_game_time;
-	boolean delete_recursion_lock;
-	boolean widget_is_error_dialog;
-	boolean close_if_local_player_controller_present;
-	byte pad17;
-	long creation_time;
-	unsigned long milliseconds_to_auto_close;
-	unsigned long auto_close_fade_time;
-	real alpha_modifier;
-	struct widget_instance *previous;
-	struct widget_instance *next;
-	struct widget_instance *parent;
-	struct widget_instance *child;
-	struct widget_instance *focused_child;
-	union
-	{
-		struct
-		{
-			wchar_t *text;
-			short string_list_index;
-		} text_box;
-		struct
-		{
-			short selected_index;
-			/* counted back toward zero one step per rendered frame; the two
-			tab functions start it at +15 and -15 and the column list renderer
-			clears it */
-			short last_list_tab_direction;
-			void *list_items;
-			word number_of_items;
-			struct widget_instance *extended_description;
-			wchar_t *item_text;
-		} list;
-	} parameters;
-	struct widget_animation_data animation;
-};
-
-typedef char verify_widget_instance_size[
-	sizeof(struct widget_instance) == 0x58 ? 1 : -1];
-typedef char verify_widget_instance_animation_offset[
-	offsetof(struct widget_instance, animation) == 0x50 ? 1 : -1];
-
-typedef char verify_widget_instance_creation_time_offset[
-	offsetof(struct widget_instance, creation_time) == 0x18 ? 1 : -1];
-typedef char verify_widget_instance_alpha_modifier_offset[
-	offsetof(struct widget_instance, alpha_modifier) == 0x24 ? 1 : -1];
-typedef char verify_widget_instance_next_offset[
-	offsetof(struct widget_instance, next) == 0x2C ? 1 : -1];
-typedef char verify_widget_instance_focused_child_offset[
-	offsetof(struct widget_instance, focused_child) == 0x38 ? 1 : -1];
-typedef char verify_widget_instance_text_box_string_list_index_offset[
-	offsetof(struct widget_instance, parameters.text_box.string_list_index) == 0x40 ? 1 : -1];
 
 #endif
 /* ---------- prototypes */

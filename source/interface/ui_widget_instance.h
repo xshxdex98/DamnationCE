@@ -1,8 +1,7 @@
 /*
 UI_WIDGET_INSTANCE.H
 
-The widget instance, shared by every file that touches one. Fields that
-files named differently share a union.
+The widget instance, shared by every file that touches one.
 */
 
 #ifndef __UI_WIDGET_INSTANCE_H
@@ -19,7 +18,8 @@ struct widget_animation_data
 	short number_of_sprite_frames;
 };
 
-#define ui_widget_animation_data widget_animation_data
+typedef char widget_animation_data_size_assert[
+	sizeof(struct widget_animation_data) == 0x8 ? 1 : -1];
 
 struct widget_instance
 {
@@ -31,10 +31,10 @@ struct widget_instance
 	short type;
 	boolean visible;
 	boolean render_regardless_of_controller_index;
-	union { boolean disabled; boolean never_receive_events; };
+	boolean disabled;
 	boolean pause_game_time;
 	boolean delete_recursion_lock;
-	union { boolean widget_is_error_dialog; boolean error_dialog; };
+	boolean widget_is_error_dialog;
 	boolean close_if_local_player_controller_present;
 	byte pad17;
 	int creation_time;
@@ -55,11 +55,11 @@ struct widget_instance
 		} text_box;
 		struct
 		{
-			union { short selected_index; short selected_list_item_index; };
+			short selected_index;
 			/* counted back toward zero one step per rendered frame; the two
 			tab functions start it at +15 and -15 and the column list renderer
 			clears it */
-			union { short last_list_tab_direction; short list_item_top_index; };
+			short last_list_tab_direction;
 			void *list_items;
 			word number_of_items;
 			struct widget_instance *extended_description;

@@ -26,6 +26,9 @@ struct event_record
 	} data;
 };
 
+typedef char event_record_size_assert[
+	sizeof(struct event_record) == 0x8 ? 1 : -1];
+
 /* ---------- prototypes/EVENT_MANAGER.C */
 
 void event_manager_initialize(
