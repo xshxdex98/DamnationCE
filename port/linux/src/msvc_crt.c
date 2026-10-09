@@ -14,7 +14,6 @@ port/linux/include/stdio.h).
 #include <errno.h>
 #include <fenv.h>
 #include <fcntl.h>
-#include <fenv.h>
 #include <float.h>
 #include <limits.h>
 #include <math.h>

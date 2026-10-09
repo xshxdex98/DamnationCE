@@ -16,6 +16,7 @@ game's text uses outside of its own font tables.
 #include <errno.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -741,28 +742,30 @@ static int wide_format(struct wide_output *output, const wchar_t *format, va_lis
 		{
 			char narrow[512];
 			wchar_t wide[512];
+			BOOL floating = conversion == 'e' || conversion == 'E' || conversion == 'f' ||
+				conversion == 'g' || conversion == 'G';
+
+			/* (the longest specification, seven flags with both numbers at
+			their cap and "llX", is well inside its 64 characters) */
+			if (size == 3 && !floating)
+			{
+				specification[specification_length++] = 'l';
+				specification[specification_length++] = 'l';
+			}
+			specification[specification_length++] = (char)conversion;
+			specification[specification_length] = '\0';
 
 			if (conversion == 'p')
 			{
-#ifdef HALO_64BIT
-				snprintf(narrow, sizeof(narrow), "%016llX", (unsigned long long)(uintptr_t)va_arg(arguments, void *));
-#else
-				snprintf(narrow, sizeof(narrow), "%08lX", (unsigned long)va_arg(arguments, void *));
-#endif
+				snprintf(narrow, sizeof(narrow), "%0*llX", (int)sizeof(void *) * 2,
+					(unsigned long long)(uintptr_t)va_arg(arguments, void *));
 			}
-			else if (conversion == 'e' || conversion == 'E' || conversion == 'f' ||
-				conversion == 'g' || conversion == 'G')
+			else if (floating)
 			{
-				specification[specification_length++] = (char)conversion;
-				specification[specification_length] = '\0';
 				snprintf(narrow, sizeof(narrow), specification, va_arg(arguments, double));
 			}
 			else if (size == 3)
 			{
-				specification[specification_length++] = 'l';
-				specification[specification_length++] = 'l';
-				specification[specification_length++] = (char)conversion;
-				specification[specification_length] = '\0';
 				snprintf(narrow, sizeof(narrow), specification, va_arg(arguments, long long));
 			}
 			else
@@ -771,8 +774,6 @@ static int wide_format(struct wide_output *output, const wchar_t *format, va_lis
 
 				if (size == 1)
 					value = (conversion == 'd' || conversion == 'i') ? (short)value : (unsigned short)value;
-				specification[specification_length++] = (char)conversion;
-				specification[specification_length] = '\0';
 				snprintf(narrow, sizeof(narrow), specification, value);
 			}
 			narrow_to_wide(narrow, strlen(narrow), wide, sizeof(wide) / sizeof(wide[0]));
