@@ -30,7 +30,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          last="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/nightly" --jq .target_commitish 2>/dev/null || true)"
+          # (no nightly yet: gh prints its error, which is no commit)
+          last="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/nightly" --jq .target_commitish 2>/dev/null)" || last=""
           if [ "$GITHUB_EVENT_NAME" = schedule ] && [ "$last" = "$GITHUB_SHA" ]; then
             echo "main has not moved since the last nightly (${GITHUB_SHA::7})"
             echo "build=false" >> "$GITHUB_OUTPUT"
