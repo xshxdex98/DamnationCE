@@ -110,19 +110,34 @@ static void log_bytes(int fd, const char *bytes, size_t size)
 	pthread_mutex_unlock(&log_lock);
 }
 
-static long guest_writev(int fd, uint64_t vector, int count, int64_t offset, int positional)
+enum
 {
-	struct iovec host_vector[64];
+	MAXIMUM_IO_VECTOR = 64,
+};
+
+/* a guest's I/O vector as the host's; FALSE if it is too long */
+static int io_vector_from_guest(uint64_t vector, int count, struct iovec *host_vector)
+{
 	const struct guest_iovec *guest_vector = GUEST(const struct guest_iovec *, vector);
 	int index;
 
-	if (count < 0 || count > 64)
-		return -EINVAL;
+	if (count < 0 || count > MAXIMUM_IO_VECTOR)
+		return 0;
 	for (index = 0; index < count; index++)
 	{
 		host_vector[index].iov_base = GUEST(void *, guest_vector[index].base);
 		host_vector[index].iov_len = guest_vector[index].length;
 	}
+	return 1;
+}
+
+static long guest_writev(int fd, uint64_t vector, int count, int64_t offset, int positional)
+{
+	struct iovec host_vector[MAXIMUM_IO_VECTOR];
+	int index;
+
+	if (!io_vector_from_guest(vector, count, host_vector))
+		return -EINVAL;
 	if (fd == 1 || fd == 2)
 	{
 		long total = 0;
@@ -141,17 +156,10 @@ static long guest_writev(int fd, uint64_t vector, int count, int64_t offset, int
 
 static long guest_readv(int fd, uint64_t vector, int count, int64_t offset, int positional)
 {
-	struct iovec host_vector[64];
-	const struct guest_iovec *guest_vector = GUEST(const struct guest_iovec *, vector);
-	int index;
+	struct iovec host_vector[MAXIMUM_IO_VECTOR];
 
-	if (count < 0 || count > 64)
+	if (!io_vector_from_guest(vector, count, host_vector))
 		return -EINVAL;
-	for (index = 0; index < count; index++)
-	{
-		host_vector[index].iov_base = GUEST(void *, guest_vector[index].base);
-		host_vector[index].iov_len = guest_vector[index].length;
-	}
 	if (positional)
 		return result_of(preadv(fd, host_vector, count, offset));
 	return result_of(readv(fd, host_vector, count));
