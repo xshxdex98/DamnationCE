@@ -721,14 +721,18 @@ void map_screen_pointer(struct halo_ui_pointer const *pointer)
 	}
 	if (pointer->wheel_steps)
 		move(0, (short)(pointer->wheel_steps > 0 ? -1 : 1));
-	item = pointer->moved ? item_at(pointer->x, pointer->y) : NONE;
+	/* (a finger has no hover: a tap selects and a tap on the selection picks) */
+	item = pointer->moved && !pointer->touch ? item_at(pointer->x, pointer->y) : NONE;
 	if (item != NONE && item < count)
 		*selected = item;
 	item = pointer->left_clicks ? item_at(pointer->click_x, pointer->click_y) : NONE;
 	if (item != NONE && item < count)
 	{
+		boolean picked = !pointer->touch || item == *selected;
+
 		*selected = item;
-		pick();
+		if (picked)
+			pick();
 	}
 }
 
