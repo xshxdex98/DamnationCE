@@ -28,6 +28,12 @@
       the file. Posted silently.
         DISCORD_UPSTREAM_WEBHOOK  the upstream channel's webhook URL
 
+  discord_feeds.py nightly <version> <commit> <commits file>
+      A nightly build published (nightly.yml): a heading card, where to
+      download it, and the titles of its commits since the last nightly,
+      one a line in the file. Posted silently.
+        DISCORD_NIGHTLY_WEBHOOK  the nightly builds channel's webhook URL
+
   discord_feeds.py rules
       The rules channel's picture, of discord_rules.md: posted, or with
       DISCORD_RULES_MESSAGE that message edited to match the file.
@@ -271,25 +277,44 @@ UPSTREAM_STATUSES = {
     "conflict": "It conflicts with DamnationCE's own changes, so it's waiting for a merge by hand. The files: {details}",
 }
 # the most of a build's commits listed
-UPSTREAM_COMMITS = 25
+COMMITS_LISTED = 25
 
 
-def post_upstream(build, status, commits_path, details=""):
-    webhook = os.environ["DISCORD_UPSTREAM_WEBHOOK"]
+def commit_lines(commits_path):
+    """a build's commits (one title a line in the file) as a post's list,
+    the first COMMITS_LISTED of them; none for none"""
     with open(commits_path, encoding="utf-8") as commits_file:
         commits = [line.strip() for line in commits_file if line.strip()]
-    lines = [f"**[OpenCE {build}](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/{build})**",
-             UPSTREAM_STATUSES[status].format(details=details)]
-    if commits:
-        lines += ["", "What's in it:"] + [f"- {commit}" for commit in commits[:UPSTREAM_COMMITS]]
-        if len(commits) > UPSTREAM_COMMITS:
-            lines.append(f"- and {len(commits) - UPSTREAM_COMMITS} more")
-    card = heading("OpenCE", build, "Upstream update")
+    if not commits:
+        return []
+    lines = ["", "What's in it:"] + [f"- {commit}" for commit in commits[:COMMITS_LISTED]]
+    if len(commits) > COMMITS_LISTED:
+        lines.append(f"- and {len(commits) - COMMITS_LISTED} more")
+    return lines
+
+
+def post_feed(webhook, card_name, card, lines):
+    """a heading card (if Pillow drew one) and the lines under it, silently"""
     if card:
-        post_card(webhook, "upstream.png", card)
+        post_card(webhook, card_name, card)
     for part in message_parts("\n".join(lines)):
         request(webhook, "POST", {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS,
                                   "allowed_mentions": {"parse": []}})
+
+
+def post_upstream(build, status, commits_path, details=""):
+    lines = [f"**[OpenCE {build}](https://github.com/OpenCommunityEdition/OpenCE/releases/tag/{build})**",
+             UPSTREAM_STATUSES[status].format(details=details)] + commit_lines(commits_path)
+    card = heading("OpenCE", build, "Upstream update")
+    post_feed(os.environ["DISCORD_UPSTREAM_WEBHOOK"], "upstream.png", card, lines)
+
+
+def post_nightly(version, commit, commits_path):
+    lines = [f"**[DamnationCE {version}](https://github.com/xshxdex98/DamnationCE/releases/tag/nightly)**",
+             f"Last night's build of main ({commit[:7]}), for Windows, Linux, macOS and Android: for testing, "
+             "downloaded by hand (it doesn't update itself)."] + commit_lines(commits_path)
+    card = heading("DamnationCE", version, "Nightly build")
+    post_feed(os.environ["DISCORD_NIGHTLY_WEBHOOK"], "nightly.png", card, lines)
 
 
 def update_rules():
@@ -320,6 +345,8 @@ def main():
         edit_release(sys.argv[2], sys.argv[3], sys.argv[4])
     elif sys.argv[1:2] == ["upstream"] and len(sys.argv) in (5, 6) and sys.argv[3] in UPSTREAM_STATUSES:
         post_upstream(*sys.argv[2:])
+    elif sys.argv[1:2] == ["nightly"] and len(sys.argv) == 5:
+        post_nightly(*sys.argv[2:])
     elif sys.argv[1:2] == ["rules"]:
         update_rules()
     else:

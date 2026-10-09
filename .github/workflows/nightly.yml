@@ -1,0 +1,100 @@
+name: Nightly
+
+# A build of main each night, of every platform, for testing: the release
+# builds (optimised, as players get them) of <VERSION>-nightly.<date>,
+# published as the "nightly" pre-release, the night before's replaced. The
+# builds never look for updates (build.yml's updates: false): a tester
+# downloads each by hand. A night main has not moved since the last nightly
+# builds nothing; a run started by hand (Actions > Nightly > Run workflow)
+# builds anyway.
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    outputs:
+      build: ${{ steps.check.outputs.build }}
+      version: ${{ steps.check.outputs.version }}
+      last: ${{ steps.check.outputs.last }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          last="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/nightly" --jq .target_commitish 2>/dev/null || true)"
+          if [ "$GITHUB_EVENT_NAME" = schedule ] && [ "$last" = "$GITHUB_SHA" ]; then
+            echo "main has not moved since the last nightly (${GITHUB_SHA::7})"
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$(tr -d '[:space:]' < VERSION)-nightly.$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+          echo "last=$last" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: check
+    if: ${{ needs.check.outputs.build == 'true' }}
+    uses: ./.github/workflows/build.yml
+    # (the Android signing key's)
+    secrets: inherit
+    with:
+      version: ${{ needs.check.outputs.version }}
+      release: true
+      updates: false
+
+  publish:
+    needs: [check, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      # (the history, for the commits since the last nightly)
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: damnationce-*-release-zip
+          path: nightly
+          merge-multiple: true
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          ls -l nightly
+          gh release delete nightly --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create nightly nightly/*.zip --repo "$GITHUB_REPOSITORY" --prerelease \
+            --target "$GITHUB_SHA" --title "DamnationCE nightly build ($VERSION)" \
+            --notes "Last night's build of main, from ${GITHUB_SHA::7}, for testing: download it by hand (it never updates itself). Releases are the stable builds."
+
+      - run: pip install --quiet pillow
+
+      # (the nightly builds channel's post: what changed since the last
+      # nightly, or for the first, since the last release; none without its
+      # webhook, as in a fork)
+      - name: Post to Discord
+        env:
+          DISCORD_NIGHTLY_WEBHOOK: ${{ secrets.DISCORD_NIGHTLY_WEBHOOK }}
+          VERSION: ${{ needs.check.outputs.version }}
+          LAST: ${{ needs.check.outputs.last }}
+        run: |
+          if [ -n "$DISCORD_NIGHTLY_WEBHOOK" ]; then
+            base="$LAST"
+            if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+              base="$(git describe --tags --abbrev=0 --match 'v*' "$GITHUB_SHA")"
+            fi
+            git log --no-merges --format=%s "$base..$GITHUB_SHA" > commits.txt
+            python3 tools/discord_feeds.py nightly "$VERSION" "$GITHUB_SHA" commits.txt
+          fi

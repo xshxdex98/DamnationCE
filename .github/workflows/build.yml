@@ -12,7 +12,8 @@ name: Build
 # game starts (port/linux/src/updater.c). A release is this workflow called
 # by release.yml (a tag v<VERSION> pushed): then only the release builds are
 # made, versioned, and zipped as the updater names them
-# (damnationce-<platform>-release.zip).
+# (damnationce-<platform>-release.zip). nightly.yml calls it so too, with
+# updates off: its builds are no release's and look for none.
 #
 # Kept cheap:
 # - one job per platform builds both configurations, so its set-up (tools,
@@ -49,6 +50,10 @@ on:
       release:
         type: boolean
         default: true
+      # (a release's builds look for newer releases; a nightly's do not)
+      updates:
+        type: boolean
+        default: true
 
 concurrency:
   group: build-${{ github.ref }}-${{ inputs.release || false }}
@@ -62,9 +67,9 @@ env:
   CCACHE_DIR: ${{ github.workspace }}/.ccache
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_MAXSIZE: 1G
-  # (tools/version.py: empty unless release.yml calls this)
+  # (tools/version.py: empty unless release.yml or nightly.yml calls this)
   HALO_VERSION: ${{ inputs.version }}
-  HALO_RELEASE_BUILD: ${{ inputs.release && '1' || '' }}
+  HALO_RELEASE_BUILD: ${{ inputs.release && inputs.updates && '1' || '' }}
   # (a push to main: its builds offer newer pushes; tools/version.py)
   HALO_UPDATE_CHANNEL: ${{ (github.event_name == 'push' || inputs.publish) && github.ref == 'refs/heads/main' && 'latest' || '' }}
   HALO_BUILD_COMMIT: ${{ github.sha }}

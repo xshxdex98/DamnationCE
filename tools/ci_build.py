@@ -14,8 +14,9 @@ passed on as --compiler-launcher.
 
 The version comes from the environment (tools/version.py), which
 DamnationCE's release workflows set: HALO_VERSION (0.5.0b, or
-0.5.0b-nightly.42), HALO_RELEASE_BUILD=1 for a release (whose version must
-be VERSION's), and HALO_BUILD_NUMBER, which orders the Android builds.
+0.5.0b-nightly.20261009), HALO_RELEASE_BUILD=1 for a release (whose
+version must be VERSION's), and HALO_BUILD_NUMBER, which orders the
+Android builds.
 Without them, a build is VERSION's -dev and never looks for updates.
 """
 
