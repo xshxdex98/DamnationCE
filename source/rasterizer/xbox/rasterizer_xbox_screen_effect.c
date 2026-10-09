@@ -21,9 +21,7 @@ RASTERIZER_XBOX_SCREEN_EFFECT.C
 #include "rasterizer_xbox.h"
 #include "rasterizer_xbox_pixel_shader.h"
 #include "effects/player_effects.h"
-#ifdef HALO_64BIT
-#include "cseries/cseries_windows.h" /* (declared: its result is not an int) */
-#endif
+#include "cseries/cseries_windows.h"
 
 enum
 {

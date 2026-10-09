@@ -5036,6 +5036,7 @@ static void game_engine_report_game(
 	for (index = 0; index < count; index++)
 	{
 		struct player_datum *player = player_get(ranking[index].player_index);
+		struct game_statistics const *statistics = &player->statistics;
 		struct browser_report_player *line = &players[index];
 
 		csmemset(line, 0, sizeof(*line));
@@ -5045,39 +5046,34 @@ static void game_engine_report_game(
 		line->score = game_engine->get_player_score
 			? game_engine->get_player_score(ranking[index].player_index, FALSE)
 			: 0;
-		line->kills = player->statistics.kills[0];
-		line->assists = player->statistics.assists[0];
-		line->deaths = player->statistics.deaths;
-		line->betrayals = player->statistics.friendly_fire_kills;
-		line->suicides = player->statistics.suicides;
-		line->multikills = player->statistics.multiple_kills;
-		line->shots_fired = player->statistics.shots_fired;
-		line->shots_hit = player->statistics.shots_hit;
+		line->kills = statistics->kills[0];
+		line->assists = statistics->assists[0];
+		line->deaths = statistics->deaths;
+		line->betrayals = statistics->friendly_fire_kills;
+		line->suicides = statistics->suicides;
+		line->multikills = statistics->multiple_kills;
+		line->shots_fired = statistics->shots_fired;
+		line->shots_hit = statistics->shots_hit;
 		line->color = player->network_player_data.primary_color_index;
-		{
-			unsigned long network_game_server_machine_ipv4_address(struct network_game_server *server,
-				short machine_index);
-
-			line->address = network_game_server_machine_ipv4_address(global_network_game_server_get(),
-				player->network_player_data.machine_index);
-		}
+		line->address = network_game_server_machine_ipv4_address(global_network_game_server_get(),
+			player->network_player_data.machine_index);
 		/* (the game type's statistics: the union's member for this game) */
 		switch (global_variant.game_engine_index)
 		{
 		case game_engine_ctf:
-			line->flag_grabs = player->statistics.multiplayer_statistics.ctf_statistics.flag_grabs;
-			line->flag_returns = player->statistics.multiplayer_statistics.ctf_statistics.flag_returns;
-			line->flag_scores = player->statistics.multiplayer_statistics.ctf_statistics.flag_scores;
+			line->flag_grabs = statistics->multiplayer_statistics.ctf_statistics.flag_grabs;
+			line->flag_returns = statistics->multiplayer_statistics.ctf_statistics.flag_returns;
+			line->flag_scores = statistics->multiplayer_statistics.ctf_statistics.flag_scores;
 			break;
 		case game_engine_oddball:
-			line->ball_time = player->statistics.multiplayer_statistics.oddball_statistics.time_with_the_ball;
-			line->ball_carrier_kills = player->statistics.multiplayer_statistics.oddball_statistics.ball_carrier_kills;
+			line->ball_time = statistics->multiplayer_statistics.oddball_statistics.time_with_the_ball;
+			line->ball_carrier_kills = statistics->multiplayer_statistics.oddball_statistics.ball_carrier_kills;
 			break;
 		case game_engine_king:
-			line->hill_time = player->statistics.multiplayer_statistics.king_statistics.time_on_hill;
+			line->hill_time = statistics->multiplayer_statistics.king_statistics.time_on_hill;
 			break;
 		case game_engine_race:
-			line->laps = player->statistics.multiplayer_statistics.race_statistics.laps;
+			line->laps = statistics->multiplayer_statistics.race_statistics.laps;
 			break;
 		}
 	}
