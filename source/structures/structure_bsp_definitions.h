@@ -90,7 +90,10 @@ struct structure_cluster
 	short weather_palette_index;
 	byte unusedA[0x1E];
 	struct tag_block predicted_resources;
-	byte unused34[0x34];
+	byte unused34[0xC];
+	word first_lens_flare_marker_index;
+	word lens_flare_marker_count;
+	byte unused44[0x24];
 };
 
 typedef char structure_cluster_size_assert[

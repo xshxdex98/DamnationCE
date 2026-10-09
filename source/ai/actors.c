@@ -113,21 +113,6 @@ typedef char actor_datum_meta_encounter_index_offset_assert[
 typedef char actor_datum_meta_first_prop_index_offset_assert[
 	offsetof(struct actor_datum, meta.first_prop_index) == 0x50 ? 1 : -1];
 
-/* the AI destination radius of a vehicle definition, which
- * vehicle_definitions.h leaves opaque */
-struct vehicle_definition
-{
-	struct unit_definition unit;
-	unsigned long flags;
-	byte __unknown2F4[0x90];
-	real ai_destination_radius;
-};
-
-typedef char vehicle_definition_flags_offset_assert[
-	offsetof(struct vehicle_definition, flags) == 0x2F0 ? 1 : -1];
-typedef char vehicle_definition_ai_destination_radius_offset_assert[
-	offsetof(struct vehicle_definition, ai_destination_radius) == 0x384 ? 1 : -1];
-
 typedef char ai_globals_service_data_time_given_offset_assert[
 	offsetof(struct ai_globals, time_given_this_frame) == 0x3 ? 1 : -1];
 typedef char ai_globals_service_data_current_highest_offset_assert[

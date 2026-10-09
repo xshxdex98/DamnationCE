@@ -121,42 +121,6 @@ struct rasterizer_environment_fog_screen_window
 	struct rasterizer_environment_fog_screen_wind wind;
 };
 
-#ifndef HALO_64BIT
-struct transparent_geometry_group
-{
-	unsigned long geometry_flags;
-	long object_index;
-	long source_object_index;
-	struct shader *shader;
-	short shader_permutation_index;
-	word pad12;
-	struct render_model_effect effect;
-	real_vector2d model_base_map_scale;
-	long dynamic_triangle_buffer_index;
-	struct triangle_buffer const *triangle_buffer;
-	long first_triangle_index;
-	long triangle_count;
-	long dynamic_vertex_buffer_index;
-	struct vertex_buffer const *vertex_buffer;
-	struct bitmap_data const *lightmap;
-	real_matrix4x3 const *node_matrices;
-	short node_matrix_count;
-	word pad66;
-	struct render_lighting const *lighting;
-	struct render_animation const *animation;
-	real z_sort;
-	real_point3d centroid;
-	real_plane3d plane;
-	long sorted_index;
-	short previous_group_presorted_index;
-	short next_group_presorted_index;
-	long active_camouflage_transparent_source_object_index;
-	boolean sort_last;
-	boolean cortana_hack;
-	byte pad9E[2];
-};
-#endif
-
 typedef char rasterizer_environment_fog_window_parameters_fog_offset_assert[
 	offsetof(struct rasterizer_window_begin_parameters, fog) == 0x1E8 ? 1 : -1];
 typedef char rasterizer_environment_fog_window_parameters_field_of_view_offset_assert[
@@ -178,10 +142,6 @@ typedef char rasterizer_environment_fog_model_skinning_size_assert[
 	sizeof(struct render_skinning) == 0x8 ? 1 : -1];
 typedef char rasterizer_environment_fog_model_map_scale_offset_assert[
 	offsetof(struct rasterizer_model_begin_parameters, base_map_scale) == 0xC4 ? 1 : -1];
-typedef char rasterizer_environment_fog_transparent_group_size_assert[
-	sizeof(struct transparent_geometry_group) == 0xA0 ? 1 : -1];
-typedef char rasterizer_environment_fog_transparent_group_map_scale_offset_assert[
-	offsetof(struct transparent_geometry_group, model_base_map_scale) == 0x3C ? 1 : -1];
 
 #endif
 /* ---------- globals */

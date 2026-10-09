@@ -40,70 +40,6 @@ struct bitmap_data;
 struct shader;
 struct vertex_buffer;
 
-#ifdef HALO_64BIT
-struct rasterizer_widget_window_parameters
-#else
-struct transparent_geometry_group
-#endif
-{
-#ifdef HALO_64BIT
-	byte reserved00[8];
-	real_point3d camera_position;
-	real_vector3d camera_forward;
-	byte reserved20[0x14];
-	rectangle2d viewport_bounds;
-	byte reserved3C[0x30];
-	real_matrix4x3 world_to_view;
-	byte reservedA0[0x100];
-	real projection_matrix[4][4];
-#else
-	unsigned long geometry_flags;
-	long object_index;
-	long source_object_index;
-	struct shader const *shader;
-	short shader_permutation_index;
-	short pad12;
-	short effect_type;
-	byte reserved16[0x26];
-	real_vector2d model_base_map_scale;
-	long dynamic_triangle_buffer_index;
-	void (*render_proc)(
-		long object_index,
-		long widget_index);
-	long first_triangle_index;
-	long triangle_count;
-	long dynamic_vertex_buffer_index;
-	struct vertex_buffer const *vertex_buffers;
-	struct bitmap_data const *lightmap;
-	void const *node_matrices;
-	short node_matrix_count;
-	word pad66;
-	void const *lighting;
-	void const *animation;
-	real z_sort;
-	real_point3d centroid;
-	real_plane3d plane;
-	long sorted_index;
-	short previous_group_presorted_index;
-	short next_group_presorted_index;
-	long active_camouflage_transparent_source_object_index;
-	byte reserved9C;
-	boolean cortana_hack;
-	byte reserved9E[2];
-#endif
-};
-
-#ifdef HALO_64BIT
-typedef char rasterizer_widget_window_parameters_offset_assert[
-	offsetof(
-		struct rasterizer_widget_window_parameters,
-		projection_matrix) == 0x1A0 ? 1 : -1];
-#else
-typedef char transparent_geometry_group_size_assert[
-	sizeof(struct transparent_geometry_group) == 0xA0 ? 1 : -1];
-
-#endif
-
 /* ---------- prototypes */
 
 static boolean rasterizer_widget_project_billboard(
@@ -216,13 +152,13 @@ void _rasterizer_widget_submit(
 			group->source_object_index = 0;
 			group->shader = NULL;
 			group->shader_permutation_index = 0;
-			group->effect_type = 0;
+			group->effect.type = 0;
 			group->dynamic_triangle_buffer_index = NONE;
 			group->render_proc = render_proc;
 			group->first_triangle_index = object_index;
 			group->triangle_count = widget_index;
 			group->dynamic_vertex_buffer_index = NONE;
-			group->vertex_buffers = NULL;
+			group->vertex_buffer = NULL;
 			group->lightmap = NULL;
 			null_plane.n.i = 0.0f;
 			null_plane.n.j = 0.0f;

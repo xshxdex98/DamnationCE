@@ -43,29 +43,14 @@ struct model_vertex_compressed
 struct render_model_effect
 {
 	short type;
-#ifdef HALO_64BIT
-	union { word pad; word pad02; };
-#else
 	word pad;
-#endif
 	real intensity;
 	real parameter;
 	long source_object_index;
-#ifdef HALO_64BIT
-	/* (the names the units that kept their own copy used) */
-	union { real_point3d source_object_centroid; real_point3d centroid; };
-	union { struct shader *modifier_shader; struct shader *shader; };
-	union { struct render_animation modifier_animation; struct render_animation animation; };
-#else
 	real_point3d source_object_centroid;
 	struct shader *modifier_shader;
 	struct render_animation modifier_animation;
-#endif
 };
-#ifdef HALO_64BIT
-
-#define rasterizer_model_effect_parameters render_model_effect
-#endif
 
 struct rasterizer_model_begin_parameters
 {

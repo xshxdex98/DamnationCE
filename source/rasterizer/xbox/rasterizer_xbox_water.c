@@ -56,23 +56,6 @@ enum
 
 /* ---------- structures */
 
-#ifndef HALO_64BIT
-struct transparent_geometry_group
-{
-	unsigned long geometry_flags;
-	byte reserved04[0x8];
-	struct shader *shader;
-	short shader_permutation_index;
-	byte reserved12[0x6E];
-	real_plane3d plane;
-};
-
-#endif
-
-#ifndef HALO_64BIT
-typedef char verify_water_geometry_group_plane_offset[
-	offsetof(struct transparent_geometry_group, plane) == 0x80 ? 1 : -1];
-#endif
 typedef char verify_pixel_shader_definition_size[
 	sizeof(struct pixel_shader_definition) == 0xF0 ? 1 : -1];
 

@@ -9,19 +9,14 @@ Narrow cross-translation-unit interface owned by RASTERIZER_TRANSPARENT_GEOMETRY
 #pragma once
 
 #include "cseries.h"
-#ifdef HALO_64BIT
 #include "rasterizer/rasterizer_model_types.h"
-#endif
 
-#ifdef HALO_64BIT
 struct triangle_buffer;
 struct vertex_buffer;
 struct bitmap_data;
 struct render_lighting;
 struct render_animation;
 
-/* one definition for every file: those that named or typed a field
-differently share a union */
 struct transparent_geometry_group
 {
 	unsigned int geometry_flags;
@@ -30,18 +25,11 @@ struct transparent_geometry_group
 	struct shader *shader;
 	short shader_permutation_index;
 	word pad12;
-	union
-	{
-		struct rasterizer_model_effect_parameters effect;
-		struct
-		{
-			short effect_type;
-			short pad16;
-			real effect_intensity;
-		};
-	};
+	struct render_model_effect effect;
 	real_vector2d model_base_map_scale;
 	int dynamic_triangle_buffer_index;
+	/* a widget group (one with no shader) holds its render proc here and the
+	proc's two arguments in the next two fields */
 	union
 	{
 		struct triangle_buffer const *triangle_buffer;
@@ -50,11 +38,7 @@ struct transparent_geometry_group
 	int first_triangle_index;
 	int triangle_count;
 	int dynamic_vertex_buffer_index;
-	union
-	{
-		struct vertex_buffer const *vertex_buffer;
-		struct vertex_buffer const *vertex_buffers;
-	};
+	struct vertex_buffer const *vertex_buffer;
 	struct bitmap_data const *lightmap;
 	real_matrix4x3 const *node_matrices;
 	short node_matrix_count;
@@ -72,9 +56,6 @@ struct transparent_geometry_group
 	boolean cortana_hack;
 	byte pad9E[2];
 };
-#else
-struct transparent_geometry_group;
-#endif
 
 void rasterizer_transparent_geometry_groups_begin(
 	void);

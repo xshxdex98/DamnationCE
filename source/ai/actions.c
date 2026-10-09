@@ -75,15 +75,6 @@ struct actor_dive_animation
 	real score_bias;
 };
 
-/* the AI driving values of a vehicle definition, which
- * vehicle_definitions.h leaves opaque */
-struct vehicle_definition
-{
-	byte __unknown0[0x390];
-	real ai_charge_repeat_time;
-	real ai_strafing_stop_range;
-};
-
 typedef char ai_globals_action_vehicle_size_assert[
 	sizeof(struct ai_vehicle_enterable) == 0x28 ? 1 : -1];
 typedef char ai_globals_action_grenades_enabled_offset_assert[
@@ -99,10 +90,6 @@ typedef char actions_actor_moving_offset_assert[
 typedef char actions_unit_dive_distance_offset_assert[
 	(offsetof(struct unit_definition, unit) +
 		offsetof(struct _unit_definition, dive_distance)) == 0x238 ? 1 : -1];
-typedef char actions_vehicle_charge_repeat_offset_assert[
-	offsetof(struct vehicle_definition, ai_charge_repeat_time) == 0x390 ? 1 : -1];
-typedef char actions_vehicle_strafing_stop_offset_assert[
-	offsetof(struct vehicle_definition, ai_strafing_stop_range) == 0x394 ? 1 : -1];
 typedef char firing_position_evaluation_context_size_assert[
 	sizeof(struct firing_position_evaluation_context) == 0x670 ? 1 : -1];
 

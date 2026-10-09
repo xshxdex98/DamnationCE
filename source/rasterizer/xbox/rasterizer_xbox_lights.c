@@ -18,34 +18,12 @@ RASTERIZER_XBOX_LIGHTS.C
 
 #include "rasterizer_xbox.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
+#include "rasterizer/rasterizer_lights.h"
 
 enum
 {
 	SUN_GLOW_CONVOLVE_PASS_COUNT = 4,
 	SUN_GLOW_RAY_COUNT = 16
-};
-
-/* ---------- structures */
-
-struct lens_flare_definition
-{
-	byte reserved00[0x10];
-	real occlusion_radius;
-};
-
-struct rasterizer_lens_flare_submit_parameters
-{
-	struct lens_flare_definition *definition;
-	real_point3d position;
-	unsigned long compressed_direction;
-	unsigned long compressed_up;
-	unsigned long compressed_light_color;
-	short light_identifier;
-	short light_index;
-	short lens_flare_index;
-	byte compressed_window_index;
-	byte compressed_light_scale;
-	long internal__occlusion_pixels;
 };
 
 /* ---------- prototypes */
