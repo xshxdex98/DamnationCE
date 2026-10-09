@@ -51,22 +51,6 @@ enum
 
 enum
 {
-	_shader_type_screen = 0,
-	_shader_type_effect,
-	_shader_type_decal,
-	_shader_type_environment,
-	_shader_type_model,
-	_shader_type_transparent_generic,
-	_shader_type_transparent_chicago,
-	_shader_type_transparent_water,
-	_shader_type_transparent_glass,
-	_shader_type_transparent_meter,
-	_shader_type_transparent_plasma,
-	NUMBER_OF_SHADER_TYPES
-};
-
-enum
-{
 	_shader_effect_uses_nonlinear_tint_bit = 1,
 	_shader_effect_flags_dont_overdraw_first_person_weapon_bit,
 };
@@ -237,176 +221,6 @@ enum
 
 /* the transparent shader fields read here (as the shader preprocessors
  * declare them, with this file's extra fields) */
-
-struct shader_transparent_generic_map
-{
-	word flags;
-	word pad02;
-	real map_u_scale;
-	real map_v_scale;
-	real map_u_offset;
-	real map_v_offset;
-	real map_rotation;
-	real mipmap_bias;
-	struct tag_reference map;
-	struct shader_texture_animation map_animation;
-};
-
-typedef char shader_transparent_generic_map_size_assert[
-	sizeof(struct shader_transparent_generic_map) == 0x64 ? 1 : -1];
-typedef char shader_transparent_generic_map_animation_offset_assert[
-	offsetof(struct shader_transparent_generic_map, map_animation) == 0x2C ? 1 : -1];
-
-struct shader_transparent_generic_stage
-{
-	word flags;
-	short pad02;
-	short constant_color0_animation_source;
-	short constant_color0_animation_function;
-	real constant_color0_animation_period;
-	real_argb_color constant_color0;
-	real_argb_color constant_color1;
-	byte reserved_after_constant_color1[68];
-};
-
-typedef char shader_transparent_generic_stage_size_assert[
-	sizeof(struct shader_transparent_generic_stage) == 0x70 ? 1 : -1];
-
-struct shader_transparent_generic
-{
-	byte numeric_counter_limit;
-	byte flags;
-	short type;
-	short framebuffer_blend_function;
-	short framebuffer_fade_mode;
-	short framebuffer_fade_source;
-	short pad32;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	struct tag_block extra_layers;
-	struct tag_block maps;
-	struct tag_block stages;
-};
-
-struct shader_transparent_generic_definition
-{
-	struct shader_base shader;
-	struct shader_transparent_generic generic;
-};
-
-typedef char shader_transparent_generic_maps_offset_assert[
-	offsetof(struct shader_transparent_generic_definition, generic.maps) == 0x54 ? 1 : -1];
-
-struct shader_transparent_chicago_map
-{
-	word flags;
-	byte reserved_before_functions[42];
-	short color_function;
-	short alpha_function;
-	byte reserved_before_map_u_scale[36];
-	real map_u_scale;
-	real map_v_scale;
-	real map_u_offset;
-	real map_v_offset;
-	real map_rotation;
-	real mipmap_bias;
-	struct tag_reference map;
-	byte reserved_after_map[40];
-	struct shader_texture_animation map_animation;
-};
-
-typedef char shader_transparent_chicago_map_size_assert[
-	sizeof(struct shader_transparent_chicago_map) == 0xDC ? 1 : -1];
-typedef char shader_transparent_chicago_map_u_scale_offset_assert[
-	offsetof(struct shader_transparent_chicago_map, map_u_scale) == 0x54 ? 1 : -1];
-
-struct shader_transparent_chicago
-{
-	byte numeric_counter_limit;
-	byte flags;
-	short type;
-	short framebuffer_blend_function;
-	short framebuffer_fade_mode;
-	short framebuffer_fade_source;
-	short pad32;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	struct tag_block extra_layers;
-	struct tag_block maps;
-	word extra_flags;
-	word pad62;
-};
-
-struct shader_transparent_chicago_definition
-{
-	struct shader_base shader;
-	struct shader_transparent_chicago chicago;
-};
-
-typedef char shader_transparent_chicago_extra_flags_offset_assert[
-	offsetof(struct shader_transparent_chicago_definition, chicago.extra_flags) == 0x60 ? 1 : -1];
-
-struct shader_transparent_glass_definition
-{
-	struct shader shader;
-	word flags;
-	short pad2A;
-	byte reserved_before_tint_color[40];
-	real_rgb_color tint_color;
-	real tint_map_scale;
-	struct tag_reference tint_map;
-	byte reserved_before_reflection_flags[20];
-	word reflection_flags;
-	short reflection_type;
-	real_argb_color reflection_view_perpendicular_color;
-	real_argb_color reflection_view_parallel_color;
-	struct tag_reference reflection_map;
-	real reflection_bump_map_scale;
-	struct tag_reference reflection_bump_map;
-	byte reserved_before_diffuse_flags[128];
-	word diffuse_flags;
-	word pad152;
-	real diffuse_map_scale;
-	struct tag_reference diffuse_map;
-	real diffuse_detail_map_scale;
-	struct tag_reference diffuse_detail_map;
-	byte reserved_after_diffuse_detail_map[100];
-};
-
-typedef char shader_transparent_glass_reflection_type_offset_assert[
-	offsetof(struct shader_transparent_glass_definition, reflection_type) == 0x8A ? 1 : -1];
-typedef char shader_transparent_glass_diffuse_detail_map_offset_assert[
-	offsetof(struct shader_transparent_glass_definition, diffuse_detail_map) == 0x16C ? 1 : -1];
-
-struct shader_transparent_meter_definition
-{
-	struct shader shader;
-	word flags;
-	short pad2A;
-	byte reserved_before_map[32];
-	struct tag_reference map;
-	byte reserved_before_gradient_min_color[32];
-	real_rgb_color gradient_min_color;
-	real_rgb_color gradient_max_color;
-	real_rgb_color background_color;
-	real_rgb_color flash_color;
-	real_rgb_color tint_color;
-	real meter_transparency;
-	real background_transparency;
-	byte reserved_before_meter_brightness_source[24];
-	short meter_brightness_source;
-	short flash_brightness_source;
-	short value_source;
-	short gradient_source;
-	short flash_extension_source;
-	word padE2;
-	byte reserved_after_flash_extension_source[32];
-};
-
-typedef char shader_transparent_meter_gradient_min_color_offset_assert[
-	offsetof(struct shader_transparent_meter_definition, gradient_min_color) == 0x7C ? 1 : -1];
-typedef char shader_transparent_meter_brightness_source_offset_assert[
-	offsetof(struct shader_transparent_meter_definition, meter_brightness_source) == 0xD8 ? 1 : -1];
 
 #ifdef HALO_64BIT
 struct rasterizer_transparent_geometry_hud_globals_prefix
@@ -1706,12 +1520,12 @@ void rasterizer_transparent_geometry_group_draw(
 							long result;
 
 							for (layer_index = 0;
-								layer_index < shader_transparent_generic->generic.extra_layers.count;
+								layer_index < shader_transparent_generic->transparent.extra_layers.count;
 								layer_index++)
 							{
 								struct transparent_geometry_group layer_group;
 								long layer_shader_index = TAG_BLOCK_GET_ELEMENT(
-									&shader_transparent_generic->generic.extra_layers,
+									&shader_transparent_generic->transparent.extra_layers,
 									layer_index,
 									struct tag_reference)->index;
 
@@ -1732,7 +1546,7 @@ void rasterizer_transparent_geometry_group_draw(
 
 							SetRenderStateSmart(
 								D3DRS_CULLMODE,
-								TEST_FLAG(shader_transparent_generic->generic.flags, _shader_transparent_flag_two_sided_bit) ?
+								TEST_FLAG(shader_transparent_generic->transparent.flags, _shader_transparent_flag_two_sided_bit) ?
 									D3DCULL_NONE : D3DCULL_CCW);
 							SetRenderStateSmart(
 								D3DRS_COLORWRITEENABLE,
@@ -1740,23 +1554,23 @@ void rasterizer_transparent_geometry_group_draw(
 							SetRenderStateSmart(D3DRS_ALPHABLENDENABLE, TRUE);
 							SetRenderStateSmart(
 								D3DRS_ALPHATESTENABLE,
-								TEST_FLAG(shader_transparent_generic->generic.flags, _shader_transparent_flag_alpha_tested_bit));
+								TEST_FLAG(shader_transparent_generic->transparent.flags, _shader_transparent_flag_alpha_tested_bit));
 							SetRenderStateSmart(D3DRS_ALPHAREF, 0x7F);
 							rasterizer_set_framebuffer_blend_function(
-								shader_transparent_generic->generic.framebuffer_blend_function);
+								shader_transparent_generic->transparent.framebuffer_blend_function);
 
-							if (TEST_FLAG(shader_transparent_generic->generic.flags, _shader_transparent_flag_numeric_bit) &&
+							if (TEST_FLAG(shader_transparent_generic->transparent.flags, _shader_transparent_flag_numeric_bit) &&
 								group->animation &&
-								shader_transparent_generic->generic.maps.count > 0)
+								shader_transparent_generic->transparent.maps.count > 0)
 							{
 								struct bitmap_group const *bitmap_group =
 									bitmap_group_get(TAG_BLOCK_GET_ELEMENT(
-										&shader_transparent_generic->generic.maps,
+										&shader_transparent_generic->transparent.maps,
 										0,
 										struct shader_transparent_generic_map)->map.index);
 								short frame_count = (short)bitmap_group->bitmaps.count;
 								short function_index = frame_count == 8 ? 3 : 0;
-								short counter_limit = shader_transparent_generic->generic.numeric_counter_limit;
+								short counter_limit = shader_transparent_generic->transparent.numeric_counter_limit;
 								short counter_value = PIN(fast_ftol(floor(counter_limit*
 									group->animation->values[function_index] + 0.5f)), 0, counter_limit);
 								short digit_index;
@@ -1769,22 +1583,22 @@ void rasterizer_transparent_geometry_group_draw(
 								bitmap_sequence_index = counter_value%frame_count;
 							}
 
-							if (shader_transparent_generic->generic.maps.count > 0)
+							if (shader_transparent_generic->transparent.maps.count > 0)
 							{
 								for (map_index = 0;
 									map_index < NUMBER_OF_SHADER_TRANSPARENT_MAPS;
 									map_index++)
 								{
-									if (map_index < shader_transparent_generic->generic.maps.count)
+									if (map_index < shader_transparent_generic->transparent.maps.count)
 									{
 										struct shader_transparent_generic_map const *map =
 											TAG_BLOCK_GET_ELEMENT(
-												&shader_transparent_generic->generic.maps,
+												&shader_transparent_generic->transparent.maps,
 												map_index,
 												struct shader_transparent_generic_map);
 										/* port: a type the tables below have (a map's) */
-										short type = VALID_INDEX(shader_transparent_generic->generic.type, NUMBER_OF_SHADER_TRANSPARENT_GENERIC_TYPES) ?
-											shader_transparent_generic->generic.type :
+										short type = VALID_INDEX(shader_transparent_generic->transparent.first_map_type, NUMBER_OF_SHADER_TRANSPARENT_GENERIC_TYPES) ?
+											shader_transparent_generic->transparent.first_map_type :
 											_shader_transparent_generic_type_2d_map;
 										short map_type_bitmap_type[NUMBER_OF_SHADER_TRANSPARENT_MAPS] =
 										{
@@ -1805,9 +1619,9 @@ void rasterizer_transparent_geometry_group_draw(
 										match_assert(
 											"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_transparent_geometry.c",
 											1030,
-											!TEST_FLAG(shader_transparent_generic->shader.radiosity.flags,
+											!TEST_FLAG(shader_transparent_generic->shader.base.radiosity.flags,
 												_shader_radiosity_FILTHY_transparent_lit_bit) ||
-												shader_transparent_generic->generic.type==_shader_transparent_generic_type_2d_map);
+												shader_transparent_generic->transparent.first_map_type==_shader_transparent_generic_type_2d_map);
 										match_assert(
 											"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_transparent_geometry.c",
 											1031,
@@ -1859,12 +1673,12 @@ void rasterizer_transparent_geometry_group_draw(
 												D3DTEXF_POINT : D3DTEXF_LINEAR);
 									}
 
-									if (map_index < shader_transparent_generic->generic.maps.count &&
-										(map_index>0 || shader_transparent_generic->generic.type==_shader_transparent_generic_type_2d_map))
+									if (map_index < shader_transparent_generic->transparent.maps.count &&
+										(map_index>0 || shader_transparent_generic->transparent.first_map_type==_shader_transparent_generic_type_2d_map))
 									{
 										struct shader_transparent_generic_map const *map =
 											TAG_BLOCK_GET_ELEMENT(
-												&shader_transparent_generic->generic.maps,
+												&shader_transparent_generic->transparent.maps,
 												map_index,
 												struct shader_transparent_generic_map);
 										real_vector2d map_scale;
@@ -1873,7 +1687,7 @@ void rasterizer_transparent_geometry_group_draw(
 										map_scale.j = map->map_v_scale;
 
 										if (!map_index &&
-											TEST_FLAG(shader_transparent_generic->generic.flags,
+											TEST_FLAG(shader_transparent_generic->transparent.flags,
 												_shader_transparent_flag_scale_first_map_with_distance_bit))
 										{
 											map_scale.i = -(map_scale.i*group->z_sort);
@@ -1881,7 +1695,7 @@ void rasterizer_transparent_geometry_group_draw(
 										}
 
 										if (map_index>0 ||
-											!TEST_FLAG(shader_transparent_generic->generic.flags,
+											!TEST_FLAG(shader_transparent_generic->transparent.flags,
 												_shader_transparent_flag_first_map_is_in_screenspace_bit))
 										{
 											map_scale.i *= group->model_base_map_scale.i;
@@ -1900,8 +1714,8 @@ void rasterizer_transparent_geometry_group_draw(
 											(real_vector4d *)vsh_constants__texanim[map_index*2],
 											(real_vector4d *)vsh_constants__texanim[map_index*2+1]);
 									}
-									else if (map_index < shader_transparent_generic->generic.maps.count &&
-										TEST_FLAG(shader_transparent_generic->generic.flags,
+									else if (map_index < shader_transparent_generic->transparent.maps.count &&
+										TEST_FLAG(shader_transparent_generic->transparent.flags,
 											_shader_transparent_flag_first_map_is_in_screenspace_bit))
 									{
 										vsh_constants__texanim[map_index*2][0] =
@@ -1959,11 +1773,11 @@ void rasterizer_transparent_geometry_group_draw(
 								/* port: no more stages than the combiners hold (a map's
 								count), as shader_transparent_generic_create has */
 								short stage_count = FLOOR(
-									MIN(shader_transparent_generic->generic.stages.count, MAXIMUM_SHADER_TRANSPARENT_GENERIC_STAGES),
+									MIN(shader_transparent_generic->stages.count, MAXIMUM_SHADER_TRANSPARENT_GENERIC_STAGES),
 									1);
 
 								if (TEST_FLAG(group->geometry_flags, _rasterizer_geometry_sky_bit) &&
-									shader_transparent_generic->generic.framebuffer_blend_function ==
+									shader_transparent_generic->transparent.framebuffer_blend_function ==
 										_framebuffer_blend_function_alpha_blend)
 								{
 									struct render_fog const *fog = &global_window_parameters.fog;
@@ -1984,7 +1798,7 @@ void rasterizer_transparent_geometry_group_draw(
 								else
 								{
 									real vsh_constants__texscale[3][4];
-									short fade_source = shader_transparent_generic->generic.framebuffer_fade_source;
+									short fade_source = shader_transparent_generic->transparent.framebuffer_fade_source;
 									unsigned long combiner_constant = 0;
 
 									vsh_constants__texscale[0][0] = 0.0f;
@@ -2030,7 +1844,7 @@ void rasterizer_transparent_geometry_group_draw(
 											"IDirect3DDevice8_SetVertexShaderConstant(global_d3d_device, VSH_CONSTANTS__TEXSCALE_OFFSET, vsh_constants__texscale, VSH_CONSTANTS__TEXSCALE_COUNT)");
 									}
 
-									switch (shader_transparent_generic->generic.framebuffer_fade_mode)
+									switch (shader_transparent_generic->transparent.framebuffer_fade_mode)
 									{
 										case _framebuffer_fade_mode_none:
 											combiner_constant = 0x14;
@@ -2053,7 +1867,7 @@ void rasterizer_transparent_geometry_group_draw(
 											break;
 									}
 
-									switch (shader_transparent_generic->generic.framebuffer_blend_function)
+									switch (shader_transparent_generic->transparent.framebuffer_blend_function)
 									{
 										case _framebuffer_blend_function_alpha_blend:
 											pixel_shader.alpha_inputs[stage_count] =
@@ -2105,13 +1919,13 @@ void rasterizer_transparent_geometry_group_draw(
 							/* port: no more stages than the combiners hold (a map's
 							count) */
 							for (stage_index = 0;
-								stage_index < shader_transparent_generic->generic.stages.count &&
+								stage_index < shader_transparent_generic->stages.count &&
 									stage_index < MAXIMUM_SHADER_TRANSPARENT_GENERIC_STAGES;
 								stage_index++)
 							{
 								struct shader_transparent_generic_stage const *stage =
 									TAG_BLOCK_GET_ELEMENT(
-										&shader_transparent_generic->generic.stages,
+										&shader_transparent_generic->stages,
 										stage_index,
 										struct shader_transparent_generic_stage);
 								real_argb_color constant_color0;
@@ -2137,11 +1951,11 @@ void rasterizer_transparent_geometry_group_draw(
 								for (component_index = 0;
 									component_index < NUMBEROF(color_delta.n);
 									component_index++)
-									color_delta.n[component_index] = stage->constant_color1.n[component_index]-stage->constant_color0.n[component_index];
+									color_delta.n[component_index] = stage->constant_color0_upper_bound.n[component_index]-stage->constant_color0_lower_bound.n[component_index];
 								for (component_index = 0;
 									component_index < NUMBEROF(constant_color0.n);
 									component_index++)
-									constant_color0.n[component_index] = function_value*color_delta.n[component_index] + stage->constant_color0.n[component_index];
+									constant_color0.n[component_index] = function_value*color_delta.n[component_index] + stage->constant_color0_lower_bound.n[component_index];
 
 								match_assert(
 									"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_transparent_geometry.c",
@@ -2208,12 +2022,12 @@ void rasterizer_transparent_geometry_group_draw(
 							layer_index, so the loop never ended on a chicago shader with
 							a layer (retail's have none) */
 							for (layer_index = 0;
-								layer_index < shader_transparent_chicago->chicago.extra_layers.count;
+								layer_index < shader_transparent_chicago->transparent.extra_layers.count;
 								layer_index++)
 							{
 								struct transparent_geometry_group layer_group;
 								long layer_shader_index = TAG_BLOCK_GET_ELEMENT(
-									&shader_transparent_chicago->chicago.extra_layers,
+									&shader_transparent_chicago->transparent.extra_layers,
 									layer_index,
 									struct tag_reference)->index;
 
@@ -2234,7 +2048,7 @@ void rasterizer_transparent_geometry_group_draw(
 
 							SetRenderStateSmart(
 								D3DRS_CULLMODE,
-								TEST_FLAG(shader_transparent_chicago->chicago.flags, _shader_transparent_flag_two_sided_bit) ?
+								TEST_FLAG(shader_transparent_chicago->transparent.flags, _shader_transparent_flag_two_sided_bit) ?
 									D3DCULL_NONE : D3DCULL_CCW);
 							SetRenderStateSmart(
 								D3DRS_COLORWRITEENABLE,
@@ -2242,25 +2056,25 @@ void rasterizer_transparent_geometry_group_draw(
 							SetRenderStateSmart(D3DRS_ALPHABLENDENABLE, TRUE);
 							SetRenderStateSmart(
 								D3DRS_ALPHATESTENABLE,
-								TEST_FLAG(shader_transparent_chicago->chicago.flags, _shader_transparent_flag_alpha_tested_bit));
+								TEST_FLAG(shader_transparent_chicago->transparent.flags, _shader_transparent_flag_alpha_tested_bit));
 							SetRenderStateSmart(D3DRS_ALPHAREF, 0x7F);
 							rasterizer_set_framebuffer_blend_function(
-								shader_transparent_chicago->chicago.framebuffer_blend_function);
+								shader_transparent_chicago->transparent.framebuffer_blend_function);
 
-							if (TEST_FLAG(shader_transparent_chicago->chicago.flags, _shader_transparent_flag_numeric_bit) &&
+							if (TEST_FLAG(shader_transparent_chicago->transparent.flags, _shader_transparent_flag_numeric_bit) &&
 								group->animation &&
-								shader_transparent_chicago->chicago.maps.count > 0)
+								shader_transparent_chicago->transparent.maps.count > 0)
 							{
 								struct shader_transparent_chicago_map const *map =
 									TAG_BLOCK_GET_ELEMENT(
-										&shader_transparent_chicago->chicago.maps,
+										&shader_transparent_chicago->transparent.maps,
 										0,
 										struct shader_transparent_chicago_map);
 								struct bitmap_group const *bitmap_group =
 									bitmap_group_get(map->map.index);
 								short frame_count = (short)bitmap_group->bitmaps.count;
 
-								if (TEST_FLAG(shader_transparent_chicago->chicago.extra_flags,
+								if (TEST_FLAG(shader_transparent_chicago->extra_flags,
 									_shader_transparent_chicago_extra_flag_numeric_countdown_timer_bit))
 								{
 									bitmap_sequence_index = numeric_countdown_timer_get(
@@ -2269,7 +2083,7 @@ void rasterizer_transparent_geometry_group_draw(
 								else
 								{
 									short function_index = frame_count == 8 ? 3 : 0;
-									short counter_limit = shader_transparent_chicago->chicago.numeric_counter_limit;
+									short counter_limit = shader_transparent_chicago->transparent.numeric_counter_limit;
 									short counter_value = PIN(fast_ftol(floor(counter_limit*
 										group->animation->values[function_index] + 0.5f)), 0, counter_limit);
 									short digit_index;
@@ -2287,16 +2101,16 @@ void rasterizer_transparent_geometry_group_draw(
 								map_index < NUMBER_OF_SHADER_TRANSPARENT_MAPS;
 								map_index++)
 							{
-								if (map_index < shader_transparent_chicago->chicago.maps.count)
+								if (map_index < shader_transparent_chicago->transparent.maps.count)
 								{
 									struct shader_transparent_chicago_map const *map =
 										TAG_BLOCK_GET_ELEMENT(
-											&shader_transparent_chicago->chicago.maps,
+											&shader_transparent_chicago->transparent.maps,
 											map_index,
 											struct shader_transparent_chicago_map);
 									/* port: a type the tables below have (a map's) */
-									short type = VALID_INDEX(shader_transparent_chicago->chicago.type, NUMBER_OF_SHADER_TRANSPARENT_CHICAGO_TYPES) ?
-										shader_transparent_chicago->chicago.type :
+									short type = VALID_INDEX(shader_transparent_chicago->transparent.first_map_type, NUMBER_OF_SHADER_TRANSPARENT_CHICAGO_TYPES) ?
+										shader_transparent_chicago->transparent.first_map_type :
 										_shader_transparent_chicago_type_2d_map;
 									short map_type_bitmap_type[NUMBER_OF_SHADER_TRANSPARENT_MAPS] =
 									{
@@ -2317,9 +2131,9 @@ void rasterizer_transparent_geometry_group_draw(
 									match_assert(
 										"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_transparent_geometry.c",
 										1383,
-										!TEST_FLAG(shader_transparent_chicago->shader.radiosity.flags,
+										!TEST_FLAG(shader_transparent_chicago->shader.base.radiosity.flags,
 											_shader_radiosity_FILTHY_transparent_lit_bit) ||
-											shader_transparent_chicago->chicago.type==_shader_transparent_chicago_type_2d_map);
+											shader_transparent_chicago->transparent.first_map_type==_shader_transparent_chicago_type_2d_map);
 									match_assert(
 										"c:\\halo\\SOURCE\\rasterizer\\xbox\\rasterizer_xbox_transparent_geometry.c",
 										1384,
@@ -2384,12 +2198,12 @@ void rasterizer_transparent_geometry_group_draw(
 											D3DTEXF_POINT : D3DTEXF_LINEAR);
 								}
 
-								if (map_index < shader_transparent_chicago->chicago.maps.count &&
-									(map_index>0 || shader_transparent_chicago->chicago.type==_shader_transparent_chicago_type_2d_map))
+								if (map_index < shader_transparent_chicago->transparent.maps.count &&
+									(map_index>0 || shader_transparent_chicago->transparent.first_map_type==_shader_transparent_chicago_type_2d_map))
 								{
 									struct shader_transparent_chicago_map const *map =
 										TAG_BLOCK_GET_ELEMENT(
-											&shader_transparent_chicago->chicago.maps,
+											&shader_transparent_chicago->transparent.maps,
 											map_index,
 											struct shader_transparent_chicago_map);
 									real_vector2d map_scale;
@@ -2398,7 +2212,7 @@ void rasterizer_transparent_geometry_group_draw(
 									map_scale.j = map->map_v_scale;
 
 									if (!map_index &&
-										TEST_FLAG(shader_transparent_chicago->chicago.flags,
+										TEST_FLAG(shader_transparent_chicago->transparent.flags,
 											_shader_transparent_flag_scale_first_map_with_distance_bit))
 									{
 										map_scale.i = -(map_scale.i*group->z_sort);
@@ -2406,7 +2220,7 @@ void rasterizer_transparent_geometry_group_draw(
 									}
 
 									if (map_index>0 ||
-										!TEST_FLAG(shader_transparent_chicago->chicago.flags,
+										!TEST_FLAG(shader_transparent_chicago->transparent.flags,
 											_shader_transparent_flag_first_map_is_in_screenspace_bit))
 									{
 										map_scale.i *= group->model_base_map_scale.i;
@@ -2425,8 +2239,8 @@ void rasterizer_transparent_geometry_group_draw(
 										(real_vector4d *)vsh_constants__texanim[map_index*2],
 										(real_vector4d *)vsh_constants__texanim[map_index*2+1]);
 								}
-								else if (map_index < shader_transparent_chicago->chicago.maps.count &&
-									TEST_FLAG(shader_transparent_chicago->chicago.flags,
+								else if (map_index < shader_transparent_chicago->transparent.maps.count &&
+									TEST_FLAG(shader_transparent_chicago->transparent.flags,
 										_shader_transparent_flag_first_map_is_in_screenspace_bit))
 								{
 									vsh_constants__texanim[map_index*2][0] =
@@ -2483,12 +2297,12 @@ void rasterizer_transparent_geometry_group_draw(
 								/* port: no more maps than the texture stages hold (a map's
 								count), as shader_transparent_chicago_create has */
 								short stage_count = (short)PIN(
-									shader_transparent_chicago->chicago.maps.count,
+									shader_transparent_chicago->transparent.maps.count,
 									0,
 									NUMBER_OF_SHADER_TRANSPARENT_MAPS);
 
 								if (TEST_FLAG(group->geometry_flags, _rasterizer_geometry_sky_bit) &&
-									shader_transparent_chicago->chicago.framebuffer_blend_function ==
+									shader_transparent_chicago->transparent.framebuffer_blend_function ==
 										_framebuffer_blend_function_alpha_blend)
 								{
 									struct render_fog const *fog = &global_window_parameters.fog;
@@ -2509,7 +2323,7 @@ void rasterizer_transparent_geometry_group_draw(
 								else
 								{
 									real vsh_constants__texscale[3][4];
-									short fade_source = shader_transparent_chicago->chicago.framebuffer_fade_source;
+									short fade_source = shader_transparent_chicago->transparent.framebuffer_fade_source;
 									unsigned long combiner_constant = 0;
 
 									vsh_constants__texscale[0][0] = 0.0f;
@@ -2527,7 +2341,7 @@ void rasterizer_transparent_geometry_group_draw(
 
 									if (group->effect_type ==
 											_render_model_effect_type_active_camouflage &&
-										!TEST_FLAG(shader_transparent_chicago->chicago.extra_flags,
+										!TEST_FLAG(shader_transparent_chicago->extra_flags,
 											_shader_transparent_chicago_extra_flag_dont_fade_active_camouflage_bit))
 										vsh_constants__texscale[2][2] *=
 											PIN(1.0f-group->effect_intensity, 0.0f, 1.0f);
@@ -2557,7 +2371,7 @@ void rasterizer_transparent_geometry_group_draw(
 											"IDirect3DDevice8_SetVertexShaderConstant(global_d3d_device, VSH_CONSTANTS__TEXSCALE_OFFSET, vsh_constants__texscale, VSH_CONSTANTS__TEXSCALE_COUNT)");
 									}
 
-									switch (shader_transparent_chicago->chicago.framebuffer_fade_mode)
+									switch (shader_transparent_chicago->transparent.framebuffer_fade_mode)
 									{
 										case _framebuffer_fade_mode_none:
 											combiner_constant = 0x14;
@@ -2580,7 +2394,7 @@ void rasterizer_transparent_geometry_group_draw(
 											break;
 									}
 
-									switch (shader_transparent_chicago->chicago.framebuffer_blend_function)
+									switch (shader_transparent_chicago->transparent.framebuffer_blend_function)
 									{
 										case _framebuffer_blend_function_alpha_blend:
 											pixel_shader.alpha_inputs[stage_count] =

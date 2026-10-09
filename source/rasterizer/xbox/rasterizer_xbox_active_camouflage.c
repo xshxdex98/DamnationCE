@@ -25,23 +25,6 @@ RASTERIZER_XBOX_ACTIVE_CAMOUFLAGE.C
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "render/render.h"
 
-/* ---------- constants */
-
-enum
-{
-	_shader_type_screen = 0,
-	_shader_type_effect,
-	_shader_type_decal,
-	_shader_type_environment,
-	_shader_type_model,
-	_shader_type_transparent_generic,
-	_shader_type_transparent_chicago,
-	_shader_type_transparent_water,
-	_shader_type_transparent_glass,
-	_shader_type_transparent_meter,
-	_shader_type_transparent_plasma
-};
-
 enum
 {
 	_active_camouflage_tint_edge_density_bit = 0
@@ -60,12 +43,6 @@ enum
 };
 
 /* ---------- structures */
-
-struct shader_model_definition
-{
-	struct shader shader;
-	struct shader_model_properties model;
-};
 
 #ifndef HALO_64BIT
 struct transparent_geometry_group
@@ -103,8 +80,6 @@ struct transparent_geometry_group
 };
 
 #endif
-typedef char verify_shader_model_texture_animation_offset[
-	offsetof(struct shader_model_definition, model.texture_animation) == 0xFC ? 1 : -1];
 #ifndef HALO_64BIT
 typedef char verify_transparent_geometry_group_size[
 	sizeof(struct transparent_geometry_group) == 0xA0 ? 1 : -1];

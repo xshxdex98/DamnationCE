@@ -91,8 +91,6 @@ enum
 
 enum
 {
-	_shader_type_environment = 3,
-	_shader_type_transparent_water = 7,
 	_rasterizer_statistics_mode_enabled = 2,
 };
 
@@ -161,108 +159,10 @@ struct rasterizer_environment_globals
 	real specular_light_brightness;
 };
 
-struct shader_environment_diffuse_properties
-{
-	word flags;
-	short pad02;
-	byte reserved04[0x18];
-	struct tag_reference base_map;
-	byte reserved2C[0x18];
-	short detail_map_function;
-	short pad46;
-	real primary_detail_map_scale;
-	struct tag_reference primary_detail_map;
-	real secondary_detail_map_scale;
-	struct tag_reference secondary_detail_map;
-	byte reserved70[0x18];
-	short micro_detail_map_function;
-	short pad8A;
-	real micro_detail_map_scale;
-	struct tag_reference micro_detail_map;
-	real_rgb_color material_color;
-	byte reservedAC[0xC];
-	real bump_map_scale;
-	struct tag_reference bump_map;
-	real_vector2d runtime_bump_map_scale;
-	byte reservedD4[0x40];
-};
-
-struct shader_environment_self_illumination_properties
-{
-	word flags;
-	short pad02;
-	byte reserved04[0x18];
-	real_rgb_color primary_on_color;
-	real_rgb_color primary_off_color;
-	short primary_animation_function;
-	short pad36;
-	real primary_animation_period;
-	real primary_animation_phase;
-	byte reserved40[0x18];
-	real_rgb_color secondary_on_color;
-	real_rgb_color secondary_off_color;
-	short secondary_animation_function;
-	short pad72;
-	real secondary_animation_period;
-	real secondary_animation_phase;
-	byte reserved7C[0x18];
-	real_rgb_color plasma_on_color;
-	real_rgb_color plasma_off_color;
-	short plasma_animation_function;
-	short padAE;
-	real plasma_animation_period;
-	real plasma_animation_phase;
-	byte reservedB8[0x18];
-	real map_scale;
-	struct tag_reference map;
-};
-
 struct rasterizer_environment_vector_mode
 {
 	short vertex_shader_permutation_index;
 	long final_combiner_input;
-};
-
-struct shader_environment_reflection_properties
-{
-	word flags;
-	short type;
-	real lightmap_brightness_scale;
-	long unused1[7];
-	real view_perpendicular_brightness;
-	real view_parallel_brightness;
-	long unused2[4];
-	real mirror_index_of_refraction;
-	real mirror_depth;
-	long unused3[4];
-	struct tag_reference cube_map;
-	long unused4[4];
-};
-
-struct shader_environment_properties
-{
-	word flags;
-	short type;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	long unused[11];
-	struct shader_environment_diffuse_properties diffuse;
-	struct shader_environment_self_illumination_properties self_illumination;
-	byte reserved23C[0x18];
-	struct shader_environment_specular_properties specular;
-	struct shader_environment_reflection_properties reflection;
-};
-
-struct shader_environment_definition
-{
-	struct shader shader;
-	struct shader_environment_properties environment;
-};
-
-struct shader_transparent_water_definition
-{
-	struct shader shader;
-	word flags;
 };
 
 /* ---------- prototypes */

@@ -12,13 +12,6 @@ SHADER_TRANSPARENT_GENERIC_PREPROCESSOR.C
 #include "tag_files/tag_groups.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 
-/* ---------- constants */
-
-enum
-{
-	_shader_type_transparent_generic = 5
-};
-
 enum
 {
 	_shader_transparent_generic_stage_flag_color_mux_bit = 0,
@@ -80,67 +73,6 @@ enum
 /* ---------- macros */
 
 #define SHADER_STAGE_REGISTER_MASK 0x0f
-
-/* ---------- structures */
-
-struct shader_transparent_generic_map
-{
-	word flags;
-	byte reserved_before_mipmap_bias[22];
-	real mipmap_bias;
-	struct tag_reference map;
-	byte reserved_after_map[56];
-};
-
-struct shader_transparent_generic_stage
-{
-	word flags;
-	byte reserved_before_color1[42];
-	real_argb_color color1;
-	short color_input_A;
-	short color_input_A_mapping;
-	short color_input_B;
-	short color_input_B_mapping;
-	short color_input_C;
-	short color_input_C_mapping;
-	short color_input_D;
-	short color_input_D_mapping;
-	short color_output_AB;
-	short color_output_AB_function;
-	short color_output_CD;
-	short color_output_CD_function;
-	short color_output_AB_CD_mux_sum;
-	short color_output_mapping;
-	short alpha_input_A;
-	short alpha_input_A_mapping;
-	short alpha_input_B;
-	short alpha_input_B_mapping;
-	short alpha_input_C;
-	short alpha_input_C_mapping;
-	short alpha_input_D;
-	short alpha_input_D_mapping;
-	short alpha_output_A;
-	short alpha_output_B;
-	short alpha_output_C;
-	short alpha_output_mapping;
-};
-
-struct shader_transparent_generic_definition
-{
-	struct shader shader;
-	byte numeric_counter_limit;
-	byte flags;
-	short first_map_type;
-	short framebuffer_blend_function;
-	short framebuffer_fade_mode;
-	short framebuffer_fade_source;
-	short pad;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	struct tag_block extra_layers;
-	struct tag_block maps;
-	struct tag_block stages;
-};
 
 /* ---------- prototypes */
 
@@ -493,19 +425,19 @@ boolean shader_transparent_generic_create(
 
 	csmemset(pixel_shader, 0, sizeof(*pixel_shader));
 
-	if (generic->maps.count > 0 || generic->stages.count > 0)
+	if (generic->transparent.maps.count > 0 || generic->stages.count > 0)
 	{
 		pixel_shader->texture_modes =
-			((((generic->maps.count > 3) << 5 | (generic->maps.count > 2)) << 5 |
-			(generic->maps.count > 1)) << 5) |
-			(generic->maps.count > 0 ?
-			(generic->first_map_type != 0 ? _xbox_texture_mode_cube_map : _xbox_texture_mode_2d) :
+			((((generic->transparent.maps.count > 3) << 5 | (generic->transparent.maps.count > 2)) << 5 |
+			(generic->transparent.maps.count > 1)) << 5) |
+			(generic->transparent.maps.count > 0 ?
+			(generic->transparent.first_map_type != 0 ? _xbox_texture_mode_cube_map : _xbox_texture_mode_2d) :
 			_xbox_texture_mode_none);
 
-		for (map_index = 0; map_index < generic->maps.count; map_index++)
+		for (map_index = 0; map_index < generic->transparent.maps.count; map_index++)
 		{
 			struct shader_transparent_generic_map *map = TAG_BLOCK_GET_ELEMENT(
-				&generic->maps,
+				&generic->transparent.maps,
 				map_index,
 				struct shader_transparent_generic_map);
 

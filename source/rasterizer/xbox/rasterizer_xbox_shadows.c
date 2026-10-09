@@ -34,32 +34,12 @@ enum
 
 enum
 {
-	_shader_type_model = 4,
-};
-
-enum
-{
 	_shadow_convolution_vertex_shader_index = 0x26,
 	_shadow_vertex_shader_index = 0x1d,
 	_shadow_model_vertex_shader_index = 0x27,
 };
 
 /* ---------- structures */
-
-struct shader_model_definition
-{
-	struct shader shader;
-	word flags;
-	byte reserved2A[0x72];
-	real_vector2d map_scale;
-	struct tag_reference base_map;
-	byte reservedB4[0x24];
-	real detail_map_scale;
-	struct tag_reference detail_map;
-	real detail_map_v_scale;
-	byte reservedF0[0xC];
-	struct shader_texture_animation animation;
-};
 
 typedef char verify_rasterizer_shadows_model_shadow_count_offset[
 	offsetof(
@@ -75,16 +55,6 @@ typedef char verify_rasterizer_shadows_model_animation_offset[
 	offsetof(struct rasterizer_model_begin_parameters, animation) == 0x84
 		? 1 : -1];
 #endif
-typedef char verify_rasterizer_shadows_shader_model_flags_offset[
-	offsetof(struct shader_model_definition, flags) == 0x28 ? 1 : -1];
-typedef char verify_rasterizer_shadows_shader_model_map_scale_offset[
-	offsetof(struct shader_model_definition, map_scale) == 0x9C ? 1 : -1];
-typedef char verify_rasterizer_shadows_shader_model_base_map_offset[
-	offsetof(struct shader_model_definition, base_map) == 0xA4 ? 1 : -1];
-typedef char verify_rasterizer_shadows_shader_model_detail_scale_offset[
-	offsetof(struct shader_model_definition, detail_map_scale) == 0xD8 ? 1 : -1];
-typedef char verify_rasterizer_shadows_shader_model_animation_offset[
-	offsetof(struct shader_model_definition, animation) == 0xFC ? 1 : -1];
 
 /* ---------- prototypes */
 
@@ -328,7 +298,7 @@ void _rasterizer_environment_shadow_model_draw(
 				288,
 				local_parameters);
 
-			if (TEST_FLAG(model->flags, _shader_model_two_sided_bit))
+			if (TEST_FLAG(model->model.flags, _shader_model_two_sided_bit))
 			{
 				IDirect3DDevice8_SetRenderState(global_d3d_device, D3DRS_CULLMODE, D3DCULL_NONE);
 			}
@@ -341,7 +311,7 @@ void _rasterizer_environment_shadow_model_draw(
 				vertex_buffer->type,
 				0);
 
-			if (TEST_FLAG(model->flags, _shader_model_not_alpha_tested_bit))
+			if (TEST_FLAG(model->model.flags, _shader_model_not_alpha_tested_bit))
 			{
 				IDirect3DDevice8_SetRenderState(global_d3d_device, D3DRS_PSTEXTUREMODES, 0);
 			}
@@ -352,7 +322,7 @@ void _rasterizer_environment_shadow_model_draw(
 					0,
 					0,
 					1,
-					model->base_map.index,
+					model->model.base_map.index,
 					bitmap_index);
 				IDirect3DDevice8_SetTextureStageState(
 					global_d3d_device,
@@ -385,8 +355,8 @@ void _rasterizer_environment_shadow_model_draw(
 				real_vector4d vertex_constants[3] =
 				{
 					{
-						model->detail_map_scale,
-						model->detail_map_scale * model->detail_map_v_scale,
+						model->model.detail_map_scale,
+						model->model.detail_map_scale * model->model.detail_map_v_scale,
 						1.0f,
 						1.0f
 					},
@@ -395,10 +365,10 @@ void _rasterizer_environment_shadow_model_draw(
 				};
 
 				shader_texture_animation_evaluate(
-					&model->animation,
+					&model->model.texture_animation,
 					&local_parameters->animation,
-					local_parameters->base_map_scale.i * model->map_scale.i,
-					local_parameters->base_map_scale.j * model->map_scale.j,
+					local_parameters->base_map_scale.i * model->model.map_u_scale,
+					local_parameters->base_map_scale.j * model->model.map_v_scale,
 					0.0f,
 					0.0f,
 					0.0f,

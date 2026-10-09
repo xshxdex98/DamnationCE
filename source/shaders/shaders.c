@@ -13,24 +13,6 @@ SHADERS.C
 #include "shaders.h"
 #include "shaders/shader_definitions.h"
 
-/* ---------- constants */
-
-enum
-{
-	_shader_type_screen = 0,
-	_shader_type_effect,
-	_shader_type_decal,
-	_shader_type_environment,
-	_shader_type_model,
-	_shader_type_transparent_generic,
-	_shader_type_transparent_chicago,
-	_shader_type_transparent_water,
-	_shader_type_transparent_glass,
-	_shader_type_transparent_meter,
-	_shader_type_transparent_plasma,
-	NUMBER_OF_SHADER_TYPES
-};
-
 enum
 {
 	_shader_transparent_decal_bit = 1,
@@ -68,22 +50,6 @@ enum
 
 /* ---------- structures */
 
-struct shader_transparent_generic_definition
-{
-	struct shader shader;
-	byte numeric_counter_limit;
-	byte flags;
-	short first_map_type;
-};
-
-struct shader_transparent_chicago_definition
-{
-	struct shader shader;
-	byte numeric_counter_limit;
-	byte flags;
-	short first_map_type;
-};
-
 struct shader_glass_definition
 {
 	struct shader shader;
@@ -106,66 +72,18 @@ struct shader_effect_permutation_definition
 	short secondary_map_anchor;
 };
 
-struct shader_model_definition
-{
-	struct shader shader;
-	word flags;
-	short type;
-	byte reserved_before_translucency[0xC];
-	real translucency;
-};
-
-struct shader_environment_diffuse_properties
-{
-	byte reserved_before_texture_animation[0xE4];
-	short u_animation_function;
-	short pad_u_animation;
-	real u_animation_period;
-	real u_animation_scale;
-	short v_animation_function;
-	short pad_v_animation;
-	real v_animation_period;
-	real v_animation_scale;
-	byte reserved_after_texture_animation[0x18];
-};
-
-struct shader_environment_definition
-{
-	struct shader shader;
-	word flags;
-	short type;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	byte reserved_before_diffuse[0x2C];
-	struct shader_environment_diffuse_properties diffuse;
-	byte reserved_before_reflection[0x150];
-	word reflection_flags;
-};
-
 struct numeric_countdown_timer_state
 {
 	boolean on;
 	long previous_game_time;
 };
 
-typedef char shader_transparent_flags_offset[
-	offsetof(struct shader_transparent_generic_definition, flags) == 0x29 ? 1 : -1];
 typedef char shader_glass_reflection_type_offset[
 	offsetof(struct shader_glass_definition, reflection_type) == 0x8A ? 1 : -1];
 typedef char shader_effect_secondary_map_offset[
 	offsetof(struct shader_effect_permutation_definition, secondary_map) == 0x4C ? 1 : -1];
 typedef char shader_effect_secondary_map_anchor_offset[
 	offsetof(struct shader_effect_permutation_definition, secondary_map_anchor) == 0x5C ? 1 : -1];
-typedef char shader_model_translucency_offset[
-	offsetof(struct shader_model_definition, translucency) == 0x38 ? 1 : -1];
-typedef char shader_environment_diffuse_offset[
-	offsetof(struct shader_environment_definition, diffuse) == 0x6C ? 1 : -1];
-typedef char shader_environment_u_animation_period_offset[
-	offsetof(struct shader_environment_definition, diffuse.u_animation_period) == 0x154 ? 1 : -1];
-typedef char shader_environment_v_animation_period_offset[
-	offsetof(struct shader_environment_definition, diffuse.v_animation_period) == 0x160 ? 1 : -1];
-typedef char shader_environment_reflection_flags_offset[
-	offsetof(struct shader_environment_definition, reflection_flags) == 0x2D0 ? 1 : -1];
 typedef char shader_texture_animation_size[
 	sizeof(struct shader_texture_animation) == 0x38 ? 1 : -1];
 #ifndef HALO_64BIT
@@ -194,7 +112,7 @@ short shader_get_vertex_shader_permutation(
 		case _shader_type_model:
 		{
 			struct shader_model_definition *model = SHADER_GET_MODEL(shader);
-			if (model->translucency > 0.0f)
+			if (model->model.translucency > 0.0f)
 			{
 				permutation = 1;
 			}
@@ -225,7 +143,7 @@ short shader_get_vertex_shader_permutation(
 		{
 			struct shader_transparent_generic_definition *generic =
 				SHADER_GET_TRANSPARENT_GENERIC(shader);
-			permutation = generic->first_map_type + 1;
+			permutation = generic->transparent.first_map_type + 1;
 			if (permutation != 1)
 			{
 				if (TEST_FLAG(shader->base.radiosity.flags, _shader_transparent_lit_bit))
@@ -236,7 +154,7 @@ short shader_get_vertex_shader_permutation(
 			}
 			generic = SHADER_GET_TRANSPARENT_GENERIC(shader);
 			if (!TEST_FLAG(
-					generic->flags,
+					generic->transparent.flags,
 					_shader_transparent_first_map_is_in_screenspace_bit))
 			{
 				permutation = 0;
@@ -248,14 +166,14 @@ short shader_get_vertex_shader_permutation(
 		{
 			struct shader_transparent_chicago_definition *chicago =
 				SHADER_GET_TRANSPARENT_CHICAGO(shader);
-			permutation = chicago->first_map_type + 1;
+			permutation = chicago->transparent.first_map_type + 1;
 			if (permutation != 1)
 			{
 				goto test_lit;
 			}
 			chicago = SHADER_GET_TRANSPARENT_CHICAGO(shader);
 			if (!TEST_FLAG(
-					chicago->flags,
+					chicago->transparent.flags,
 					_shader_transparent_first_map_is_in_screenspace_bit))
 			{
 				permutation = 0;
@@ -293,8 +211,8 @@ boolean shader_is_mirror(
 		{
 		case _shader_type_environment:
 			result = TEST_FLAG(
-				SHADER_GET_ENVIRONMENT(shader)->reflection_flags,
-				_shader_environment_dynamic_mirror_bit);
+				SHADER_GET_ENVIRONMENT(shader)->environment.reflection.flags,
+				_shader_environment_reflection_dynamic_mirror_bit);
 			break;
 
 		case _shader_type_transparent_glass:
@@ -318,13 +236,13 @@ boolean shader_is_decal(
 		{
 		case _shader_type_transparent_generic:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_GENERIC(shader)->flags,
+				SHADER_GET_TRANSPARENT_GENERIC(shader)->transparent.flags,
 				_shader_transparent_decal_bit);
 			break;
 
 		case _shader_type_transparent_chicago:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_CHICAGO(shader)->flags,
+				SHADER_GET_TRANSPARENT_CHICAGO(shader)->transparent.flags,
 				_shader_transparent_decal_bit);
 			break;
 
@@ -356,13 +274,13 @@ boolean shader_is_water_decal(
 		{
 		case _shader_type_transparent_generic:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_GENERIC(shader)->flags,
+				SHADER_GET_TRANSPARENT_GENERIC(shader)->transparent.flags,
 				_shader_transparent_draw_before_water_bit);
 			break;
 
 		case _shader_type_transparent_chicago:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_CHICAGO(shader)->flags,
+				SHADER_GET_TRANSPARENT_CHICAGO(shader)->transparent.flags,
 				_shader_transparent_draw_before_water_bit);
 			break;
 		}
@@ -382,13 +300,13 @@ boolean shader_ignores_effect(
 		{
 		case _shader_type_transparent_generic:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_GENERIC(shader)->flags,
+				SHADER_GET_TRANSPARENT_GENERIC(shader)->transparent.flags,
 				_shader_transparent_ignore_effect_bit);
 			break;
 
 		case _shader_type_transparent_chicago:
 			result = TEST_FLAG(
-				SHADER_GET_TRANSPARENT_CHICAGO(shader)->flags,
+				SHADER_GET_TRANSPARENT_CHICAGO(shader)->transparent.flags,
 				_shader_transparent_ignore_effect_bit);
 			break;
 		}
@@ -644,7 +562,7 @@ void shader_environment_texture_animation_evaluate(
 	match_assert("c:\\halo\\SOURCE\\shaders\\shaders.c", 346, u_offset);
 	match_assert("c:\\halo\\SOURCE\\shaders\\shaders.c", 347, v_offset);
 
-	diffuse = &SHADER_GET_ENVIRONMENT(shader)->diffuse;
+	diffuse = &SHADER_GET_ENVIRONMENT(shader)->environment.diffuse;
 
 	match_assert(
 		"c:\\halo\\SOURCE\\shaders\\shaders.c",

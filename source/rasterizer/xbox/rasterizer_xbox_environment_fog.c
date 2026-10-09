@@ -36,13 +36,6 @@ RASTERIZER_XBOX_ENVIRONMENT_FOG.C
 #include "rasterizer/rasterizer_model_types.h"
 #endif
 
-/* ---------- constants */
-
-enum
-{
-	_shader_type_environment = 3,
-};
-
 enum
 {
 	_rasterizer_drawing_mode_normal = 0,
@@ -95,17 +88,6 @@ enum
 
 enum
 {
-	_shader_type_transparent_chicago = 4,
-	_shader_type_transparent_generic = 8,
-};
-
-enum
-{
-	_shader_transparent_chicago_no_fog_bit = 2,
-};
-
-enum
-{
 	VSH_CONSTANTS__TEXSCALE_OFFSET = -84,
 	VSH_CONSTANTS__TEXSCALE_COUNT = 3,
 };
@@ -137,16 +119,6 @@ struct rasterizer_environment_fog_screen_window
 	struct rasterizer_environment_fog_screen_layer
 		layers[MAXIMUM_ENVIRONMENT_FOG_SCREEN_LAYERS];
 	struct rasterizer_environment_fog_screen_wind wind;
-};
-
-struct shader_transparent_chicago_definition
-{
-	struct shader shader;
-	byte flags;
-	byte reserved29[0x73];
-	real map_u_scale;
-	real map_v_scale;
-	struct tag_reference map;
 };
 
 #ifndef HALO_64BIT
@@ -201,8 +173,6 @@ typedef char rasterizer_environment_fog_screen_window_layers_offset_assert[
 	offsetof(struct rasterizer_environment_fog_screen_window, layers) == 0xC ? 1 : -1];
 typedef char rasterizer_environment_fog_screen_window_wind_offset_assert[
 	offsetof(struct rasterizer_environment_fog_screen_window, wind) == 0x2C ? 1 : -1];
-typedef char rasterizer_environment_fog_chicago_map_scale_offset_assert[
-	offsetof(struct shader_transparent_chicago_definition, map_u_scale) == 0x9C ? 1 : -1];
 #ifndef HALO_64BIT
 typedef char rasterizer_environment_fog_model_skinning_size_assert[
 	sizeof(struct render_skinning) == 0x8 ? 1 : -1];
@@ -1301,16 +1271,16 @@ void _rasterizer_environment_fog_screen_begin(
 						&opaque_model_submit_parameters[group_index];
 					struct render_skinning skinning;
 
-					if (group->shader->base.type == _shader_type_transparent_chicago &&
+					if (group->shader->base.type == _shader_type_model &&
 						!TEST_FLAG(
-							((struct shader_transparent_chicago_definition *)
+							((struct shader_model_definition *)
 								shader_get_and_verify_type(
 									group->shader,
-									_shader_type_transparent_chicago))->flags,
-							_shader_transparent_chicago_no_fog_bit))
+									_shader_type_model))->model.flags,
+							_shader_model_not_alpha_tested_bit))
 					{
-						struct shader_transparent_chicago_definition const *chicago =
-							(struct shader_transparent_chicago_definition *)group->shader;
+						struct shader_model_definition const *model_shader =
+							(struct shader_model_definition *)group->shader;
 
 						{
 							D3DDevice_SetRenderState_PSTextureModes(0x21);
@@ -1319,19 +1289,19 @@ void _rasterizer_environment_fog_screen_begin(
 								1,
 								0,
 								1,
-								chicago->map.index,
+								model_shader->model.base_map.index,
 								group->shader_permutation_index);
 							IDirect3DDevice8_SetTextureStageState(global_d3d_device, 1, D3DTSS_ADDRESSU, D3DTADDRESS_WRAP);
 							IDirect3DDevice8_SetTextureStageState(global_d3d_device, 1, D3DTSS_ADDRESSV, D3DTADDRESS_WRAP);
 							IDirect3DDevice8_SetTextureStageState(global_d3d_device, 1, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
 							IDirect3DDevice8_SetTextureStageState(global_d3d_device, 1, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
 							IDirect3DDevice8_SetTextureStageState(global_d3d_device, 1, D3DTSS_MIPFILTER, D3DTEXF_LINEAR);
-							vsh_constants__texscale[1][0] = chicago->map_u_scale * group->model_base_map_scale.i;
+							vsh_constants__texscale[1][0] = model_shader->model.map_u_scale * group->model_base_map_scale.i;
 							vsh_constants__texscale[1][1] = 0.0f;
 							vsh_constants__texscale[1][2] = 0.0f;
 							vsh_constants__texscale[1][3] = 0.0f;
 							vsh_constants__texscale[2][0] = 0.0f;
-							vsh_constants__texscale[2][1] = chicago->map_v_scale * group->model_base_map_scale.j;
+							vsh_constants__texscale[2][1] = model_shader->model.map_v_scale * group->model_base_map_scale.j;
 							vsh_constants__texscale[2][2] = 0.0f;
 							vsh_constants__texscale[2][3] = 0.0f;
 							if (IDirect3DDevice8_SetVertexShaderConstant(
@@ -1351,9 +1321,9 @@ void _rasterizer_environment_fog_screen_begin(
 							}
 						}
 					}
-					else if (group->shader->base.type == _shader_type_transparent_chicago ||
+					else if (group->shader->base.type == _shader_type_model ||
 						group->shader->base.type == _shader_type_environment ||
-						group->shader->base.type == _shader_type_transparent_generic)
+						group->shader->base.type == _shader_type_transparent_glass)
 					{
 						D3DDevice_SetRenderState_PSTextureModes(1);
 						IDirect3DDevice8_SetTextureStageState(global_d3d_device, 1, D3DTSS_ALPHAKILL, D3DTALPHAKILL_DISABLE);

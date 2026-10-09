@@ -93,11 +93,6 @@ enum
 	LENS_FLARE_DEFINITION_TAG = 'lens',
 };
 
-enum
-{
-	_shader_type_environment = 3,
-};
-
 /* ---------- macros */
 
 #define light_get(index) \
@@ -123,13 +118,6 @@ enum
 		((struct environment_vertex_compressed const *)xbox_pointer((material)->compressed_vertex_data.address) \
 			+ (material)->vertices.count) \
 		+ (vertex_index))
-
-struct shader_environment_definition
-{
-	struct shader shader;
-	byte reserved28[0x60];
-	struct tag_reference base_map;
-};
 
 struct lights_game_globals
 {
@@ -1189,16 +1177,16 @@ void light_particle(
 				shader_environment_definition_get(shader);
 
 			if (structure->lightmap_group.index != NONE
-				&& shader_environment->base_map.index != NONE
+				&& shader_environment->environment.diffuse.base_map.index != NONE
 				&& lightmap->bitmap_index != NONE)
 			{
 				struct bitmap_data *lightmap_bitmap = bitmap_group_try_and_get_bitmap(
 					structure->lightmap_group.index,
 					lightmap->bitmap_index);
 				struct bitmap_data *diffuse_bitmap = bitmap_group_try_and_get_bitmap(
-					shader_environment->base_map.index,
+					shader_environment->environment.diffuse.base_map.index,
 					(short)(material->permutation_index
-						% bitmap_group_get(shader_environment->base_map.index)->bitmaps.count));
+						% bitmap_group_get(shader_environment->environment.diffuse.base_map.index)->bitmaps.count));
 				struct structure_surface const *surface = NULL;
 
 				if (lightmap_bitmap
@@ -2199,7 +2187,7 @@ boolean lights_distant_lighting_at_point(
 
 				if (structure_bsp->lightmap_group.index != NONE
 					&& lightmap->bitmap_index != NONE
-					&& shader_environment->base_map.index != NONE)
+					&& shader_environment->environment.diffuse.base_map.index != NONE)
 				{
 					struct structure_surface const *surface = TAG_BLOCK_GET_ELEMENT(
 						&structure_bsp->surfaces,
@@ -2209,9 +2197,9 @@ boolean lights_distant_lighting_at_point(
 						structure_bsp->lightmap_group.index,
 						lightmap->bitmap_index);
 					struct bitmap_data *diffuse_bitmap = bitmap_group_try_and_get_bitmap(
-						shader_environment->base_map.index,
+						shader_environment->environment.diffuse.base_map.index,
 						(short)(material->permutation_index
-							% bitmap_group_get(shader_environment->base_map.index)->bitmaps.count));
+							% bitmap_group_get(shader_environment->environment.diffuse.base_map.index)->bitmaps.count));
 
 					if (lightmap_bitmap != NULL
 						&& diffuse_bitmap != NULL

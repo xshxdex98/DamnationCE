@@ -39,7 +39,6 @@ enum
 	bsps are at most 66 deep */
 	MAXIMUM_STRUCTURE_BSP_TRAVERSAL_DEPTH = 1024,
 	COMPRESSED_STRUCTURE_VERTEX_SIZE = 0x20,
-	_shader_type_environment = 3,
 };
 
 /* ---------- macros */

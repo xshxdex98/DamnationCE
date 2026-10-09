@@ -21,9 +21,6 @@ STRUCTURE_LENS_FLARES.C
 
 enum
 {
-	_shader_type_environment = 3,
-	_shader_type_transparent_generic = 5,
-	_shader_type_transparent_chicago = 6,
 	MAXIMUM_TRIANGLES_PER_CONNECTED_GEOMETRY_COPLANAR_GROUP = 20000,
 };
 
