@@ -72,33 +72,6 @@ struct shader_effect_permutation_definition
 	short secondary_map_anchor;
 };
 
-struct shader_environment_diffuse_properties
-{
-	byte reserved_before_texture_animation[0xE4];
-	short u_animation_function;
-	short pad_u_animation;
-	real u_animation_period;
-	real u_animation_scale;
-	short v_animation_function;
-	short pad_v_animation;
-	real v_animation_period;
-	real v_animation_scale;
-	byte reserved_after_texture_animation[0x18];
-};
-
-struct shader_environment_definition
-{
-	struct shader shader;
-	word flags;
-	short type;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	byte reserved_before_diffuse[0x2C];
-	struct shader_environment_diffuse_properties diffuse;
-	byte reserved_before_reflection[0x150];
-	word reflection_flags;
-};
-
 struct numeric_countdown_timer_state
 {
 	boolean on;
@@ -111,14 +84,6 @@ typedef char shader_effect_secondary_map_offset[
 	offsetof(struct shader_effect_permutation_definition, secondary_map) == 0x4C ? 1 : -1];
 typedef char shader_effect_secondary_map_anchor_offset[
 	offsetof(struct shader_effect_permutation_definition, secondary_map_anchor) == 0x5C ? 1 : -1];
-typedef char shader_environment_diffuse_offset[
-	offsetof(struct shader_environment_definition, diffuse) == 0x6C ? 1 : -1];
-typedef char shader_environment_u_animation_period_offset[
-	offsetof(struct shader_environment_definition, diffuse.u_animation_period) == 0x154 ? 1 : -1];
-typedef char shader_environment_v_animation_period_offset[
-	offsetof(struct shader_environment_definition, diffuse.v_animation_period) == 0x160 ? 1 : -1];
-typedef char shader_environment_reflection_flags_offset[
-	offsetof(struct shader_environment_definition, reflection_flags) == 0x2D0 ? 1 : -1];
 typedef char shader_texture_animation_size[
 	sizeof(struct shader_texture_animation) == 0x38 ? 1 : -1];
 #ifndef HALO_64BIT
@@ -246,7 +211,7 @@ boolean shader_is_mirror(
 		{
 		case _shader_type_environment:
 			result = TEST_FLAG(
-				SHADER_GET_ENVIRONMENT(shader)->reflection_flags,
+				SHADER_GET_ENVIRONMENT(shader)->environment.reflection.flags,
 				_shader_environment_reflection_dynamic_mirror_bit);
 			break;
 
@@ -597,7 +562,7 @@ void shader_environment_texture_animation_evaluate(
 	match_assert("c:\\halo\\SOURCE\\shaders\\shaders.c", 346, u_offset);
 	match_assert("c:\\halo\\SOURCE\\shaders\\shaders.c", 347, v_offset);
 
-	diffuse = &SHADER_GET_ENVIRONMENT(shader)->diffuse;
+	diffuse = &SHADER_GET_ENVIRONMENT(shader)->environment.diffuse;
 
 	match_assert(
 		"c:\\halo\\SOURCE\\shaders\\shaders.c",

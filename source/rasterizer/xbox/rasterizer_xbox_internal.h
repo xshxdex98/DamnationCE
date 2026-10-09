@@ -13,18 +13,6 @@ Declarations shared by the Xbox rasterizer's files only.
 #include "shaders/shader_texture_animation.h"
 #include "tag_files/tag_groups.h"
 
-struct shader_environment_specular_properties
-{
-	word flags;
-	short type;
-	long unused04[4];
-	real brightness;
-	long unused18[5];
-	real_rgb_color view_perpendicular_color;
-	real_rgb_color view_parallel_color;
-	long unused44[4];
-};
-
 struct bitmap_data;
 struct rasterizer_model_begin_parameters;
 struct shader;

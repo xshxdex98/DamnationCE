@@ -58,36 +58,6 @@ struct rasterizer_transparent_geometry_group_plasma
 };
 #endif
 
-struct shader_transparent_plasma_definition
-{
-	byte reserved00[4];
-	short intensity_exponent_source;
-	short pad06;
-	real intensity_exponent;
-	short offset_exponent_source;
-	short pad0E;
-	real offset_amount;
-	real offset_exponent;
-	byte reserved40[0x20];
-	real perpendicular_alpha;
-	real_rgb_color perpendicular_color;
-	real parallel_alpha;
-	real_rgb_color parallel_color;
-	short color_source;
-	byte reserved82[0x3E];
-	real primary_noise_map_animation_period;
-	real_vector3d primary_noise_map_animation_direction;
-	real primary_noise_map_scale;
-	byte reservedAC[0xC];
-	long primary_noise_map;
-	byte reservedBC[0x24];
-	real secondary_noise_map_animation_period;
-	real_vector3d secondary_noise_map_animation_direction;
-	real secondary_noise_map_scale;
-	byte reservedF4[0xC];
-	long secondary_noise_map;
-};
-
 #ifndef HALO_64BIT
 typedef char plasma_group_size_assert[
 	sizeof(struct rasterizer_transparent_geometry_group_plasma) == 0x70 ? 1 : -1];
@@ -96,14 +66,6 @@ typedef char plasma_group_shader_offset_assert[
 typedef char plasma_group_runtime_offset_assert[
 	offsetof(struct rasterizer_transparent_geometry_group_plasma, runtime_parameters) == 0x6C ? 1 : -1];
 #endif
-typedef char plasma_primary_period_offset_assert[
-	offsetof(struct shader_transparent_plasma_definition, primary_noise_map_animation_period) == 0x98 ? 1 : -1];
-typedef char plasma_primary_bitmap_offset_assert[
-	offsetof(struct shader_transparent_plasma_definition, primary_noise_map) == 0xB8 ? 1 : -1];
-typedef char plasma_secondary_period_offset_assert[
-	offsetof(struct shader_transparent_plasma_definition, secondary_noise_map_animation_period) == 0xE0 ? 1 : -1];
-typedef char plasma_secondary_bitmap_offset_assert[
-	offsetof(struct shader_transparent_plasma_definition, secondary_noise_map) == 0x100 ? 1 : -1];
 typedef char pixel_shader_definition_size_assert[
 	sizeof(struct pixel_shader_definition) == 0xF0 ? 1 : -1];
 
@@ -155,8 +117,8 @@ void rasterizer_plasma_energy_draw(
 		global_d3d_device);
 	if (rasterizer_debug_options.plasma_energy_enabled)
 	{
-		plasma = (struct shader_transparent_plasma_definition const *)(
-			(byte *)shader_get_and_verify_type(group->shader, 10) + sizeof(struct shader));
+		plasma = (struct shader_transparent_plasma_definition const *)
+			shader_get_and_verify_type(group->shader, _shader_type_transparent_plasma);
 		tint = global_real_rgb_white;
 		intensity = 1.0f;
 		offset = 0.0f;
@@ -184,14 +146,14 @@ void rasterizer_plasma_energy_draw(
 			}
 		}
 
-		rasterizer_set_texture(0, 1, 0, plasma->primary_noise_map, group->bitmap_sequence_index);
+		rasterizer_set_texture(0, 1, 0, plasma->primary_noise_map.index, group->bitmap_sequence_index);
 		IDirect3DDevice8_SetTextureStageState(global_d3d_device, 0, D3DTSS_ADDRESSU, D3DTADDRESS_WRAP);
 		IDirect3DDevice8_SetTextureStageState(global_d3d_device, 0, D3DTSS_ADDRESSV, D3DTADDRESS_WRAP);
 		IDirect3DDevice8_SetTextureStageState(global_d3d_device, 0, D3DTSS_ADDRESSW, D3DTADDRESS_WRAP);
 		IDirect3DDevice8_SetTextureStageState(global_d3d_device, 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
 		IDirect3DDevice8_SetTextureStageState(global_d3d_device, 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
 		IDirect3DDevice8_SetTextureStageState(global_d3d_device, 0, D3DTSS_MIPFILTER, D3DTEXF_LINEAR);
-		rasterizer_set_texture(1, 1, 0, plasma->secondary_noise_map, group->bitmap_sequence_index);
+		rasterizer_set_texture(1, 1, 0, plasma->secondary_noise_map.index, group->bitmap_sequence_index);
 		IDirect3DDevice8_SetTextureStageState(global_d3d_device, 1, D3DTSS_ADDRESSU, D3DTADDRESS_WRAP);
 		IDirect3DDevice8_SetTextureStageState(global_d3d_device, 1, D3DTSS_ADDRESSV, D3DTADDRESS_WRAP);
 		IDirect3DDevice8_SetTextureStageState(global_d3d_device, 1, D3DTSS_ADDRESSW, D3DTADDRESS_WRAP);

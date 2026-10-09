@@ -413,6 +413,190 @@ struct shader_transparent_chicago_definition
 typedef char shader_transparent_chicago_definition_size_assert[
 	sizeof(struct shader_transparent_chicago_definition) == 0x6C ? 1 : -1];
 
+struct shader_environment_self_illumination_properties
+{
+	word flags;
+	short pad02;
+	byte reserved04[0x18];
+	real_rgb_color primary_on_color;
+	real_rgb_color primary_off_color;
+	short primary_animation_function;
+	short pad36;
+	real primary_animation_period;
+	real primary_animation_phase;
+	byte reserved40[0x18];
+	real_rgb_color secondary_on_color;
+	real_rgb_color secondary_off_color;
+	short secondary_animation_function;
+	short pad72;
+	real secondary_animation_period;
+	real secondary_animation_phase;
+	byte reserved7C[0x18];
+	real_rgb_color plasma_on_color;
+	real_rgb_color plasma_off_color;
+	short plasma_animation_function;
+	short padAE;
+	real plasma_animation_period;
+	real plasma_animation_phase;
+	byte reservedB8[0x18];
+	real map_scale;
+	struct tag_reference map;
+};
+
+struct shader_environment_specular_properties
+{
+	word flags;
+	short type;
+	long unused04[4];
+	real brightness;
+	long unused18[5];
+	real_rgb_color view_perpendicular_color;
+	real_rgb_color view_parallel_color;
+	long unused44[4];
+};
+
+struct shader_environment_diffuse_properties
+{
+	word flags;
+	short pad02;
+	byte reserved04[0x18];
+	struct tag_reference base_map;
+	byte reserved2C[0x18];
+	short detail_map_function;
+	short pad46;
+	real primary_detail_map_scale;
+	struct tag_reference primary_detail_map;
+	real secondary_detail_map_scale;
+	struct tag_reference secondary_detail_map;
+	byte reserved70[0x18];
+	short micro_detail_map_function;
+	short pad8A;
+	real micro_detail_map_scale;
+	struct tag_reference micro_detail_map;
+	real_rgb_color material_color;
+	byte reservedAC[0xC];
+	real bump_map_scale;
+	struct tag_reference bump_map;
+	real_vector2d runtime_bump_map_scale;
+	byte reservedD4[0x10];
+	short u_animation_function;
+	short pad_u_animation;
+	real u_animation_period;
+	real u_animation_scale;
+	short v_animation_function;
+	short pad_v_animation;
+	real v_animation_period;
+	real v_animation_scale;
+	byte reservedFC[0x18];
+};
+
+typedef char shader_environment_diffuse_properties_size_assert[
+	sizeof(struct shader_environment_diffuse_properties) == 0x114 ? 1 : -1];
+
+struct shader_environment_reflection_properties
+{
+	word flags;
+	short type;
+	real lightmap_brightness_scale;
+	long unused1[7];
+	real view_perpendicular_brightness;
+	real view_parallel_brightness;
+	long unused2[4];
+	real mirror_index_of_refraction;
+	real mirror_depth;
+	long unused3[4];
+	struct tag_reference cube_map;
+	long unused4[4];
+};
+
+typedef char shader_environment_reflection_properties_size_assert[
+	sizeof(struct shader_environment_reflection_properties) == 0x74 ? 1 : -1];
+
+struct shader_environment_properties
+{
+	word flags;
+	short type;
+	real lens_flare_spacing;
+	struct tag_reference lens_flare;
+	long unused[11];
+	struct shader_environment_diffuse_properties diffuse;
+	struct shader_environment_self_illumination_properties self_illumination;
+	byte reserved23C[0x18];
+	struct shader_environment_specular_properties specular;
+	struct shader_environment_reflection_properties reflection;
+};
+
+struct shader_environment_definition
+{
+	struct shader shader;
+	struct shader_environment_properties environment;
+};
+
+typedef char shader_environment_definition_size_assert[
+	sizeof(struct shader_environment_definition) == 0x344 ? 1 : -1];
+
+struct shader_transparent_water_definition
+{
+	struct shader shader;
+	unsigned short flags;
+	short type;
+	byte reserved2C[0x20];
+	struct tag_reference base_map;
+	byte reserved5C[0x10];
+	real_argb_color view_perpendicular_tint_color;
+	real_argb_color view_parallel_tint_color;
+	byte reserved8C[0x10];
+	struct tag_reference reflection_map;
+	byte reservedAC[0x10];
+	real ripple_animation_angle;
+	real ripple_animation_velocity;
+	real ripple_scale;
+	struct tag_reference ripple_maps;
+	short ripple_mipmap_levels;
+	short pad0DA;
+	real ripple_mipmap_fade_factor;
+	real ripple_mipmap_lod_bias;
+	byte reserved0E4[0x40];
+	struct tag_block ripples;
+	byte reserved130[0x10];
+};
+
+typedef char shader_transparent_water_definition_size_assert[
+	sizeof(struct shader_transparent_water_definition) == 0x140 ? 1 : -1];
+
+struct shader_transparent_plasma_definition
+{
+	struct shader shader;
+	byte reserved28[4];
+	short intensity_exponent_source;
+	short pad2E;
+	real intensity_exponent;
+	short offset_exponent_source;
+	short pad36;
+	real offset_amount;
+	real offset_exponent;
+	byte reserved40[0x20];
+	real perpendicular_alpha;
+	real_rgb_color perpendicular_color;
+	real parallel_alpha;
+	real_rgb_color parallel_color;
+	short color_source;
+	byte reserved82[0x3E];
+	real primary_noise_map_animation_period;
+	real_vector3d primary_noise_map_animation_direction;
+	real primary_noise_map_scale;
+	struct tag_reference primary_noise_map;
+	byte reservedE4[0x24];
+	real secondary_noise_map_animation_period;
+	real_vector3d secondary_noise_map_animation_direction;
+	real secondary_noise_map_scale;
+	struct tag_reference secondary_noise_map;
+	byte reserved12C[0x20];
+};
+
+typedef char shader_transparent_plasma_definition_size_assert[
+	sizeof(struct shader_transparent_plasma_definition) == 0x14C ? 1 : -1];
+
 /* ---------- prototypes/SHADER_DEFINITIONS.C */
 
 struct shader *shader_get_and_verify_type(struct shader *shader, short shader_type);

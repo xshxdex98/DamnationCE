@@ -195,201 +195,6 @@ typedef char verify_shader_size[sizeof(struct shader) == 0x28 ? 1 : -1];
 typedef char verify_shader_transparent_chicago_extended_size[
 	sizeof(struct shader_transparent_chicago_extended_definition) == 0x78 ? 1 : -1];
 
-/* rasterizer_xbox_transparent_geometry.c */
-
-/* rasterizer_xbox_water.c */
-
-struct shader_transparent_water_definition
-{
-	struct shader shader;
-	unsigned short flags;
-	short type;
-	byte reserved2C[0x20];
-	struct tag_reference base_map;
-	byte reserved5C[0x10];
-	real_argb_color view_perpendicular_tint_color;
-	real_argb_color view_parallel_tint_color;
-	byte reserved8C[0x10];
-	struct tag_reference reflection_map;
-	byte reservedAC[0x10];
-	real ripple_animation_angle;
-	real ripple_animation_velocity;
-	real ripple_scale;
-	struct tag_reference ripple_maps;
-	short ripple_mipmap_levels;
-	short pad0DA;
-	real ripple_mipmap_fade_factor;
-	real ripple_mipmap_lod_bias;
-	byte reserved0E4[0x40];
-	struct tag_block ripples;
-	byte reserved130[0x10];
-};
-
-/* rasterizer_xbox_plasma_energy.c (whose offsets are from the end of the
-shader), rasterizer_xbox_models.c */
-
-struct shader_transparent_plasma_definition
-{
-	struct shader shader;
-	byte reserved28[4];
-	short intensity_exponent_source;
-	short pad2E;
-	real intensity_exponent;
-	short offset_exponent_source;
-	short pad36;
-	real offset_amount;
-	real offset_exponent;
-	byte reserved40[0x20];
-	real perpendicular_alpha;
-	real_rgb_color perpendicular_color;
-	real parallel_alpha;
-	real_rgb_color parallel_color;
-	short color_source;
-	byte reserved82[0x3E];
-	real primary_noise_map_animation_period;
-	real_vector3d primary_noise_map_animation_direction;
-	real primary_noise_map_scale;
-	struct tag_reference primary_noise_map;
-	byte reservedE4[0x24];
-	real secondary_noise_map_animation_period;
-	real_vector3d secondary_noise_map_animation_direction;
-	real secondary_noise_map_scale;
-	struct tag_reference secondary_noise_map;
-	byte reserved12C[0x20];
-};
-
-typedef char verify_shader_transparent_water_ripple_maps_offset[
-	offsetof(struct shader_transparent_water_definition, ripple_maps) == 0xC8 ? 1 : -1];
-typedef char verify_shader_transparent_water_ripples_offset[
-	offsetof(struct shader_transparent_water_definition, ripples) == 0x124 ? 1 : -1];
-typedef char verify_shader_transparent_water_size[
-	sizeof(struct shader_transparent_water_definition) == 0x140 ? 1 : -1];
-typedef char verify_shader_transparent_plasma_intensity_exponent_source_offset[
-	offsetof(struct shader_transparent_plasma_definition, intensity_exponent_source) == 0x2C ? 1 : -1];
-typedef char verify_shader_transparent_plasma_primary_noise_map_offset[
-	offsetof(struct shader_transparent_plasma_definition, primary_noise_map) == 0xD4 ? 1 : -1];
-typedef char verify_shader_transparent_plasma_secondary_noise_map_offset[
-	offsetof(struct shader_transparent_plasma_definition, secondary_noise_map) == 0x11C ? 1 : -1];
-typedef char verify_shader_transparent_plasma_size[
-	sizeof(struct shader_transparent_plasma_definition) == 0x14C ? 1 : -1];
-
-/* rasterizer_xbox_environment.c, rasterizer_xbox_models.c, shaders.c,
-object_lights.c (the fields the game reads) */
-
-struct shader_environment_definition
-{
-	struct shader shader;
-	word flags;
-	short type;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	byte reserved40[0x2C];
-	/* diffuse */
-	word diffuse_flags;
-	short pad6E;
-	byte reserved70[0x18];
-	struct tag_reference base_map;
-	byte reserved98[0x18];
-	short detail_map_function;
-	short padB2;
-	real primary_detail_map_scale;
-	struct tag_reference primary_detail_map;
-	real secondary_detail_map_scale;
-	struct tag_reference secondary_detail_map;
-	byte reservedDC[0x18];
-	short micro_detail_map_function;
-	short padF6;
-	real micro_detail_map_scale;
-	struct tag_reference micro_detail_map;
-	real_rgb_color material_color;
-	byte reserved118[0xC];
-	real bump_map_scale;
-	struct tag_reference bump_map;
-	real_vector2d runtime_bump_map_scale;
-	byte reserved140[0x10];
-	short u_animation_function;
-	short pad152;
-	real u_animation_period;
-	real u_animation_scale;
-	short v_animation_function;
-	short pad15E;
-	real v_animation_period;
-	real v_animation_scale;
-	byte reserved168[0x18];
-	/* self-illumination */
-	word self_illumination_flags;
-	short pad182;
-	byte reserved184[0x18];
-	real_rgb_color primary_on_color;
-	real_rgb_color primary_off_color;
-	short primary_animation_function;
-	short pad1B6;
-	real primary_animation_period;
-	real primary_animation_phase;
-	byte reserved1C0[0x18];
-	real_rgb_color secondary_on_color;
-	real_rgb_color secondary_off_color;
-	short secondary_animation_function;
-	short pad1F2;
-	real secondary_animation_period;
-	real secondary_animation_phase;
-	byte reserved1FC[0x18];
-	real_rgb_color plasma_on_color;
-	real_rgb_color plasma_off_color;
-	short plasma_animation_function;
-	short pad22E;
-	real plasma_animation_period;
-	real plasma_animation_phase;
-	byte reserved238[0x18];
-	real self_illumination_map_scale;
-	struct tag_reference self_illumination_map;
-	byte reserved264[0x18];
-	/* specular */
-	word specular_flags;
-	short specular_type;
-	byte reserved280[0x50];
-	/* reflection */
-	word reflection_flags;
-	short reflection_type;
-	byte reserved2D4[0x50];
-	struct tag_reference reflection_cube_map;
-	byte reserved334[0x10];
-};
-
-typedef char verify_shader_environment_base_map_offset[
-	offsetof(struct shader_environment_definition, base_map) == 0x88 ? 1 : -1];
-typedef char verify_shader_environment_detail_map_function_offset[
-	offsetof(struct shader_environment_definition, detail_map_function) == 0xB0 ? 1 : -1];
-typedef char verify_shader_environment_micro_detail_map_offset[
-	offsetof(struct shader_environment_definition, micro_detail_map) == 0xFC ? 1 : -1];
-typedef char verify_shader_environment_bump_map_offset[
-	offsetof(struct shader_environment_definition, bump_map) == 0x128 ? 1 : -1];
-typedef char verify_shader_environment_u_animation_function_offset[
-	offsetof(struct shader_environment_definition, u_animation_function) == 0x150 ? 1 : -1];
-typedef char verify_shader_environment_v_animation_period_offset[
-	offsetof(struct shader_environment_definition, v_animation_period) == 0x160 ? 1 : -1];
-typedef char verify_shader_environment_primary_animation_function_offset[
-	offsetof(struct shader_environment_definition, primary_animation_function) == 0x1B4 ? 1 : -1];
-typedef char verify_shader_environment_secondary_animation_function_offset[
-	offsetof(struct shader_environment_definition, secondary_animation_function) == 0x1F0 ? 1 : -1];
-typedef char verify_shader_environment_plasma_animation_function_offset[
-	offsetof(struct shader_environment_definition, plasma_animation_function) == 0x22C ? 1 : -1];
-typedef char verify_shader_environment_self_illumination_map_offset[
-	offsetof(struct shader_environment_definition, self_illumination_map) == 0x254 ? 1 : -1];
-typedef char verify_shader_environment_specular_flags_offset[
-	offsetof(struct shader_environment_definition, specular_flags) == 0x27C ? 1 : -1];
-typedef char verify_shader_environment_reflection_flags_offset[
-	offsetof(struct shader_environment_definition, reflection_flags) == 0x2D0 ? 1 : -1];
-typedef char verify_shader_environment_reflection_cube_map_offset[
-	offsetof(struct shader_environment_definition, reflection_cube_map) == 0x324 ? 1 : -1];
-typedef char verify_shader_environment_size[sizeof(struct shader_environment_definition) == 0x344 ? 1 : -1];
-
-/* weather_particle_systems.c */
-
-/* decals.c */
-
-/* rasterizer_xbox_detail_objects.c */
-
 /* rasterizer_lights.c */
 
 struct lens_flare_reflection
@@ -448,8 +253,6 @@ struct lens_flare_definition
 typedef char verify_lens_flare_reflection_size[sizeof(struct lens_flare_reflection) == 0x80 ? 1 : -1];
 typedef char verify_lens_flare_reflections_offset[offsetof(struct lens_flare_definition, reflections) == 0xC4 ? 1 : -1];
 typedef char verify_lens_flare_size[sizeof(struct lens_flare_definition) == 0xF0 ? 1 : -1];
-
-/* object_lights.c, rasterizer_xbox_environment.c */
 
 /* fog_definitions.h, structures.c, rasterizer_xbox_environment_fog.c */
 
@@ -922,7 +725,7 @@ static boolean shader_environment_check(
 	void *base)
 {
 	struct shader_environment_definition *environment = base;
-	struct bitmap_group *base_map = tag_validate_tag_get(validation, environment->base_map.index, 'bitm');
+	struct bitmap_group *base_map = tag_validate_tag_get(validation, environment->environment.diffuse.base_map.index, 'bitm');
 
 	shader_type_check(validation, base, _shader_type_environment);
 	/* (lights take a lightmap's permutation modulo its base map's bitmaps,
@@ -930,7 +733,7 @@ static boolean shader_environment_check(
 	if (base_map && base_map->bitmaps.count <= 0)
 	{
 		tag_validate_correct(validation, "has a base map with no bitmaps: none");
-		environment->base_map.index = NONE;
+		environment->environment.diffuse.base_map.index = NONE;
 	}
 
 	return TRUE;
@@ -1573,29 +1376,29 @@ static struct tag_schema_field const shader_transparent_chicago_extended_fields[
 static struct tag_schema_field const shader_environment_fields[] =
 {
 	TAG_SCHEMA_STRUCT(struct shader_environment_definition, shader, shader_schema),
-	TAG_SCHEMA_ENUM(struct shader_environment_definition, type, NUMBER_OF_SHADER_ENVIRONMENT_TYPES, 0),
-	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, lens_flare, TAG_SCHEMA_GROUPS('lens')),
-	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, base_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_ENUM(struct shader_environment_definition, environment.type, NUMBER_OF_SHADER_ENVIRONMENT_TYPES, 0),
+	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, environment.lens_flare, TAG_SCHEMA_GROUPS('lens')),
+	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, environment.diffuse.base_map, TAG_SCHEMA_GROUPS('bitm')),
 	/* (an index into set_environment_shader_pixel_shader's tables of 3, on a
 	model, rasterizer_xbox_models.c) */
-	TAG_SCHEMA_ENUM(struct shader_environment_definition, detail_map_function, NUMBER_OF_SHADER_DETAIL_FUNCTIONS, 0),
-	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, primary_detail_map, TAG_SCHEMA_GROUPS('bitm')),
-	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, secondary_detail_map, TAG_SCHEMA_GROUPS('bitm')),
-	TAG_SCHEMA_ENUM(struct shader_environment_definition, micro_detail_map_function,
+	TAG_SCHEMA_ENUM(struct shader_environment_definition, environment.diffuse.detail_map_function, NUMBER_OF_SHADER_DETAIL_FUNCTIONS, 0),
+	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, environment.diffuse.primary_detail_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, environment.diffuse.secondary_detail_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_ENUM(struct shader_environment_definition, environment.diffuse.micro_detail_map_function,
 		NUMBER_OF_SHADER_DETAIL_FUNCTIONS, 0),
-	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, micro_detail_map, TAG_SCHEMA_GROUPS('bitm')),
-	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, bump_map, TAG_SCHEMA_GROUPS('bitm')),
-	TAG_SCHEMA_ENUM(struct shader_environment_definition, u_animation_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
-	TAG_SCHEMA_ENUM(struct shader_environment_definition, v_animation_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
-	TAG_SCHEMA_ENUM(struct shader_environment_definition, primary_animation_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
-	TAG_SCHEMA_ENUM(struct shader_environment_definition, secondary_animation_function,
+	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, environment.diffuse.micro_detail_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, environment.diffuse.bump_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_ENUM(struct shader_environment_definition, environment.diffuse.u_animation_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
+	TAG_SCHEMA_ENUM(struct shader_environment_definition, environment.diffuse.v_animation_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
+	TAG_SCHEMA_ENUM(struct shader_environment_definition, environment.self_illumination.primary_animation_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
+	TAG_SCHEMA_ENUM(struct shader_environment_definition, environment.self_illumination.secondary_animation_function,
 		NUMBER_OF_PERIODIC_FUNCTIONS, 0),
-	TAG_SCHEMA_ENUM(struct shader_environment_definition, plasma_animation_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
-	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, self_illumination_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_ENUM(struct shader_environment_definition, environment.self_illumination.plasma_animation_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
+	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, environment.self_illumination.map, TAG_SCHEMA_GROUPS('bitm')),
 	/* (the reflection vertex shader's permutation, of which there are 3) */
-	TAG_SCHEMA_ENUM(struct shader_environment_definition, reflection_type,
+	TAG_SCHEMA_ENUM(struct shader_environment_definition, environment.reflection.type,
 		NUMBER_OF_SHADER_ENVIRONMENT_REFLECTION_TYPES, 0),
-	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, reflection_cube_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_REFERENCE(struct shader_environment_definition, environment.reflection.cube_map, TAG_SCHEMA_GROUPS('bitm')),
 	TAG_SCHEMA_CHECK(shader_environment_check),
 	TAG_SCHEMA_END
 };

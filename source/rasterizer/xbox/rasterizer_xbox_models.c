@@ -75,13 +75,6 @@ enum
 	NUMBER_OF_MODEL_VERTEX_SHADER_PERMUTATIONS
 };
 
-struct shader_transparent_plasma_definition
-{
-	struct shader shader;
-	byte reserved28[4];
-	short intensity_exponent_source;
-};
-
 #ifndef HALO_64BIT
 struct transparent_geometry_group
 {
@@ -117,55 +110,6 @@ struct transparent_geometry_group
 	byte pad9E[2];
 };
 #endif
-
-struct shader_environment_diffuse_properties
-{
-	byte reserved00[0x1C];
-	struct tag_reference base_map;
-	byte reserved2C[0x18];
-	short detail_map_function;
-	short pad46;
-	real primary_detail_map_scale;
-	struct tag_reference primary_detail_map;
-	byte reserved5C[0x44];
-	real_rgb_color material_color;
-	byte reservedAC[0xC];
-	real bump_map_scale;
-	struct tag_reference bump_map;
-	real_vector2d runtime_bump_map_scale;
-	byte reservedD4[0x40];
-};
-
-struct shader_environment_reflection_properties
-{
-	word flags;
-	short type;
-	real lightmap_brightness_scale;
-	byte reserved08[0x1C];
-	real view_perpendicular_brightness;
-	real view_parallel_brightness;
-	byte reserved2C[0x28];
-	struct tag_reference cube_map;
-};
-
-struct shader_environment_properties
-{
-	word flags;
-	short type;
-	real lens_flare_spacing;
-	struct tag_reference lens_flare;
-	long unused[11];
-	struct shader_environment_diffuse_properties diffuse;
-	byte reserved158[0xFC];
-	struct shader_environment_specular_properties specular;
-	struct shader_environment_reflection_properties reflection;
-};
-
-struct shader_environment_definition
-{
-	struct shader shader;
-	struct shader_environment_properties environment;
-};
 
 typedef char verify_rasterizer_model_parameters_skinning_offset[
 	offsetof(struct rasterizer_model_begin_parameters, skinning) == 0x08
@@ -223,16 +167,10 @@ typedef char verify_rasterizer_models_statistics_transparent_offset[
 		transparent_model_vertex_count) == 0xE4 ? 1 : -1];
 typedef char verify_rasterizer_model_pixel_shader_size[
 	sizeof(struct pixel_shader_definition) == 0xF0 ? 1 : -1];
-typedef char verify_shader_environment_base_map_offset[
-	offsetof(struct shader_environment_definition, environment.diffuse.base_map)
-		== 0x88 ? 1 : -1];
 typedef char verify_shader_environment_detail_function_offset[
 	offsetof(
 		struct shader_environment_definition,
 		environment.diffuse.detail_map_function) == 0xB0 ? 1 : -1];
-typedef char verify_shader_environment_bump_map_offset[
-	offsetof(struct shader_environment_definition, environment.diffuse.bump_map)
-		== 0x128 ? 1 : -1];
 typedef char verify_shader_environment_specular_offset[
 	offsetof(
 		struct shader_environment_definition,

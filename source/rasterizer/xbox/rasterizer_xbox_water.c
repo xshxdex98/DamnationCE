@@ -69,56 +69,10 @@ struct transparent_geometry_group
 
 #endif
 
-/* the shader_transparent_water tag definition, from the shader header onwards */
-struct shader_transparent_water_definition
-{
-	struct shader shader;
-	unsigned short flags;
-	short type;
-	byte reserved2C[0x20];
-	struct tag_reference base_map;
-	byte reserved5C[0x10];
-	real_argb_color view_perpendicular_tint_color;
-	real_argb_color view_parallel_tint_color;
-	byte reserved8C[0x10];
-	struct tag_reference reflection_map;
-	byte reservedAC[0x10];
-	real ripple_animation_angle;
-	real ripple_animation_velocity;
-	real ripple_scale;
-	struct tag_reference ripple_maps;
-	short ripple_mipmap_levels;
-	short pad0DA;
-	real ripple_mipmap_fade_factor;
-	real ripple_mipmap_lod_bias;
-	byte reserved0E4[0x40];
-	struct tag_block ripples;
-};
-
-typedef char verify_water_definition_flags_offset[
-	offsetof(struct shader_transparent_water_definition, flags) == 0x28 ? 1 : -1];
-typedef char verify_water_definition_base_map_offset[
-	offsetof(struct shader_transparent_water_definition, base_map) == 0x4C ? 1 : -1];
-typedef char verify_water_definition_perpendicular_tint_offset[
-	offsetof(struct shader_transparent_water_definition, view_perpendicular_tint_color) == 0x6C ? 1 : -1];
-typedef char verify_water_definition_parallel_tint_offset[
-	offsetof(struct shader_transparent_water_definition, view_parallel_tint_color) == 0x7C ? 1 : -1];
-typedef char verify_water_definition_reflection_map_offset[
-	offsetof(struct shader_transparent_water_definition, reflection_map) == 0x9C ? 1 : -1];
-typedef char verify_water_definition_animation_angle_offset[
-	offsetof(struct shader_transparent_water_definition, ripple_animation_angle) == 0xBC ? 1 : -1];
-typedef char verify_water_definition_ripple_maps_offset[
-	offsetof(struct shader_transparent_water_definition, ripple_maps) == 0xC8 ? 1 : -1];
-typedef char verify_water_definition_lod_bias_offset[
-	offsetof(struct shader_transparent_water_definition, ripple_mipmap_lod_bias) == 0xE0 ? 1 : -1];
 #ifndef HALO_64BIT
 typedef char verify_water_geometry_group_plane_offset[
 	offsetof(struct transparent_geometry_group, plane) == 0x80 ? 1 : -1];
 #endif
-typedef char verify_water_definition_mipmap_levels_offset[
-	offsetof(struct shader_transparent_water_definition, ripple_mipmap_levels) == 0xD8 ? 1 : -1];
-typedef char verify_water_definition_ripples_offset[
-	offsetof(struct shader_transparent_water_definition, ripples) == 0x124 ? 1 : -1];
 typedef char verify_pixel_shader_definition_size[
 	sizeof(struct pixel_shader_definition) == 0xF0 ? 1 : -1];
 
