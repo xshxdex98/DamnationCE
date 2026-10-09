@@ -787,6 +787,14 @@ static uint64_t watch_page(uint64_t address)
 	return (address - HALO_GUEST_WINDOW_BASE) / PAGE;
 }
 
+/* the last watched page of a range that begins in the window */
+static uint64_t watch_last_page(uint32_t address, uint32_t size)
+{
+	uint64_t last = watch_page((uint64_t)address + size - 1);
+
+	return last < WATCH_PAGE_COUNT ? last : WATCH_PAGE_COUNT - 1;
+}
+
 static void mark_written(uint64_t page)
 {
 	page_generation[page] = __sync_add_and_fetch(&current_generation, 1);
@@ -906,9 +914,7 @@ void host_memory_watch_protect(uint32_t address, uint32_t size)
 	if (!watch_active || !size || !in_window(address))
 		return;
 	first = watch_page(address);
-	last = watch_page((uint64_t)address + size - 1);
-	if (last >= WATCH_PAGE_COUNT)
-		last = WATCH_PAGE_COUNT - 1;
+	last = watch_last_page(address, size);
 	for (page = first; page <= last; page++)
 	{
 		if (!page_protected[page])
@@ -932,9 +938,7 @@ uint32_t host_memory_watch_generation(uint32_t address, uint32_t size)
 	if (!size || !in_window(address))
 		return 0;
 	first = watch_page(address);
-	last = watch_page((uint64_t)address + size - 1);
-	if (last >= WATCH_PAGE_COUNT)
-		last = WATCH_PAGE_COUNT - 1;
+	last = watch_last_page(address, size);
 	for (page = first; page <= last; page++)
 	{
 		if (page_generation[page] > newest)
@@ -954,9 +958,7 @@ void host_memory_watch_prepare_write(uint32_t address, uint32_t size)
 	if (start < HALO_GUEST_WINDOW_BASE)
 		start = HALO_GUEST_WINDOW_BASE;
 	first = watch_page(start);
-	last = watch_page((uint64_t)address + size - 1);
-	if (last >= WATCH_PAGE_COUNT)
-		last = WATCH_PAGE_COUNT - 1;
+	last = watch_last_page(address, size);
 	for (page = first; page <= last; page++)
 	{
 		if (page_protected[page])
@@ -971,9 +973,7 @@ void host_memory_watch_forget(uint32_t address, uint32_t size)
 	if (!size || !in_window(address))
 		return;
 	first = watch_page(address);
-	last = watch_page((uint64_t)address + size - 1);
-	if (last >= WATCH_PAGE_COUNT)
-		last = WATCH_PAGE_COUNT - 1;
+	last = watch_last_page(address, size);
 	for (page = first; page <= last; page++)
 	{
 		page_protected[page] = 0;

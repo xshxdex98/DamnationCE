@@ -585,14 +585,9 @@ int munmap(void *address, size_t length)
 		errno = EINVAL;
 		return -1;
 	}
-	if (information.AllocationBase == address &&
-		!VirtualFree(address, 0, MEM_RELEASE))
-	{
-		errno = errno_from_windows_error(GetLastError());
-		return -1;
-	}
-	if (information.AllocationBase != address &&
-		!VirtualFree(address, length, MEM_DECOMMIT))
+	/* a whole allocation released, pages inside one given back */
+	if (!(information.AllocationBase == address ? VirtualFree(address, 0, MEM_RELEASE) :
+		VirtualFree(address, length, MEM_DECOMMIT)))
 	{
 		errno = errno_from_windows_error(GetLastError());
 		return -1;

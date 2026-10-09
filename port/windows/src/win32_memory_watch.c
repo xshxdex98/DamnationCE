@@ -41,6 +41,14 @@ static unsigned long page_index(unsigned long address)
 	return (address - PLATFORM_CONTIGUOUS_BASE) / WATCH_PAGE_SIZE;
 }
 
+/* the last watched page of a range that begins in the window */
+static unsigned long last_page(unsigned long address, unsigned long size)
+{
+	unsigned long last = page_index(address + size - 1);
+
+	return last < WATCH_PAGE_COUNT ? last : WATCH_PAGE_COUNT - 1;
+}
+
 static void mark_written(unsigned long page)
 {
 	DWORD previous;
@@ -84,9 +92,7 @@ void memory_watch_protect(unsigned long address, unsigned long size)
 	if (!watch_active || !size || !in_window(address))
 		return;
 	first = page_index(address);
-	last = page_index(address + size - 1);
-	if (last >= WATCH_PAGE_COUNT)
-		last = WATCH_PAGE_COUNT - 1;
+	last = last_page(address, size);
 	for (page = first; page <= last; page++)
 	{
 		if (!page_protected[page])
@@ -112,9 +118,7 @@ unsigned long memory_watch_generation(unsigned long address, unsigned long size)
 	if (!size || !in_window(address))
 		return 0;
 	first = page_index(address);
-	last = page_index(address + size - 1);
-	if (last >= WATCH_PAGE_COUNT)
-		last = WATCH_PAGE_COUNT - 1;
+	last = last_page(address, size);
 	for (page = first; page <= last; page++)
 	{
 		if ((unsigned long)page_generation[page] > newest)
@@ -135,9 +139,7 @@ void memory_watch_prepare_write(void *address, unsigned long size)
 	if (start < PLATFORM_CONTIGUOUS_BASE)
 		start = PLATFORM_CONTIGUOUS_BASE;
 	first = page_index(start);
-	last = page_index((unsigned long)address + size - 1);
-	if (last >= WATCH_PAGE_COUNT)
-		last = WATCH_PAGE_COUNT - 1;
+	last = last_page((unsigned long)address, size);
 	for (page = first; page <= last; page++)
 	{
 		if (page_protected[page])
@@ -153,9 +155,7 @@ void memory_watch_forget(void *address, unsigned long size)
 	if (!size || !in_window(start))
 		return;
 	first = page_index(start);
-	last = page_index(start + size - 1);
-	if (last >= WATCH_PAGE_COUNT)
-		last = WATCH_PAGE_COUNT - 1;
+	last = last_page(start, size);
 	for (page = first; page <= last; page++)
 	{
 		page_protected[page] = 0;

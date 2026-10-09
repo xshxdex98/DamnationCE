@@ -392,8 +392,9 @@ static int crash_upload(const wchar_t *folder, const wchar_t *name)
 	return status >= 400 && status < 500 && status != 408 && status != 429;
 }
 
-/* sends the reports waiting in the folder, one process at a time */
-static void crash_upload_pending(const wchar_t *folder)
+/* sends the reports waiting in the folder (or, not to be sent, deletes
+them), one process at a time */
+static void crash_settle_pending(const wchar_t *folder, int upload)
 {
 	wchar_t names[MAXIMUM_PENDING_REPORTS * 2][MAX_PATH];
 	HANDLE lock = CreateMutexW(NULL, FALSE, CRASH_UPLOAD_LOCK);
@@ -406,7 +407,7 @@ static void crash_upload_pending(const wchar_t *folder)
 		count = MAXIMUM_PENDING_REPORTS * 2;
 	for (index = 0; index < count; index++)
 	{
-		if (crash_upload(folder, names[index]))
+		if (!upload || crash_upload(folder, names[index]))
 			crash_delete_report(folder, names[index]);
 	}
 	if (lock)
@@ -699,32 +700,21 @@ static void crash_reporter(DWORD process_id, DWORD thread_id, ULONG_PTR exceptio
 			return;
 		}
 	}
-	crash_upload_pending(folder);
+	crash_settle_pending(folder, 1);
 }
 
 /* "halo.exe --crash-upload": the reports a crash left unsent */
 static void crash_uploader(void)
 {
-	wchar_t folder[PATH_SIZE], names[MAXIMUM_PENDING_REPORTS * 2][MAX_PATH];
+	wchar_t folder[PATH_SIZE];
 	const char *consent;
-	int count, index;
 
 	if (!crash_folder(folder, PATH_SIZE))
 		return;
 	crash_reporter_log(folder);
 	consent = crash_consent();
-	if (!strcmp(consent, "yes"))
-	{
-		crash_upload_pending(folder);
-	}
-	else if (!strcmp(consent, "no"))
-	{
-		count = crash_pending_reports(folder, names, MAXIMUM_PENDING_REPORTS * 2);
-		if (count > MAXIMUM_PENDING_REPORTS * 2)
-			count = MAXIMUM_PENDING_REPORTS * 2;
-		for (index = 0; index < count; index++)
-			crash_delete_report(folder, names[index]);
-	}
+	if (!strcmp(consent, "yes") || !strcmp(consent, "no"))
+		crash_settle_pending(folder, !strcmp(consent, "yes"));
 }
 
 /* ---------- the crashed game */
