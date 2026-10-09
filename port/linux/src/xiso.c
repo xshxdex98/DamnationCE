@@ -113,12 +113,14 @@ struct xiso_image
 	int error_size;
 };
 
-static int name_is_plain(const char *name);
+static unsigned long read_u16(const unsigned char *bytes)
+{
+	return (unsigned long)bytes[0] | (unsigned long)bytes[1] << 8;
+}
 
 static unsigned long read_u32(const unsigned char *bytes)
 {
-	return (unsigned long)bytes[0] | (unsigned long)bytes[1] << 8 | (unsigned long)bytes[2] << 16 |
-		(unsigned long)bytes[3] << 24;
+	return read_u16(bytes) | read_u16(bytes + 2) << 16;
 }
 
 static int fail(struct xiso_image *image, const char *format, const char *detail)
@@ -162,8 +164,11 @@ static int find_volume(struct xiso_image *image, unsigned long *root_sector, uns
 
 		if (!read_at(image, offset, descriptor, sizeof(descriptor)))
 			continue;
-		if (memcmp(descriptor, volume_magic, 20) || memcmp(descriptor + 0x7EC, volume_magic, 20))
+		if (memcmp(descriptor, volume_magic, sizeof(volume_magic) - 1) ||
+			memcmp(descriptor + 0x7EC, volume_magic, sizeof(volume_magic) - 1))
+		{
 			continue;
+		}
 		image->partition = partition_offsets[index];
 		*root_sector = read_u32(descriptor + 20);
 		*root_size = read_u32(descriptor + 24);
@@ -186,6 +191,25 @@ static unsigned char *read_directory(struct xiso_image *image, unsigned long sec
 		table = NULL;
 	}
 	return table;
+}
+
+/* whether a name is one to write in the maps folder: no path, no "." or
+"..", and only printable ASCII that every desktop file system takes as a
+plain name (a disc's maps folder holds .map files and loading.tga) */
+static int name_is_plain(const char *name)
+{
+	const char *at;
+
+	if (!*name || !strcmp(name, ".") || !strcmp(name, ".."))
+		return 0;
+	for (at = name; *at; at++)
+	{
+		unsigned char c = (unsigned char)*at;
+
+		if (c < 0x20 || c > 0x7e || strchr("/\\:*?\"<>|", c))
+			return 0;
+	}
+	return 1;
 }
 
 struct directory_walk
@@ -212,8 +236,8 @@ static void walk_directory(struct directory_walk *walk, unsigned long offset, in
 	if (depth > 64 || ++walk->visited > 4096 || offset + ENTRY_HEADER_SIZE > walk->size)
 		return;
 	entry = walk->table + offset;
-	left = (unsigned long)entry[0] | (unsigned long)entry[1] << 8;
-	right = (unsigned long)entry[2] | (unsigned long)entry[3] << 8;
+	left = read_u16(entry);
+	right = read_u16(entry + 2);
 	/* 0xFFFF: padding, an empty directory */
 	if (left == 0xFFFF)
 		return;
@@ -232,31 +256,10 @@ static void walk_directory(struct directory_walk *walk, unsigned long offset, in
 		/* (as extract-xiso refuses them: no name may leave the folder, and
 		none but a plain file name is written) */
 		if (name_is_plain(file->name))
-		{
 			walk->entry_count++;
-		}
 	}
 	if (right)
 		walk_directory(walk, right, depth + 1);
-}
-
-/* whether a name is one to write in the maps folder: no path, no "." or
-"..", and only printable ASCII that every desktop file system takes as a
-plain name (a disc's maps folder holds .map files and loading.tga) */
-static int name_is_plain(const char *name)
-{
-	const char *at;
-
-	if (!*name || !strcmp(name, ".") || !strcmp(name, ".."))
-		return 0;
-	for (at = name; *at; at++)
-	{
-		unsigned char c = (unsigned char)*at;
-
-		if (c < 0x20 || c > 0x7e || strchr("/\\:*?\"<>|", c))
-			return 0;
-	}
-	return 1;
 }
 
 static int names_match(const char *a, const char *b)

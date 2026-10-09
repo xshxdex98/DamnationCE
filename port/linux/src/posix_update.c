@@ -40,6 +40,8 @@ Built with the host's ABI, as the other posix_*.c.
 #define MAXIMUM_REDIRECTS 8
 #define TIMEOUT_MILLISECONDS 20000
 #define MAXIMUM_HEADER_SIZE 16384
+/* (a release is tens of megabytes: a body past this fills no disk) */
+#define MAXIMUM_DOWNLOAD_SIZE (512ull * 1024 * 1024)
 
 /* where distributions keep their certificate authorities */
 static const char *const certificate_bundles[] =
@@ -314,9 +316,6 @@ struct download
 	unsigned long long received, total;
 };
 
-/* (a release is tens of megabytes: a body past this fills no disk) */
-#define MAXIMUM_DOWNLOAD_SIZE (512ull * 1024 * 1024)
-
 static int body_write(struct download *download, const unsigned char *data, size_t size)
 {
 	if (download->received + size > MAXIMUM_DOWNLOAD_SIZE)
@@ -391,38 +390,25 @@ static int read_body(struct connection *connection, struct download *download, i
 	}
 }
 
-/* one GET: the body into download on 200, the Location on a redirect;
-the status, or 0 on failure */
-static int https_get(const char *url, struct download *download, char *location, size_t location_size, char *error,
-	int error_size)
+/* a GET of path on the connection to host: the body into download on 200,
+the Location on a redirect; the status, or 0 on failure */
+static int https_exchange(struct connection *connection, const char *host, const char *path,
+	struct download *download, char *location, size_t location_size, char *error, int error_size)
 {
-	static struct connection connection;
-	char host[256], port[16], path[2048];
 	char request[3072];
 	char line[MAXIMUM_HEADER_SIZE];
 	unsigned long long length = 0;
 	int have_length = 0, chunked = 0, status = 0;
 
-	if (!parse_url(url, host, sizeof(host), port, sizeof(port), path, sizeof(path)))
-	{
-		snprintf(error, (size_t)error_size, "not an https:// address: %s", url);
-		return 0;
-	}
-	if (!connection_open(&connection, host, port, error, error_size))
-	{
-		connection_free(&connection);
-		return 0;
-	}
 	snprintf(request, sizeof(request),
 		"GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: " UPDATE_USER_AGENT "\r\n"
 		"Accept: */*\r\nConnection: close\r\n\r\n",
 		path, host);
-	if (!connection_write(&connection, request, strlen(request)) ||
-		!connection_read_line(&connection, line, sizeof(line)) ||
+	if (!connection_write(connection, request, strlen(request)) ||
+		!connection_read_line(connection, line, sizeof(line)) ||
 		sscanf(line, "HTTP/%*d.%*d %d", &status) != 1)
 	{
 		snprintf(error, (size_t)error_size, "no answer from %s", host);
-		connection_free(&connection);
 		return 0;
 	}
 	location[0] = 0;
@@ -431,10 +417,9 @@ static int https_get(const char *url, struct download *download, char *location,
 	{
 		char *value;
 
-		if (!connection_read_line(&connection, line, sizeof(line)))
+		if (!connection_read_line(connection, line, sizeof(line)))
 		{
 			snprintf(error, (size_t)error_size, "a broken answer from %s", host);
-			connection_free(&connection);
 			return 0;
 		}
 		if (!line[0])
@@ -451,7 +436,6 @@ static int https_get(const char *url, struct download *download, char *location,
 			if (length > MAXIMUM_DOWNLOAD_SIZE)
 			{
 				snprintf(error, (size_t)error_size, "the download from %s is too large", host);
-				connection_free(&connection);
 				return 0;
 			}
 		}
@@ -467,12 +451,30 @@ static int https_get(const char *url, struct download *download, char *location,
 	if (status == 200)
 	{
 		download->total = have_length && !chunked ? length : 0;
-		if (!read_body(&connection, download, chunked, length, have_length && !chunked))
+		if (!read_body(connection, download, chunked, length, have_length && !chunked))
 		{
 			snprintf(error, (size_t)error_size, "the download from %s broke off", host);
 			status = 0;
 		}
 	}
+	return status;
+}
+
+/* one GET of url (https_exchange) on a connection of its own */
+static int https_get(const char *url, struct download *download, char *location, size_t location_size, char *error,
+	int error_size)
+{
+	static struct connection connection;
+	char host[256], port[16], path[2048];
+	int status = 0;
+
+	if (!parse_url(url, host, sizeof(host), port, sizeof(port), path, sizeof(path)))
+	{
+		snprintf(error, (size_t)error_size, "not an https:// address: %s", url);
+		return 0;
+	}
+	if (connection_open(&connection, host, port, error, error_size))
+		status = https_exchange(&connection, host, path, download, location, location_size, error, error_size);
 	connection_free(&connection);
 	return status;
 }

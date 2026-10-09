@@ -55,11 +55,6 @@ macos_build.py; the Android app's version is its own, build.gradle) */
 #ifndef HALO_RELEASE_BUILD
 #define HALO_RELEASE_BUILD 0
 #endif
-#ifdef __APPLE__
-/* (the macOS application does not update itself yet) */
-#undef HALO_RELEASE_BUILD
-#define HALO_RELEASE_BUILD 0
-#endif
 #ifndef HALO_BUILD_FLAVOR
 #define HALO_BUILD_FLAVOR "release"
 #endif
@@ -70,7 +65,9 @@ macos_build.py; the Android app's version is its own, build.gradle) */
 #define HALO_BUILD_COMMIT ""
 #endif
 #ifdef __APPLE__
-/* (as above) */
+/* (the macOS application does not update itself yet) */
+#undef HALO_RELEASE_BUILD
+#define HALO_RELEASE_BUILD 0
 #undef HALO_UPDATE_CHANNEL
 #define HALO_UPDATE_CHANNEL ""
 #endif
@@ -390,27 +387,46 @@ static int updater_rolling(void)
 	return HALO_UPDATE_CHANNEL[0] && HALO_BUILD_COMMIT[0] && !strcmp(HALO_BUILD_FLAVOR, "release");
 }
 
-/* the commit GitHub's "latest" pre-release was built from (its target),
-shortened as HALO_BUILD_COMMIT is, into commit; 0 if there is none */
-static int updater_latest_build(char *commit, size_t size)
+/* what builds are checked for: each push to main's, or releases' */
+static const char *updater_kind(void)
+{
+	return updater_rolling() ? "build" : "version";
+}
+
+static const char *updater_current(void)
+{
+	return updater_rolling() ? HALO_BUILD_COMMIT : HALO_VERSION;
+}
+
+/* GitHub's answer to a request of its API (text to SDL_free); NULL if there
+is none */
+static char *updater_ask_github(const char *url)
 {
 	char path[1200];
 	char error[512] = "";
 	size_t length = 0;
-	size_t commit_length = strlen(HALO_BUILD_COMMIT);
 	char *text;
-	const char *target;
-	int found = 0;
 
 	updater_path(path, sizeof(path), "update-check.json");
-	if (!update_download("https://api.github.com/repos/" UPDATE_REPOSITORY "/releases/tags/latest", path, NULL,
-		NULL, error, sizeof(error)))
+	if (!update_download(url, path, NULL, NULL, error, sizeof(error)))
 	{
-		platform_log("update: could not check for a new build: %s", error);
-		return 0;
+		platform_log("update: could not check for a new %s: %s", updater_kind(), error);
+		return NULL;
 	}
 	text = SDL_LoadFile(path, &length);
 	update_delete_file(path);
+	return text;
+}
+
+/* the commit GitHub's "latest" pre-release was built from (its target),
+shortened as HALO_BUILD_COMMIT is, into commit; 0 if there is none */
+static int updater_latest_build(char *commit, size_t size)
+{
+	size_t commit_length = strlen(HALO_BUILD_COMMIT);
+	char *text = updater_ask_github("https://api.github.com/repos/" UPDATE_REPOSITORY "/releases/tags/latest");
+	const char *target;
+	int found = 0;
+
 	if (!text)
 		return 0;
 	/* "target_commitish": "<commit>" */
@@ -431,22 +447,10 @@ static int updater_latest_build(char *commit, size_t size)
 0 if there is none */
 static int updater_latest_release(char *version, size_t size)
 {
-	char path[1200];
-	char error[512] = "";
-	size_t length = 0;
-	char *text;
+	char *text = updater_ask_github("https://api.github.com/repos/" UPDATE_REPOSITORY "/releases/latest");
 	const char *tag;
 	int found = 0;
 
-	updater_path(path, sizeof(path), "update-check.json");
-	if (!update_download("https://api.github.com/repos/" UPDATE_REPOSITORY "/releases/latest", path, NULL, NULL,
-		error, sizeof(error)))
-	{
-		platform_log("update: could not check for a new version: %s", error);
-		return 0;
-	}
-	text = SDL_LoadFile(path, &length);
-	update_delete_file(path);
 	if (!text)
 		return 0;
 	/* "tag_name": "v<version>" */
@@ -473,32 +477,22 @@ static int updater_latest_release(char *version, size_t size)
 static int SDLCALL updater_check_thread(void *context)
 {
 	char latest[sizeof(updater_latest_version)];
+	int available;
 
 	(void)context;
 	if (updater_rolling())
+		available = updater_latest_build(latest, sizeof(latest)) && strcmp(latest, HALO_BUILD_COMMIT);
+	else
+		available = updater_latest_release(latest, sizeof(latest)) && updater_newer(latest);
+	if (available)
 	{
-		if (updater_latest_build(latest, sizeof(latest)) && strcmp(latest, HALO_BUILD_COMMIT))
-		{
-			platform_log("update: build %s is available (this is %s)", latest, HALO_BUILD_COMMIT);
-			snprintf(updater_latest_version, sizeof(updater_latest_version), "%s", latest);
-			SDL_SetAtomicInt(&updater_state, _updater_available);
-		}
-		else
-		{
-			platform_log("update: this is the latest build (%s)", HALO_BUILD_COMMIT);
-			SDL_SetAtomicInt(&updater_state, _updater_handled);
-		}
-		return 0;
-	}
-	if (updater_latest_release(latest, sizeof(latest)) && updater_newer(latest))
-	{
-		platform_log("update: version %s is available (this is %s)", latest, HALO_VERSION);
+		platform_log("update: %s %s is available (this is %s)", updater_kind(), latest, updater_current());
 		snprintf(updater_latest_version, sizeof(updater_latest_version), "%s", latest);
 		SDL_SetAtomicInt(&updater_state, _updater_available);
 	}
 	else
 	{
-		platform_log("update: this is the latest version (%s)", HALO_VERSION);
+		platform_log("update: this is the latest %s (%s)", updater_kind(), updater_current());
 		SDL_SetAtomicInt(&updater_state, _updater_handled);
 	}
 	return 0;
@@ -563,6 +557,7 @@ static int updater_download_zip(const char *zip_path, char *error, size_t error_
 	thread = SDL_CreateThread(updater_download_thread, "update download", &download);
 	if (!thread)
 	{
+		SDL_DestroyMutex(download.lock);
 		snprintf(error, error_size, "could not start the download");
 		return 0;
 	}
@@ -695,6 +690,7 @@ static void updater_clean_up(void)
 /* at start-up (sdl_platform.c): looks for a new version, in the background */
 void updater_start(void)
 {
+	SDL_Thread *thread;
 	char *slash;
 
 	if (!update_executable_path(updater_executable, sizeof(updater_executable)))
@@ -724,14 +720,11 @@ void updater_start(void)
 		return;
 	}
 	SDL_SetAtomicInt(&updater_state, _updater_checking);
-	{
-		SDL_Thread *thread = SDL_CreateThread(updater_check_thread, "update check", NULL);
-
-		if (thread)
-			SDL_DetachThread(thread);
-		else
-			SDL_SetAtomicInt(&updater_state, _updater_handled);
-	}
+	thread = SDL_CreateThread(updater_check_thread, "update check", NULL);
+	if (thread)
+		SDL_DetachThread(thread);
+	else
+		SDL_SetAtomicInt(&updater_state, _updater_handled);
 }
 
 /* every frame, on the game's thread (sdl_platform.c): asks the player once a
@@ -771,16 +764,10 @@ void updater_poll(SDL_Window *window)
 	fullscreen = window && (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN);
 	if (fullscreen)
 		SDL_SetWindowFullscreen(window, false);
-	if (updater_rolling())
-		snprintf(message, sizeof(message),
-			"A new build of DamnationCE is out (%s; this is %s).\n\n"
-			"Do you want to update? The game will close and start the new build.",
-			updater_latest_version, HALO_BUILD_COMMIT);
-	else
-		snprintf(message, sizeof(message),
-			"A new version of DamnationCE is out (%s; this is %s).\n\n"
-			"Do you want to update? The game will close and start the new version.",
-			updater_latest_version, HALO_VERSION);
+	snprintf(message, sizeof(message),
+		"A new %s of DamnationCE is out (%s; this is %s).\n\n"
+		"Do you want to update? The game will close and start the new %s.",
+		updater_kind(), updater_latest_version, updater_current(), updater_kind());
 	{
 		SDL_MessageBoxData question = { SDL_MESSAGEBOX_INFORMATION, window, "DamnationCE: new version", message,
 			3, question_buttons, NULL };
@@ -792,7 +779,7 @@ void updater_poll(SDL_Window *window)
 	{
 		SDL_MessageBoxData confirm = { SDL_MESSAGEBOX_WARNING, window, "DamnationCE: new version",
 			"Stop asking about new versions?\n\n"
-			"To ask again, set auto = true in the [update] section of config.toml.",
+			"To ask again, set check = true in the [update] section of config.toml.",
 			2, confirm_buttons, NULL };
 		int confirmed = 0;
 
