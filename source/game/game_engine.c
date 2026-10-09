@@ -5069,22 +5069,20 @@ void game_engine_load_stage(
 }
 
 #ifdef HALO_GAME_BROWSER
-/* the carnage report of a game this machine hosts, as it ends: the players
-in the postgame's order, for the game list (port/linux/src/browser.c,
-which sends it if the game is listed). A game that is quit or crashes never
-gets here, so it is never reported. */
-static void game_engine_report_game(
-	void)
+/* the lines of a carnage report: the players in the postgame's order, the
+host's machine addresses with them (for the game list and Delta Stats,
+port/linux/game/game_events.c). Returns the count. */
+long game_engine_report_lines(
+	struct browser_report_player *players,
+	long maximum)
 {
 	static struct statistic_buffer ranking[MULTIPLAYER_MAXIMUM_PLAYERS];
-	static struct browser_report_player players[MULTIPLAYER_MAXIMUM_PLAYERS];
+	struct network_game_server *server = global_network_game_server_get();
 	long count = populate_statistic_buffer(ranking, _postgame_statistic_ranking, FALSE);
-	boolean teams = global_variant.universal_variant.teams;
 	long index;
 
-	/* (a game everyone left, the dedicated server's to end: no report) */
-	if (count == 0)
-		return;
+	if (count > maximum)
+		count = maximum;
 	for (index = 0; index < count; index++)
 	{
 		struct player_datum *player = player_get(ranking[index].player_index);
@@ -5107,8 +5105,8 @@ static void game_engine_report_game(
 		line->shots_fired = statistics->shots_fired;
 		line->shots_hit = statistics->shots_hit;
 		line->color = player->network_player_data.primary_color_index;
-		line->address = network_game_server_machine_ipv4_address(global_network_game_server_get(),
-			player->network_player_data.machine_index);
+		if (server)
+			line->address = network_game_server_machine_ipv4_address(server, player->network_player_data.machine_index);
 		/* (the game type's statistics: the union's member for this game) */
 		switch (global_variant.game_engine_index)
 		{
@@ -5129,6 +5127,22 @@ static void game_engine_report_game(
 			break;
 		}
 	}
+	return count;
+}
+
+/* the carnage report of a game this machine hosts, as it ends, for the game
+list (port/linux/src/browser.c, which sends it if the game is listed). A
+game that is quit or crashes never gets here, so it is never reported. */
+static void game_engine_report_game(
+	void)
+{
+	static struct browser_report_player players[MULTIPLAYER_MAXIMUM_PLAYERS];
+	long count = game_engine_report_lines(players, MULTIPLAYER_MAXIMUM_PLAYERS);
+	boolean teams = global_variant.universal_variant.teams;
+
+	/* (a game everyone left, the dedicated server's to end: no report) */
+	if (count == 0)
+		return;
 	browser_report_game(
 		teams,
 		teams ? game_engine_get_team_score(0) : 0,
