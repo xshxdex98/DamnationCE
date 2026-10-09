@@ -35,11 +35,11 @@ pixels as they arrive, and samples them in this build's order
 #include "rasterizer/rasterizer_swizzle.h"
 #include "shaders/shader_definitions.h"
 #include "interface/unit_hud_interface_definition.h"
+#include "interface/weapon_hud_interface_definition.h"
 #include "cache_file_formats.h"
 #include "custom_edition_cache.h"
 
 #include <stdlib.h>
-#include "interface/weapon_hud_interface_definition.h"
 
 /* ---------- constants */
 
@@ -94,10 +94,9 @@ typedef char verify_weapon_hud_interface_elements_meters_offset[
 	offsetof(struct weapon_hud_interface_elements, meters) == 0x6C ? 1 : -1];
 
 /* a bitmap whose channels Halo PC keeps elsewhere than this build reads
-them from */
-/* one bitmap of a bitmap tag: the renderer reorders each texture's channels
-on its own, so a meter and a static drawing other bitmaps of one tag each
-get their own order */
+them from: one bitmap of a bitmap tag, as the renderer reorders each
+texture's channels on its own (a meter and a static drawing other bitmaps of
+one tag each get their own order) */
 struct reordered_bitmap
 {
 	long handle;

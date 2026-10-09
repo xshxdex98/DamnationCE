@@ -644,9 +644,6 @@ static void structure_bsp_buffers_release(
 	return;
 }
 
-/* Gives `material` compressed vertices at `vertices` and buffers made from
-them. Its uncompressed vertices (cache_file_formats.c checked their size and
-place) stay where they are. */
 /* geometry the renderer draws from: in the Xbox's contiguous memory, as the
 game's own vertex and index buffers are (physical_memory_map.c), which the
 renderer keeps on the GPU (d3d8_gl.c's mirror: anything outside it is sent
@@ -678,6 +675,9 @@ static void geometry_free(
 		system_free(geometry);
 }
 
+/* Gives `material` compressed vertices at `vertices` and buffers made from
+them. Its uncompressed vertices (cache_file_formats.c checked their size and
+place) stay where they are. */
 static boolean structure_material_convert(
 	struct structure_material *material,
 	byte *vertices)
@@ -970,7 +970,9 @@ void custom_edition_structure_bsp_unload(
 	if (globals->structure_bsp)
 	{
 		structure_bsp_buffers_release(globals->structure_bsp);
-		geometry_free(globals->structure_bsp_vertices, globals->structure_bsp_vertices_contiguous);
+		/* (none when it could not be made: the game's free stops on NULL) */
+		if (globals->structure_bsp_vertices)
+			geometry_free(globals->structure_bsp_vertices, globals->structure_bsp_vertices_contiguous);
 		globals->structure_bsp = NULL;
 		globals->structure_bsp_vertices = NULL;
 	}

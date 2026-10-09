@@ -137,9 +137,8 @@ static byte adpcm_encode_sample(
 	return nibble;
 }
 
-/* Encodes `frame_count` frames of interleaved 16-bit samples as Xbox ADPCM into
-`output`, which holds adpcm_encoded_bytes(frame_count, channel_count) bytes.
-A last block short of 64 frames is filled with the final sample. */
+/* the bytes `frame_count` frames of `channel_count` channels take as Xbox
+ADPCM: whole blocks */
 static unsigned long adpcm_encoded_bytes(
 	long frame_count,
 	long channel_count)
@@ -148,6 +147,9 @@ static unsigned long adpcm_encoded_bytes(
 		ADPCM_BLOCK_BYTES * channel_count;
 }
 
+/* Encodes `frame_count` frames of interleaved 16-bit samples as Xbox ADPCM into
+`output`, which holds adpcm_encoded_bytes(frame_count, channel_count) bytes.
+A last block short of 64 frames is filled with the final sample. */
 static void adpcm_encode(
 	short const *samples,
 	long frame_count,

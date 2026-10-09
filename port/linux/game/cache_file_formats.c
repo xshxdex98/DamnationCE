@@ -220,7 +220,6 @@ MAXIMUM_NODES_PER_ANIMATION), so a graph or animation of more is refused. */
 #define ANIMATION_BYTES 0xB4
 #define ANIMATION_NODE_COUNT_OFFSET 0x2C
 #define MAXIMUM_NODES_PER_ANIMATION 64
-#define GBXMODEL_BYTES 0xE8
 #define GBXMODEL_NODES_OFFSET 0xB8
 #define GBXMODEL_NODE_BYTES 0x9C
 /* a node's next sibling, first child and parent (shorts), in models and
@@ -414,7 +413,6 @@ the heights; the block offsets below hold for every font in loc.map) */
 #define TAG_REFERENCE_BYTES 16
 #define TAG_REFERENCE_INDEX_OFFSET 12
 
-#define UNICODE_STRING_LIST_BYTES 0x0C
 #define HUD_MESSAGE_TEXT_BYTES 0x80
 
 /* CRC-32 (reflected polynomial 0x04C11DB7), updated from 0xFFFFFFFF with no
@@ -507,7 +505,6 @@ static enum cache_file_status animation_check(
 
 static struct element_layout const plain_element_layout = { 0, NULL, 0, NULL, 0, NULL };
 
-/* the placements the unit and grenade HUD interfaces hold themselves */
 /* the unit and grenade HUD interfaces' elements that draw a bitmap (their
 blips and numbers do not: UNIT_HUD_INTERFACE_BLIPS_OFFSET, and the
 grenade count's numbers at 0xF4) */
@@ -1183,38 +1180,59 @@ static char const *tag_name_get(
 		NULL;
 }
 
+/* Whether `size` bytes at `offset` lie within their file: the resource map
+of `type` when `in_resource_map`, else the map itself (the element at
+`element_offset` names them). */
+static enum cache_file_status resource_data_check(
+	struct load_state *state,
+	int in_resource_map,
+	enum resource_map_type type,
+	uint32_t offset,
+	uint32_t size,
+	uint32_t element_offset)
+{
+	uint32_t limit = state->file_length;
+
+	if (in_resource_map)
+	{
+		struct resource_map const *map = state->resource_maps[type];
+
+		if (!map)
+		{
+			return load_fail(state, _cache_file_status_missing_resource_map, element_offset);
+		}
+		limit = map->source->size;
+	}
+	if (!range_fits(offset, size, limit))
+	{
+		return load_fail(state, _cache_file_status_bad_resource_data_range, offset);
+	}
+
+	return _cache_file_status_ok;
+}
+
 static enum cache_file_status bitmap_data_check(
 	struct load_state *state,
 	uint32_t element_offset)
 {
 	uint8_t const *bitmap = state->tag_cache + element_offset;
-	uint32_t pixels_offset = read_u32(bitmap + BITMAP_DATA_PIXELS_OFFSET_OFFSET);
-	uint32_t pixels_size = read_u32(bitmap + BITMAP_DATA_PIXELS_SIZE_OFFSET);
-	uint32_t limit;
+	enum cache_file_status status;
 
 	/* Reclaimer (Halo1/BitmapTag.cs): the pixels are in bitmaps.map when
 	the bitmap says so, else in the map itself */
-	if (flag_is_set(read_u16(bitmap + BITMAP_DATA_FLAGS_OFFSET), BITMAP_DATA_IN_RESOURCE_MAP_BIT))
+	status = resource_data_check(
+		state,
+		flag_is_set(read_u16(bitmap + BITMAP_DATA_FLAGS_OFFSET), BITMAP_DATA_IN_RESOURCE_MAP_BIT),
+		_resource_map_bitmaps,
+		read_u32(bitmap + BITMAP_DATA_PIXELS_OFFSET_OFFSET),
+		read_u32(bitmap + BITMAP_DATA_PIXELS_SIZE_OFFSET),
+		element_offset);
+	if (status == _cache_file_status_ok)
 	{
-		struct resource_map const *bitmaps = state->resource_maps[_resource_map_bitmaps];
+		state->report->bitmap_data_ranges_checked++;
+	}
 
-		if (!bitmaps)
-		{
-			return load_fail(state, _cache_file_status_missing_resource_map, element_offset);
-		}
-		limit = bitmaps->source->size;
-	}
-	else
-	{
-		limit = state->file_length;
-	}
-	if (!range_fits(pixels_offset, pixels_size, limit))
-	{
-		return load_fail(state, _cache_file_status_bad_resource_data_range, pixels_offset);
-	}
-	state->report->bitmap_data_ranges_checked++;
-
-	return _cache_file_status_ok;
+	return status;
 }
 
 static enum cache_file_status sound_permutation_check(
@@ -1223,34 +1241,25 @@ static enum cache_file_status sound_permutation_check(
 {
 	uint8_t const *samples = state->tag_cache + element_offset + SOUND_PERMUTATION_SAMPLES_OFFSET;
 	int32_t size = read_s32(samples + TAG_DATA_SIZE_OFFSET);
-	uint32_t file_offset = read_u32(samples + TAG_DATA_FILE_OFFSET_OFFSET);
-	uint32_t limit;
+	enum cache_file_status status;
 
 	if (size < 0)
 	{
 		return load_fail(state, _cache_file_status_bad_resource_data_range, element_offset);
 	}
-	if (flag_is_set(read_u32(samples + TAG_DATA_FLAGS_OFFSET), SOUND_SAMPLES_IN_RESOURCE_MAP_BIT))
+	status = resource_data_check(
+		state,
+		flag_is_set(read_u32(samples + TAG_DATA_FLAGS_OFFSET), SOUND_SAMPLES_IN_RESOURCE_MAP_BIT),
+		_resource_map_sounds,
+		read_u32(samples + TAG_DATA_FILE_OFFSET_OFFSET),
+		(uint32_t)size,
+		element_offset);
+	if (status == _cache_file_status_ok)
 	{
-		struct resource_map const *sounds = state->resource_maps[_resource_map_sounds];
+		state->report->sound_sample_ranges_checked++;
+	}
 
-		if (!sounds)
-		{
-			return load_fail(state, _cache_file_status_missing_resource_map, element_offset);
-		}
-		limit = sounds->source->size;
-	}
-	else
-	{
-		limit = state->file_length;
-	}
-	if (!range_fits(file_offset, (uint32_t)size, limit))
-	{
-		return load_fail(state, _cache_file_status_bad_resource_data_range, file_offset);
-	}
-	state->report->sound_sample_ranges_checked++;
-
-	return _cache_file_status_ok;
+	return status;
 }
 
 /* A gbxmodel part's strip and vertices: of the kinds Custom Edition writes,
@@ -2140,6 +2149,7 @@ enum cache_file_status custom_edition_cache_load(
 	struct load_state state;
 	uint8_t *tag_index;
 	uint8_t *tag_instances;
+	uint8_t *scenario_instance;
 	uint32_t instances_offset;
 	uint32_t scenario_offset;
 	uint32_t scenario_handle;
@@ -2269,29 +2279,25 @@ enum cache_file_status custom_edition_cache_load(
 	/* the scenario and its structure BSPs */
 	scenario_handle = read_u32(tag_index + TAG_INDEX_SCENARIO_OFFSET);
 	report->scenario_tag_index = (int32_t)(scenario_handle & ABSOLUTE_INDEX_MASK);
+	scenario_instance = (scenario_handle & ABSOLUTE_INDEX_MASK) < (uint32_t)tag_count ?
+		tag_instances + (scenario_handle & ABSOLUTE_INDEX_MASK) * TAG_INSTANCE_BYTES :
+		NULL;
 	/* Map protection can rename the scenario's group (to 'prot', say). Halo
 	PC used whatever tag the header named, so give it the scenario's group. */
-	if ((scenario_handle & ABSOLUTE_INDEX_MASK) < (uint32_t)tag_count)
+	if (scenario_instance &&
+		read_u32(scenario_instance + TAG_INSTANCE_HANDLE_OFFSET) == scenario_handle &&
+		read_u32(scenario_instance + TAG_INSTANCE_GROUP_OFFSET) != SCENARIO_GROUP_TAG)
 	{
-		uint8_t *scenario_instance = tag_instances + (scenario_handle & ABSOLUTE_INDEX_MASK) * TAG_INSTANCE_BYTES;
-
-		if (read_u32(scenario_instance + TAG_INSTANCE_HANDLE_OFFSET) == scenario_handle &&
-			read_u32(scenario_instance + TAG_INSTANCE_GROUP_OFFSET) != SCENARIO_GROUP_TAG)
-		{
-			write_u32(scenario_instance + TAG_INSTANCE_GROUP_OFFSET, SCENARIO_GROUP_TAG);
-			write_u32(scenario_instance + TAG_INSTANCE_PARENT_GROUP_OFFSET, NO_GROUP_TAG);
-			write_u32(scenario_instance + TAG_INSTANCE_PARENT_GROUP_OFFSET + 4, NO_GROUP_TAG);
-			report->scenario_regrouped = 1;
-		}
+		write_u32(scenario_instance + TAG_INSTANCE_GROUP_OFFSET, SCENARIO_GROUP_TAG);
+		write_u32(scenario_instance + TAG_INSTANCE_PARENT_GROUP_OFFSET, NO_GROUP_TAG);
+		write_u32(scenario_instance + TAG_INSTANCE_PARENT_GROUP_OFFSET + 4, NO_GROUP_TAG);
+		report->scenario_regrouped = 1;
 	}
-	if ((scenario_handle & ABSOLUTE_INDEX_MASK) >= (uint32_t)tag_count ||
-		read_u32(tag_instances + (scenario_handle & ABSOLUTE_INDEX_MASK) * TAG_INSTANCE_BYTES + TAG_INSTANCE_HANDLE_OFFSET) != scenario_handle ||
-		read_u32(tag_instances + (scenario_handle & ABSOLUTE_INDEX_MASK) * TAG_INSTANCE_BYTES + TAG_INSTANCE_GROUP_OFFSET) != SCENARIO_GROUP_TAG ||
-		read_u32(tag_instances + (scenario_handle & ABSOLUTE_INDEX_MASK) * TAG_INSTANCE_BYTES + TAG_INSTANCE_IN_RESOURCE_MAP_OFFSET) ||
-		!tag_cache_offset(
-			&state,
-			read_u32(tag_instances + (scenario_handle & ABSOLUTE_INDEX_MASK) * TAG_INSTANCE_BYTES + TAG_INSTANCE_ADDRESS_OFFSET),
-			SCENARIO_BYTES,
+	if (!scenario_instance ||
+		read_u32(scenario_instance + TAG_INSTANCE_HANDLE_OFFSET) != scenario_handle ||
+		read_u32(scenario_instance + TAG_INSTANCE_GROUP_OFFSET) != SCENARIO_GROUP_TAG ||
+		read_u32(scenario_instance + TAG_INSTANCE_IN_RESOURCE_MAP_OFFSET) ||
+		!tag_cache_offset(&state, read_u32(scenario_instance + TAG_INSTANCE_ADDRESS_OFFSET), SCENARIO_BYTES,
 			&scenario_offset))
 	{
 		return load_fail(&state, _cache_file_status_bad_scenario_tag, scenario_handle);
@@ -3578,58 +3584,59 @@ enum cache_file_status custom_edition_cache_convert(
 	{
 		uint8_t const *instance = instances + (uint32_t)tag_index * TAG_INSTANCE_BYTES;
 		uint32_t group_tag = read_u32(instance + TAG_INSTANCE_GROUP_OFFSET);
+		uint32_t address = read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET);
 		struct shader_group_type const *shader_type = shader_group_type_get(group_tag);
 		uint32_t offset;
 
 		if (group_tag == SHADER_MODEL_GROUP_TAG &&
 			flag_is_set(report->behaviours, _custom_edition_behaviour_invert_detail_after_reflection) &&
-			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), SHADER_MODEL_FLAGS_OFFSET + 2, &offset))
+			tag_cache_offset(&state, address, SHADER_MODEL_FLAGS_OFFSET + 2, &offset))
 		{
 			write_u16(tag_cache + offset + SHADER_MODEL_FLAGS_OFFSET,
 				(uint16_t)(read_u16(tag_cache + offset + SHADER_MODEL_FLAGS_OFFSET) ^ 1U << SHADER_MODEL_DETAIL_AFTER_REFLECTION_BIT));
 		}
 
 		if (group_tag == BITMAP_GROUP_TAG &&
-			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), BITMAP_GROUP_BYTES, &offset))
+			tag_cache_offset(&state, address, BITMAP_GROUP_BYTES, &offset))
 		{
 			bitmaps_prepare(&state, offset, read_u32(instance + TAG_INSTANCE_HANDLE_OFFSET), report);
 		}
 		if (group_tag == WEAPON_GROUP_TAG &&
-			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), WEAPON_BYTES, &offset))
+			tag_cache_offset(&state, address, WEAPON_BYTES, &offset))
 		{
 			weapon_functions_convert(tag_cache + offset, report);
 		}
 		if (group_tag == ANIMATION_GRAPH_GROUP_TAG &&
-			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), ANIMATION_GRAPH_BYTES, &offset))
+			tag_cache_offset(&state, address, ANIMATION_GRAPH_BYTES, &offset))
 		{
 			animation_graph_overlays_repair(&state, offset, report);
 			node_links_repair(&state, state.tag_cache + offset + ANIMATION_GRAPH_NODES_OFFSET, ANIMATION_GRAPH_NODE_BYTES,
 				report);
 		}
 		if (group_tag == GBXMODEL_GROUP_TAG &&
-			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), GBXMODEL_BYTES, &offset))
+			tag_cache_offset(&state, address, GBXMODEL_BYTES, &offset))
 		{
 			node_links_repair(&state, state.tag_cache + offset + GBXMODEL_NODES_OFFSET, GBXMODEL_NODE_BYTES, report);
 		}
 		if (group_tag == SOUND_GROUP_TAG &&
-			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), SOUND_DEFINITION_BYTES, &offset))
+			tag_cache_offset(&state, address, SOUND_DEFINITION_BYTES, &offset))
 		{
 			sound_prepare(&state, offset, read_u32(instance + TAG_INSTANCE_HANDLE_OFFSET), report);
 		}
 		if (hud_definition_bytes(group_tag) &&
-			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), hud_definition_bytes(group_tag), &offset))
+			tag_cache_offset(&state, address, hud_definition_bytes(group_tag), &offset))
 		{
 			hud_placements_convert(&state, group_tag, offset, report);
 			hud_meters_convert(&state, group_tag, offset, report);
 		}
 		if (group_tag == UNICODE_STRING_LIST_GROUP_TAG &&
 			!strcmp(custom_edition_cache_tag_name(tag_cache, loaded_bytes, tag_index), MULTIPLAYER_GAME_TEXT_NAME) &&
-			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), UNICODE_STRING_LIST_BYTES, &offset))
+			tag_cache_offset(&state, address, UNICODE_STRING_LIST_BYTES, &offset))
 		{
 			multiplayer_score_hint_convert(&state, offset, report);
 		}
 		if (group_tag == UI_WIDGET_DEFINITION_GROUP_TAG &&
-			tag_cache_offset(&state, read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET), UI_WIDGET_DEFINITION_BYTES, &offset))
+			tag_cache_offset(&state, address, UI_WIDGET_DEFINITION_BYTES, &offset))
 		{
 			widget_pc_functions_clear(&state, offset, report);
 			if (!strcmp(custom_edition_cache_tag_name(tag_cache, loaded_bytes, tag_index), MULTIPLAYER_PAUSE_LIST_NAME))
@@ -3641,7 +3648,7 @@ enum cache_file_status custom_edition_cache_convert(
 		}
 		if (!tag_cache_offset(
 				&state,
-				read_u32(instance + TAG_INSTANCE_ADDRESS_OFFSET),
+				address,
 				group_tag == TRANSPARENT_CHICAGO_EXTENDED_GROUP_TAG ? TRANSPARENT_CHICAGO_EXTENDED_BYTES : SHADER_BYTES,
 				&offset))
 		{

@@ -139,22 +139,31 @@ static void node_make_inert(
 	conversion->made_inert++;
 }
 
+/* whether the node refers to an engine global (not one of the scenario's) */
+static boolean engine_global_reference(
+	struct hs_syntax_node const *node)
+{
+	return TEST_FLAG(node->flags, _hs_syntax_node_primitive_bit) && TEST_FLAG(node->flags, _hs_syntax_node_global_bit) &&
+		TEST_FLAG(node->short_value, HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT);
+}
+
+/* this build's designator of the engine global of that name, or NONE */
+static short engine_global_designator(
+	char const *name)
+{
+	short designator = hs_find_global_by_name(name);
+
+	return designator != NONE && TEST_FLAG(designator, HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT) ? designator : NONE;
+}
+
 /* whether the node refers to an engine global this build does not have */
 static boolean engine_global_missing(
 	struct scripts_conversion const *conversion,
 	struct hs_syntax_node const *node)
 {
 	char const *name = script_string_get(conversion, node->string_offset);
-	short designator;
 
-	if (!name || !TEST_FLAG(node->flags, _hs_syntax_node_primitive_bit) ||
-		!TEST_FLAG(node->flags, _hs_syntax_node_global_bit) ||
-		!TEST_FLAG(node->short_value, HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT))
-	{
-		return FALSE;
-	}
-	designator = hs_find_global_by_name(name);
-	return designator == NONE || !TEST_FLAG(designator, HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT);
+	return name && engine_global_reference(node) && engine_global_designator(name) == NONE;
 }
 
 /* A call names its function with its first child, which has the function's
@@ -165,6 +174,7 @@ static boolean function_call_convert(
 {
 	long name_index = DATUM_INDEX_TO_ABSOLUTE_INDEX(call->data);
 	struct hs_syntax_node *name_node;
+	struct hs_syntax_node const *argument = NULL;
 	char const *name;
 	short function_index;
 
@@ -178,6 +188,11 @@ static boolean function_call_convert(
 	{
 		return FALSE;
 	}
+	if (name_node->next_node_index != NONE &&
+		DATUM_INDEX_TO_ABSOLUTE_INDEX(name_node->next_node_index) < conversion->node_count)
+	{
+		argument = &conversion->nodes[DATUM_INDEX_TO_ABSOLUTE_INDEX(name_node->next_node_index)];
+	}
 	function_index = hs_find_function_by_name(name);
 	if (function_index == NONE)
 	{
@@ -185,14 +200,9 @@ static boolean function_call_convert(
 	}
 	/* (a set of an engine global this build lacks writes nothing: its first
 	argument is the global, which the interpreter would write by its index) */
-	else if (!strcmp(name, "set") && name_node->next_node_index != NONE &&
-		DATUM_INDEX_TO_ABSOLUTE_INDEX(name_node->next_node_index) < conversion->node_count &&
-		engine_global_missing(conversion,
-			&conversion->nodes[DATUM_INDEX_TO_ABSOLUTE_INDEX(name_node->next_node_index)]))
+	else if (!strcmp(name, "set") && argument && engine_global_missing(conversion, argument))
 	{
-		node_make_inert(conversion, call, "engine global",
-			script_string_get(conversion,
-				conversion->nodes[DATUM_INDEX_TO_ABSOLUTE_INDEX(name_node->next_node_index)].string_offset));
+		node_make_inert(conversion, call, "engine global", script_string_get(conversion, argument->string_offset));
 	}
 	else if (call->function_index != function_index)
 	{
@@ -216,8 +226,8 @@ static boolean engine_global_convert(
 	{
 		return FALSE;
 	}
-	designator = hs_find_global_by_name(name);
-	if (designator == NONE || !TEST_FLAG(designator, HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT))
+	designator = engine_global_designator(name);
+	if (designator == NONE)
 	{
 		node_make_inert(conversion, reference, "engine global", name);
 	}
@@ -290,9 +300,7 @@ static boolean scenario_scripts_convert(
 		{
 			converted = function_call_convert(&conversion, node);
 		}
-		else if (globals && TEST_FLAG(node->flags, _hs_syntax_node_primitive_bit) &&
-			TEST_FLAG(node->flags, _hs_syntax_node_global_bit) &&
-			TEST_FLAG(node->short_value, HS_EXTERNAL_GLOBAL_DESIGNATOR_BIT))
+		else if (globals && engine_global_reference(node))
 		{
 			converted = engine_global_convert(&conversion, node);
 		}
