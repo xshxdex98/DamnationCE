@@ -492,9 +492,13 @@ void player_profile_save_level_completed(
 	level = main_get_current_solo_level();
 	difficulty = game_difficulty_level_get();
 	/* port: a level not in the campaign (a Custom Edition map's, played
-	alone or as network co-op) is not the profile's to record */
-	if (level == NONE)
+	alone or as network co-op, whose scripts may end it with game_won) is
+	not the profile's to record, nor a difficulty it has no flags for */
+	if (level < 0 || level >= NUMBER_OF_SINGLE_PLAYER_LEVELS ||
+		difficulty < 0 || difficulty >= NUMBER_OF_GAME_DIFFICULTY_LEVELS)
+	{
 		return;
+	}
 
 	match_assert("c:\\halo\\SOURCE\\saved games\\player_profile.c", 0x19D, (level>=0) && (level<NUMBER_OF_SINGLE_PLAYER_LEVELS) && (difficulty >= 0) && (difficulty < NUMBER_OF_GAME_DIFFICULTY_LEVELS));
 

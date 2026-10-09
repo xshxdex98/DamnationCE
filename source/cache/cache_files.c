@@ -701,7 +701,8 @@ boolean cache_file_header_verify(
 		header->footer_signature != CACHE_FILE_FOOTER_SIGNATURE ||
 		header->file_length < 0 ||
 		header->file_length > 0x11600000 ||
-		csstrlen(header->name) > 31)
+		/* port: its name ends within its field (csstrlen read on past it) */
+		!memchr(header->name, 0, sizeof(header->name)))
 	{
 		if (fatal)
 		{
@@ -796,6 +797,14 @@ char const *cache_files_multiplayer_region(
 	build[0x1F] = 0;
 
 	return cache_files_build_region(cache_file_globals.header.build);
+}
+
+/* port: the loaded map's name, from its header (cache_file_header_verify
+checked that it ends within its field) */
+char const *cache_file_loaded_map_name(
+	void)
+{
+	return cache_file_globals.header.name;
 }
 
 /* whether the named map plays multiplayer with the others: FALSE for a map

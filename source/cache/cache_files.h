@@ -126,6 +126,8 @@ char const *cache_files_build_region(
 	char const *build);
 char const *cache_files_multiplayer_region(
 	char build[0x20]);
+char const *cache_file_loaded_map_name(
+	void);
 boolean cache_files_map_plays_multiplayer(
 	char const *map_name,
 	char build[0x20]);

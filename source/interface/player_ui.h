@@ -108,5 +108,8 @@ boolean player_ui_prompt_user_to_rename_edit_profile(
 	void);
 void player0_look_invert_pitch(
 	boolean invert);
+/* port: a saved game file deleted (saved_game_files.c) */
+void player_ui_saved_game_file_removed(
+	long removed_index);
 
 #endif // __PLAYER_UI_H

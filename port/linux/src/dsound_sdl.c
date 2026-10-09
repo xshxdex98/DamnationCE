@@ -582,6 +582,26 @@ static BOOL take_frame(struct sdl_stream *stream, float *frame)
 	}
 }
 
+/* whether the voice has a frame to take; the packets with none left are
+marked finished on the way, as take_frame marks them */
+static BOOL voice_has_frames(struct sdl_stream *stream)
+{
+	unsigned long position;
+
+	for (position = 0; position < stream->packet_count; position++)
+	{
+		struct voice_packet *packet = &stream->packets[(stream->packet_head + position) % MAXIMUM_STREAM_PACKETS];
+
+		if (packet->finished)
+			continue;
+		if (stream->cursor < packet->frames)
+			return TRUE;
+		stream->cursor = 0;
+		packet->finished = TRUE;
+	}
+	return FALSE;
+}
+
 /* ---------- mixing */
 
 /* mixes one voice into output (frames of stereo float), and into the reverb's
@@ -604,6 +624,16 @@ static void mix_voice(struct sdl_stream *stream, float *output, float *send, uns
 	rate, and the frames it reaches on each side */
 	scale = step > 1.0 ? (float)(1.0 / (step < RESAMPLER_MAXIMUM_STRETCH ? step : RESAMPLER_MAXIMUM_STRETCH)) : 1.0f;
 	width = (long)ceilf(RESAMPLER_ZERO_CROSSINGS / scale);
+	/* a voice that ran dry and stopped (below) starts over once it has
+	frames again: stream_process starts over only a stream with no packets,
+	and the next can come before the finished ones are completed */
+	if (stream->silence > (unsigned long)(2 * width))
+	{
+		if (!voice_has_frames(stream))
+			return;
+		resampler_reset(stream);
+		stream->gains_valid = FALSE;
+	}
 	voice_gains(stream, &target_left, &target_right, &target_room, &target_direct_lowpass, &target_room_lowpass);
 	if (!stream->gains_valid)
 	{
@@ -656,6 +686,17 @@ static void mix_voice(struct sdl_stream *stream, float *output, float *send, uns
 		{
 			/* a voice turned all the way down (out of earshot), and not
 			sending to the reverb, only moves on */
+		}
+		else if (!reverb_enabled)
+		{
+			/* (audio.reverb off: linear interpolation, without the
+			windowed sinc's softening) */
+			const float *a = stream->history[stream->center % RESAMPLER_HISTORY];
+			const float *b = stream->history[(stream->center + 1) % RESAMPLER_HISTORY];
+			float fraction = (float)stream->phase;
+
+			sample_left = a[0] + (b[0] - a[0]) * fraction;
+			sample_right = a[1] + (b[1] - a[1]) * fraction;
 		}
 		else if (scale == 1.0f)
 		{
@@ -1312,6 +1353,10 @@ static void stream_complete_head(struct sdl_stream *stream, DWORD status, DWORD 
 	struct voice_packet *entry = &stream->packets[stream->packet_head];
 	XMEDIAPACKET packet = entry->packet;
 
+	/* (one not played to its end, flushed: the cursor was its place, and the
+	mixer may take the next while the lock is let go below) */
+	if (!entry->finished)
+		stream->cursor = 0;
 	packet_release(entry);
 	entry->finished = FALSE;
 	stream->packet_head = (stream->packet_head + 1) % MAXIMUM_STREAM_PACKETS;

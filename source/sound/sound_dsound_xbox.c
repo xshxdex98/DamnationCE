@@ -2207,7 +2207,7 @@ static void CALLBACK dsound_channel_callback(
 
 			channel->packet_count--;
 
-			if (!dsound_globals.paused)
+			if (!dsound_globals.paused && !channel->stopping)
 			{
 				if (channel->packet_count==0)
 				{
@@ -2879,16 +2879,18 @@ static void channel_stop(
 {
 	struct sound_channel *channel= channel_get(index);
 
-	if (channel->state!=_sound_channel_idle)
-	{
-		DirectSoundStopStream(channel->stream);
-
-		channel->stopping= TRUE;
-		channel->state= _sound_channel_idle;
-	}
-
+	/* port: its permutations let go of before the stream is stopped, which
+	completes its packets there and then (dsound_sdl.c): a packet already
+	mixed completes as a success, which would queue the next */
 	channel->playing_permutation= NULL;
 	channel->queued_permutation= NULL;
+
+	if (channel->state!=_sound_channel_idle || channel->packet_count!=0)
+	{
+		channel->stopping= TRUE;
+		DirectSoundStopStream(channel->stream);
+		channel->state= _sound_channel_idle;
+	}
 
 	return;
 }

@@ -329,7 +329,7 @@ static long looping_sound_new(
 	long definition_index,
 	long identifier,
 	struct sound_source const *source);
-static void sound_set_definition_end(
+static boolean sound_set_definition_end(
 	long sound_index);
 static long update_potentially_audible_looping_sound(
 	long definition_index,
@@ -1194,7 +1194,9 @@ static long looping_sound_new(
 	return looping_sound_index;
 }
 
-static void sound_set_definition_end(
+/* port: FALSE when instance limiting stopped the sound itself, whose
+channel is then no one's: nothing more is queued through it */
+static boolean sound_set_definition_end(
 	long sound_index)
 {
 	struct sound_datum *sound = sound_get(sound_index);
@@ -1235,18 +1237,21 @@ static void sound_set_definition_end(
 		}
 		else
 		{
-			return;
+			return TRUE;
 		}
 
 		if (channel_index != NONE)
 		{
-			sound_index = channel_get(channel_index)->sound_index;
+			long victim_sound_index = channel_get(channel_index)->sound_index;
+			sound_stop(victim_sound_index);
+			return victim_sound_index != sound_index;
 		}
 
 		sound_stop(sound_index);
+		return FALSE;
 	}
 
-	return;
+	return TRUE;
 }
 
 static long update_potentially_audible_looping_sound(
@@ -1300,6 +1305,8 @@ static long update_potentially_audible_looping_sound(
 				sound->track_proc = track_loop_track_sound;
 				sound->fade_stop_time = 0;
 				sound->fade_start_time = 0;
+				sound->fade_interpolation_start = 1.f;
+				sound->fade_interpolation_end = 1.f;
 				sound->next_definition_index = NONE;
 				sound->pitch_range_index =
 					sound_definition_find_pitch_range_by_pitch(
@@ -1483,7 +1490,9 @@ static real sound_calculate_fade(
 	long sound_index)
 {
 	struct sound_datum *sound = sound_get(sound_index);
-	real fade = 1.f;
+	/* port: a finished fade keeps its end (a sound faded out stays silent,
+	asked again this frame or after waiting on the cache) */
+	real fade = sound->fade_interpolation_end;
 
 	if (sound->fade_start_time != sound->fade_stop_time)
 	{
@@ -1591,6 +1600,33 @@ static void sound_start_fade(
 	}
 
 	return;
+}
+
+/* port: fades out a looping sound's track's sounds but one, by their loop
+and track rather than the sound playing (another on a restart or crossfade),
+those still waiting on the cache or a channel among them */
+static void sound_fade_looping_track_components(
+	long looping_sound_index,
+	short track_index,
+	long except_sound_index,
+	real seconds)
+{
+	long sound_index;
+
+	for (sound_index = data_next_index(sound_data, NONE);
+		sound_index != NONE;
+		sound_index = data_next_index(sound_data, sound_index))
+	{
+		struct sound_datum *sound = sound_get(sound_index);
+
+		if (sound_index != except_sound_index &&
+			(sound->type == _sound_start_track || sound->type == _sound_loop_track) &&
+			sound->source_identifier == looping_sound_index &&
+			sound->loop_track_index == track_index)
+		{
+			sound_start_fade(_sound_fade_mode_linear, seconds, NONE, sound_index);
+		}
+	}
 }
 
 static short channel_get_state(
@@ -2201,6 +2237,8 @@ long sound_new_impulse(
 											NONE);
 									sound->fade_stop_time = 0;
 									sound->fade_start_time = 0;
+									sound->fade_interpolation_start = 1.f;
+									sound->fade_interpolation_end = 1.f;
 									sound->loop_track_index = NONE;
 									_sound_cache_sound_request(
 										sound_permutation_get(
@@ -2347,6 +2385,13 @@ boolean sound_refresh_looping(
 
 					if (refresh_state == _looping_sound_refresh_start)
 					{
+						if (track->start_sound.index != NONE ||
+							TEST_FLAG(track->flags, _fade_in_at_start_bit))
+						{
+							sound_fade_looping_track_components(
+								looping_sound_index, track_index, NONE,
+								track->fade_out_duration);
+						}
 						if (track->start_sound.index != NONE)
 						{
 							*playing_sound_index =
@@ -2442,6 +2487,15 @@ boolean sound_refresh_looping(
 					}
 					else if (loop->state != _looping_sound_refresh_stop)
 					{
+						if (fade_time != 0.f ||
+							TEST_FLAG(track->flags, _fade_out_at_stop_bit) ||
+							(track->stop_sound.index == NONE &&
+								!TEST_FLAG(definition->flags, _looping_sound_fake_impulse_sound_bit)))
+						{
+							sound_fade_looping_track_components(
+								looping_sound_index, track_index, *playing_sound_index,
+								fade_time != 0.f ? fade_time : track->fade_out_duration);
+						}
 						if (fade_time != 0.f)
 						{
 							sound_start_fade(
@@ -2651,7 +2705,10 @@ static void update_channel_for_looping_sound(
 					(!channel->playing_permutation ||
 						channel->playing_permutation->next_permutation_index == NONE))
 				{
-					sound_set_definition_end(channel->sound_index);
+					if (!sound_set_definition_end(channel->sound_index))
+					{
+						return;
+					}
 					definition = sound_definition_get(sound->definition_index);
 					pitch_range = TAG_BLOCK_GET_ELEMENT(
 						&definition->pitch_ranges,
