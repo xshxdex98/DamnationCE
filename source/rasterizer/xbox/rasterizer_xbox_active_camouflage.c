@@ -42,51 +42,6 @@ enum
 	ACTIVE_CAMOUFLAGE_SCREEN_HEIGHT = 240
 };
 
-/* ---------- structures */
-
-#ifndef HALO_64BIT
-struct transparent_geometry_group
-{
-	unsigned long geometry_flags;
-	long object_index;
-	long source_object_index;
-	struct shader *shader;
-	short shader_permutation_index;
-	word pad12;
-	struct render_model_effect effect;
-	real_vector2d model_base_map_scale;
-	long dynamic_triangle_buffer_index;
-	struct triangle_buffer const *triangle_buffer;
-	long first_triangle_index;
-	long triangle_count;
-	long dynamic_vertex_buffer_index;
-	struct vertex_buffer const *vertex_buffer;
-	struct bitmap_data const *lightmap;
-	real_matrix4x3 const *node_matrices;
-	short node_matrix_count;
-	word pad66;
-	struct render_lighting const *lighting;
-	struct render_animation const *animation;
-	real z_sort;
-	real_point3d centroid;
-	real_plane3d plane;
-	long sorted_index;
-	short previous_group_presorted_index;
-	short next_group_presorted_index;
-	long active_camouflage_transparent_source_object_index;
-	boolean sort_last;
-	boolean cortana_hack;
-	byte pad9E[2];
-};
-
-#endif
-#ifndef HALO_64BIT
-typedef char verify_transparent_geometry_group_size[
-	sizeof(struct transparent_geometry_group) == 0xA0 ? 1 : -1];
-typedef char verify_transparent_geometry_group_animation_offset[
-	offsetof(struct transparent_geometry_group, animation) == 0x6C ? 1 : -1];
-
-#endif
 /* ---------- globals */
 
 static boolean local_active_camouflage_visibility_flag = FALSE;

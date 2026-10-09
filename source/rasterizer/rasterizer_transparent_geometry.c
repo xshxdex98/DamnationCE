@@ -20,51 +20,6 @@ RASTERIZER_TRANSPARENT_GEOMETRY.C
 #include "rasterizer/rasterizer_transparent_geometry.h"
 #endif
 
-/* ---------- structures */
-
-#ifndef HALO_64BIT
-struct transparent_geometry_group
-{
-	unsigned long geometry_flags;
-	long object_index;
-	long source_object_index;
-	struct shader *shader;
-	byte opaque10[0x44];
-	long dynamic_vertex_buffer_index;
-	struct vertex_buffer const *vertex_buffer;
-	byte opaque5c[0x14];
-	real z_sort;
-	byte opaque74[0x1C];
-	long sorted_index;
-	byte opaque94[9];
-	boolean cortana_hack;
-	byte opaque9e[2];
-};
-
-typedef char transparent_geometry_group_size_assert[
-	sizeof(struct transparent_geometry_group) == 0xA0 ? 1 : -1];
-#endif
-typedef char transparent_geometry_group_geometry_flags_offset_assert[
-	offsetof(struct transparent_geometry_group, geometry_flags) == 0x0 ? 1 : -1];
-typedef char transparent_geometry_group_object_index_offset_assert[
-	offsetof(struct transparent_geometry_group, object_index) == 0x4 ? 1 : -1];
-typedef char transparent_geometry_group_source_object_index_offset_assert[
-	offsetof(struct transparent_geometry_group, source_object_index) == 0x8 ? 1 : -1];
-#ifndef HALO_64BIT
-typedef char transparent_geometry_group_shader_offset_assert[
-	offsetof(struct transparent_geometry_group, shader) == 0xC ? 1 : -1];
-typedef char transparent_geometry_group_dynamic_vertex_buffer_index_offset_assert[
-	offsetof(struct transparent_geometry_group, dynamic_vertex_buffer_index) == 0x54 ? 1 : -1];
-typedef char transparent_geometry_group_vertex_buffer_offset_assert[
-	offsetof(struct transparent_geometry_group, vertex_buffer) == 0x58 ? 1 : -1];
-typedef char transparent_geometry_group_z_sort_offset_assert[
-	offsetof(struct transparent_geometry_group, z_sort) == 0x70 ? 1 : -1];
-typedef char transparent_geometry_group_sorted_index_offset_assert[
-	offsetof(struct transparent_geometry_group, sorted_index) == 0x90 ? 1 : -1];
-typedef char transparent_geometry_group_cortana_hack_offset_assert[
-	offsetof(struct transparent_geometry_group, cortana_hack) == 0x9D ? 1 : -1];
-
-#endif
 /* ---------- prototypes */
 static void rasterizer_sort_external(
 	void);

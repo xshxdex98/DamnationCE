@@ -113,43 +113,6 @@ enum
 
 struct bitmap_data;
 
-#ifndef HALO_64BIT
-struct transparent_geometry_group
-{
-	unsigned long geometry_flags;
-	long object_index;
-	long source_object_index;
-	struct shader const *shader;
-	short shader_permutation_index;
-	short pad12;
-	short effect_type;
-	byte reserved16[0x26];
-	real_vector2d model_base_map_scale;
-	long dynamic_triangle_buffer_index;
-	long triangle_buffer_index;
-	long first_triangle_index;
-	long triangle_count;
-	long dynamic_vertex_buffer_index;
-	struct vertex_buffer const *vertex_buffers;
-	struct bitmap_data const *lightmap;
-	void const *node_matrices;
-	short node_matrix_count;
-	word pad66;
-	void const *lighting;
-	void const *animation;
-	real z_sort;
-	real_point3d centroid;
-	real_plane3d plane;
-	long sorted_index;
-	short previous_group_presorted_index;
-	short next_group_presorted_index;
-	long active_camouflage_transparent_source_object_index;
-	byte reserved9C;
-	boolean cortana_hack;
-	byte reserved9E[2];
-};
-#endif
-
 struct rasterizer_environment_globals
 {
 	struct transparent_geometry_group local_group;
@@ -2822,18 +2785,18 @@ void _rasterizer_environment_transparent_geometry_submit(
 		group->shader = shader;
 		group->object_index = 0;
 		group->source_object_index = 0;
-		group->effect_type = 0;
+		group->effect.type = 0;
 		group->shader_permutation_index = shader_permutation_index;
 		group->dynamic_triangle_buffer_index = dynamic_triangle_buffer_index;
 #ifdef HALO_64BIT
 		group->triangle_buffer = NULL;
 #else
-		group->triangle_buffer_index = 0;
+		group->dynamic_triangle_buffer_index = 0;
 #endif
 		group->first_triangle_index = first_triangle_index;
 		group->triangle_count = triangle_count;
 		group->dynamic_vertex_buffer_index = NONE;
-		group->vertex_buffers = vertex_buffers;
+		group->vertex_buffer = vertex_buffers;
 		group->lightmap = lightmap;
 		null_plane.n.i = 0.0f;
 		null_plane.n.j = 0.0f;

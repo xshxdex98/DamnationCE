@@ -222,84 +222,6 @@ enum
 /* the transparent shader fields read here (as the shader preprocessors
  * declare them, with this file's extra fields) */
 
-#ifdef HALO_64BIT
-struct rasterizer_transparent_geometry_hud_globals_prefix
-#else
-struct transparent_geometry_group
-#endif
-{
-#ifdef HALO_64BIT
-	byte reserved00[0x54];
-	long single_player_font_index;
-#else
-	unsigned long geometry_flags;
-	long object_index;
-	long source_object_index;
-	struct shader *shader;
-	short shader_permutation_index;
-	short pad12;
-	short effect_type;
-	short pad16;
-	real effect_intensity;
-	byte reserved1C[0x20];
-	real_vector2d model_base_map_scale;
-	long dynamic_triangle_buffer_index;
-	/* a NULL shader marks a widget group: rasterizer_xbox_widgets.c stores
-	 * render_proc here and its two arguments in the next two fields */
-	union
-	{
-		struct triangle_buffer const *triangle_buffer;
-		void (*render_proc)(
-			long object_index,
-			long widget_index);
-	};
-	long first_triangle_index;
-	long triangle_count;
-	long dynamic_vertex_buffer_index;
-	struct vertex_buffer const *vertex_buffer;
-	struct bitmap_data const *lightmap;
-	void const *node_matrices;
-	short node_matrix_count;
-	word pad66;
-	struct render_lighting const *lighting;
-	struct render_animation const *animation;
-	real z_sort;
-	real_point3d centroid;
-	real_plane3d plane;
-	long sorted_index;
-	short previous_group_presorted_index;
-	short next_group_presorted_index;
-	long active_camouflage_transparent_source_object_index;
-	byte reserved9C;
-	boolean cortana_hack;
-	byte reserved9E[2];
-#endif
-};
-#ifndef HALO_64BIT
-
-typedef char transparent_geometry_group_size_assert[
-	sizeof(struct transparent_geometry_group) == 0xA0 ? 1 : -1];
-typedef char transparent_geometry_group_triangle_buffer_offset_assert[
-	offsetof(struct transparent_geometry_group, triangle_buffer) == 0x48 ? 1 : -1];
-typedef char transparent_geometry_group_vertex_buffer_offset_assert[
-	offsetof(struct transparent_geometry_group, vertex_buffer) == 0x58 ? 1 : -1];
-typedef char transparent_geometry_group_effect_type_offset_assert[
-	offsetof(struct transparent_geometry_group, effect_type) == 0x14 ? 1 : -1];
-typedef char transparent_geometry_group_effect_intensity_offset_assert[
-	offsetof(struct transparent_geometry_group, effect_intensity) == 0x18 ? 1 : -1];
-typedef char transparent_geometry_group_node_matrices_offset_assert[
-	offsetof(struct transparent_geometry_group, node_matrices) == 0x60 ? 1 : -1];
-typedef char transparent_geometry_group_lighting_offset_assert[
-	offsetof(struct transparent_geometry_group, lighting) == 0x68 ? 1 : -1];
-typedef char transparent_geometry_group_centroid_offset_assert[
-	offsetof(struct transparent_geometry_group, centroid) == 0x74 ? 1 : -1];
-typedef char transparent_geometry_group_sorted_index_offset_assert[
-	offsetof(struct transparent_geometry_group, sorted_index) == 0x90 ? 1 : -1];
-typedef char transparent_geometry_group_active_camouflage_offset_assert[
-	offsetof(struct transparent_geometry_group,
-		active_camouflage_transparent_source_object_index) == 0x98 ? 1 : -1];
-#endif
-
 struct rasterizer_xbox_transparent_geometry_globals
 {
 	long last_source_object_index;
@@ -922,7 +844,7 @@ void rasterizer_transparent_geometry_group_draw(
 		{
 			short pass;
 
-			if (group->effect_type == _render_model_effect_type_cortana)
+			if (group->effect.type == _render_model_effect_type_cortana)
 			{
 				long source_object_index = group->source_object_index;
 
@@ -955,7 +877,7 @@ void rasterizer_transparent_geometry_group_draw(
 					do
 					{
 						if (source_group->source_object_index != source_object_index ||
-							source_group->effect_type != _render_model_effect_type_cortana)
+							source_group->effect.type != _render_model_effect_type_cortana)
 							break;
 
 						if (!shader_ignores_effect(source_group->shader))
@@ -993,7 +915,7 @@ void rasterizer_transparent_geometry_group_draw(
 				if (rasterizer_debug_options.active_camouflage_multipass_enabled ?
 					(group->shader &&
 						group->shader->base.type == _shader_type_model &&
-						group->effect_type == _render_model_effect_type_active_camouflage &&
+						group->effect.type == _render_model_effect_type_active_camouflage &&
 						group->source_object_index !=
 							rasterizer_xbox_transparent_geometry_globals.last_source_object_index) :
 					(!group->shader ||
@@ -1006,7 +928,7 @@ void rasterizer_transparent_geometry_group_draw(
 
 			if (!TEST_FLAG(group->geometry_flags, _rasterizer_geometry_no_queue_bit) &&
 				global_window_parameters.rasterizer_target == 0 &&
-				group->effect_type == _render_model_effect_type_active_camouflage &&
+				group->effect.type == _render_model_effect_type_active_camouflage &&
 				group->shader &&
 				group->shader->base.type == _shader_type_model &&
 				!dirty)
@@ -1015,7 +937,7 @@ void rasterizer_transparent_geometry_group_draw(
 					rasterizer_transparent_geometry_next_group(group);
 
 				if (!next_group ||
-					next_group->effect_type != _render_model_effect_type_active_camouflage ||
+					next_group->effect.type != _render_model_effect_type_active_camouflage ||
 					next_group->source_object_index != group->source_object_index ||
 					!next_group->shader ||
 					next_group->shader->base.type != _shader_type_model)
@@ -1081,7 +1003,7 @@ void rasterizer_transparent_geometry_group_draw(
 				{
 					if (TEST_FLAG(group->geometry_flags, _rasterizer_geometry_first_person_bit))
 					{
-						if (group->effect_type == _render_model_effect_type_active_camouflage)
+						if (group->effect.type == _render_model_effect_type_active_camouflage)
 						{
 							if (pass > 0)
 								break;
@@ -1118,7 +1040,7 @@ void rasterizer_transparent_geometry_group_draw(
 					switch (group->shader->base.type)
 					{
 						case _shader_type_model:
-							switch (group->effect_type)
+							switch (group->effect.type)
 							{
 								case _render_model_effect_type_active_camouflage:
 									if (rasterizer_xbox_transparent_geometry_globals.test_no_more_active_camo)
@@ -1814,10 +1736,10 @@ void rasterizer_transparent_geometry_group_draw(
 									vsh_constants__texscale[2][2] = 1.0f;
 									vsh_constants__texscale[2][3] = 0.0f;
 
-									if (group->effect_type ==
+									if (group->effect.type ==
 										_render_model_effect_type_active_camouflage)
 										vsh_constants__texscale[2][2] *=
-											PIN(1.0f-group->effect_intensity, 0.0f, 1.0f);
+											PIN(1.0f-group->effect.intensity, 0.0f, 1.0f);
 
 									/* port: and a source the animation has (a map's) */
 									if (fade_source > 0 &&
@@ -2339,12 +2261,12 @@ void rasterizer_transparent_geometry_group_draw(
 									vsh_constants__texscale[2][2] = 1.0f;
 									vsh_constants__texscale[2][3] = 0.0f;
 
-									if (group->effect_type ==
+									if (group->effect.type ==
 											_render_model_effect_type_active_camouflage &&
 										!TEST_FLAG(shader_transparent_chicago->extra_flags,
 											_shader_transparent_chicago_extra_flag_dont_fade_active_camouflage_bit))
 										vsh_constants__texscale[2][2] *=
-											PIN(1.0f-group->effect_intensity, 0.0f, 1.0f);
+											PIN(1.0f-group->effect.intensity, 0.0f, 1.0f);
 
 									/* port: and a source the animation has (a map's) */
 									if (fade_source > 0 &&
@@ -2552,11 +2474,11 @@ void rasterizer_transparent_geometry_group_draw(
 									real_rgb_color_to_pixel32(&glass->tint_color);
 								pixel_shader.rgb_inputs[0] = 0x08010000;
 								pixel_shader.rgb_outputs[0] = 0xC0;
-								if (group->effect_type ==
+								if (group->effect.type ==
 									_render_model_effect_type_active_camouflage)
 								{
 									pixel_shader.constant_1[0] =
-										real_alpha_to_pixel32(group->effect_intensity);
+										real_alpha_to_pixel32(group->effect.intensity);
 									pixel_shader.alpha_inputs[0] = 0x14320000;
 									pixel_shader.alpha_outputs[0] = 0x40;
 								}
@@ -2740,11 +2662,11 @@ void rasterizer_transparent_geometry_group_draw(
 								pixel_shader.rgb_outputs[0] = 0x20CD;
 								pixel_shader.rgb_inputs[1] = 0x0C0C0D0D;
 								pixel_shader.rgb_outputs[1] = 0xCD;
-								if (group->effect_type ==
+								if (group->effect.type ==
 									_render_model_effect_type_active_camouflage)
 								{
 									pixel_shader.constant_1[1] =
-										real_alpha_to_pixel32(group->effect_intensity);
+										real_alpha_to_pixel32(group->effect.intensity);
 									pixel_shader.alpha_inputs[1] = 0x14320000;
 									pixel_shader.alpha_outputs[1] = 0x40;
 								}
@@ -3153,7 +3075,7 @@ void rasterizer_transparent_geometry_group_draw(
 					rasterizer_set_frustum_z(0.0f, 0.0f);
 
 				if (TEST_FLAG(group->geometry_flags, _rasterizer_geometry_first_person_bit) &&
-					group->effect_type == _render_model_effect_type_active_camouflage)
+					group->effect.type == _render_model_effect_type_active_camouflage)
 					rasterizer_set_frustum_z(0.0f, 0.0f);
 			}
 		}
@@ -3184,7 +3106,7 @@ void rasterizer_transparent_geometry_group_draw(
 			{
 				if (groups2[group_index].active_camouflage_transparent_source_object_index ==
 						group->source_object_index &&
-					groups2[group_index].effect_type ==
+					groups2[group_index].effect.type ==
 						_render_model_effect_type_active_camouflage)
 				{
 					rasterizer_transparent_geometry_group_draw(&groups2[group_index], TRUE);
