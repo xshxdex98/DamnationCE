@@ -69,6 +69,9 @@ struct render_sort_filth
 
 /* ---------- prototypes/MODELS.C */
 
+/* port: apply native transparent part links once per loaded model. */
+void models_fix_transparent_part_links(void);
+
 void model_interpolate_node_orientations(
 	struct model const *model,
 	struct real_orientation *original_node_orientations,
