@@ -65,13 +65,6 @@ struct config_setting
 	const char *comment;
 };
 
-/* macOS starts in a window, as its games do */
-#ifdef __APPLE__
-#define DEFAULT_FULLSCREEN "false"
-#else
-#define DEFAULT_FULLSCREEN "true"
-#endif
-
 static const struct config_setting config_settings[] =
 {
 	{ "display.fullscreen", _config_boolean, "true", "HALO_FULLSCREEN", _environment_value, _platform_desktop,
@@ -610,7 +603,7 @@ static void config_path(char *path, size_t size)
 }
 
 /* the whole file, NUL terminated, or NULL; free() it */
-static char *config_read_file(const char *path, size_t *size)
+char *config_file_read(const char *path, size_t *size)
 {
 #ifdef HALO_ANDROID
 	FILE *file = fopen(path, "rb");
@@ -657,11 +650,12 @@ static int config_write_file(const char *path, const char *text)
 {
 #ifdef HALO_ANDROID
 	FILE *file = fopen(path, "wb");
+	size_t length = strlen(text);
 	int written;
 
 	if (!file)
 		return 0;
-	written = fwrite(text, 1, strlen(text), file) == strlen(text);
+	written = fwrite(text, 1, length, file) == length;
 	return fclose(file) == 0 && written;
 #else
 	return SDL_SaveFile(path, text, strlen(text));
@@ -674,10 +668,9 @@ struct config_text
 	size_t length, capacity;
 };
 
-static void config_append(struct config_text *text, const char *string)
+/* the first length characters of string added to the text */
+static void config_append_length(struct config_text *text, const char *string, size_t length)
 {
-	size_t length = strlen(string);
-
 	if (text->length + length + 1 > text->capacity)
 	{
 		size_t capacity = (text->capacity ? text->capacity : 4096) * 2 + length;
@@ -688,8 +681,14 @@ static void config_append(struct config_text *text, const char *string)
 		text->buffer = buffer;
 		text->capacity = capacity;
 	}
-	memcpy(text->buffer + text->length, string, length + 1);
+	memcpy(text->buffer + text->length, string, length);
 	text->length += length;
+	text->buffer[text->length] = 0;
+}
+
+static void config_append(struct config_text *text, const char *string)
+{
+	config_append_length(text, string, strlen(string));
 }
 
 /* the first length characters of text, as a string of their own */
@@ -751,19 +750,16 @@ static char *config_default_text(void)
 	char section[32] = "";
 	size_t index;
 
-#ifdef HALO_ANDROID
 	config_append(&text,
 		"# Halo settings\n"
 		"#\n"
 		"# The game writes this file with the defaults when it is missing: delete\n"
 		"# it to go back to them.\n");
-#else
+#ifndef HALO_ANDROID
+	/* (Android apps have no environment to set) */
 	config_append(&text,
-		"# Halo settings\n"
-		"#\n"
-		"# The game writes this file with the defaults when it is missing: delete\n"
-		"# it to go back to them. Each setting can also be set for one run with\n"
-		"# the environment variable named with it, which wins over this file.\n");
+		"# Each setting can also be set for one run with the environment variable\n"
+		"# named with it, which wins over this file.\n");
 #endif
 	for (index = 0; index < NUMBER_OF_CONFIG_SETTINGS; index++)
 	{
@@ -843,13 +839,7 @@ static char *config_add_missing(const char *text, toml_datum_t table)
 		}
 		if (!block.buffer)
 			continue;
-		{
-			char *before = config_copy(current, (size_t)(insert - current));
-
-			if (before)
-				config_append(&updated, before);
-			free(before);
-		}
+		config_append_length(&updated, current, (size_t)(insert - current));
 		if (insert > current && insert[-1] != '\n')
 			config_append(&updated, "\n");
 		config_append(&updated, block.buffer);
@@ -1064,13 +1054,7 @@ static char *config_drop_repeated_keys(const char *text)
 			if (seen_count < (int)(sizeof(seen) / sizeof(seen[0])))
 				snprintf(seen[seen_count++], sizeof(seen[0]), "%s", name);
 		}
-		{
-			char *copy = config_copy(line, (size_t)(next - line));
-
-			if (copy)
-				config_append(&out, copy);
-			free(copy);
-		}
+		config_append_length(&out, line, (size_t)(next - line));
 		line = next;
 	}
 	if (!dropped)
@@ -1106,7 +1090,7 @@ static void config_load(void)
 	}
 
 	config_path(path, sizeof(path));
-	text = config_read_file(path, &size);
+	text = config_file_read(path, &size);
 	if (text)
 	{
 		toml_result_t result = toml_parse(text, (int)size);
@@ -1197,21 +1181,6 @@ static const struct config_value *config_value(const char *name, enum config_typ
 
 /* ---------- writing a setting */
 
-/* the line's key, if it is "key = ..." (after spaces), in key */
-static int config_line_key(const char *line, const char *end, const char *key)
-{
-	size_t length = strlen(key);
-
-	while (line < end && (*line == ' ' || *line == '\t'))
-		line++;
-	if ((size_t)(end - line) <= length || strncmp(line, key, length) != 0)
-		return 0;
-	line += length;
-	while (line < end && (*line == ' ' || *line == '\t'))
-		line++;
-	return line < end && *line == '=';
-}
-
 /* sets a setting, for now and in config.toml, from its value as text
 ("true", "60", "1.5", "all"): its line there is changed (or added), the rest
 of the file kept as it is */
@@ -1219,7 +1188,7 @@ int config_write(const char *name, const char *value)
 {
 	const char *dot = strchr(name, '.');
 	long index = config_setting_index(name);
-	char section[64], key[64], wanted[80], current[64] = "", line_text[600], path[1024];
+	char section[64], key[64], current[64] = "", found[96], line_text[600], path[1024];
 	struct config_text out = { 0 };
 	size_t size = 0;
 	char *text;
@@ -1264,9 +1233,8 @@ int config_write(const char *name, const char *value)
 		break;
 	}
 	}
-	snprintf(wanted, sizeof(wanted), "%s", section);
 	config_path(path, sizeof(path));
-	text = config_read_file(path, &size);
+	text = config_file_read(path, &size);
 	for (line = text ? text : ""; *line;)
 	{
 		const char *end = line + strcspn(line, "\n");
@@ -1280,24 +1248,17 @@ int config_write(const char *name, const char *value)
 				config_append(&out, line_text);
 				written = 1;
 			}
-			in_section = !strcmp(current, wanted);
+			in_section = !strcmp(current, section);
 		}
-		else if (in_section && !written && config_line_key(line, end, key))
+		else if (in_section && !written && config_line_key_name(line, end, section, found, sizeof(found)) &&
+			!strcmp(found, name))
 		{
 			config_append(&out, line_text);
 			written = 1;
 			line = next;
 			continue;
 		}
-		{
-			char *copy = config_copy(line, (size_t)(next - line));
-
-			if (copy)
-			{
-				config_append(&out, copy);
-				free(copy);
-			}
-		}
+		config_append_length(&out, line, (size_t)(next - line));
 		line = next;
 	}
 	if (!written)
@@ -1375,11 +1336,6 @@ void config_folder(char *path, size_t size)
 }
 
 /* ---------- public code */
-
-char *config_file_read(const char *path, size_t *size)
-{
-	return config_read_file(path, size);
-}
 
 unsigned long config_changes(void)
 {
