@@ -14,5 +14,4 @@ subprocess.run([
     str(root / "tools/tests/TouchLayoutTest.java")
 ], check=True)
 subprocess.run(["java", "-cp", str(classes), "com.halo.decomp.TouchLayoutTest"], check=True)
-
 subprocess.run(["java", "-cp", str(classes), "com.halo.decomp.GyroscopeAimTest"], check=True)
