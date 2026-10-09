@@ -10,6 +10,25 @@ INPUT_ABSTRACTION.H
 
 #include "cseries/cseries.h"
 
+/* ---------- constants */
+
+enum
+{
+	_game_control_jump,
+	_game_control_switch_grenades,
+	_game_control_action,
+	_game_control_switch_weapons,
+	_game_control_melee,
+	_game_control_flashlight,
+	_game_control_grenade,
+	_game_control_primary_trigger,
+	_game_control_start,
+	_game_control_back,
+	_game_control_crouch,
+	_game_control_zoom,
+	NUMBER_OF_GAME_CONTROLS,
+};
+
 /* ---------- structures */
 
 struct game_input_preferences
@@ -22,10 +41,20 @@ struct game_input_preferences
 	boolean invert_look_aircraft_control;
 };
 
-struct game_input_state;
-
 typedef char verify_game_input_preferences_size[
 	sizeof(struct game_input_preferences) == 0x18 ? 1 : -1];
+
+struct game_input_state
+{
+	byte buttons[NUMBER_OF_GAME_CONTROLS];
+	real forward_movement;
+	real strafe;
+	real yaw;
+	real pitch;
+};
+
+typedef char game_input_state_size_assert[
+	sizeof(struct game_input_state) == 0x1C ? 1 : -1];
 
 /* ---------- prototypes/INPUT_ABSTRACTION.C */
 

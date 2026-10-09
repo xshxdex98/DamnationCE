@@ -9,6 +9,7 @@ DIALOGUE_DEFINITIONS.H
 /* ---------- headers */
 
 #include "cseries/cseries.h"
+#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
@@ -25,7 +26,17 @@ enum
 
 /* ---------- structures */
 
-struct dialogue_definition;
+struct dialogue_definition
+{
+	short vocalization_enum_version;
+	word pad;
+	long unused[3];
+	struct tag_reference vocalizations[NUMBER_OF_DIALOGUE_VOCALIZATION_TYPES];
+	struct tag_reference unused_vocalizations[47];
+};
+
+typedef char dialogue_definition_size_assert[
+	sizeof(struct dialogue_definition) == 0x1010 ? 1 : -1];
 
 /* ---------- prototypes/DIALOGUE_DEFINITIONS.C */
 

@@ -12,6 +12,7 @@ DEVICE_MACHINES.C
 #include "memory/data.h"
 #include "units/bipeds.h"
 #include "units/unit_definitions.h"
+#include "devices/devices.h"
 
 /* ---------- constants */
 
@@ -30,15 +31,6 @@ enum
 {
 	_object_function2_active_bit = 2,
 	_object_runtime_unit_cannot_open_doors_automatically_bit = 14,
-};
-
-/* ---------- structures */
-
-struct device_group_datum
-{
-	short identifier;
-	word pad;
-	real actual_value;
 };
 
 /* ---------- public code */

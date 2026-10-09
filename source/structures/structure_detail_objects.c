@@ -49,31 +49,6 @@ struct detail_object_cell_coordinate
 	byte pad07;
 };
 
-struct detail_object_cell_data
-{
-	long first_detail_object_index;
-	long detail_object_count;
-	short cell_x;
-	short cell_y;
-	real cell_z;
-	long first_vertex_index;
-	real_vector4d *z_reference_vector;
-};
-
-struct detail_object_layer_data
-{
-	struct detail_object_cell_data *cells;
-	short cell_count;
-	short collection_definition_index;
-};
-
-struct detail_object_view_data
-{
-	struct detail_object_layer_data *layers;
-	short layer_count;
-	word pad06;
-};
-
 struct detail_object_runtime_data
 {
 	struct detail_object_cell_data cells[32][27];
@@ -91,12 +66,6 @@ struct detail_object_global_runtime_data
 typedef char detail_object_cell_coordinate_size[
 	sizeof(struct detail_object_cell_coordinate) == 0x8 ? 1 : -1];
 #ifndef HALO_64BIT
-typedef char detail_object_cell_data_size[
-	sizeof(struct detail_object_cell_data) == 0x18 ? 1 : -1];
-typedef char detail_object_layer_data_size[
-	sizeof(struct detail_object_layer_data) == 0x8 ? 1 : -1];
-typedef char detail_object_view_data_size[
-	sizeof(struct detail_object_view_data) == 0x8 ? 1 : -1];
 typedef char detail_object_runtime_data_size[
 	sizeof(struct detail_object_runtime_data) == 0x5210 ? 1 : -1];
 typedef char detail_object_global_runtime_data_size[

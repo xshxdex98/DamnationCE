@@ -236,6 +236,25 @@ struct animation_graph_node
 typedef char animation_graph_node_size_assert[
 	sizeof(struct animation_graph_node) == 0x40 ? 1 : -1];
 
+struct compressed_animation_header
+{
+	long rotation_keyframe_frame_indices_offset;
+	long default_rotations_offset;
+	long rotation_keyframes_offset;
+	long translation_node_headers_offset;
+	long translation_keyframe_frame_indices_offset;
+	long default_translations_offset;
+	long translation_keyframes_offset;
+	long scale_node_headers_offset;
+	long scale_keyframe_frame_indices_offset;
+	long default_scales_offset;
+	long scale_keyframes_offset;
+	unsigned long rotation_node_headers[1];
+};
+
+typedef char compressed_animation_header_node_headers_offset_assert[
+	offsetof(struct compressed_animation_header, rotation_node_headers) == 0x2C ? 1 : -1];
+
 /* ---------- prototypes/MODEL_ANIMATION_DEFINITIONS.C */
 
 byte *animation_get_frame_data(struct animation const *animation, short frame_index);

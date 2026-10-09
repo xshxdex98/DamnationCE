@@ -57,6 +57,16 @@ union real_point3d;
 union real_rgb_color;
 union real_vector3d;
 
+struct render_sort_filth
+{
+	short *previous_group_presorted_index_reference;
+	short *next_group_presorted_index_reference;
+	short group_index;
+	short next_part_index;
+	short part_index;
+	word pad;
+};
+
 /* ---------- prototypes/MODELS.C */
 
 void model_interpolate_node_orientations(

@@ -54,14 +54,6 @@ enum control_button
 	NUMBER_OF_ACTION_CONTROL_BUTTONS,
 };
 
-enum mouse_button
-{
-	_mouse_button_left = 0,
-	_mouse_button_middle,
-	_mouse_button_right,
-	NUMBER_OF_MOUSE_BUTTONS = 4,
-};
-
 real const MOUSE_YAW_SCALE = 0.0031415927f;
 real const MOUSE_PITCH_SCALE = 0.0031415927f;
 
@@ -125,31 +117,8 @@ struct input_blob
 	unsigned long player_control_flags;
 };
 
-struct game_input_state
-{
-	byte buttons[12];
-	real forward_movement;
-	real strafe;
-	real yaw;
-	real pitch;
-};
-
-struct mouse_state
-{
-	long x;
-	long y;
-	long wheel;
-	byte buttons[NUMBER_OF_MOUSE_BUTTONS];
-};
-
 typedef char input_blob_size_assert[
 	sizeof(struct input_blob) == sizeof(struct player_action) ? 1 : -1];
-typedef char game_input_state_size_assert[
-	sizeof(struct game_input_state) == 0x1C ? 1 : -1];
-typedef char mouse_state_size_assert[
-	sizeof(struct mouse_state) == 0x10 ? 1 : -1];
-typedef char mouse_state_buttons_offset_assert[
-	offsetof(struct mouse_state, buttons) == 0xC ? 1 : -1];
 
 struct player_control_globals_data
 {

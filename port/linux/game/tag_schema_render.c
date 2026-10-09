@@ -31,6 +31,7 @@ of its group: each shader group's check makes the type its group's.
 #include "objects/widgets/lightning.h"
 #include "structures/detail_object_definitions.h"
 #include "scenario/sky_definitions.h"
+#include "objects/light_definitions.h"
 
 /* ---------- constants */
 
@@ -701,54 +702,6 @@ typedef char verify_lens_flare_reflections_offset[offsetof(struct lens_flare_def
 typedef char verify_lens_flare_size[sizeof(struct lens_flare_definition) == 0xF0 ? 1 : -1];
 
 /* object_lights.c, rasterizer_xbox_environment.c */
-
-struct light_definition
-{
-	unsigned long flags;
-	real radius;
-	real radius_modifier_lower_bound;
-	real radius_modifier_upper_bound;
-	real falloff_angle;
-	real cutoff_angle;
-	real lens_flare_radius;
-	real runtime_cosine_falloff_angle;
-	real runtime_cosine_cutoff_angle;
-	real specular_radius_multiplier;
-	real runtime_sine_cutoff_angle;
-	byte reserved2C[0x8];
-	unsigned long color_interpolation_flags;
-	real_argb_color color_lower_bound;
-	real_argb_color color_upper_bound;
-	byte reserved58[0xC];
-	/* gel */
-	struct tag_reference gel_map;
-	word pad74;
-	short texture_animation_function;
-	real texture_animation_rate;
-	struct tag_reference gel_secondary_map;
-	word pad8C;
-	short yaw_function;
-	real yaw_period;
-	word pad94;
-	short roll_function;
-	real roll_period;
-	word pad9C;
-	short pitch_function;
-	real pitch_period;
-	byte reservedA4[0x8];
-	struct tag_reference lens_flare;
-	byte reservedBC[0x38];
-	real transition_duration;
-	word padF8;
-	short falloff_function;
-	byte reservedFC[0x64];
-};
-
-typedef char verify_light_gel_map_offset[offsetof(struct light_definition, gel_map) == 0x64 ? 1 : -1];
-typedef char verify_light_pitch_function_offset[offsetof(struct light_definition, pitch_function) == 0x9E ? 1 : -1];
-typedef char verify_light_lens_flare_offset[offsetof(struct light_definition, lens_flare) == 0xAC ? 1 : -1];
-typedef char verify_light_falloff_function_offset[offsetof(struct light_definition, falloff_function) == 0xFA ? 1 : -1];
-typedef char verify_light_size[sizeof(struct light_definition) == 0x160 ? 1 : -1];
 
 /* fog_definitions.h, structures.c, rasterizer_xbox_environment_fog.c */
 
@@ -2168,13 +2121,13 @@ is drawn with) */
 
 static struct tag_schema_field const light_fields[] =
 {
-	TAG_SCHEMA_REFERENCE(struct light_definition, gel_map, TAG_SCHEMA_GROUPS('bitm')),
-	TAG_SCHEMA_REFERENCE(struct light_definition, gel_secondary_map, TAG_SCHEMA_GROUPS('bitm')),
-	TAG_SCHEMA_ENUM(struct light_definition, yaw_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
-	TAG_SCHEMA_ENUM(struct light_definition, roll_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
-	TAG_SCHEMA_ENUM(struct light_definition, pitch_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
-	TAG_SCHEMA_REFERENCE(struct light_definition, lens_flare, TAG_SCHEMA_GROUPS('lens')),
-	TAG_SCHEMA_ENUM(struct light_definition, falloff_function, NUMBER_OF_TRANSITION_FUNCTIONS, 0),
+	TAG_SCHEMA_REFERENCE(struct point_light_definition, gel.map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_REFERENCE(struct point_light_definition, gel.secondary_map, TAG_SCHEMA_GROUPS('bitm')),
+	TAG_SCHEMA_ENUM(struct point_light_definition, gel.yaw_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
+	TAG_SCHEMA_ENUM(struct point_light_definition, gel.roll_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
+	TAG_SCHEMA_ENUM(struct point_light_definition, gel.pitch_function, NUMBER_OF_PERIODIC_FUNCTIONS, 0),
+	TAG_SCHEMA_REFERENCE(struct point_light_definition, lens_flare, TAG_SCHEMA_GROUPS('lens')),
+	TAG_SCHEMA_ENUM(struct point_light_definition, falloff_function, NUMBER_OF_TRANSITION_FUNCTIONS, 0),
 	TAG_SCHEMA_END
 };
 
@@ -2450,7 +2403,7 @@ static struct tag_schema_definition const detail_object_collection_schema =
 static struct tag_schema_definition const lens_flare_schema =
 	TAG_SCHEMA_DEFINITION(lens_flare, struct lens_flare_definition, lens_flare_fields);
 static struct tag_schema_definition const light_schema =
-	TAG_SCHEMA_DEFINITION(light, struct light_definition, light_fields);
+	TAG_SCHEMA_DEFINITION(light, struct point_light_definition, light_fields);
 static struct tag_schema_definition const fog_schema =
 	TAG_SCHEMA_DEFINITION(fog, struct fog_definition_full, fog_fields);
 static struct tag_schema_definition const antenna_schema =

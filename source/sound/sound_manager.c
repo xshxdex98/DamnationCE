@@ -221,47 +221,6 @@ struct looping_sound_datum
 	} tracks[4];
 };
 
-struct sound_platform_definition
-{
-	short platform_code;
-	byte reserved0[2];
-	boolean (*initialize)(
-		struct sound_preferences *preferences);
-	void (*dispose)(
-		void);
-	void (*set_listener_properties)(
-		struct platform_sound_listener_properties const *properties);
-	void (*begin_scene)(
-		void);
-	void (*end_scene)(
-		void);
-	void (*queue_sound_to_channel)(
-		short channel_index,
-		struct sound_permutation *permutation);
-	void (*channel_update)(
-		short channel_index);
-	void (*stop_channel)(
-		short channel_index);
-	short (*get_channel_state)(
-		short channel_index);
-	void (*set_pause)(
-		boolean paused);
-	void (*flush)(
-		void);
-	void (*set_channel_location)(
-		short channel_index,
-		boolean spatialized,
-		struct sound_location const *location,
-		real obstruction,
-		real occlusion,
-		boolean attenuate_direct_path);
-	void (*set_channel_properties)(
-		short channel_index,
-		struct platform_sound_channel_properties const *properties,
-		boolean gain_only);
-	real direct_path_gain;
-};
-
 struct sound_manager_globals
 {
 	boolean initialized;
@@ -305,12 +264,6 @@ typedef char verify_looping_sound_datum_size[
 #ifndef HALO_64BIT
 typedef char verify_sound_manager_globals_size[
 	sizeof(struct sound_manager_globals) == 0x178 ? 1 : -1];
-typedef char verify_sound_platform_definition_size[
-	sizeof(struct sound_platform_definition) == 0x3C ? 1 : -1];
-typedef char verify_sound_platform_dispose_offset[
-	offsetof(struct sound_platform_definition, dispose) == 0x8 ? 1 : -1];
-typedef char verify_sound_platform_pause_offset[
-	offsetof(struct sound_platform_definition, set_pause) == 0x28 ? 1 : -1];
 #endif
 typedef char verify_sound_manager_paused_offset[
 	offsetof(struct sound_manager_globals, paused) == 0x2 ? 1 : -1];

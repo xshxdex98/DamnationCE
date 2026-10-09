@@ -94,6 +94,16 @@ struct machine_datum
 	struct _machine_datum machine;
 };
 
+struct device_group_datum
+{
+	short identifier;
+	word flags;
+	real actual_value;
+};
+
+typedef char device_group_datum_size_assert[
+	sizeof(struct device_group_datum) == 0x8 ? 1 : -1];
+
 /* ---------- prototypes/DEVICES.C */
 
 void devices_initialize(

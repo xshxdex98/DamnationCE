@@ -48,7 +48,6 @@ enum sound_channel_state
 
 /* ---------- macros */
 
-
 /* deferred DirectSound parameters are only resubmitted when they change by more than epsilon */
 #define realcmp_epsilon(a, b, epsilon) (fabs((a)-(b))<(epsilon))
 
@@ -143,52 +142,6 @@ typedef char dsound_globals_paused_offset_assert[
 	offsetof(struct dsound_globals, paused) == 0x78C4 ? 1 : -1];
 typedef char dsound_globals_pause_gain_offset_assert[
 	offsetof(struct dsound_globals, pause_gain) == 0x78C8 ? 1 : -1];
-#endif
-
-struct sound_platform_definition
-{
-	short platform_code;
-	byte reserved002[2];
-	boolean (*initialize)(
-		struct sound_preferences *preferences);
-	void (*dispose)(
-		void);
-	void (*set_listener_properties)(
-		struct platform_sound_listener_properties const *properties);
-	void (*begin_scene)(
-		void);
-	void (*end_scene)(
-		void);
-	void (*queue_sound_to_channel)(
-		short channel_index,
-		struct sound_permutation *sound);
-	void (*channel_update)(
-		short channel_index);
-	void (*stop_channel)(
-		short channel_index);
-	short (*get_channel_state)(
-		short channel_index);
-	void (*set_pause)(
-		boolean paused);
-	void (*flush)(
-		void);
-	void (*set_channel_location)(
-		short channel_index,
-		boolean spatialized,
-		struct sound_location const *location,
-		real occlusion,
-		real obstruction,
-		boolean attenuate_direct_path);
-	void (*set_channel_properties)(
-		short channel_index,
-		struct platform_sound_channel_properties const *properties,
-		boolean gain_only);
-	real direct_path_gain;
-};
-#ifndef HALO_64BIT
-
-typedef char sound_platform_definition_direct_path_gain_offset_assert[
-	offsetof(struct sound_platform_definition, direct_path_gain) == 0x38 ? 1 : -1];
 #endif
 
 /* ---------- prototypes */

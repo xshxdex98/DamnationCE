@@ -65,21 +65,6 @@ struct shader_model_properties
 	struct tag_reference reflection_cube_map;
 };
 
-struct point_light_geometry_parameters
-{
-	real radius;
-	real radius_modifier_lower_bound;
-	real radius_modifier_upper_bound;
-	real falloff_angle;
-	real cutoff_angle;
-	real lens_flare_radius;
-	real runtime_cosine_falloff_angle;
-	real runtime_cosine_cutoff_angle;
-	real specular_radius_multiplier;
-	real runtime_sine_cutoff_angle;
-	long unused[2];
-};
-
 struct bitmap_data;
 struct rasterizer_model_begin_parameters;
 struct shader;

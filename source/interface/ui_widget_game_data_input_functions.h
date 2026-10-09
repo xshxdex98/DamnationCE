@@ -17,6 +17,15 @@ struct widget_instance;
 typedef void (*ui_widget_game_data_function)(
 	struct widget_instance *widget);
 
+struct single_player_level_entry
+{
+	char const *map_name;
+	boolean available;
+	boolean completion_marker;
+	boolean difficulty_marker;
+	boolean cooperative_marker;
+};
+
 /* ---------- prototypes/UI_WIDGET_GAME_DATA_INPUT_FUNCTIONS.C */
 
 void ui_widget_game_data_function_invoke(

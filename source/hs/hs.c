@@ -593,11 +593,6 @@ struct hs_arguments_long_long_long
 	long value2;
 };
 
-struct hud_message_definition
-{
-	byte reserved[0x40];
-};
-
 struct hud_waypoint_arrow_definition
 {
 	byte reserved[0x68];

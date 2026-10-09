@@ -105,32 +105,6 @@ struct decal_wrap_parameters
 	byte pad00D[3];
 };
 
-struct decal_datum
-{
-	short identifier;
-	word flags;
-	short cluster_index;
-	short layer;
-	real_point3d position;
-	long creation_time;
-	byte sequence_index;
-	byte unused_was_frames_remaining;
-	byte sprite_index;
-	byte bitmap_index;
-	real lifetime;
-	real decay_time;
-	pixel32 color;
-	byte intensity;
-	byte unused;
-	short quad_count;
-	long definition_index;
-	long previous_decal_index;
-	long next_decal_index;
-};
-
-typedef char decal_size_check[
-	sizeof(struct decal_datum) == 0x38 ? 1 : -1];
-
 struct decal_globals
 {
 	long first_decal_indices[NUMBER_OF_DECAL_LAYERS][MAXIMUM_CLUSTERS_PER_STRUCTURE];

@@ -30,6 +30,7 @@ RASTERIZER_XBOX_ENVIRONMENT_FOG.C
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "rasterizer_xbox_draw_primitives.h"
 #include "rasterizer_xbox_water.h"
+#include "scenario/fog_definitions.h"
 #ifdef HALO_64BIT
 #include "rasterizer/xbox/rasterizer_xbox_draw_primitives.h"
 #include "rasterizer/rasterizer_model_types.h"
@@ -110,31 +111,6 @@ enum
 };
 
 /* ---------- macros */
-
-struct fog_screen
-{
-	word flags;
-	short layer_count;
-	real near_distance;
-	real far_distance;
-	real near_density;
-	real far_density;
-	real start_distance_from_fog_plane;
-	byte reserved18[4];
-	pixel32 color;
-	real rotation_multiplier;
-	real strafing_multiplier;
-	real zoom_multiplier;
-	byte reserved2C[8];
-	real map_scale;
-	struct tag_reference map;
-	real animation_period;
-	real animation_unused;
-	struct real_bounds wind_velocity;
-	struct real_bounds wind_period;
-	real wind_acceleration_weight;
-	real wind_perpendicular_weight;
-};
 
 struct rasterizer_environment_fog_screen_wind
 {

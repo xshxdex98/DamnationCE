@@ -36,6 +36,7 @@ RASTERIZER_XBOX.C
 #include "rasterizer_xbox_vertex_shaders.h"
 #include "shaders/shader_definitions.h"
 #include "rasterizer/xbox/rasterizer_xbox_internal.h"
+#include "objects/light_definitions.h"
 
 enum
 {
@@ -220,12 +221,6 @@ struct rasterizer_model_lighting_constants
 		distant_lights[MAXIMUM_RENDERED_DISTANT_LIGHTS];
 	real_rgb_color ambient_color;
 	real pad;
-};
-
-struct point_light_definition
-{
-	unsigned long flags;
-	struct point_light_geometry_parameters geometry;
 };
 
 /* the shell's window globals; only hWndPresentTarget is read here */
