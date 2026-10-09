@@ -61,7 +61,7 @@ enum
 	CONTROL_HELD_TICKS = 2 * TICKS_PER_SECOND,
 	/* an impulse is repeated in this many entries, in case one is lost */
 	IMPULSE_REPEAT_TICKS = 3,
-	/* the number of unit_start_animation_impulse impulses (private to units.c) */
+	/* an entry with no impulse, and a unit of no team */
 	NO_IMPULSE = 0xFF,
 	NO_TEAM = 0xFF,
 
@@ -70,7 +70,7 @@ enum
 	or a leap (unit_leap_begin). */
 	_actor_action_melee = NUMBER_OF_UNIT_ANIMATION_IMPULSES,
 	_actor_action_leap,
-	NUMBER_OF_ACTOR_ACTIONS,
+	NUMBER_OF_NETWORK_ACTOR_ACTIONS,
 
 	/* control flags a unit acts on in one tick: a unit that sets one goes to
 	every client that tick, however far away, so the action isn't missed */
@@ -438,7 +438,7 @@ static boolean actor_state_apply(
 		state->animation_state >= NUMBER_OF_UNIT_ANIMATION_STATES ||
 		state->aiming_speed >= NUMBER_OF_UNIT_AIMING_SPEEDS ||
 		!VALID_FLAGS(state->control_flags, NUMBER_OF_UNIT_CONTROL_FLAGS) ||
-		(state->impulse != NO_IMPULSE && state->impulse >= NUMBER_OF_ACTOR_ACTIONS) ||
+		(state->impulse != NO_IMPULSE && state->impulse >= NUMBER_OF_NETWORK_ACTOR_ACTIONS) ||
 		(state->speech_sound != NONE && !distributed_tag_of_group(state->speech_sound, SOUND_DEFINITION_TAG)) ||
 		(state->user_animation_graph != NONE &&
 			!distributed_graph_animation(state->user_animation_graph, state->user_animation)) ||
