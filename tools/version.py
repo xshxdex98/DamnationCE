@@ -6,8 +6,9 @@ same):
   - A release is built by GitHub Actions from its tag, v<VERSION>
     (tools/ci_build.py gives HALO_VERSION, and HALO_RELEASE_BUILD=1, the
     only builds whose self-updater looks for newer releases).
-  - Other builds of the workflow are nightlies, <VERSION>-nightly.<run>; a
-    build anywhere else is <VERSION>-dev.
+  - nightly.yml's builds are <VERSION>-nightly.<date> (HALO_VERSION, not a
+    release's); a push to main's are <VERSION>+<commit>; any other build
+    is <VERSION>-dev.
 """
 
 import os
