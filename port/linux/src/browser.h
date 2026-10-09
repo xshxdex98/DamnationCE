@@ -108,6 +108,10 @@ void browser_host_update(const unsigned short *name, const char *map, short engi
 is more than a few seconds old: those of this machine's network version,
 without this machine's own. Returns their count. */
 int browser_get_games(struct browser_game *games, int maximum_count);
+/* how many listed games are of a newer network version than this build
+plays (left out of the list: an older build sees none of them); asks for
+the list as browser_get_games does */
+int browser_newer_games(void);
 
 /* whether a listed game's host is an internet play peer of this machine
 (joining it, or joined): its address in the game's network then */
