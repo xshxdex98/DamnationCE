@@ -1035,6 +1035,37 @@ static void distributed_change_from_object(
 	}
 }
 
+/* the changes the message holds, once there are limit of them (1: any),
+sent reliably to the machine (NONE: every client); the count left in it */
+static short distributed_object_changes_flush(
+	struct distributed_object_change_message *message,
+	short count,
+	short limit,
+	long machine_index)
+{
+	word size;
+
+	if (!count || count < limit)
+		return count;
+	size = (word)(sizeof(message->header) + count * sizeof(struct distributed_object_change));
+	if (machine_index == NONE)
+		distributed_send(message, _distributed_message_object_changes, count, size, _distributed_to_clients_reliably);
+	else
+		distributed_send_to_machine_reliably(machine_index, message, _distributed_message_object_changes, count, size);
+	return 0;
+}
+
+/* a change telling the clients the object is gone */
+static void distributed_change_delete(
+	struct distributed_object_change *change,
+	long object_index)
+{
+	csmemset(change, 0, sizeof(*change));
+	change->change = _object_change_delete;
+	change->object_index = object_index;
+	objects_statistics.deletes++;
+}
+
 /* the objects made and deleted since the last time, to every client */
 static void distributed_host_update_objects(
 	void)
@@ -1060,54 +1091,25 @@ static void distributed_host_update_objects(
 		/* (another object in the same place: that one is gone) */
 		if (objects_host_told[absolute_index] != NONE)
 		{
-			csmemset(&message.changes[count], 0, sizeof(message.changes[count]));
-			message.changes[count].change = _object_change_delete;
-			message.changes[count].object_index = objects_host_told[absolute_index];
-			objects_statistics.deletes++;
-			if (++count == limit)
-			{
-				distributed_send(&message, _distributed_message_object_changes, count,
-					(word)(sizeof(message.header) + count * sizeof(struct distributed_object_change)),
-					_distributed_to_clients_reliably);
-				count = 0;
-			}
+			distributed_change_delete(&message.changes[count], objects_host_told[absolute_index]);
+			count = distributed_object_changes_flush(&message, count + 1, limit, NONE);
 		}
 		objects_host_told[absolute_index] = iterator.index;
 		if (absolute_index >= objects_host_told_count)
 			objects_host_told_count = absolute_index + 1;
 		objects_statistics.creates++;
 		distributed_change_from_object(iterator.index, &message.changes[count]);
-		if (++count == limit)
-		{
-			distributed_send(&message, _distributed_message_object_changes, count,
-				(word)(sizeof(message.header) + count * sizeof(struct distributed_object_change)),
-				_distributed_to_clients_reliably);
-			count = 0;
-		}
+		count = distributed_object_changes_flush(&message, count + 1, limit, NONE);
 	}
 	for (absolute_index = 0; absolute_index < objects_host_told_count; absolute_index++)
 	{
 		if (objects_host_told[absolute_index] == NONE || seen[absolute_index])
 			continue;
-		csmemset(&message.changes[count], 0, sizeof(message.changes[count]));
-		message.changes[count].change = _object_change_delete;
-		message.changes[count].object_index = objects_host_told[absolute_index];
+		distributed_change_delete(&message.changes[count], objects_host_told[absolute_index]);
 		objects_host_told[absolute_index] = NONE;
-		objects_statistics.deletes++;
-		if (++count == limit)
-		{
-			distributed_send(&message, _distributed_message_object_changes, count,
-				(word)(sizeof(message.header) + count * sizeof(struct distributed_object_change)),
-				_distributed_to_clients_reliably);
-			count = 0;
-		}
+		count = distributed_object_changes_flush(&message, count + 1, limit, NONE);
 	}
-	if (count)
-	{
-		distributed_send(&message, _distributed_message_object_changes, count,
-			(word)(sizeof(message.header) + count * sizeof(struct distributed_object_change)),
-			_distributed_to_clients_reliably);
-	}
+	distributed_object_changes_flush(&message, count, 1, NONE);
 }
 
 /* The order a newly loaded client receives the host's objects in, most
@@ -1184,19 +1186,10 @@ void network_objects_client_asked(
 			if (object_index == NONE || distributed_object_send_rank(object_index) != rank)
 				continue;
 			distributed_change_from_object(object_index, &message.changes[count]);
-			if (++count == limit)
-			{
-				distributed_send_to_machine_reliably(machine_index, &message, _distributed_message_object_changes, count,
-					(word)(sizeof(message.header) + count * sizeof(struct distributed_object_change)));
-				count = 0;
-			}
+			count = distributed_object_changes_flush(&message, count + 1, limit, machine_index);
 		}
 	}
-	if (count)
-	{
-		distributed_send_to_machine_reliably(machine_index, &message, _distributed_message_object_changes, count,
-			(word)(sizeof(message.header) + count * sizeof(struct distributed_object_change)));
-	}
+	distributed_object_changes_flush(&message, count, 1, machine_index);
 	distributed_send_to_machine_reliably(machine_index, &message, _distributed_message_objects_synchronized, 0,
 		(word)sizeof(message.header));
 }
