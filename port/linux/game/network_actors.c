@@ -62,7 +62,6 @@ enum
 	/* an impulse is repeated in this many entries, in case one is lost */
 	IMPULSE_REPEAT_TICKS = 3,
 	/* the number of unit_start_animation_impulse impulses (private to units.c) */
-	NUMBER_OF_UNIT_ANIMATION_IMPULSES = 14,
 	NO_IMPULSE = 0xFF,
 	NO_TEAM = 0xFF,
 

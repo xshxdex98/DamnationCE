@@ -109,18 +109,6 @@ enum
 
 enum
 {
-	_ui_widget_type_container,
-	_ui_widget_type_text_box,
-	_ui_widget_type_spinner_list,
-	_ui_widget_type_column_list,
-	_ui_widget_type_game_model,
-	_ui_widget_type_movie,
-	_ui_widget_type_custom,
-	NUMBER_OF_UI_WIDGET_TYPES
-};
-
-enum
-{
 	/* only the icon types below _icon_action name a button bitmap of their own;
 	the rest are resolved through the local player's control preferences */
 	NUM_ICONS = _icon_action

@@ -12,16 +12,24 @@ SOUND_MANAGER.H
 
 /* ---------- constants */
 
-/* sound channel states */
 enum
 {
-	NUMBER_OF_SOUND_CHANNEL_STATES = 3
+	MAXIMUM_SOUND_CHANNELS = 256
 };
 
-/* sound channel flags */
+/* a sound channel's state */
 enum
 {
-	_sound_channel_3d_bit,
+	_sound_channel_idle = 0,
+	_sound_channel_playing,
+	_sound_channel_queued,
+	NUMBER_OF_SOUND_CHANNEL_STATES
+};
+
+/* its flags */
+enum
+{
+	_sound_channel_3d_bit = 0,
 	_sound_channel_stereo_bit,
 	_sound_channel_44k_bit,
 	_sound_channel_compressed_bit

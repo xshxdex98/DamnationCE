@@ -19,7 +19,6 @@ enum
 enum
 {
 	NUMBER_OF_SHADER_FUNCTIONS = 13,
-	NUMBER_OF_PIXEL_SHADER_STAGES = 8,
 	/* port: the maps a chicago shader has room for: the four texture stages
 	(texture_modes) the draw sets up (the tag's own maximum; retail has 4 at
 	most) */

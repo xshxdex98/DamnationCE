@@ -107,8 +107,6 @@ enum
 	_ai_communication_team_human = 0,
 	_ai_communication_team_covenant = 1,
 	NUMBER_OF_AI_COMMUNICATION_TEAMS = 2,
-	_unit_play_speech_none = 0,
-	_unit_play_speech_queue = 1,
 };
 
 #define COMMUNICATION_CLOSE_DISTANCE 5.0f

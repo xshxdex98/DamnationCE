@@ -15,8 +15,8 @@ PHYSICS_DEFINITIONS.H
 
 enum
 {
-	POINT_PHYSICS_DEFINITION_TAG = 'phys',
-	POINT_PHYSICS_DEFINITION_VERSION = 1,
+	PHYSICS_DEFINITION_TAG = 'phys',
+	PHYSICS_DEFINITION_VERSION = 1,
 };
 
 enum
@@ -31,7 +31,7 @@ enum
 
 /* ---------- macros */
 
-#define physics_definition_get(index) ((struct physics_definition *)tag_get(POINT_PHYSICS_DEFINITION_TAG, index))
+#define physics_definition_get(index) ((struct physics_definition *)tag_get(PHYSICS_DEFINITION_TAG, index))
 
 /* ---------- structures */
 

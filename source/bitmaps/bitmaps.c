@@ -22,13 +22,6 @@ enum
 	MAXIMUM_BITMAP_DEPTH = 256,
 };
 
-enum
-{
-
-	FIRST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt1,
-	LAST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt5,
-};
-
 /* ---------- prototypes */
 
 long bitmap_mipmap_get_pixel_count(

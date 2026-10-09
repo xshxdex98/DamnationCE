@@ -21,16 +21,6 @@ RASTERIZER_XBOX_DECALS.C
 
 enum
 {
-	_rasterizer_drawing_mode_normal = 0
-};
-
-enum
-{
-	_rasterizer_statistics_mode_geometry = 2
-};
-
-enum
-{
 	PIXEL32_COMPONENT_MASK = 0xff
 };
 

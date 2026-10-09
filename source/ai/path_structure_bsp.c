@@ -15,11 +15,6 @@ PATH_STRUCTURE_BSP.C
 #include "structures/structure_bsp_definitions.h"
 #include "ai/path.h"
 
-enum
-{
-	_path_test_pill_endpoint_near_wall_ok_bit = 0,
-};
-
 /* ---------- prototypes */
 
 static byte path_pathfinding_surface(

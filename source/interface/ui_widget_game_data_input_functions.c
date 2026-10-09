@@ -29,16 +29,6 @@ UI_WIDGET_GAME_DATA_INPUT_FUNCTIONS.C
 #include "custom_edition_maps.h" /* port: port/linux/game/custom_edition_maps.c */
 #include "halo_menus.h" /* port: PC_MENU_FUNCTION_BASE */
 
-/* ---------- constants */
-
-enum
-{
-	_ui_widget_type_bitmap = 0,
-	_ui_widget_type_text_box,
-	_ui_widget_type_spinner_list,
-	_ui_widget_type_column_list,
-};
-
 enum
 {
 	/* the native builds' session limit (port/linux/include/halo_port_limits.h) */
@@ -359,7 +349,7 @@ static void settings_menu_update_extended_description(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x138,
-			description_picture->type == _ui_widget_type_bitmap,
+			description_picture->type == _ui_widget_type_container,
 			"expected a container widget for the settings select list extended description pic");
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
@@ -517,7 +507,7 @@ static void difficulty_select_menu_update_extended_description(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x243,
-			description_picture->type == _ui_widget_type_bitmap,
+			description_picture->type == _ui_widget_type_container,
 			"expected a container widget for the difficulty list extended description pic");
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
@@ -1094,7 +1084,7 @@ static void network_pregame_status_screen_update(
 			match_vassert(
 				"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 				0x48B,
-				controller_bitmap && controller_bitmap->type == _ui_widget_type_bitmap,
+				controller_bitmap && controller_bitmap->type == _ui_widget_type_container,
 				"expected container widget for local player controller bitmap");
 			name_text = controller_bitmap->next;
 			match_vassert(
@@ -1691,7 +1681,7 @@ static void main_menu_animation_fakery(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x9AE,
 		widget->parameters.list.extended_description &&
-			widget->parameters.list.extended_description->type == _ui_widget_type_bitmap,
+			widget->parameters.list.extended_description->type == _ui_widget_type_container,
 		"expected a picture (container) for main menu options list extended description");
 
 	widget->parameters.list.extended_description->animation.current_frame_index =
@@ -1956,7 +1946,7 @@ static void game_options_menu_update_pic_desc(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0x983,
 		widget->parameters.list.extended_description &&
-			widget->parameters.list.extended_description->type == _ui_widget_type_bitmap,
+			widget->parameters.list.extended_description->type == _ui_widget_type_container,
 		"expected a picture (container) for game options list extended description");
 
 	definition = ui_widget_definition_get(widget->definition_tag_index);
@@ -2283,7 +2273,7 @@ static void multiplayer_game_set_bitmap_for_map(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0xB09,
-		widget->type == _ui_widget_type_bitmap,
+		widget->type == _ui_widget_type_container,
 		"expected container widget for mp game settings bitmap");
 
 	game = network_game_get_game();
@@ -2373,7 +2363,7 @@ static void multiplayer_game_set_bitmap_for_ruleset(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0xB28,
-		widget->type == _ui_widget_type_bitmap,
+		widget->type == _ui_widget_type_container,
 		"expected container widget for mp game settings bitmap");
 
 	game = network_game_get_game();
@@ -2594,7 +2584,7 @@ static void teams_no_teams_mp_game_bitmap_update(
 	match_vassert(
 		"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 		0xBFC,
-		widget->type == _ui_widget_type_bitmap,
+		widget->type == _ui_widget_type_container,
 		"expected a container bitmap for mp pregame header widget");
 
 	if (game)
@@ -2898,7 +2888,7 @@ static void mutliplayer_settings_select_list_update_displayed_items(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x6A2,
 			ui_widget_definition_get(icon->definition_tag_index)->type ==
-				_ui_widget_type_bitmap,
+				_ui_widget_type_container,
 			"expected a container widget for the list item's second child (map pic)");
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
@@ -3192,7 +3182,7 @@ static void player_profile_3wide_list_update(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x7AF,
-			item && item->type == _ui_widget_type_bitmap,
+			item && item->type == _ui_widget_type_container,
 			"expected profile item description container widget");
 
 		profile_name = item->child;
@@ -3205,13 +3195,13 @@ static void player_profile_3wide_list_update(
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x7B5,
-			color_picture && color_picture->type == _ui_widget_type_bitmap,
+			color_picture && color_picture->type == _ui_widget_type_container,
 			"expected a container widget for the profile color picture");
 		description_fields = color_picture->next;
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x7B8,
-			description_fields && description_fields->type == _ui_widget_type_bitmap,
+			description_fields && description_fields->type == _ui_widget_type_container,
 			"expected a container widget for the profile description fields");
 
 		empty_profile_label = description_fields->child;
@@ -3653,7 +3643,7 @@ static void solo_level_select_list_update_displayed_items(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x1FA,
 			ui_widget_definition_get(map_bitmap->definition_tag_index)->type ==
-				_ui_widget_type_bitmap,
+				_ui_widget_type_container,
 			"expected a container widget for the list item's second child (map pic)");
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
@@ -3769,7 +3759,7 @@ static void player_profile_color_picker_update(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x95F,
 			ui_widget_definition_get(bitmap->definition_tag_index)->type ==
-				_ui_widget_type_bitmap,
+				_ui_widget_type_container,
 			"expected a container widget for the list item's second child (color pic)");
 
 		color_index = ((byte *)list_widget->parameters.list.list_items)
@@ -3831,7 +3821,7 @@ static void mp_level_select_list_update_displayed_items(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",
 			0x9D6,
 			ui_widget_definition_get(map_bitmap->definition_tag_index)->type ==
-				_ui_widget_type_bitmap,
+				_ui_widget_type_container,
 			"expected a container widget for the list item's second child (map pic)");
 		match_vassert(
 			"c:\\halo\\SOURCE\\interface\\ui_widget_game_data_input_functions.c",

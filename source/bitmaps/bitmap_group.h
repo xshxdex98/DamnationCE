@@ -71,6 +71,13 @@ enum
 	NUMBER_OF_BITMAP_FORMATS
 };
 
+/* the DXT formats, first to last */
+enum
+{
+	FIRST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt1,
+	LAST_COMPRESSED_BITMAP_FORMAT = _bitmap_format_dxt5
+};
+
 enum
 {
 	BITMAP_GROUP_TAG = 'bitm',

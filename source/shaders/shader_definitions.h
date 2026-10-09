@@ -84,6 +84,14 @@ enum
 	_shader_model_self_illumination_no_random_phase_bit = 0,
 };
 
+/* a shader animation's functions and its sources: none, or one of an
+object's four outgoing functions (render_animation's values[source - 1]) */
+enum
+{
+	NUMBER_OF_SHADER_ANIMATION_FUNCTIONS = 4,
+	NUMBER_OF_SHADER_ANIMATION_SOURCES = 5
+};
+
 /* framebuffer blend functions */
 enum
 {

@@ -31,20 +31,11 @@ RASTERIZER_XBOX_ENVIRONMENT_FOG.C
 #include "rasterizer_xbox_draw_primitives.h"
 #include "rasterizer_xbox_water.h"
 #include "scenario/fog_definitions.h"
+#include "rasterizer/xbox/rasterizer_xbox_internal.h"
 #ifdef HALO_64BIT
 #include "rasterizer/xbox/rasterizer_xbox_draw_primitives.h"
 #include "rasterizer/rasterizer_model_types.h"
 #endif
-
-enum
-{
-	_rasterizer_drawing_mode_normal = 0,
-};
-
-enum
-{
-	_rasterizer_statistics_mode_enabled = 2,
-};
 
 enum
 {
@@ -56,16 +47,6 @@ enum
 enum
 {
 	MAXIMUM_ATMOSPHERE_DOMINANT_WARNINGS = 20,
-};
-
-enum
-{
-	NUMBER_OF_PIXEL_SHADER_STAGES = 8,
-};
-
-enum
-{
-	_fog_definition_atmosphere_dominant_bit = 1,
 };
 
 enum
@@ -84,12 +65,6 @@ enum
 	_fog_screen_no_environment_multipass_bit = 0,
 	_fog_screen_no_model_multipass_bit,
 	_fog_screen_no_texture_bit,
-};
-
-enum
-{
-	VSH_CONSTANTS__TEXSCALE_OFFSET = -84,
-	VSH_CONSTANTS__TEXSCALE_COUNT = 3,
 };
 
 /* ---------- macros */
@@ -275,7 +250,7 @@ boolean rasterizer_environment_fog_screen_model_begin(
 				model_parameters_cached = FALSE;
 				result = TRUE;
 				if (rasterizer_debug_options.statistics_mode ==
-					_rasterizer_statistics_mode_enabled)
+					_rasterizer_statistics_mode_geometry)
 				{
 					rasterizer_frame_statistics.environment_fog_screen_model_count++;
 				}
@@ -504,7 +479,7 @@ void _rasterizer_environment_fog_draw(
 			first_triangle_index,
 			triangle_count,
 			vertex_buffer);
-		if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_enabled)
+		if (rasterizer_debug_options.statistics_mode == _rasterizer_statistics_mode_geometry)
 		{
 			rasterizer_frame_statistics.environment_fog_dynamic_draw_count++;
 			rasterizer_frame_statistics.environment_fog_dynamic_triangle_count += triangle_count;
@@ -1307,7 +1282,7 @@ void _rasterizer_environment_fog_screen_begin(
 					{
 						rasterizer_transparent_geometry_group_draw__internal(group, FALSE);
 						if (rasterizer_debug_options.statistics_mode ==
-							_rasterizer_statistics_mode_enabled)
+							_rasterizer_statistics_mode_geometry)
 						{
 							rasterizer_frame_statistics.
 								environment_fog_screen_static_draw_count++;
@@ -1376,7 +1351,7 @@ void _rasterizer_environment_fog_screen_draw(
 				triangle_count,
 				vertex_buffer);
 			if (rasterizer_debug_options.statistics_mode ==
-				_rasterizer_statistics_mode_enabled)
+				_rasterizer_statistics_mode_geometry)
 			{
 				rasterizer_frame_statistics.environment_fog_screen_dynamic_draw_count++;
 				rasterizer_frame_statistics.environment_fog_screen_dynamic_triangle_count +=

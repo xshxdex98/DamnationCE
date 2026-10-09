@@ -17,6 +17,7 @@ RASTERIZER_FRAME_STATISTICS.C
 #include "rasterizer_geometry.h"
 #include "rasterizer/xbox/rasterizer_xbox.h"
 #include "text/draw_string.h"
+#include "rasterizer/rasterizer.h"
 
 /* ---------- constants */
 
@@ -27,15 +28,6 @@ enum
 	NUMBER_OF_STATISTICS_TAB_STOPS = 6,
 	NUMBER_OF_MEMORY_USAGE_REPORTS = 16,
 	STATISTICS_TEXT_BUFFER_SIZE = 12288
-};
-
-enum
-{
-	_rasterizer_statistics_mode_none = 0,
-	_rasterizer_statistics_mode_objects,
-	_rasterizer_statistics_mode_geometry,
-	_rasterizer_statistics_mode_profile,
-	_rasterizer_statistics_mode_memory
 };
 
 /* ---------- structures */

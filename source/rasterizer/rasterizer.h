@@ -13,6 +13,33 @@ RASTERIZER.H
 
 /* ---------- constants */
 
+/* drawing modes */
+enum
+{
+	_rasterizer_drawing_mode_normal,
+	_rasterizer_drawing_mode_overdraw,
+	_rasterizer_drawing_mode_bump_color,
+	_rasterizer_drawing_mode_specular_mask,
+	_rasterizer_drawing_mode_specular_mask_times_bump_color,
+	_rasterizer_drawing_mode_diffuse_texture_times_bump_color,
+	_rasterizer_drawing_mode_bump_edge,
+	_rasterizer_drawing_mode_specular_mask_times_bump_edge,
+	_rasterizer_drawing_mode_diffuse_texture_times_bump_edge,
+	_rasterizer_drawing_mode_vectors,
+	NUMBER_OF_RASTERIZER_DRAWING_MODES
+};
+
+/* statistics modes */
+enum
+{
+	_rasterizer_statistics_mode_none = 0,
+	_rasterizer_statistics_mode_objects,
+	_rasterizer_statistics_mode_geometry,
+	_rasterizer_statistics_mode_profile,
+	_rasterizer_statistics_mode_memory,
+	NUMBER_OF_RASTERIZER_STATISTICS_MODES
+};
+
 /* screen effect convolutions */
 enum
 {
@@ -754,8 +781,6 @@ void rasterizer_dynamic_lit_geometry_draw(
 void rasterizer_psuedo_dynamic_screen_quad_draw(
 	struct rasterizer_dynamic_screen_geometry_parameters *parameters,
 	struct dynamic_screen_vertex *vertices);
-#ifndef RASTERIZER_WIDGET_SIGNATURES_OWNED
-#endif
 void rasterizer_profile_enable(
 	boolean enable);
 void rasterizer_screen_flash(
@@ -780,8 +805,6 @@ void rasterizer_environment_fog_screen_draw(
 	long first_triangle_index,
 	long triangle_count,
 	struct vertex_buffer const *vertex_buffer);
-#ifndef RASTERIZER_WIDGET_SIGNATURES_OWNED
-#endif
 
 /* ---------- prototypes/RASTERIZER_XBOX_ACTIVE_CAMOUFLAGE.C */
 

@@ -54,11 +54,6 @@ enum
 	NUMBER_OF_ACTOR_FACINGS,
 };
 
-enum
-{
-	_actor_definition_flags2_pathfinding_ignores_danger_bit = 4,
-};
-
 /* ---------- macros */
 
 #define _full_circle (2.f*_pi)

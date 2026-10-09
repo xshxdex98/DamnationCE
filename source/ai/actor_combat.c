@@ -45,29 +45,14 @@ ACTOR_COMBAT.C
 
 #include "math/real_math_declarations.h"
 #include "ai/actors.h"
+#include "ai/actor_definitions.h"
 
 /* ---------- constants */
 
 enum
 {
 
-	_vehicle_ai_weapon_cannot_rotate_bit = 8,
-
 	MAXIMUM_COLLATERAL_DAMAGE_ACTORS = 32,
-};
-
-/* actor_definition.flags2 (no header declares it yet; other files keep
- * partial copies) */
-enum
-{
-	_actor_definition_flags2_avoid_all_enemy_attack_vectors_bit = 0,
-	_actor_definition_flags2_must_stand_to_fire_bit,
-	_actor_definition_flags2_must_stop_to_fire_bit,
-	_actor_definition_flags2_disallow_vehicle_combat_bit,
-	_actor_definition_flags2_pathfinding_ignores_danger_bit,
-	_actor_definition_flags2_panic_in_groups_bit,
-	_actor_definition_flags2_no_corpse_shooting_bit,
-	NUMBER_OF_ACTOR_DEFINITION_FLAGS2
 };
 
 /* No shared header owns these tag/actor domains yet; action_charge.c carries a
@@ -79,15 +64,6 @@ enum
 	_actor_special_fire_mode_overcharge,
 	_actor_special_fire_mode_secondary,
 	NUMBER_OF_ACTOR_SPECIAL_FIRE_MODES,
-};
-
-enum
-{
-	_actor_special_fire_situation_never = 0,
-	_actor_special_fire_situation_enemy_visible,
-	_actor_special_fire_situation_enemy_out_of_sight,
-	_actor_special_fire_situation_strafing,
-	NUMBER_OF_ACTOR_SPECIAL_FIRE_SITUATIONS,
 };
 
 /* ---------- macros */

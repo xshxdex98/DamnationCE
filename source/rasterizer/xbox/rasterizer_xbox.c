@@ -37,6 +37,7 @@ RASTERIZER_XBOX.C
 #include "shaders/shader_definitions.h"
 #include "rasterizer/xbox/rasterizer_xbox_internal.h"
 #include "objects/light_definitions.h"
+#include "scenario/fog_definitions.h"
 
 enum
 {
@@ -73,26 +74,6 @@ enum
 	_bitmap_usage_bump_map = 3,
 
 	NUMBER_OF_BITMAP_USAGES = 4
-};
-
-/* render_fog.planar_mode and fog_definition.flags; both enumerations belong in
- * render/render_cameras.h, which this worker may not edit. */
-enum
-{
-	_render_planar_fog_mode_off = 0,
-	_render_planar_fog_mode_normal,
-	_render_planar_fog_mode_fully_fogged,
-
-	NUMBER_OF_RENDER_PLANAR_FOG_MODES
-};
-
-enum
-{
-	_fog_definition_is_water_bit = 0,
-	_fog_definition_atmosphere_dominant_bit,
-	_fog_definition_screen_effect_only_bit,
-
-	NUMBER_OF_FOG_DEFINITION_FLAGS
 };
 
 /* combiner_count register layout: the active combiner count in the low

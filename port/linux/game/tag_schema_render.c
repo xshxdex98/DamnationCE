@@ -33,6 +33,7 @@ of its group: each shader group's check makes the type its group's.
 #include "scenario/sky_definitions.h"
 #include "objects/light_definitions.h"
 #include "rasterizer/rasterizer_lights.h"
+#include "rasterizer/xbox/rasterizer_xbox_internal.h"
 
 /* ---------- constants */
 
@@ -61,16 +62,12 @@ enum
 	/* rasterizer_xbox.c, rasterizer_xbox_transparent_geometry.c */
 	NUMBER_OF_FRAMEBUFFER_BLEND_FUNCTIONS = 8,
 	NUMBER_OF_FRAMEBUFFER_FADE_MODES = 3,
-	/* none, or one of an object's four outgoing functions (render_animation's
-	values[source - 1]) */
-	NUMBER_OF_SHADER_ANIMATION_SOURCES = NUMBER_OF_OBJECT_FUNCTION_REFERENCES,
 	NUMBER_OF_SHADER_TRANSPARENT_TYPES = 4,
 	/* the four texture stages a transparent shader's maps go to (and their
 	transforms, vsh_constants__texanim[8]) */
 	NUMBER_OF_SHADER_TRANSPARENT_MAPS = 4,
 	/* the pixel shader's combiner stages, of which a generic shader's stages
 	take all but the last, the fog's (pixel_shader_definition) */
-	NUMBER_OF_PIXEL_SHADER_STAGES = 8,
 	MAXIMUM_SHADER_TRANSPARENT_GENERIC_STAGES = NUMBER_OF_PIXEL_SHADER_STAGES - 1,
 	_shader_transparent_flag_numeric_bit = 7,
 

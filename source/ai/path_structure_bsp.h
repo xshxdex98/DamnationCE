@@ -10,6 +10,11 @@ PATH_STRUCTURE_BSP.H
 
 #include "math/real_math.h"
 
+/* path test flags */
+enum
+{
+	_path_test_pill_endpoint_near_wall_ok_bit
+};
 /* ---------- structures */
 
 struct structure_bsp;

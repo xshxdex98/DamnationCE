@@ -11,6 +11,7 @@ SHADER_TRANSPARENT_GENERIC_PREPROCESSOR.C
 #include "shaders/shader_definitions.h"
 #include "tag_files/tag_groups.h"
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
+#include "rasterizer/xbox/rasterizer_xbox_internal.h"
 
 enum
 {
@@ -63,7 +64,6 @@ enum
 
 enum
 {
-	NUMBER_OF_PIXEL_SHADER_STAGES = 8,
 	/* port: the stages a generic shader has room for, one combiner kept for
 	the fog stage rasterizer_xbox_transparent_geometry.c adds after them
 	(the tag's own maximum; retail has 7 at most) */

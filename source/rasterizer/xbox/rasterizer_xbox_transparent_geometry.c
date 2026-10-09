@@ -76,8 +76,6 @@ enum
 
 enum
 {
-	VSH_CONSTANTS__TEXSCALE_OFFSET = -0x54,
-	VSH_CONSTANTS__TEXSCALE_COUNT = 3,
 	VSH_CONSTANTS__TEXANIM_OFFSET = -0x51,
 	VSH_CONSTANTS__TEXANIM_COUNT = 8,
 	VSH_CONSTANTS__INVERSE_OFFSET = 0x58,
@@ -199,12 +197,6 @@ enum
 	_framebuffer_blend_function_component_max,
 	_framebuffer_blend_function_alpha_multiply_add,
 	NUMBER_OF_FRAMEBUFFER_BLEND_FUNCTIONS
-};
-
-enum
-{
-	NUMBER_OF_SHADER_ANIMATION_FUNCTIONS = 4,
-	NUMBER_OF_SHADER_ANIMATION_SOURCES = 5
 };
 
 enum

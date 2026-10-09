@@ -24,14 +24,6 @@ enum
 	MAXIMUM_VERTICES_PER_DEBUG_PRIMITIVE = 3
 };
 
-enum
-{
-	_rasterizer_stats_none = 0,
-	_rasterizer_stats_summary,
-	_rasterizer_stats_geometry,
-	NUMBER_OF_RASTERIZER_STATS_MODES
-};
-
 /* ---------- structures */
 
 struct rasterizer_debug_vertex
@@ -118,7 +110,7 @@ long rasterizer_debug_new_primitive(
 		primitive_index = (*primitive_count)++;
 		debug_data.primitive_count++;
 
-		if (rasterizer_debug_options.statistics_mode==_rasterizer_stats_geometry)
+		if (rasterizer_debug_options.statistics_mode==_rasterizer_statistics_mode_geometry)
 		{
 			rasterizer_frame_statistics.debug_primitive_count++;
 		}

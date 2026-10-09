@@ -15,6 +15,35 @@ UNITS.H
 
 /* ---------- constants */
 
+/* unit animation impulses */
+enum
+{
+	_unit_animation_impulse_berserk,
+	_unit_animation_impulse_signal_move,
+	_unit_animation_impulse_signal_attack,
+	_unit_animation_impulse_signal_warn,
+	_unit_animation_impulse_surprise_front,
+	_unit_animation_impulse_surprise_back,
+	_unit_animation_impulse_evade_left,
+	_unit_animation_impulse_evade_right,
+	_unit_animation_impulse_dive_front,
+	_unit_animation_impulse_dive_back,
+	_unit_animation_impulse_dive_left,
+	_unit_animation_impulse_dive_right,
+	_unit_animation_impulse_vehicle_celebrate,
+	_unit_animation_impulse_vehicle_panic,
+	NUMBER_OF_UNIT_ANIMATION_IMPULSES
+};
+
+/* unit speech */
+enum
+{
+	_unit_play_speech_none,
+	_unit_play_speech_queue,
+	_unit_play_speech_immediate,
+	_unit_play_speech_immediate_dequeue
+};
+
 /* a unit's damage animations: flinches (a soft ping plays over its
 animation, a hard ping in its place) and deaths */
 enum

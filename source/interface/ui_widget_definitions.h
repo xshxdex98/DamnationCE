@@ -14,6 +14,19 @@ The start of the UI widget tag definition.
 
 /* ---------- constants */
 
+/* widget types */
+enum
+{
+	_ui_widget_type_container = 0,
+	_ui_widget_type_text_box,
+	_ui_widget_type_spinner_list,
+	_ui_widget_type_column_list,
+	_ui_widget_type_game_model,
+	_ui_widget_type_movie,
+	_ui_widget_type_custom,
+	NUMBER_OF_UI_WIDGET_TYPES
+};
+
 /* list flags */
 enum
 {

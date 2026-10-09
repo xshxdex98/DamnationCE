@@ -127,8 +127,6 @@ enum
 	HARDWARE_CHARACTER_CACHE_BORDERS = 2,
 
 	/* ui_widget.c, ui_widget_text_search_and_replace_functions.c */
-	NUMBER_OF_UI_WIDGET_TYPES = 7,
-	_ui_widget_type_column_list = 3,
 	NUMBER_OF_WIDGET_CONTROLLERS = 5,
 	NUMBER_OF_WIDGET_TEXT_JUSTIFICATIONS = 3,
 	_widget_replace_function_null = 0,

@@ -49,24 +49,6 @@ ACTORS.C
 enum
 {
 	_rgb_color_interpolation_hsv_bit = 0,
-	_ai_reference_squad_bit = 15,
-};
-
-/* vehicle_definition.flags; the shared vehicle tag header has not yet
- * reconstructed these AI-facing constants. */
-enum
-{
-	_vehicle_ai_weapon_cannot_rotate_bit = 8,
-	_vehicle_ai_driver_enable_bit = 11,
-	_vehicle_ai_driver_flying_bit,
-	_vehicle_ai_driver_nondirectional_bit,
-	_vehicle_ai_driver_hovering_bit,
-};
-
-/* projectile_datum.flags (projectiles.c keeps the enum to itself) */
-enum
-{
-	_projectile_will_super_explode_bit = 7,
 };
 
 /* (the shared header calls these MAXIMUM_SWARMS and
@@ -74,7 +56,6 @@ enum
 enum
 {
 	MAXIMUM_NUMBER_OF_ACTIVE_SWARMS = MAXIMUM_SWARMS,
-	MAXIMUM_NUMBER_OF_UNITS_PER_SWARM = MAXIMUM_UNIT_INDICES_PER_SWARM,
 };
 
 /* decision loop bounds: five remembered actions, ten passes */
@@ -2134,7 +2115,7 @@ long actor_create_for_unit(
 			{
 				if (actor->meta.swarm &&
 					iterator.index != disallow_actor_index &&
-					actor->meta.swarm_unit_count < MAXIMUM_NUMBER_OF_UNITS_PER_SWARM &&
+					actor->meta.swarm_unit_count < MAXIMUM_UNIT_INDICES_PER_SWARM &&
 					actor->meta.variant_definition_index == actor_variant_definition_index &&
 					(allow_addition_to_other_squads || actor->meta.squad_index == squad_index))
 				{
@@ -2641,7 +2622,7 @@ static void actor_swarm_component_setup(
 	struct swarm_component_datum *component = swarm_component_get(component_index);
 
 	component->combat_target_prop_index = NONE;
-	match_assert("c:\\halo\\SOURCE\\ai\\actors.c", 1244, swarm->unit_count < MAXIMUM_NUMBER_OF_UNITS_PER_SWARM);
+	match_assert("c:\\halo\\SOURCE\\ai\\actors.c", 1244, swarm->unit_count < MAXIMUM_UNIT_INDICES_PER_SWARM);
 	swarm->unit_indices[swarm->unit_count] = unit_index;
 	swarm->component_indices[swarm->unit_count] = component_index;
 	swarm->unit_count++;
@@ -2743,7 +2724,7 @@ long actor_swarm_cache_new(
 			struct swarm_datum *swarm = swarm_get(swarm_index);
 			long unit_index = actor->meta.swarm_unit_index;
 
-			match_assert("c:\\halo\\SOURCE\\ai\\actors.c", 1570, actor->meta.swarm_unit_count <= MAXIMUM_NUMBER_OF_UNITS_PER_SWARM);
+			match_assert("c:\\halo\\SOURCE\\ai\\actors.c", 1570, actor->meta.swarm_unit_count <= MAXIMUM_UNIT_INDICES_PER_SWARM);
 			swarm->actor_index = actor_index;
 			swarm->unit_count = 0;
 
@@ -3240,7 +3221,7 @@ boolean actor_swarm_attach_unit(
 			match_assert("c:\\halo\\SOURCE\\ai\\actors.c", 1300, actor->meta.unit_index == NONE);
 			match_assert("c:\\halo\\SOURCE\\ai\\actors.c", 1301, unit->unit.actor_index == NONE);
 			match_assert("c:\\halo\\SOURCE\\ai\\actors.c", 1302, unit->unit.swarm_actor_index == NONE);
-			match_assert("c:\\halo\\SOURCE\\ai\\actors.c", 1305, actor->meta.swarm_unit_count < MAXIMUM_NUMBER_OF_UNITS_PER_SWARM);
+			match_assert("c:\\halo\\SOURCE\\ai\\actors.c", 1305, actor->meta.swarm_unit_count < MAXIMUM_UNIT_INDICES_PER_SWARM);
 
 			unit->unit.swarm_actor_index = actor_index;
 			unit->unit.swarm_next_unit_index = actor->meta.swarm_unit_index;

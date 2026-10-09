@@ -46,11 +46,6 @@ enum
 	OBJECT_RENDER_STATE_SMALL_INTERVAL = 10,
 };
 
-enum
-{
-	_render_planar_fog_mode_normal = 1,
-};
-
 #define OBJECT_RENDER_STATE_LARGE_PIXELS 400.f
 #define OBJECT_RENDER_STATE_SMALL_PIXELS 100.f
 
