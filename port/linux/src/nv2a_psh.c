@@ -64,8 +64,26 @@ enum
 
 /* ---------- combiner inputs */
 
+static const char *destination_name(unsigned long reg)
+{
+	switch (reg)
+	{
+	case _register_v0: return "v0";
+	case _register_v1: return "v1";
+	case _register_t0: return "t0";
+	case _register_t1: return "t1";
+	case _register_t2: return "t2";
+	case _register_t3: return "t3";
+	case _register_r0: return "r0";
+	case _register_r1: return "r1";
+	default: return NULL;
+	}
+}
+
 static const char *register_expression(unsigned long reg, int stage, BOOL unique_c0, BOOL unique_c1)
 {
+	const char *name = destination_name(reg);
+
 	static char buffer[4][32];
 	static int next = 0;
 	char *result = buffer[next++ & 3];
@@ -83,17 +101,9 @@ static const char *register_expression(unsigned long reg, int stage, BOOL unique
 		snprintf(result, sizeof(buffer[0]), "ps_c1[%d]", unique_c1 ? stage : 0);
 		return result;
 	case _register_fog: return "fog";
-	case _register_v0: return "v0";
-	case _register_v1: return "v1";
-	case _register_t0: return "t0";
-	case _register_t1: return "t1";
-	case _register_t2: return "t2";
-	case _register_t3: return "t3";
-	case _register_r0: return "r0";
-	case _register_r1: return "r1";
 	case _register_v1r0_sum: return stage < 0 ? "v1r0_sum" : "vec4(0.0)";
 	case _register_ef_product: return stage < 0 ? "ef_product" : "vec4(0.0)";
-	default: return "vec4(0.0)";
+	default: return name ? name : "vec4(0.0)";
 	}
 }
 
@@ -141,22 +151,6 @@ static void final_input(struct xgpu_text *text, unsigned long input, BOOL alpha_
 		xgpu_text_append(text, "(1.0 - clamp(%s, 0.0, 1.0))", value);
 	else
 		xgpu_text_append(text, "clamp(%s, 0.0, 1.0)", value);
-}
-
-static const char *destination_name(unsigned long reg)
-{
-	switch (reg)
-	{
-	case _register_v0: return "v0";
-	case _register_v1: return "v1";
-	case _register_t0: return "t0";
-	case _register_t1: return "t1";
-	case _register_t2: return "t2";
-	case _register_t3: return "t3";
-	case _register_r0: return "r0";
-	case _register_r1: return "r1";
-	default: return NULL;
-	}
 }
 
 static const char *output_mapping(unsigned long flags)

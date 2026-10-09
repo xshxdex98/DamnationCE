@@ -355,11 +355,6 @@ static int elapsed(unsigned long since, unsigned long time)
 	return !since || (unsigned int)(p2p_now() - since) >= (unsigned int)time;
 }
 
-static unsigned short network_short(unsigned short value)
-{
-	return (unsigned short)(value << 8 | value >> 8);
-}
-
 /* whether more than reserve of a budget is left now (maximum at once, one
 more each interval); spend takes one */
 static int budget_left(struct budget *budget, int maximum, int interval, int reserve, int spend)
@@ -1564,33 +1559,16 @@ void p2p_signal_start(void)
 	text = list;
 	while (*text && signalling.broker_count < MAXIMUM_BROKERS)
 	{
-		const char *end = text + strcspn(text, ",");
 		struct broker *broker = &signalling.brokers[signalling.broker_count];
-		char *colon;
-		int length;
 
-		while (text < end && *text == ' ')
-			text++;
-		length = (int)(end - text);
-		while (length > 0 && text[length - 1] == ' ')
-			length--;
-		if (length > 0 && length < (int)sizeof(broker->host))
+		memset(broker, 0, sizeof(*broker));
+		if (p2p_list_endpoint(&text, broker->host, (int)sizeof(broker->host), 1883, &broker->port))
 		{
-			memset(broker, 0, sizeof(*broker));
-			memcpy(broker->host, text, (size_t)length);
 			broker->socket = -1;
-			broker->port = network_short(1883);
-			colon = strchr(broker->host, ':');
-			if (colon)
-			{
-				broker->port = network_short((unsigned short)atoi(colon + 1));
-				*colon = 0;
-			}
 			/* connect at once */
 			broker->state_time = p2p_now() - RETRY_INTERVAL;
 			signalling.broker_count++;
 		}
-		text = *end ? end + 1 : end;
 	}
 	if (!signalling.broker_count)
 		platform_log("Internet play: no signalling brokers (network.brokers_file), so invites cannot work");
