@@ -364,14 +364,22 @@ void _rasterizer_screen_effect(
 	{
 		short pass_count = (parameters->convolution_extra_passes + 1) * 2;
 		short pass;
-		/* The native builds draw the screen at several pixels to the Xbox's
-		one (halo_screen_scale): a convolution's few copies of the screen,
-		apart by its radius in the Xbox's pixels, blended into a blur at
-		640x480, and at four times the pixels they stand apart as sharp
-		ghosts (the zoom's warp). The same spread in that many times the
-		passes, each a step of it, blends them again. */
 		struct rasterizer_cinematic_screen_effect_parameters scaled_parameters;
+		short source_target;
+		short destination_target;
+		short stage;
+		short viewport_width;
+		short viewport_height;
+		real_rectangle2d vertex_bounds;
+		unsigned long light_enhancement_input;
+		unsigned long desaturation_input;
 
+		/* port: the native builds draw the screen at several pixels to the
+		Xbox's one (halo_screen_scale): a convolution's few copies of the
+		screen, apart by its radius in the Xbox's pixels, blend into a blur at
+		640x480 but stand apart as sharp ghosts at four times the pixels (the
+		zoom's warp). The same spread in that many times the passes, each a
+		step of it, blends them again */
 		if (parameters->convolution_type != _rasterizer_screen_effect_convolution_type_none && !parameters->video_on)
 		{
 			long steps = (long)(halo_screen_scale() + 0.999f);
@@ -386,14 +394,6 @@ void _rasterizer_screen_effect(
 				pass_count *= (short)steps;
 			}
 		}
-		short source_target;
-		short destination_target;
-		short stage;
-		short viewport_width;
-		short viewport_height;
-		real_rectangle2d vertex_bounds;
-		unsigned long light_enhancement_input;
-		unsigned long desaturation_input;
 
 		if (parameters->video_on)
 		{

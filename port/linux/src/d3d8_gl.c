@@ -529,7 +529,7 @@ struct gl_device
 	unsigned long index_offset;
 	GLuint samplers[D3DTSS_MAXSTAGES];
 
-	/* One extra query is scratch space; result slot zero belongs to the game. */
+	/* the game's slots, then a scratch query (visibility_test_end) */
 	GLuint queries[VISIBILITY_TEST_SLOTS + 1];
 	BOOL query_pending[VISIBILITY_TEST_SLOTS];
 	/* the pixels each of the game's pixels covered in the test's target
@@ -667,8 +667,8 @@ xgpu_gl_state_invalidate, after which every value is set again. Unknown
 values are all ones, which no real value matches (floats become NaN, which
 compares unequal to everything). */
 
-/* (each attribute pointed at on its own, glVertexAttribPointer: OpenGL ES,
-and macOS, whose OpenGL 4.1 has no vertex attribute binding of 4.3) */
+/* OpenGL ES and macOS's OpenGL 4.1 have no vertex attribute binding (OpenGL
+4.3): each attribute is pointed at on its own, by glVertexAttribPointer */
 #if defined(HALO_ANDROID) || defined(__APPLE__)
 struct attribute_pointer
 {

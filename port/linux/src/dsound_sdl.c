@@ -687,8 +687,8 @@ static void mix_voice(struct sdl_stream *stream, float *output, float *send, uns
 		}
 		else if (!reverb_enabled)
 		{
-			/* with reverb disabled, it uses linear interpolation
-			for raw (non-muffled) sound quality instead. */
+			/* (audio.reverb off: linear interpolation, without the
+			windowed sinc's softening) */
 			const float *a = stream->history[stream->center % RESAMPLER_HISTORY];
 			const float *b = stream->history[(stream->center + 1) % RESAMPLER_HISTORY];
 			float fraction = (float)stream->phase;

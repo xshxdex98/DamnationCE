@@ -2201,7 +2201,6 @@ static void CALLBACK dsound_channel_callback(
 	{
 		struct sound_channel *channel= channel_get(channel_index);
 
-
 		if (status==XMEDIAPACKET_STATUS_SUCCESS || status==XMEDIAPACKET_STATUS_FLUSHED)
 		{
 			sound_cache_sound_hardware_unlock(packet_context);
@@ -2661,7 +2660,6 @@ static void dsound_channel_queue_sound(
 {
 	struct sound_channel *channel= channel_get(index);
 
-
 	match_assert(
 		"c:\\halo\\SOURCE\\sound\\sound_dsound_xbox.c",
 		1111,
@@ -2881,10 +2879,9 @@ static void channel_stop(
 {
 	struct sound_channel *channel= channel_get(index);
 
-
-	/* The SDL backend completes packets synchronously during StopStream.
-	   Retire the producer before flushing: a SUCCESS callback for an already
-	   mixed packet must not refill the stream we are cancelling. */
+	/* port: its permutations let go of before the stream is stopped, which
+	completes its packets there and then (dsound_sdl.c): a packet already
+	mixed completes as a success, which would queue the next */
 	channel->playing_permutation= NULL;
 	channel->queued_permutation= NULL;
 

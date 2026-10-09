@@ -1194,6 +1194,8 @@ static long looping_sound_new(
 	return looping_sound_index;
 }
 
+/* port: FALSE when instance limiting stopped the sound itself, whose
+channel is then no one's: nothing more is queued through it */
 static boolean sound_set_definition_end(
 	long sound_index)
 {
@@ -1245,8 +1247,6 @@ static boolean sound_set_definition_end(
 			return victim_sound_index != sound_index;
 		}
 
-		/* Instance limiting may retire this very voice. Its caller must not
-		   queue another permutation through the now-unowned channel. */
 		sound_stop(sound_index);
 		return FALSE;
 	}
@@ -1330,7 +1330,6 @@ static long update_potentially_audible_looping_sound(
 					TRUE,
 					FALSE);
 				looping_sound->component_sound_count++;
-
 			}
 		}
 	}
@@ -1491,8 +1490,8 @@ static real sound_calculate_fade(
 	long sound_index)
 {
 	struct sound_datum *sound = sound_get(sound_index);
-	/* A completed fade keeps its endpoint. Another query in this frame (or
-	   after a cache delay) must not bring a stopped voice back to full gain. */
+	/* port: a finished fade keeps its end (a sound faded out stays silent,
+	asked again this frame or after waiting on the cache) */
 	real fade = sound->fade_interpolation_end;
 
 	if (sound->fade_start_time != sound->fade_stop_time)
@@ -1565,7 +1564,6 @@ static void sound_start_fade(
 		fade_in_sound_index!=NONE || fade_out_sound_index!=NONE);
 
 	fade_start_time = sound_manager_globals.render_time - 1;
-
 	fade_stop_time = (long)(seconds * 1000.f + fade_start_time);
 	fade_stop_time = MAX(fade_stop_time, sound_manager_globals.render_time);
 
@@ -1604,8 +1602,9 @@ static void sound_start_fade(
 	return;
 }
 
-/* The primary handle changes on restart and crossfade. Cancellation belongs
-   to the loop and track, including voices still waiting for a cache/channel. */
+/* port: fades out a looping sound's track's sounds but one, by their loop
+and track rather than the sound playing (another on a restart or crossfade),
+those still waiting on the cache or a channel among them */
 static void sound_fade_looping_track_components(
 	long looping_sound_index,
 	short track_index,
@@ -1698,7 +1697,6 @@ static void sound_stop(
 	struct sound_datum *sound = sound_get(sound_index);
 	struct sound_definition *definition =
 		sound_definition_get(sound->definition_index);
-
 
 	if (sound->playing_channel_index != NONE)
 	{
@@ -2813,7 +2811,6 @@ static void process_looping_sounds(
 
 		if (looping_sound->flip_flop != sound_manager_globals.flip_flop)
 		{
-
 			datum_delete(looping_sound_data, looping_sound_index);
 		}
 		else if (looping_sound->state != _looping_sound_refresh_stop)
