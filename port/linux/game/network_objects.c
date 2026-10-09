@@ -332,7 +332,7 @@ static struct
 	long indices[HALO_PORT_MAXIMUM_NETWORK_MACHINES];
 	short player_unit_count;
 	real_point3d player_unit_origins[MAXIMUM_TRACKED_PLAYERS];
-	struct
+	struct host_viewer
 	{
 		short unit_count;
 		long unit_indices[MAXIMUM_LOCAL_PLAYERS];
@@ -1233,7 +1233,6 @@ static void distributed_host_find_viewers(
 	void)
 {
 	short machine_number;
-
 	struct data_iterator iterator;
 	struct player_datum *player;
 
@@ -1254,30 +1253,30 @@ static void distributed_host_find_viewers(
 	}
 	for (machine_number = 0; machine_number < objects_host_viewers.count; machine_number++)
 	{
+		struct host_viewer *viewer = &objects_host_viewers.machines[machine_number];
 		long *player_list = machine_get_player_list(objects_host_viewers.indices[machine_number]);
 		short local_player_index;
 
-		objects_host_viewers.machines[machine_number].unit_count = 0;
-		objects_host_viewers.machines[machine_number].vehicle_count = 0;
+		viewer->unit_count = 0;
+		viewer->vehicle_count = 0;
 		for (local_player_index = 0; local_player_index < MAXIMUM_LOCAL_PLAYERS; local_player_index++)
 		{
-			struct player_datum *player = player_list[local_player_index] != NONE ?
+			struct player_datum *local_player = player_list[local_player_index] != NONE ?
 				player_try_and_get(player_list[local_player_index]) : NULL;
-			long unit_index = distributed_living_unit(player);
-			long vehicle_index = unit_index != NONE ? distributed_driven_vehicle(player) : NONE;
+			long unit_index = distributed_living_unit(local_player);
+			long vehicle_index = unit_index != NONE ? distributed_driven_vehicle(local_player) : NONE;
 			short count;
 
 			if (unit_index == NONE)
 				continue;
-			count = objects_host_viewers.machines[machine_number].unit_count++;
-			objects_host_viewers.machines[machine_number].unit_indices[count] = unit_index;
-			object_get_origin(unit_index, &objects_host_viewers.machines[machine_number].origins[count]);
+			count = viewer->unit_count++;
+			viewer->unit_indices[count] = unit_index;
+			object_get_origin(unit_index, &viewer->origins[count]);
 			if (vehicle_index != NONE)
 			{
-				count = objects_host_viewers.machines[machine_number].vehicle_count++;
-				objects_host_viewers.machines[machine_number].vehicle_indices[count] = vehicle_index;
-				objects_host_viewers.machines[machine_number].vehicle_player_indices[count] =
-					(short)DATUM_INDEX_TO_ABSOLUTE_INDEX(player_list[local_player_index]);
+				count = viewer->vehicle_count++;
+				viewer->vehicle_indices[count] = vehicle_index;
+				viewer->vehicle_player_indices[count] = (short)DATUM_INDEX_TO_ABSOLUTE_INDEX(player_list[local_player_index]);
 			}
 		}
 	}
@@ -1523,20 +1522,6 @@ static void distributed_inventory_from_unit(
 			}
 		}
 	}
-}
-
-/* the bytes' checksum (FNV-1a) */
-static unsigned long distributed_checksum(
-	void const *data,
-	long size)
-{
-	byte const *bytes = (byte const *)data;
-	unsigned long checksum = 2166136261UL;
-	long index;
-
-	for (index = 0; index < size; index++)
-		checksum = (checksum ^ bytes[index]) * 16777619UL;
-	return checksum;
 }
 
 /* the kinds of inventories sent this time */

@@ -446,7 +446,25 @@ static void network_test_shoot(
 	}
 }
 
-/* the host seats the last player as the nearest vehicle's driver, or out */
+/* the last player, if they have a unit, else NULL; their datum index (if
+asked) */
+static struct player_datum *network_test_last_player(
+	long *player_index)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+	struct player_datum *last = NULL;
+
+	data_iterator_new(&iterator, player_data);
+	while ((player = (struct player_datum *)data_iterator_next(&iterator)) != NULL)
+	{
+		last = player;
+		if (player_index)
+			*player_index = iterator.datum_index;
+	}
+	return last && last->unit_index != NONE ? last : NULL;
+}
+
 /* the host brings the players far from the first (on foot) near it, so
 that they are within their weapons' reach (network_test_shoot shoots only
 so near, as a player does); the host moving a client's player, as a
@@ -520,17 +538,13 @@ static void network_test_gather(
 	}
 }
 
+/* the host seats the last player as the nearest vehicle's driver, or out */
 static void network_test_vehicle(
 	boolean enter)
 {
-	struct data_iterator iterator;
-	struct player_datum *player;
-	struct player_datum *last = NULL;
+	struct player_datum *last = network_test_last_player(NULL);
 
-	data_iterator_new(&iterator, player_data);
-	while ((player = (struct player_datum *)data_iterator_next(&iterator)) != NULL)
-		last = player;
-	if (!last || last->unit_index == NONE)
+	if (!last)
 		return;
 	if (!enter)
 	{
@@ -584,17 +598,12 @@ action button, as a player getting in does) */
 static void network_test_vehicle_approach(
 	void)
 {
-	struct data_iterator iterator;
-	struct player_datum *player;
-	struct player_datum *last = NULL;
+	struct player_datum *last = network_test_last_player(NULL);
 	struct object_iterator vehicles;
 	long nearest_index = NONE;
 	real nearest_distance = 0.0f;
 
-	data_iterator_new(&iterator, player_data);
-	while ((player = (struct player_datum *)data_iterator_next(&iterator)) != NULL)
-		last = player;
-	if (!last || last->unit_index == NONE || object_get(last->unit_index)->object.parent_object_index != NONE)
+	if (!last || object_get(last->unit_index)->object.parent_object_index != NONE)
 		return;
 	object_iterator_new(&vehicles, _object_mask_vehicle, 0);
 	while (object_iterator_next(&vehicles))
@@ -638,22 +647,18 @@ static void network_test_vehicle_approach(
 static void network_test_second_weapon(
 	void)
 {
-	struct data_iterator iterator;
-	struct player_datum *player;
-	struct player_datum *last = NULL;
+	long last_index;
+	struct player_datum *last = network_test_last_player(&last_index);
 	struct object_iterator weapons;
+	long current_index;
 
-	data_iterator_new(&iterator, player_data);
-	while ((player = (struct player_datum *)data_iterator_next(&iterator)) != NULL)
-		last = player;
-	if (!last || last->unit_index == NONE)
+	if (!last)
 		return;
+	current_index = unit_get(last->unit_index)->unit.weapon_object_indices[0];
 	object_iterator_new(&weapons, _object_mask_weapon, 0);
 	while (object_iterator_next(&weapons))
 	{
 		struct object_datum *weapon = object_get(weapons.index);
-		struct unit_datum *unit = unit_get(last->unit_index);
-		long current_index = unit->unit.weapon_object_indices[0];
 
 		if (weapon->object.parent_object_index == NONE && TEST_FLAG(weapon->object.flags, _object_connected_to_map_bit) &&
 			(current_index == NONE || object_get(current_index)->definition_index != weapon->definition_index) &&
@@ -661,8 +666,7 @@ static void network_test_second_weapon(
 		{
 			platform_log("network test: the last player takes a second weapon (%lx)", weapon->definition_index);
 			/* (and camouflage, as a powerup gives) */
-			player_handle_powerup(DATUM_INDEX_NEW(last - (struct player_datum *)xbox_pointer(player_data->data), last->identifier),
-				_player_powerup_active_camouflage, 10 * TICKS_PER_SECOND);
+			player_handle_powerup(last_index, _player_powerup_active_camouflage, 10 * TICKS_PER_SECOND);
 			return;
 		}
 	}
@@ -674,18 +678,13 @@ it has it, within a tolerance) */
 static void network_test_pickup(
 	void)
 {
-	struct data_iterator iterator;
-	struct player_datum *player;
-	struct player_datum *last = NULL;
+	struct player_datum *last = network_test_last_player(NULL);
 	struct object_iterator weapons;
 	long nearest_index = NONE;
 	real nearest_distance = 0.0f;
 	struct unit_datum *unit;
 
-	data_iterator_new(&iterator, player_data);
-	while ((player = (struct player_datum *)data_iterator_next(&iterator)) != NULL)
-		last = player;
-	if (!last || last->unit_index == NONE)
+	if (!last)
 		return;
 	unit = unit_get(last->unit_index);
 	object_iterator_new(&weapons, _object_mask_weapon, 0);

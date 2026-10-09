@@ -261,6 +261,8 @@ real distributed_angle_unpack(short value, boolean signed_angle);
 /* shields and health in 16 bits */
 word distributed_vitality_pack(real value);
 real distributed_vitality_unpack(word value);
+/* the bytes' checksum (FNV-1a) */
+unsigned long distributed_checksum(void const *data, long size);
 
 /* (the host) a text in red on every machine's console, or on one client's
 (machine_index; NONE: the host's own) */

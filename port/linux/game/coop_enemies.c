@@ -324,8 +324,20 @@ static void coop_enemies_forget_vehicle(
 	coop_enemies.vehicles[vehicle_number] = coop_enemies.vehicles[--coop_enemies.vehicle_count];
 }
 
-/* whether a vehicle's seated riders have begun to get out: one alive and
-out of it (one killed in its seat is not getting out) */
+/* whether a vehicle's seated rider is alive and out of it (one killed in
+its seat is not getting out) */
+static boolean coop_enemies_rider_out(
+	struct coop_riding_vehicle const *vehicle,
+	short index)
+{
+	struct object_datum *unit = object_try_and_get_and_verify_type(vehicle->seated_unit_indices[index],
+		_object_mask_unit);
+
+	return unit && !TEST_FLAG(unit->object.damage_flags, _object_dead_bit) &&
+		unit->object.parent_object_index != vehicle->vehicle_index;
+}
+
+/* whether a vehicle's seated riders have begun to get out */
 static boolean coop_enemies_riders_getting_out(
 	struct coop_riding_vehicle const *vehicle)
 {
@@ -333,14 +345,8 @@ static boolean coop_enemies_riders_getting_out(
 
 	for (index = 0; index < vehicle->seated_count; index++)
 	{
-		struct object_datum *unit = object_try_and_get_and_verify_type(vehicle->seated_unit_indices[index],
-			_object_mask_unit);
-
-		if (unit && !TEST_FLAG(unit->object.damage_flags, _object_dead_bit) &&
-			unit->object.parent_object_index != vehicle->vehicle_index)
-		{
+		if (coop_enemies_rider_out(vehicle, index))
 			return TRUE;
-		}
 	}
 	return FALSE;
 }
@@ -367,14 +373,8 @@ static void coop_enemies_rider_place(
 	*facing = (real)atan2(object->object.forward.j, object->object.forward.i);
 	for (index = 0; index < vehicle->seated_count; index++)
 	{
-		struct object_datum *unit = object_try_and_get_and_verify_type(vehicle->seated_unit_indices[index],
-			_object_mask_unit);
-
-		if (unit && !TEST_FLAG(unit->object.damage_flags, _object_dead_bit) &&
-			unit->object.parent_object_index != vehicle->vehicle_index)
-		{
+		if (coop_enemies_rider_out(vehicle, index))
 			out_unit_indices[out_count++] = vehicle->seated_unit_indices[index];
-		}
 	}
 	if (out_count > 0)
 	{

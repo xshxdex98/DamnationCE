@@ -486,13 +486,26 @@ static void votekick_recount(
 	votekick.needed = votekick_votes_needed(electorate);
 }
 
-/* the name of a machine's players for a notice (NONE: the host's own) */
-static void votekick_names(
-	long machine_index,
-	char *names,
-	long size)
+/* a machine's vote (NONE: the host's own) in the vote running */
+static void votekick_mark_voted(
+	long machine_index)
 {
-	distributed_machine_player_names(machine_index, names, size);
+	if (machine_index == NONE)
+	{
+		votekick.host_voted = TRUE;
+		return;
+	}
+	votekick.voted[machine_index] = TRUE;
+	votekick.voted_generations[machine_index] = votekick_generations[machine_index];
+}
+
+/* the vote running's seconds left, at least 0 */
+static long votekick_seconds_left(
+	void)
+{
+	unsigned long elapsed = system_milliseconds() - votekick.started_at;
+
+	return MAX(0, VOTE_SECONDS - (long)(elapsed / 1000));
 }
 
 /* the count to every client: what it may do, and has */
@@ -501,7 +514,6 @@ static void votekick_send_status(
 {
 	long machine_indices[MAXIMUM_VOTEKICK_MACHINES];
 	short count = distributed_client_machines(machine_indices, MAXIMUM_VOTEKICK_MACHINES);
-	unsigned long now = system_milliseconds();
 	short index;
 
 	for (index = 0; index < count; index++)
@@ -517,14 +529,11 @@ static void votekick_send_status(
 		message.status.player_index = NO_PLAYER;
 		if (votekick.active)
 		{
-			unsigned long elapsed = now - votekick.started_at;
-			long left = VOTE_SECONDS - (long)(elapsed / 1000);
-
 			votekick_voter_get(machine_indices[index], &voter);
 			message.status.player_index = distributed_player_to_byte(votekick.target_player);
 			message.status.votes = (byte)PIN(votekick.votes, 0, 255);
 			message.status.needed = (byte)PIN(votekick.needed, 0, 255);
-			message.status.seconds_left = (byte)PIN(left, 0, 255);
+			message.status.seconds_left = (byte)MIN(votekick_seconds_left(), 255);
 			if (voter.voted)
 				message.status.flags |= FLAG(_votekick_status_voted_bit);
 			if (votekick_may_vote(&voter))
@@ -575,14 +584,6 @@ static void votekick_fail(
 	votekick_end();
 }
 
-/* a refusal, to the asking machine alone */
-static void votekick_refuse(
-	long machine_index,
-	char const *text)
-{
-	distributed_send_notice_to_machine(machine_index, text);
-}
-
 /* a machine's vote against a player (NONE: the host's own machine): a new
 vote, or one for the vote running */
 static void votekick_host_request(
@@ -600,24 +601,24 @@ static void votekick_host_request(
 
 	if (!config_boolean("network.votekick"))
 	{
-		votekick_refuse(machine_index, "votekick: the host has turned votes off");
+		distributed_send_notice_to_machine(machine_index, "votekick: the host has turned votes off");
 		return;
 	}
 	if (machine_index == NONE && local_player_get_next(NONE) == NONE)
 		return;
 	if (!player || player->quit_out_of_game)
 	{
-		votekick_refuse(machine_index, "votekick: no such player");
+		distributed_send_notice_to_machine(machine_index, "votekick: no such player");
 		return;
 	}
 	if (target_machine == NONE)
 	{
-		votekick_refuse(machine_index, "votekick: the host's players cannot be voted out");
+		distributed_send_notice_to_machine(machine_index, "votekick: the host's players cannot be voted out");
 		return;
 	}
 	if (!votekick_machine_valid(target_machine) || target_machine == machine_index)
 	{
-		votekick_refuse(machine_index, "votekick: not against your own players");
+		distributed_send_notice_to_machine(machine_index, "votekick: not against your own players");
 		return;
 	}
 	votekick_voter_get(machine_index, &voter);
@@ -625,12 +626,12 @@ static void votekick_host_request(
 	target.target = TRUE;
 	if (votekick_same_person(&voter, &target))
 	{
-		votekick_refuse(machine_index, "votekick: not against your own machine");
+		distributed_send_notice_to_machine(machine_index, "votekick: not against your own machine");
 		return;
 	}
 	if (!voter.host && !voter.address)
 	{
-		votekick_refuse(machine_index, "votekick: the host does not know your address");
+		distributed_send_notice_to_machine(machine_index, "votekick: the host does not know your address");
 		return;
 	}
 	/* a vote for the vote running */
@@ -639,23 +640,17 @@ static void votekick_host_request(
 		if (target_machine != votekick.target_machine)
 		{
 			snprintf(notice, sizeof(notice), "votekick: wait for the vote to kick %s to end", votekick.target_names);
-			votekick_refuse(machine_index, notice);
+			distributed_send_notice_to_machine(machine_index, notice);
 			return;
 		}
 		if (!votekick_may_vote(&voter))
 		{
-			votekick_refuse(machine_index, "votekick: you have not played long enough on this server to vote");
+			distributed_send_notice_to_machine(machine_index, "votekick: you have not played long enough on this server to vote");
 			return;
 		}
 		if (voter.voted)
 			return;
-		if (machine_index == NONE)
-			votekick.host_voted = TRUE;
-		else
-		{
-			votekick.voted[machine_index] = TRUE;
-			votekick.voted_generations[machine_index] = votekick_generations[machine_index];
-		}
+		votekick_mark_voted(machine_index);
 		{
 			short votes = votekick.votes;
 
@@ -664,7 +659,7 @@ static void votekick_host_request(
 			person's adds nothing) */
 			if (votekick.votes != votes && votekick.votes < votekick.needed)
 			{
-				votekick_names(machine_index, names, sizeof(names));
+				distributed_machine_player_names(machine_index, names, sizeof(names));
 				snprintf(notice, sizeof(notice), "%s voted to kick %s (%d of %d)", names, votekick.target_names,
 					votekick.votes, votekick.needed);
 				distributed_send_notice(notice);
@@ -681,7 +676,7 @@ static void votekick_host_request(
 	{
 		snprintf(notice, sizeof(notice), "votekick: the next vote can start in %lu seconds",
 			(votekick_next_allowed - now + 999) / 1000);
-		votekick_refuse(machine_index, notice);
+		distributed_send_notice_to_machine(machine_index, notice);
 		return;
 	}
 	if (!voter.host && votekick_played_ticks[machine_index] < votekick_starter_ticks())
@@ -691,20 +686,20 @@ static void votekick_host_request(
 		snprintf(notice, sizeof(notice),
 			"votekick: play %ld minute%s on this server to start a vote (%ld played)", minutes,
 			minutes == 1 ? "" : "s", votekick_played_ticks[machine_index] / (60 * TICKS_PER_SECOND));
-		votekick_refuse(machine_index, notice);
+		distributed_send_notice_to_machine(machine_index, notice);
 		return;
 	}
 	if (!voter.host && votekick_remembered(votekick_cooling_starters, voter.address, voter.hardware_id, &left))
 	{
 		snprintf(notice, sizeof(notice), "votekick: your last vote failed: wait %lu seconds", (left + 999) / 1000);
-		votekick_refuse(machine_index, notice);
+		distributed_send_notice_to_machine(machine_index, notice);
 		return;
 	}
 	if (votekick_remembered(votekick_protected_targets, target.address, target.hardware_id, &left))
 	{
 		snprintf(notice, sizeof(notice), "votekick: a vote against that player failed lately: wait %lu seconds",
 			(left + 999) / 1000);
-		votekick_refuse(machine_index, notice);
+		distributed_send_notice_to_machine(machine_index, notice);
 		return;
 	}
 	csmemset(&votekick, 0, sizeof(votekick));
@@ -714,19 +709,13 @@ static void votekick_host_request(
 	votekick.target_player = player_index;
 	votekick.target_address = target.address;
 	csstrcpy(votekick.target_hardware_id, target.hardware_id);
-	votekick_names(target_machine, votekick.target_names, sizeof(votekick.target_names));
+	distributed_machine_player_names(target_machine, votekick.target_names, sizeof(votekick.target_names));
 	votekick.starter_address = voter.address;
 	csstrcpy(votekick.starter_hardware_id, voter.hardware_id);
 	votekick.started_at = now;
-	if (machine_index == NONE)
-		votekick.host_voted = TRUE;
-	else
-	{
-		votekick.voted[machine_index] = TRUE;
-		votekick.voted_generations[machine_index] = votekick_generations[machine_index];
-	}
+	votekick_mark_voted(machine_index);
 	votekick_recount();
-	votekick_names(machine_index, names, sizeof(names));
+	distributed_machine_player_names(machine_index, names, sizeof(names));
 	snprintf(notice, sizeof(notice), "%s started a vote to kick %s (%d of %d): open the scores and pick the name to vote",
 		names, votekick.target_names, votekick.votes, votekick.needed);
 	distributed_send_notice(notice);
@@ -851,17 +840,12 @@ boolean network_votekick_get_status(
 	status->player_index = NONE;
 	if (votekick_host())
 	{
-		struct votekick_voter voter;
-		unsigned long elapsed;
-
 		if (!votekick.active)
 			return FALSE;
-		votekick_voter_get(NONE, &voter);
-		elapsed = system_milliseconds() - votekick.started_at;
 		status->player_index = votekick.target_player;
 		status->votes = votekick.votes;
 		status->needed = votekick.needed;
-		status->seconds_left = (short)MAX(0, VOTE_SECONDS - (long)(elapsed / 1000));
+		status->seconds_left = (short)votekick_seconds_left();
 		status->voted = votekick.host_voted;
 		status->may_vote = TRUE;
 		return TRUE;
