@@ -2162,7 +2162,7 @@ struct network_game *network_game_client_get_game(void *client);
 struct network_game *network_game_server_get_game(void *server);
 short network_game_client_get_local_machine_index(void);
 short network_game_client_get_seconds_to_game_start(void *client);
-boolean network_player_is_valid(struct network_player *player);
+boolean network_player_is_valid(struct network_player const *player);
 boolean playlist_profile_get(long index, struct game_variant *variant);
 boolean playlist_profile_get_display_name(long index, wchar_t *name);
 boolean input_get_key(struct key_stroke *key);

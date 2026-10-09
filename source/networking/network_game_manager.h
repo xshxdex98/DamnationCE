@@ -81,7 +81,7 @@ void network_game_assign_players_to_team(
 	struct network_game *game,
 	char const *prefix);
 boolean network_player_is_valid(
-	struct network_player *player);
+	struct network_player const *player);
 boolean network_game_add_machine(
 	struct network_game *game,
 	struct network_machine *machine);
