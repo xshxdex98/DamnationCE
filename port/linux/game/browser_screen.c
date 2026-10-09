@@ -623,18 +623,11 @@ void browser_screen_process(
 /* the theme's, set by layout_update */
 static struct overlay_palette const *palette;
 
-#define COLOR_RULE (palette->rule)
 #define COLOR_TITLE (palette->title)
-#define COLOR_PANEL (palette->panel)
 #define COLOR_PANEL_EDGE (palette->panel_edge)
-#define COLOR_PANEL_HEAD (palette->panel_head)
-#define COLOR_HEAD (palette->head)
-#define COLOR_ROW_SELECTED (palette->row_selected)
 #define COLOR_ROW_RULE (palette->row_rule)
 #define COLOR_TEXT (palette->text)
 #define COLOR_DIM (palette->dim)
-#define COLOR_LABEL (palette->label)
-#define COLOR_PROMPT (palette->prompt)
 #define COLOR_RED_TEAM OVERLAY_COLOR_RED_TEAM
 #define COLOR_BLUE_TEAM OVERLAY_COLOR_BLUE_TEAM
 #define COLOR_NOTICE OVERLAY_COLOR_NOTICE
@@ -986,11 +979,24 @@ static void render_row(
 		ping_color(game->ping), text);
 }
 
+/* a line of the details, its label on the left and value on the right; y
+moves to the next line */
+static void render_detail_line(
+	char const *label,
+	char const *value,
+	float *y)
+{
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.detail_x, *y, UI_ALIGN_LEFT, COLOR_DIM, label);
+	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.detail_x + DETAIL_WIDTH, *y, UI_ALIGN_RIGHT, COLOR_TEXT, value);
+	*y += 13;
+}
+
 /* The selected game's details: map, settings, and the roster if the host
 shares one (the last slot says how many more there are). */
 static void render_details(
 	struct browser_game const *game)
 {
+	struct known_map const *map;
 	char name[64], text[64];
 	float y = DETAIL_Y + DETAIL_PICTURE_HEIGHT + 8;
 	long index;
@@ -1004,31 +1010,26 @@ static void render_details(
 	overlay_utf8(game->name, NUMBEROF(game->name), name, sizeof(name));
 	ui_overlay_text(UI_FONT_BOLD, 13.0f, layout.detail_x, y, UI_ALIGN_LEFT, COLOR_TITLE, name);
 	y += 20;
-#define DETAIL_LINE(label, value) \
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.detail_x, y, UI_ALIGN_LEFT, COLOR_DIM, label); \
-	ui_overlay_text(UI_FONT_REGULAR, 9.0f, layout.detail_x + DETAIL_WIDTH, y, UI_ALIGN_RIGHT, COLOR_TEXT, value); \
-	y += 13;
-	DETAIL_LINE("Status", game->open ? "Accepting players" : "In progress");
-	if (known_map(game->map)->kind != MAP_XBOX)
+	render_detail_line("Status", game->open ? "Accepting players" : "In progress", &y);
+	map = known_map(game->map);
+	if (map->kind != MAP_XBOX)
 	{
-		DETAIL_LINE("Map", !known_map(game->map)->installed ? "Not installed" :
-			known_map(game->map)->kind == MAP_CUSTOM_EDITION ? "Custom Edition" :
-			known_map(game->map)->kind == MAP_CAMPAIGN ? "Campaign" : "Custom");
+		render_detail_line("Map", !map->installed ? "Not installed" : map->kind == MAP_CUSTOM_EDITION ? "Custom Edition" :
+			map->kind == MAP_CAMPAIGN ? "Campaign" : "Custom", &y);
 	}
-	DETAIL_LINE("Mode", type_name(game, text, sizeof(text)));
+	render_detail_line("Mode", type_name(game, text, sizeof(text)), &y);
 	snprintf(text, sizeof(text), "%d of %d", game->players, game->maximum_players);
-	DETAIL_LINE("Players", text);
+	render_detail_line("Players", text, &y);
 	if (game->score_limit)
 	{
 		snprintf(text, sizeof(text), "%d", game->score_limit);
-		DETAIL_LINE("Score limit", text);
+		render_detail_line("Score limit", text, &y);
 	}
 	if (game->ping >= 0)
 	{
 		snprintf(text, sizeof(text), "%d ms", game->ping);
-		DETAIL_LINE("Ping", text);
+		render_detail_line("Ping", text, &y);
 	}
-#undef DETAIL_LINE
 
 	y += 4;
 	ui_overlay_rect(layout.detail_x, y, DETAIL_WIDTH, 0.75f, 0, COLOR_ROW_RULE);
@@ -1102,13 +1103,7 @@ void browser_screen_render(
 	}
 	render_details(selected);
 
-	colors.fill = COLOR_PANEL;
-	colors.fill_lit = COLOR_ROW_SELECTED;
-	colors.edge = COLOR_PANEL_EDGE;
-	colors.text = COLOR_PROMPT;
-	colors.text_lit = COLOR_TITLE;
-	colors.text_disabled = COLOR_DIM;
-	colors.radius = palette->radius;
+	overlay_button_colors_get(&colors);
 	button_labels_get(&buttons);
 	overlay_buttons_draw(buttons.labels, NUMBER_OF_BUTTONS, buttons_left(&buttons), OVERLAY_BUTTON_Y,
 		browser_screen.button_hovered, buttons_disabled(), &colors);

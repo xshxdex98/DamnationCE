@@ -43,21 +43,17 @@ Each picture fills the top left 140x114 of its frame. */
 #define LEVEL_PICTURES "ui\\shell\\bitmaps\\mp_map_grafix"
 #define LEVEL_PICTURE_WIDTH 140
 #define LEVEL_PICTURE_HEIGHT 114
-static char const *const xbox_levels[] =
+
+/* the Xbox's multiplayer levels, in that order: their files and display
+names */
+static char const *const xbox_levels[][2] =
 {
-	"beavercreek", "sidewinder", "damnation", "ratrace", "prisoner", "hangemhigh", "chillout",
-	"carousel", "boardingaction", "bloodgulch", "wizard", "putput", "longest",
+	{ "beavercreek", "Battle Creek" }, { "sidewinder", "Sidewinder" }, { "damnation", "Damnation" },
+	{ "ratrace", "Rat Race" }, { "prisoner", "Prisoner" }, { "hangemhigh", "Hang 'Em High" },
+	{ "chillout", "Chill Out" }, { "carousel", "Derelict" }, { "boardingaction", "Boarding Action" },
+	{ "bloodgulch", "Blood Gulch" }, { "wizard", "Wizard" }, { "putput", "Chiron TL-34" }, { "longest", "Longest" },
 };
 #define UNKNOWN_LEVEL_FRAME NUMBEROF(xbox_levels)
-
-/* the Xbox multiplayer levels' display names */
-static char const *const xbox_map_names[][2] =
-{
-	{ "beavercreek", "Battle Creek" }, { "bloodgulch", "Blood Gulch" }, { "boardingaction", "Boarding Action" },
-	{ "carousel", "Derelict" }, { "chillout", "Chill Out" }, { "damnation", "Damnation" },
-	{ "hangemhigh", "Hang 'Em High" }, { "longest", "Longest" }, { "prisoner", "Prisoner" },
-	{ "putput", "Chiron TL-34" }, { "ratrace", "Rat Race" }, { "sidewinder", "Sidewinder" }, { "wizard", "Wizard" },
-};
 
 static struct overlay_palette const glassed_palette =
 {
@@ -105,6 +101,21 @@ enum
 #define CAIRO_ROW_EDGE 0x64A4E828
 #define CAIRO_LIT_EDGE 0xFFFFFF70
 #define CAIRO_LIT_GLOW 0xCEE6FF30
+
+/* ---------- private code */
+
+/* the Xbox level of a file's name, else NONE */
+static short xbox_level(char const *file_name)
+{
+	short index;
+
+	for (index = 0; index < NUMBEROF(xbox_levels); index++)
+	{
+		if (!csstrcmp(file_name, xbox_levels[index][0]))
+			return index;
+	}
+	return NONE;
+}
 
 /* ---------- public code */
 
@@ -356,17 +367,18 @@ void overlay_text_fitted(
 	ui_overlay_text(font, size, x, y, UI_ALIGN_LEFT, color, fitted);
 }
 
+char const *overlay_xbox_level_name(
+	short level)
+{
+	return level >= 0 && level < NUMBEROF(xbox_levels) ? xbox_levels[level][1] : NULL;
+}
+
 char const *overlay_xbox_map_name(
 	char const *file_name)
 {
-	short index;
+	short level = xbox_level(file_name);
 
-	for (index = 0; index < NUMBEROF(xbox_map_names); index++)
-	{
-		if (!csstrcmp(file_name, xbox_map_names[index][0]))
-			return xbox_map_names[index][1];
-	}
-	return NULL;
+	return level != NONE ? xbox_levels[level][1] : NULL;
 }
 
 void overlay_map_name(
@@ -454,8 +466,21 @@ float overlay_buttons_width(
 
 	for (index = 0; index < count; index++)
 		width += button_width(labels[index]) + (index ? BUTTON_GAP : 0);
-
 	return width;
+}
+
+void overlay_button_colors_get(
+	struct overlay_button_colors *colors)
+{
+	struct overlay_palette const *palette = overlay_palette_current();
+
+	colors->fill = palette->panel;
+	colors->fill_lit = palette->row_selected;
+	colors->edge = palette->panel_edge;
+	colors->text = palette->prompt;
+	colors->text_lit = palette->title;
+	colors->text_disabled = palette->dim;
+	colors->radius = palette->radius;
 }
 
 void overlay_buttons_draw(
@@ -531,22 +556,17 @@ short overlay_button_at(
 			return index;
 		x += width + BUTTON_GAP;
 	}
-
 	return NONE;
 }
 
 short overlay_map_display_index(
 	char const *map_name)
 {
-	char const *name = tag_name_strip_path(map_name);
-	short index, custom;
+	short level = xbox_level(tag_name_strip_path(map_name));
+	short custom = custom_edition_maps_display_index(map_name);
 
-	for (index = 0; index < NUMBEROF(xbox_levels); index++)
-	{
-		if (!csstrcmp(name, xbox_levels[index]))
-			return index;
-	}
-	custom = custom_edition_maps_display_index(map_name);
+	if (level != NONE)
+		return level;
 	return custom != NONE ? custom : UNKNOWN_LEVEL_FRAME;
 }
 

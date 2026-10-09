@@ -109,12 +109,6 @@ enum
 #define GAMETYPES_SCREEN "pc\\main_menu\\multiplayer_type_select\\connected\\gametype_select_screen_wrapper"
 #define SERVER_SETUP_SCREEN "pc\\main_menu\\multiplayer_type_select\\server_settings\\server_settings_screen"
 
-/* in the game's level order (ui_widget_event_handler_functions.c) */
-static char const *const xbox_level_names[] =
-{
-	"Battle Creek", "Sidewinder", "Damnation", "Rat Race", "Prisoner", "Hang 'Em High", "Chill Out",
-	"Derelict", "Boarding Action", "Blood Gulch", "Wizard", "Chiron TL-34", "Longest",
-};
 static char const *const category_names[NUMBER_OF_CATEGORIES] = { "VANILLA", "CUSTOM" };
 static char const *const difficulty_names[NUMBER_OF_GAME_DIFFICULTY_LEVELS] = { "EASY", "NORMAL", "HEROIC", "LEGENDARY" };
 
@@ -138,7 +132,6 @@ static struct step_row const cooperative_rows[] =
 client's screens' alone: Vanilla keeps the stock map list) */
 #define PALETTE (overlay_palette_current())
 #define COLOR_TITLE (PALETTE->title)
-#define COLOR_CHOSEN (PALETTE->row_selected)
 #define COLOR_TICK 0xFFFFFFFF
 #define COLOR_TEXT (PALETTE->text)
 #define COLOR_DIM (PALETTE->dim)
@@ -254,10 +247,9 @@ static void entry_text(struct map_entry const *entry, char *name, long name_size
 	if (map_screen.step == STEP_MAPS && entry->level < map_screen.xbox_count)
 	{
 		long strings = tag_loaded('ustr', LEVEL_DESCRIPTIONS);
+		char const *level_name = overlay_xbox_level_name(entry->level);
 
-		csstrncpy(name, entry->level < NUMBEROF(xbox_level_names) ? xbox_level_names[entry->level] : "?",
-			(size_t)name_size - 1);
-		name[name_size - 1] = 0;
+		snprintf(name, (size_t)name_size, "%s", level_name ? level_name : "?");
 		if (strings != NONE)
 			utf8_of(unicode_string_list_get_string(strings, entry->level), description, description_size);
 		return;
@@ -817,13 +809,8 @@ void map_screen_render(void)
 	}
 
 	step_buttons(&bar);
-	colors.fill = PALETTE->panel;
-	colors.fill_lit = COLOR_CHOSEN;
-	colors.edge = COLOR_EDGE;
+	overlay_button_colors_get(&colors);
 	colors.text = COLOR_TEXT;
-	colors.text_lit = COLOR_TITLE;
-	colors.text_disabled = COLOR_DIM;
-	colors.radius = PALETTE->radius;
 	overlay_buttons_draw(bar.labels, bar.count, (float)ROW_X, OVERLAY_BUTTON_Y, map_screen.button_hovered, 0,
 		&colors);
 }

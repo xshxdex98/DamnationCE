@@ -264,11 +264,14 @@ static void render_panel(
 		NUMBEROF(game->variant.human_readable_game_description), text, sizeof(text));
 	y = detail_line(palette, y, "Game", text);
 	if (cooperative)
+	{
 		y = detail_line(palette, y, "Difficulty", difficulty_names[PIN(game->difficulty, 0, NUMBEROF(difficulty_names) - 1)]);
+	}
 	else
+	{
 		y = detail_line(palette, y, "Mode", engine_names[PIN(game->variant.game_engine_index, 0, NUMBEROF(engine_names) - 1)]);
-	if (!cooperative)
 		y = detail_line(palette, y, "Teams", game->variant.universal_variant.teams ? "Yes" : "No");
+	}
 	snprintf(text, sizeof(text), "%d of %d", player_count, game->maximum_players);
 	detail_line(palette, y, "Players", text);
 
@@ -290,12 +293,7 @@ static void render_buttons(
 	struct overlay_button_colors colors;
 	short index;
 
-	colors.fill = palette->panel;
-	colors.fill_lit = palette->row_selected;
-	colors.edge = palette->panel_edge;
-	colors.text = palette->prompt;
-	colors.text_lit = palette->title;
-	colors.text_disabled = palette->dim;
+	overlay_button_colors_get(&colors);
 	colors.radius = palette->radius / 2;
 	for (index = 0; bar && index < NUMBER_OF_BUTTONS; index++)
 	{
