@@ -11936,7 +11936,7 @@ static void hs_enumerate_hud_messages(
 
 		hud_messages = hud_message_text_definition_get(
 			global_scenario_get()->hud_messages.index);
-		hs_enumerate_block_data(&hud_messages->messages, 0, sizeof(struct hud_message_definition));
+		hs_enumerate_block_data(&hud_messages->messages, 0, sizeof(struct hud_state_message_definition));
 	}
 	return;
 }
