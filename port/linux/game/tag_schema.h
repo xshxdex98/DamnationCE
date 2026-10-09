@@ -34,6 +34,7 @@ Each correction is logged. The retail maps need none (tools/map_validate.c).
 /* ---------- headers */
 
 #include "tag_files/tag_groups.h"
+#include "models/model_definitions.h"
 
 #include <stddef.h>
 
@@ -214,6 +215,47 @@ target_level names; flags are _tag_schema_none_bit's or 0 */
 	{ _tag_schema_terminator, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, NULL }
 
 /* ---------- structures */
+
+/* A Custom Edition gbxmodel's part (OpenSauce model_definitions.hpp), which
+the validator checks (tag_schema_models.c) and the converter makes this
+build's (custom_edition_geometry.c). Where this build's part has its
+buffers, a gbxmodel part has where its strip and vertices are in the map's
+model data (the loader checked that they lie in it), and after them the
+model's nodes its vertices name by their place in its table, when the
+model's parts have local nodes. */
+struct gbxmodel_geometry_part
+{
+	unsigned long flags;
+	short shader_index;
+	char previous_part_index;
+	char next_part_index;
+	short centroid_primary_node_index;
+	short centroid_secondary_node_index;
+	real centroid_primary_node_weight;
+	real centroid_secondary_node_weight;
+	real_point3d centroid;
+	struct tag_block uncompressed_vertices;
+	struct tag_block compressed_vertices;
+	struct tag_block triangles;
+	short strip_type;
+	word pad1;
+	long strip_triangle_count;
+	unsigned long strip_offset;
+	unsigned long unused1;
+	short vertex_type;
+	word pad2;
+	long vertex_count;
+	unsigned long unused2[2];
+	unsigned long vertex_offset;
+	byte pad3[3];
+	byte local_node_count;
+	byte local_node_indices[MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART];
+	word pad4;
+};
+
+typedef char verify_gbxmodel_geometry_part_size[sizeof(struct gbxmodel_geometry_part) == 0x84 ? 1 : -1];
+typedef char verify_gbxmodel_geometry_part_vertex_offset[
+	offsetof(struct gbxmodel_geometry_part, vertex_offset) == 0x64 ? 1 : -1];
 
 struct tag_validation;
 struct tag_schema_definition;

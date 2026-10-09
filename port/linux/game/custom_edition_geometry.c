@@ -33,6 +33,7 @@ Edition vertices (docs/custom_edition_caches.md).
 #include "structures/structure_bsp_definitions.h"
 #include "cache_file_formats.h"
 #include "custom_edition_cache.h"
+#include "tag_schema.h"
 #include "models/models.h"
 
 #include <math.h>
@@ -66,50 +67,10 @@ component this far past 1 stays within that after the packing's rounding
 (every vector of the maps examined is within 1.0001) */
 #define MAXIMUM_COMPRESSIBLE_COMPONENT 1.005f
 
-/* A model part as Custom Edition caches hold it (OpenSauce
-model_definitions.hpp, gbxmodel_geometry_part). Where this build keeps its
-buffers it keeps the kind, length and place of its strip and vertices in the
-model data (cache_file_formats.c checked they lie within it), and after them
-the table its vertices' node indices go through when the model's parts have
-local nodes. */
-struct custom_edition_model_part
-{
-	unsigned long flags;
-	short shader_index;
-	char previous_part_index;
-	char next_part_index;
-	short centroid_primary_node_index;
-	short centroid_secondary_node_index;
-	real centroid_primary_node_weight;
-	real centroid_secondary_node_weight;
-	real_point3d centroid;
-	struct tag_block uncompressed_vertices;
-	struct tag_block compressed_vertices;
-	struct tag_block triangles;
-	short strip_type;
-	word pad1;
-	long strip_triangle_count;
-	unsigned long strip_offset;
-	unsigned long unused1;
-	short vertex_type;
-	word pad2;
-	long vertex_count;
-	unsigned long unused2[2];
-	unsigned long vertex_offset;
-	byte pad3[3];
-	byte local_node_count;
-	byte local_node_indices[MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART];
-	word pad4;
-};
-
 typedef char verify_model_geometry_size[
 	sizeof(struct model_geometry) == 0x30 ? 1 : -1];
 typedef char verify_model_geometry_part_size[
 	sizeof(struct model_geometry_part) == 0x68 ? 1 : -1];
-typedef char verify_custom_edition_model_part_size[
-	sizeof(struct custom_edition_model_part) == 0x84 ? 1 : -1];
-typedef char verify_custom_edition_model_part_vertex_offset[
-	offsetof(struct custom_edition_model_part, vertex_offset) == 0x64 ? 1 : -1];
 typedef char verify_structure_material_size[
 	sizeof(struct structure_material) == 0x100 ? 1 : -1];
 
@@ -178,7 +139,7 @@ Node indices are checked as the model data holds them, local to the part
 when the model's parts have local nodes. */
 static boolean custom_edition_model_part_verify(
 	struct model const *model,
-	struct custom_edition_model_part const *part,
+	struct gbxmodel_geometry_part const *part,
 	long part_count,
 	struct model_vertex_uncompressed const *vertices,
 	word const *strip)
@@ -245,7 +206,7 @@ MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART of them, into `nodes`: their count, or
 NONE when there are more, or a vertex names a node the model lacks. */
 static long part_nodes_used(
 	struct model const *model,
-	struct custom_edition_model_part const *part,
+	struct gbxmodel_geometry_part const *part,
 	struct model_vertex_uncompressed const *vertices,
 	byte nodes[MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART])
 {
@@ -304,10 +265,10 @@ static boolean model_local_nodes_make(
 
 			for (part_index = 0; part_index < geometry->parts.count; part_index++)
 			{
-				struct custom_edition_model_part *part = TAG_BLOCK_GET_ELEMENT(
+				struct gbxmodel_geometry_part *part = TAG_BLOCK_GET_ELEMENT(
 					&geometry->parts,
 					part_index,
-					struct custom_edition_model_part);
+					struct gbxmodel_geometry_part);
 				struct model_vertex_uncompressed *vertices =
 					(struct model_vertex_uncompressed *)(model_data + part->vertex_offset);
 				byte nodes[MAXIMUM_NODES_PER_MODEL_GEOMETRY_PART];
@@ -366,10 +327,10 @@ static void custom_edition_model_part_shaders_bound(
 
 		for (part_index = 0; part_index < geometry->parts.count; part_index++)
 		{
-			struct custom_edition_model_part *part = TAG_BLOCK_GET_ELEMENT(
+			struct gbxmodel_geometry_part *part = TAG_BLOCK_GET_ELEMENT(
 				&geometry->parts,
 				part_index,
-				struct custom_edition_model_part);
+				struct gbxmodel_geometry_part);
 
 			if (part->shader_index < 0 || part->shader_index >= model->shaders.count)
 			{
@@ -422,10 +383,10 @@ static boolean custom_edition_model_verify(
 
 		for (part_index = 0; part_index < geometry->parts.count; part_index++)
 		{
-			struct custom_edition_model_part const *part = TAG_BLOCK_GET_ELEMENT(
+			struct gbxmodel_geometry_part const *part = TAG_BLOCK_GET_ELEMENT(
 				&geometry->parts,
 				part_index,
-				struct custom_edition_model_part);
+				struct gbxmodel_geometry_part);
 
 			if (!custom_edition_model_part_verify(
 				model,
@@ -457,7 +418,7 @@ static boolean custom_edition_model_verify(
 /* The model's node for a node the part `part` names by its index among its
 local nodes; an index past them is left as it is. */
 static short part_model_node(
-	struct custom_edition_model_part const *part,
+	struct gbxmodel_geometry_part const *part,
 	short node_index)
 {
 	if (node_index >= 0 && node_index < part->local_node_count)
@@ -474,7 +435,7 @@ compressing its vertices (by way of `scratch`, room for all of them) to
 vertices name the model's nodes when local_nodes, else as they are. */
 static boolean custom_edition_model_part_convert(
 	struct model_geometry_part *part,
-	struct custom_edition_model_part const *source,
+	struct gbxmodel_geometry_part const *source,
 	boolean local_nodes,
 	struct model_vertex_uncompressed const *source_vertices,
 	word const *source_strip,
@@ -568,10 +529,10 @@ static boolean custom_edition_model_convert(
 		this build's parts are smaller, and each is read first */
 		for (part_index = 0; part_index < geometry->parts.count; part_index++)
 		{
-			struct custom_edition_model_part source = *TAG_BLOCK_GET_ELEMENT(
+			struct gbxmodel_geometry_part source = *TAG_BLOCK_GET_ELEMENT(
 				&geometry->parts,
 				part_index,
-				struct custom_edition_model_part);
+				struct gbxmodel_geometry_part);
 			struct model_geometry_part *part = TAG_BLOCK_GET_ELEMENT(
 				&geometry->parts,
 				part_index,
