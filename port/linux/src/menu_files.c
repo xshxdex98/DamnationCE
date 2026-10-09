@@ -35,6 +35,8 @@ high-res HUD's are (hud_hires.c).
 
 #define MAXIMUM_DEPTH 32
 #define MAXIMUM_ART 1024
+/* a bitmap's frames (a short of the game's counts them) */
+#define MAXIMUM_FRAMES 32767
 
 /* ---------- the files */
 
@@ -175,30 +177,30 @@ static void files_gather(void)
 	{
 		/* (the folder's own and its folders': SDL's * does not cross a /) */
 		static const char *const patterns[] = { "*.xml", "*/*.xml" };
-		int pattern;
+		size_t pattern;
 
-		for (pattern = 0; pattern < 2; pattern++)
+		for (pattern = 0; pattern < sizeof(patterns) / sizeof(*patterns); pattern++)
 		{
-		int count = 0;
-		char **names = SDL_GlobDirectory(folder, patterns[pattern], 0, &count);
-		int name;
+			int count = 0;
+			char **names = SDL_GlobDirectory(folder, patterns[pattern], 0, &count);
+			int name;
 
-		for (name = 0; names && name < count; name++)
-		{
-			unsigned long size = 0;
-			unsigned char *data;
-
-			if (file_find(names[name]) >= 0)
-				continue;
-			snprintf(path, sizeof(path), "%s/%s", folder, names[name]);
-			data = file_read(path, &size);
-			if (data)
+			for (name = 0; names && name < count; name++)
 			{
-				platform_log("menus: adding %s", path);
-				file_add(names[name], data, size, 1);
+				unsigned long size = 0;
+				unsigned char *data;
+
+				if (file_find(names[name]) >= 0)
+					continue;
+				snprintf(path, sizeof(path), "%s/%s", folder, names[name]);
+				data = file_read(path, &size);
+				if (data)
+				{
+					platform_log("menus: adding %s", path);
+					file_add(names[name], data, size, 1);
+				}
 			}
-		}
-		SDL_free(names);
+			SDL_free(names);
 		}
 	}
 #endif
@@ -393,6 +395,14 @@ static void read_attributes(struct reader *reader, const char *element, const XM
 	}
 }
 
+/* a true or false attribute's value (false if it is not there) */
+static int read_flag(struct reader *reader, const char *name, const char *text)
+{
+	if (text && strcmp(text, "true") && strcmp(text, "false"))
+		reader_error(reader, "%s is \"true\" or \"false\"", name);
+	return text && !strcmp(text, "true");
+}
+
 static long current_line(struct reader *reader)
 {
 	return (long)XML_GetCurrentLineNumber(reader->parser);
@@ -495,8 +505,7 @@ static void read_bitmap(struct reader *reader, const XML_Char **attributes)
 		length = strcspn(frames, " \t\r\n");
 		if (!length)
 			break;
-		/* (a bitmap's count of frames is a short of the game's) */
-		if (bitmap.frame_count >= 32767)
+		if (bitmap.frame_count >= MAXIMUM_FRAMES)
 		{
 			reader_error(reader, "a bitmap has too many frames");
 			break;
@@ -538,21 +547,24 @@ static void read_frame(struct reader *reader, const XML_Char **attributes, long 
 	memset(&frame, 0, sizeof(frame));
 	frame.index = -1;
 	read_attributes(reader, "frame", attributes, table, sizeof(table) / sizeof(*table));
-	if (!reader->failed && (frame.png != NULL) == (frame.map != NULL))
-		reader_error(reader, "a <frame> has a png or a map bitmap, not both");
-	else if (!reader->failed && frame.png && (frame.width <= 0 || frame.height <= 0))
-		reader_error(reader, "a <frame> with a png needs width and height");
-	else if (!reader->failed && frame.map && frame.index < 0)
-		reader_error(reader, "a <frame> of a map bitmap needs its index");
-	else if (!reader->failed && frame.map && (frame.width < 0 || frame.height < 0 || !frame.width != !frame.height))
-		reader_error(reader, "a <frame> of a map bitmap is scaled to a width and a height, or neither");
-	else if (!reader->failed && (frame.x || frame.y) && (!frame.map || !frame.width))
-		reader_error(reader, "only a scaled <frame> of a map bitmap is placed at an x and y");
-	if (!reader->failed && reader->bitmap_frames_attribute)
-		reader_error(reader, "a bitmap's <frame>s and frames= cannot be mixed");
+	if (!reader->failed)
+	{
+		if ((frame.png != NULL) == (frame.map != NULL))
+			reader_error(reader, "a <frame> has a png or a map bitmap, not both");
+		else if (frame.png && (frame.width <= 0 || frame.height <= 0))
+			reader_error(reader, "a <frame> with a png needs width and height");
+		else if (frame.map && frame.index < 0)
+			reader_error(reader, "a <frame> of a map bitmap needs its index");
+		else if (frame.map && (frame.width < 0 || frame.height < 0 || !frame.width != !frame.height))
+			reader_error(reader, "a <frame> of a map bitmap is scaled to a width and a height, or neither");
+		else if ((frame.x || frame.y) && (!frame.map || !frame.width))
+			reader_error(reader, "only a scaled <frame> of a map bitmap is placed at an x and y");
+		else if (reader->bitmap_frames_attribute)
+			reader_error(reader, "a bitmap's <frame>s and frames= cannot be mixed");
+	}
 	if (frame.index < 0)
 		frame.index = 0;
-	if (menus->bitmaps[owner].frame_count >= 32767)
+	if (menus->bitmaps[owner].frame_count >= MAXIMUM_FRAMES)
 	{
 		reader_error(reader, "a bitmap has too many frames");
 		return;
@@ -650,16 +662,12 @@ static void read_widget(struct reader *reader, const XML_Char **attributes, long
 	GROW(reader, menus->widgets, index);
 	menus->widgets[index] = widget;
 	menus->widget_count++;
-	if (!grow_last(reader, &reader->last_child, index))
+	if (!grow_last(reader, &reader->last_child, index) || !grow_last(reader, &reader->last_handler, index) ||
+		!grow_last(reader, &reader->last_input, index) || !grow_last(reader, &reader->last_conditional, index) ||
+		!grow_last(reader, &reader->last_replace, index))
+	{
 		return;
-	if (!grow_last(reader, &reader->last_handler, index))
-		return;
-	if (!grow_last(reader, &reader->last_input, index))
-		return;
-	if (!grow_last(reader, &reader->last_conditional, index))
-		return;
-	if (!grow_last(reader, &reader->last_replace, index))
-		return;
+	}
 	if (parent != HALO_MENU_NONE)
 		child_add(reader, parent, index, NULL, widget.x, widget.y, child_controller);
 }
@@ -699,11 +707,8 @@ static void read_handler(struct reader *reader, const XML_Char **attributes, lon
 	handler.file = reader->file;
 	handler.line = current_line(reader);
 	read_attributes(reader, "on", attributes, table, sizeof(table) / sizeof(*table));
-	if ((back && strcmp(back, "true") && strcmp(back, "false")) ||
-		(branch && strcmp(branch, "true") && strcmp(branch, "false")))
-		reader_error(reader, "back and branch are \"true\" or \"false\"");
-	handler.back = back && !strcmp(back, "true");
-	handler.branch = branch && !strcmp(branch, "true");
+	handler.back = read_flag(reader, "back", back);
+	handler.branch = read_flag(reader, "branch", branch);
 	if (!reader->failed && !handler.event)
 		reader_error(reader, "an <on> needs an event");
 	GROW(reader, menus->handlers, index);
@@ -745,9 +750,7 @@ static void read_conditional(struct reader *reader, const XML_Char **attributes,
 	conditional.file = reader->file;
 	conditional.line = current_line(reader);
 	read_attributes(reader, "conditional", attributes, table, sizeof(table) / sizeof(*table));
-	if (if_failed && strcmp(if_failed, "true") && strcmp(if_failed, "false"))
-		reader_error(reader, "if_failed is \"true\" or \"false\"");
-	conditional.if_failed = if_failed && !strcmp(if_failed, "true");
+	conditional.if_failed = read_flag(reader, "if_failed", if_failed);
 	if (!reader->failed && !conditional.widget)
 		reader_error(reader, "a <conditional> needs a widget");
 	GROW(reader, menus->conditionals, index);
@@ -973,8 +976,10 @@ struct halo_menus const *halo_menus_load(void)
 		return succeeded[theme] ? &menus[theme] : NULL;
 	read[theme] = 1;
 	if (!gathered)
+	{
 		files_gather();
-	gathered = 1;
+		gathered = 1;
+	}
 	memset(&reader, 0, sizeof(reader));
 	for (index = 0; index < file_count && !reader.failed; index++)
 	{
@@ -1071,9 +1076,9 @@ static struct
 } art[MAXIMUM_ART];
 static long art_count;
 
-void halo_menus_art_register(void const *texture, char const *png)
+/* the art of a texture's data; art_count if it has none */
+static long art_find(unsigned long data)
 {
-	unsigned long data = ((const unsigned long *)texture)[1];
 	long index;
 
 	for (index = 0; index < art_count; index++)
@@ -1081,6 +1086,21 @@ void halo_menus_art_register(void const *texture, char const *png)
 		if (art[index].data == data)
 			break;
 	}
+	return index;
+}
+
+static void art_free(long index)
+{
+	free(art[index].png);
+	if (art[index].texture)
+		glDeleteTextures(1, &art[index].texture);
+}
+
+void halo_menus_art_register(void const *texture, char const *png)
+{
+	unsigned long data = ((const unsigned long *)texture)[1];
+	long index = art_find(data);
+
 	if (index == art_count)
 	{
 		if (art_count == MAXIMUM_ART)
@@ -1096,9 +1116,7 @@ void halo_menus_art_register(void const *texture, char const *png)
 	}
 	else
 	{
-		free(art[index].png);
-		if (art[index].texture)
-			glDeleteTextures(1, &art[index].texture);
+		art_free(index);
 	}
 	memset(&art[index], 0, sizeof(art[index]));
 	art[index].data = data;
@@ -1110,23 +1128,14 @@ void halo_menus_art_forget(void)
 	long index;
 
 	for (index = 0; index < art_count; index++)
-	{
-		free(art[index].png);
-		if (art[index].texture)
-			glDeleteTextures(1, &art[index].texture);
-	}
+		art_free(index);
 	art_count = 0;
 }
 
 unsigned int menu_art_texture(unsigned long data, unsigned long *levels)
 {
-	long index;
+	long index = art_find(data);
 
-	for (index = 0; index < art_count; index++)
-	{
-		if (art[index].data == data)
-			break;
-	}
 	/* (no png: out of memory registering it) */
 	if (index == art_count || art[index].failed || !art[index].png)
 		return 0;

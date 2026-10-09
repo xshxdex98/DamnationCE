@@ -7,8 +7,9 @@ the game's picture.
 
 Each shape is a quad whose fragment shader works out a rounded rectangle's
 edge (filled, or its outline) from the distance to it, so corners and lines
-are smooth at any size; its corners may be cut at 45 degrees instead; text is glyphs (posix_ui_font.c) packed into one
-atlas texture as they are first drawn at a size, and drawn as quads too.
+are smooth at any size; its corners may be cut at 45 degrees instead. Text
+is glyphs (posix_ui_font.c) packed into one atlas texture as they are first
+drawn at a size, and drawn as quads too.
 */
 
 #ifdef HALO_GAME_BROWSER
@@ -35,6 +36,7 @@ enum
 	LAYOUT_WIDTH = 640,
 	LAYOUT_HEIGHT = 480,
 	MAXIMUM_QUADS = 8192,
+	MAXIMUM_TEXTS = 1024,
 	ATLAS_SIZE = 2048,
 	MAXIMUM_GLYPHS = 4096,
 	MAXIMUM_TEXT = 64 * 1024,
@@ -60,6 +62,23 @@ struct vertex
 	float radius, thickness;
 	float cuts[4];
 	unsigned char color[4];
+};
+
+/* the vertex's attributes, at the shaders' locations in this order */
+static const struct
+{
+	const char *name;
+	GLint size;
+	GLenum type;
+	size_t offset;
+} vertex_attributes[] =
+{
+	{ "position", 2, GL_FLOAT, offsetof(struct vertex, x) },
+	{ "texture_coordinate", 2, GL_FLOAT, offsetof(struct vertex, u) },
+	{ "shape", 4, GL_FLOAT, offsetof(struct vertex, local_x) },
+	{ "edge", 2, GL_FLOAT, offsetof(struct vertex, radius) },
+	{ "color", 4, GL_UNSIGNED_BYTE, offsetof(struct vertex, color) },
+	{ "cut", 4, GL_FLOAT, offsetof(struct vertex, cuts) },
 };
 
 struct glyph
@@ -96,7 +115,7 @@ static struct
 		float size, x, y;
 		unsigned int color;
 		int offset;
-	} texts[1024];
+	} texts[MAXIMUM_TEXTS];
 	int text_count;
 	char text[MAXIMUM_TEXT];
 	int text_used;
@@ -168,17 +187,28 @@ static struct quad *new_quad(void)
 	return quad;
 }
 
-void ui_overlay_gradient(float x, float y, float width, float height, float radius, unsigned int top,
-	unsigned int bottom)
+/* a shape's quad at x, y, width by height; NULL when there is no room */
+static struct quad *new_shape(float x, float y, float width, float height)
 {
 	struct quad *quad = new_quad();
 
+	if (quad)
+	{
+		quad->x = x;
+		quad->y = y;
+		quad->width = width;
+		quad->height = height;
+	}
+	return quad;
+}
+
+void ui_overlay_gradient(float x, float y, float width, float height, float radius, unsigned int top,
+	unsigned int bottom)
+{
+	struct quad *quad = new_shape(x, y, width, height);
+
 	if (!quad)
 		return;
-	quad->x = x;
-	quad->y = y;
-	quad->width = width;
-	quad->height = height;
 	quad->radius = radius;
 	quad->top = top;
 	quad->bottom = bottom;
@@ -192,14 +222,10 @@ void ui_overlay_rect(float x, float y, float width, float height, float radius, 
 void ui_overlay_chamfered(float x, float y, float width, float height, const float cuts[4], unsigned int top,
 	unsigned int bottom)
 {
-	struct quad *quad = new_quad();
+	struct quad *quad = new_shape(x, y, width, height);
 
 	if (!quad)
 		return;
-	quad->x = x;
-	quad->y = y;
-	quad->width = width;
-	quad->height = height;
 	memcpy(quad->cuts, cuts, sizeof(quad->cuts));
 	quad->top = top;
 	quad->bottom = bottom;
@@ -208,14 +234,10 @@ void ui_overlay_chamfered(float x, float y, float width, float height, const flo
 void ui_overlay_chamfered_outline(float x, float y, float width, float height, const float cuts[4], float thickness,
 	unsigned int color)
 {
-	struct quad *quad = new_quad();
+	struct quad *quad = new_shape(x, y, width, height);
 
 	if (!quad)
 		return;
-	quad->x = x;
-	quad->y = y;
-	quad->width = width;
-	quad->height = height;
 	memcpy(quad->cuts, cuts, sizeof(quad->cuts));
 	quad->thickness = thickness > 0.0f ? thickness : 1.0f;
 	quad->top = quad->bottom = color;
@@ -224,14 +246,10 @@ void ui_overlay_chamfered_outline(float x, float y, float width, float height, c
 void ui_overlay_outline(float x, float y, float width, float height, float radius, float thickness,
 	unsigned int color)
 {
-	struct quad *quad = new_quad();
+	struct quad *quad = new_shape(x, y, width, height);
 
 	if (!quad)
 		return;
-	quad->x = x;
-	quad->y = y;
-	quad->width = width;
-	quad->height = height;
 	quad->radius = radius;
 	quad->thickness = thickness > 0.0f ? thickness : 1.0f;
 	quad->top = quad->bottom = color;
@@ -324,45 +342,55 @@ float ui_overlay_text(int font, float size, float x, float y, int align, unsigne
 	return text && *text ? add_text(posix_font(font), size, x, y, align, color, text) : 0.0f;
 }
 
-static int utf8(unsigned int codepoint, char *out)
-{
-	out[0] = (char)(0xE0 | (codepoint >> 12));
-	out[1] = (char)(0x80 | ((codepoint >> 6) & 0x3F));
-	out[2] = (char)(0x80 | (codepoint & 0x3F));
-	out[3] = 0;
-	return 3;
-}
-
 static const char *const button_words[NUMBER_OF_UI_BUTTONS] =
 {
 	"A", "B", "X", "Y", "Start", "LT", "RT", "LB", "RB", "<", ">", "Back",
 };
 
-float ui_overlay_button_width(int button, float size)
+/* the text standing for a button on the device the player uses, and its
+font: the button's glyph (in glyph_text, UTF-8), or its name where the
+device's font has none */
+static const char *button_text(int button, int *font, char *glyph_text)
 {
 	int device = scheme();
-	char text[4];
+	unsigned int glyph = button_glyphs[device][button];
+
+	if (!glyph || !posix_ui_font_has(button_fonts[device], glyph))
+	{
+		*font = POSIX_UI_FONT_BOLD;
+		return button_words[button];
+	}
+	/* (the private use area's: three bytes) */
+	glyph_text[0] = (char)(0xE0 | (glyph >> 12));
+	glyph_text[1] = (char)(0x80 | ((glyph >> 6) & 0x3F));
+	glyph_text[2] = (char)(0x80 | (glyph & 0x3F));
+	glyph_text[3] = 0;
+	*font = button_fonts[device];
+	return glyph_text;
+}
+
+float ui_overlay_button_width(int button, float size)
+{
+	char glyph_text[4];
+	const char *text;
+	int font;
 
 	if (button < 0 || button >= NUMBER_OF_UI_BUTTONS)
 		return 0.0f;
-	if (!button_glyphs[device][button])
-		return measure(POSIX_UI_FONT_BOLD, size, button_words[button]);
-	utf8(button_glyphs[device][button], text);
-	return measure(button_fonts[device], size, text);
+	text = button_text(button, &font, glyph_text);
+	return measure(font, size, text);
 }
 
 float ui_overlay_button(int button, float size, float x, float y, unsigned int color)
 {
-	int device = scheme();
-	char text[4];
+	char glyph_text[4];
+	const char *text;
+	int font;
 
 	if (button < 0 || button >= NUMBER_OF_UI_BUTTONS)
 		return 0.0f;
-	/* (a button the device's font lacks: its name) */
-	if (!button_glyphs[device][button] || !posix_ui_font_has(button_fonts[device], button_glyphs[device][button]))
-		return add_text(POSIX_UI_FONT_BOLD, size, x, y, UI_ALIGN_LEFT, color, button_words[button]);
-	utf8(button_glyphs[device][button], text);
-	return add_text(button_fonts[device], size, x, y, UI_ALIGN_LEFT, color, text);
+	text = button_text(button, &font, glyph_text);
+	return add_text(font, size, x, y, UI_ALIGN_LEFT, color, text);
 }
 
 /* ---------- GL */
@@ -467,9 +495,11 @@ static GLuint compile(GLenum type, const char *body)
 
 static int set_up(void)
 {
-	GLuint vertex_shader, fragment_shader;
-	GLint status = 0;
 	static const unsigned char zero = 0;
+	GLuint vertex_shader, fragment_shader;
+	GLint saved_vertex_array = 0, saved_array_buffer = 0, saved_texture = 0;
+	GLint status = 0;
+	GLuint index;
 
 	if (overlay.ready || overlay.failed)
 		return overlay.ready;
@@ -483,12 +513,8 @@ static int set_up(void)
 	overlay.program = glCreateProgram();
 	glAttachShader(overlay.program, vertex_shader);
 	glAttachShader(overlay.program, fragment_shader);
-	glBindAttribLocation(overlay.program, 0, "position");
-	glBindAttribLocation(overlay.program, 1, "texture_coordinate");
-	glBindAttribLocation(overlay.program, 2, "shape");
-	glBindAttribLocation(overlay.program, 3, "edge");
-	glBindAttribLocation(overlay.program, 4, "color");
-	glBindAttribLocation(overlay.program, 5, "cut");
+	for (index = 0; index < sizeof(vertex_attributes) / sizeof(*vertex_attributes); index++)
+		glBindAttribLocation(overlay.program, index, vertex_attributes[index].name);
 	glLinkProgram(overlay.program);
 	glDeleteShader(vertex_shader);
 	glDeleteShader(fragment_shader);
@@ -504,9 +530,6 @@ static int set_up(void)
 	overlay.cutouts_location = glGetUniformLocation(overlay.program, "cutouts");
 	overlay.window_height_location = glGetUniformLocation(overlay.program, "window_height");
 
-	{
-	GLint saved_vertex_array = 0, saved_array_buffer = 0, saved_texture = 0;
-
 	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &saved_vertex_array);
 	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &saved_array_buffer);
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &saved_texture);
@@ -515,18 +538,13 @@ static int set_up(void)
 	glBindVertexArray(overlay.vertex_array);
 	glBindBuffer(GL_ARRAY_BUFFER, overlay.vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(overlay.vertices), NULL, GL_STREAM_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(struct vertex), (const void *)offsetof(struct vertex, x));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(struct vertex), (const void *)offsetof(struct vertex, u));
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(struct vertex), (const void *)offsetof(struct vertex, local_x));
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(struct vertex), (const void *)offsetof(struct vertex, radius));
-	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(struct vertex), (const void *)offsetof(struct vertex, color));
-	glEnableVertexAttribArray(5);
-	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(struct vertex), (const void *)offsetof(struct vertex, cuts));
+	for (index = 0; index < sizeof(vertex_attributes) / sizeof(*vertex_attributes); index++)
+	{
+		glEnableVertexAttribArray(index);
+		glVertexAttribPointer(index, vertex_attributes[index].size, vertex_attributes[index].type,
+			vertex_attributes[index].type == GL_UNSIGNED_BYTE, sizeof(struct vertex),
+			(const void *)vertex_attributes[index].offset);
+	}
 	glBindVertexArray(0);
 
 	glGenTextures(1, &overlay.atlas);
@@ -542,7 +560,6 @@ static int set_up(void)
 	glBindVertexArray((GLuint)saved_vertex_array);
 	glBindBuffer(GL_ARRAY_BUFFER, (GLuint)saved_array_buffer);
 	glBindTexture(GL_TEXTURE_2D, (GLuint)saved_texture);
-	}
 	overlay.shelf_x = overlay.shelf_y = 2;
 	overlay.ready = 1;
 	return 1;
@@ -689,22 +706,41 @@ static void put_vertex(struct vertex *vertex, float x, float y, float u, float v
 	vertex->color[3] = (unsigned char)color;
 }
 
+/* a frame's shapes, text and cutouts, gathered for the next */
+static void frame_clear(void)
+{
+	overlay.quad_count = overlay.text_count = overlay.text_used = 0;
+	overlay.cutout_count = 0;
+}
+
 void ui_overlay_present(int x, int y, int width, int height, int window_width, int window_height)
 {
+	/* a quad's two triangles: whether each vertex is on the right, and on
+	the bottom */
+	static const unsigned char vertex_right[6] = { 0, 1, 0, 1, 1, 0 };
+	static const unsigned char vertex_bottom[6] = { 0, 0, 1, 0, 1, 1 };
 	float scale, origin_x, origin_y;
 	int shape_count, index, count = 0, atlas_full = 0;
+	/* (the game's renderer keeps its bindings across frames: they are put
+	back after; and it binds a sampler to each unit, which would filter the
+	atlas as it filters its textures) */
+	GLint saved_vertex_array = 0, saved_array_buffer = 0, saved_program = 0, saved_texture = 0, saved_active = 0;
+	GLint saved_sampler = 0;
+	GLint saved_viewport[4] = { 0, 0, 0, 0 };
+	GLboolean saved_blend, saved_depth, saved_stencil, saved_cull, saved_scissor;
+	GLint saved_blend_rgb_source = 0, saved_blend_rgb_destination = 0, saved_blend_alpha_source = 0,
+		saved_blend_alpha_destination = 0, saved_blend_equation = 0;
 
 	/* (a frame's cutouts go with it, drawn or not: a minimized window's
 	would fill the four and leave old ones cut out once it is shown) */
 	if (!overlay.quad_count && !overlay.text_count)
 	{
-		overlay.cutout_count = 0;
+		frame_clear();
 		return;
 	}
 	if (!set_up() || width <= 0 || height <= 0)
 	{
-		overlay.quad_count = overlay.text_count = overlay.text_used = 0;
-		overlay.cutout_count = 0;
+		frame_clear();
 		return;
 	}
 	/* (the layout's 480 lines fill the picture's height; a wider picture
@@ -721,19 +757,11 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 	origin_x = (float)x + ((float)width - LAYOUT_WIDTH * scale) * 0.5f;
 	origin_y = (float)(window_height - (y + height));
 
-	/* (the game's renderer keeps its bindings across frames: they are put
-	back after) */
-	GLint saved_vertex_array = 0, saved_array_buffer = 0, saved_program = 0, saved_texture = 0, saved_active = 0;
-	/* (the game's renderer binds a sampler to each unit, which would filter
-	the atlas as it filters its textures) */
-	GLint saved_sampler = 0;
-	GLint saved_viewport[4] = { 0, 0, 0, 0 };
-	GLboolean saved_blend = glIsEnabled(GL_BLEND), saved_depth = glIsEnabled(GL_DEPTH_TEST),
-		saved_stencil = glIsEnabled(GL_STENCIL_TEST), saved_cull = glIsEnabled(GL_CULL_FACE),
-		saved_scissor = glIsEnabled(GL_SCISSOR_TEST);
-	GLint saved_blend_rgb_source = 0, saved_blend_rgb_destination = 0, saved_blend_alpha_source = 0,
-		saved_blend_alpha_destination = 0, saved_blend_equation = 0;
-
+	saved_blend = glIsEnabled(GL_BLEND);
+	saved_depth = glIsEnabled(GL_DEPTH_TEST);
+	saved_stencil = glIsEnabled(GL_STENCIL_TEST);
+	saved_cull = glIsEnabled(GL_CULL_FACE);
+	saved_scissor = glIsEnabled(GL_SCISSOR_TEST);
 	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &saved_vertex_array);
 	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &saved_array_buffer);
 	glGetIntegerv(GL_CURRENT_PROGRAM, &saved_program);
@@ -764,48 +792,54 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 	for (index = 0; index < overlay.quad_count && count + 6 <= MAXIMUM_QUADS * 6; index++)
 	{
 		const struct quad *quad = &overlay.quads[index];
-		struct vertex *v = &overlay.vertices[count];
-		float left, top, right, bottom, half_width, half_height, radius, thickness, grow, cuts[4];
-		unsigned int top_color = quad->top, bottom_color = quad->bottom;
+		/* each side's (left and right, top and bottom) */
+		float xs[2], ys[2], us[2], vs[2], local_xs[2] = { 0, 0 }, local_ys[2] = { 0, 0 };
+		float half_width = 0, half_height = 0, radius = 0, thickness = 0, cuts[4] = { 0, 0, 0, 0 };
 		int corner;
 
 		if (index < shape_count)
 		{
 			/* a shape: layout to window pixels, a pixel larger all round for
 			the smooth edge */
-			left = origin_x + quad->x * scale;
-			top = origin_y + quad->y * scale;
-			right = left + quad->width * scale;
-			bottom = top + quad->height * scale;
+			float left = origin_x + quad->x * scale, top = origin_y + quad->y * scale;
+			float right = left + quad->width * scale, bottom = top + quad->height * scale;
+
 			half_width = (right - left) * 0.5f;
 			half_height = (bottom - top) * 0.5f;
+			xs[0] = left - 1.0f;
+			xs[1] = right + 1.0f;
+			ys[0] = top - 1.0f;
+			ys[1] = bottom + 1.0f;
+			us[0] = us[1] = -1.0f;
+			vs[0] = vs[1] = 0.0f;
+			local_xs[0] = -half_width - 1.0f;
+			local_xs[1] = half_width + 1.0f;
+			local_ys[0] = -half_height - 1.0f;
+			local_ys[1] = half_height + 1.0f;
 			radius = quad->radius * scale;
 			thickness = quad->thickness > 0.0f ? fmaxf(1.0f, quad->thickness * scale) : 0.0f;
 			for (corner = 0; corner < 4; corner++)
 				cuts[corner] = quad->cuts[corner] * scale;
-			grow = 1.0f;
-			put_vertex(&v[0], left - grow, top - grow, -1.0f, 0.0f, -half_width - grow, -half_height - grow, cuts, half_width, half_height, radius, thickness, top_color);
-			put_vertex(&v[1], right + grow, top - grow, -1.0f, 0.0f, half_width + grow, -half_height - grow, cuts, half_width, half_height, radius, thickness, top_color);
-			put_vertex(&v[2], left - grow, bottom + grow, -1.0f, 0.0f, -half_width - grow, half_height + grow, cuts, half_width, half_height, radius, thickness, bottom_color);
-			put_vertex(&v[3], right + grow, top - grow, -1.0f, 0.0f, half_width + grow, -half_height - grow, cuts, half_width, half_height, radius, thickness, top_color);
-			put_vertex(&v[4], right + grow, bottom + grow, -1.0f, 0.0f, half_width + grow, half_height + grow, cuts, half_width, half_height, radius, thickness, bottom_color);
-			put_vertex(&v[5], left - grow, bottom + grow, -1.0f, 0.0f, -half_width - grow, half_height + grow, cuts, half_width, half_height, radius, thickness, bottom_color);
 		}
 		else
 		{
 			/* a glyph, already in window pixels */
-			left = quad->x;
-			top = quad->y;
-			right = left + quad->width;
-			bottom = top + quad->height;
-			put_vertex(&v[0], left, top, quad->u0, quad->v0, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
-			put_vertex(&v[1], right, top, quad->u1, quad->v0, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
-			put_vertex(&v[2], left, bottom, quad->u0, quad->v1, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
-			put_vertex(&v[3], right, top, quad->u1, quad->v0, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
-			put_vertex(&v[4], right, bottom, quad->u1, quad->v1, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
-			put_vertex(&v[5], left, bottom, quad->u0, quad->v1, 0, 0, quad->cuts, 0, 0, 0, 0, top_color);
+			xs[0] = quad->x;
+			ys[0] = quad->y;
+			xs[1] = quad->x + quad->width;
+			ys[1] = quad->y + quad->height;
+			us[0] = quad->u0;
+			vs[0] = quad->v0;
+			us[1] = quad->u1;
+			vs[1] = quad->v1;
 		}
-		count += 6;
+		for (corner = 0; corner < 6; corner++)
+		{
+			int right = vertex_right[corner], bottom = vertex_bottom[corner];
+
+			put_vertex(&overlay.vertices[count++], xs[right], ys[bottom], us[right], vs[bottom], local_xs[right],
+				local_ys[bottom], cuts, half_width, half_height, radius, thickness, bottom ? quad->bottom : quad->top);
+		}
 	}
 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -864,8 +898,7 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 	(saved_cull ? glEnable : glDisable)(GL_CULL_FACE);
 	(saved_scissor ? glEnable : glDisable)(GL_SCISSOR_TEST);
 
-	overlay.quad_count = overlay.text_count = overlay.text_used = 0;
-	overlay.cutout_count = 0;
+	frame_clear();
 	if (atlas_full)
 		forget_glyphs();
 }

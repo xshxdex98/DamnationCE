@@ -1,12 +1,16 @@
 /*
 POSIX_FILES.C
 
-glibc file system helpers for the platform layer (see posix.h). Built with
-the host ABI and _FILE_OFFSET_BITS=64.
+The platform layer's file system helpers (posix.h), on the host's C
+library (Linux, macOS, Android). Built with the host ABI and
+_FILE_OFFSET_BITS=64.
 */
 
 #include <dirent.h>
+#include <dlfcn.h>
 #include <fcntl.h>
+#include <pthread.h>
+#include <stdio.h>
 #include <string.h>
 #include <strings.h>
 #include <sys/stat.h>
@@ -20,6 +24,11 @@ static void split64(unsigned long long value, posix_ulong *low, posix_ulong *hig
 {
 	*low = (posix_ulong)(value & 0xffffffffULL);
 	*high = (posix_ulong)(value >> 32);
+}
+
+static off_t join64(posix_ulong low, posix_ulong high)
+{
+	return (off_t)((unsigned long long)high << 32 | low);
 }
 
 static void fill_information(const struct stat *st, struct posix_file_information *information)
@@ -84,8 +93,7 @@ int posix_set_file_times(const char *path,
 int posix_seek(int descriptor, posix_long offset_low, posix_long offset_high, int whence,
 	posix_ulong *position_low, posix_ulong *position_high)
 {
-	off_t offset = (off_t)(((unsigned long long)(posix_ulong)offset_high << 32) | (posix_ulong)offset_low);
-	off_t result = lseek(descriptor, offset, whence);
+	off_t result = lseek(descriptor, join64((posix_ulong)offset_low, (posix_ulong)offset_high), whence);
 
 	if (result == (off_t)-1)
 		return -1;
@@ -95,7 +103,7 @@ int posix_seek(int descriptor, posix_long offset_low, posix_long offset_high, in
 
 int posix_truncate(int descriptor, posix_ulong size_low, posix_ulong size_high)
 {
-	return ftruncate(descriptor, (off_t)(((unsigned long long)size_high << 32) | size_low));
+	return ftruncate(descriptor, join64(size_low, size_high));
 }
 
 int posix_disk_space(const char *path,
@@ -140,8 +148,6 @@ int posix_make_directory(const char *path)
 #ifdef __LP64__
 /* The Android port calls this file from 32-bit guest code, which cannot
 hold a 64-bit DIR pointer: directory streams are small handles there. */
-#include <pthread.h>
-
 #define DIRECTORY_HANDLE_COUNT 64
 
 static DIR *directory_handles[DIRECTORY_HANDLE_COUNT];
@@ -242,9 +248,6 @@ int posix_find_entry_case_insensitive(const char *directory, const char *name,
 }
 
 /* ---------- symbols */
-
-#include <dlfcn.h>
-#include <stdio.h>
 
 /* Describe a code address as "symbol+offset" without allocating (the game's
 stack dump runs inside its own allocator's assertions). */

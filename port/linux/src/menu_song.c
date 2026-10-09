@@ -230,7 +230,7 @@ void menu_song_mix(float *output, unsigned long frames)
 	for (frame = 0; frame < frames && song.playing; frame++)
 	{
 		float edge, scale;
-		short channel;
+		int channel;
 
 		song.gain += song.gain < song.target ? step : -step;
 		if (song.gain >= 1.0f && song.target >= 1.0f)
