@@ -9,8 +9,9 @@
                                  and prints its ID, for the repository variable
 
   discord_feeds.py release <tag> <notes file>
-      A release's heading drawn as a card (discord_card.py) over its
-      changelog's text, posted silently as it is published (release.yml).
+      A release's heading drawn as a card (discord_card.py), which tells
+      @everyone, over its changelog's text, posted silently, as it is
+      published (release.yml).
       The text's message IDs are printed, for release-edit.
         DISCORD_RELEASES_WEBHOOK  the changelog channel's webhook URL
 
@@ -233,10 +234,11 @@ def release_heading(tag):
     return heading("DamnationCE", tag.lstrip("v"), "Release notes")
 
 
-def post_card(webhook, name, card):
-    """the card as a message of its own, posted silently"""
-    request(webhook, "POST", {"content": "", "flags": SUPPRESS_NOTIFICATIONS, "allowed_mentions": {"parse": []},
-                              "attachments": [{"id": 0, "filename": name}]}, [(name, card)])
+def post_card(webhook, name, card, everyone=False):
+    """the card as a message of its own, posted silently, or telling @everyone"""
+    message = {"content": "@everyone", "allowed_mentions": {"parse": ["everyone"]}} if everyone else \
+        {"content": "", "flags": SUPPRESS_NOTIFICATIONS, "allowed_mentions": {"parse": []}}
+    request(webhook, "POST", {**message, "attachments": [{"id": 0, "filename": name}]}, [(name, card)])
 
 
 def post_release(tag, notes_path):
@@ -245,14 +247,16 @@ def post_release(tag, notes_path):
         changelog = unwrap(notes.read())
     heading = release_heading(tag)
     if heading:
-        post_card(webhook, "release.png", heading)
+        post_card(webhook, "release.png", heading, everyone=True)
     else:
-        changelog = f"**DamnationCE {tag}**\n" + changelog
-    # (Discord's own text, readable at any length; a long changelog goes on in further messages)
-    for part in message_parts(changelog):
+        changelog = f"@everyone **DamnationCE {tag}**\n" + changelog
+    # (Discord's own text, readable at any length; a long changelog goes on in further messages; without
+    # the card, its first part tells @everyone)
+    for index, part in enumerate(message_parts(changelog)):
+        ping = not heading and index == 0
         message = json.loads(request(f"{webhook}?wait=true", "POST",
-                                     {"content": part, "flags": SUPPRESS_EMBEDS | SUPPRESS_NOTIFICATIONS,
-                                      "allowed_mentions": {"parse": []}}))
+                                     {"content": part, "flags": SUPPRESS_EMBEDS | (0 if ping else SUPPRESS_NOTIFICATIONS),
+                                      "allowed_mentions": {"parse": ["everyone"] if ping else []}}))
         print(f"Posted {tag}'s text as message {message['id']}")
 
 
