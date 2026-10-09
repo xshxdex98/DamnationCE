@@ -68,8 +68,6 @@ go of the p2p lock while it may wait for a program */
 void p2p_register_url_scheme(const char *scheme, const char *description);
 /* formats bytes as lower-case hexadecimal (text holds 2 * size + 1) */
 void p2p_hex(const unsigned char *bytes, int size, char *text);
-/* the invite link of a host's key hash and an invite's token */
-void p2p_format_invite(char *link, int size, const unsigned char *key_hash, const unsigned char *token);
 /* the addresses this machine can be reached at; returns their count */
 int p2p_local_candidates(struct p2p_candidate *candidates, int maximum_count);
 /* this run's X25519 public key (P2P_KEY_SIZE bytes), whose hash the
@@ -242,6 +240,8 @@ written to the brokers at once; under p2p_lock */
 void p2p_lobby_quit(void);
 /* a key hash's slot */
 void p2p_lobby_slot_topic(const unsigned char *key_hash, char *topic, int size);
+/* the invite link of a host's key hash and an invite's token */
+void p2p_format_invite(char *link, int size, const unsigned char *key_hash, const unsigned char *token);
 
 /* ---------- p2p_discord.c: rich presence and invites through the Discord
 desktop client */
