@@ -2487,18 +2487,6 @@ static int connected_player_count(void)
 	return count;
 }
 
-void p2p_format_invite(char *link, int size, const unsigned char *key_hash, const unsigned char *token)
-{
-	unsigned char bytes[P2P_KEY_HASH_SIZE + P2P_TOKEN_SIZE];
-	char text[2 * sizeof(bytes) + 1];
-
-	memcpy(bytes, key_hash, P2P_KEY_HASH_SIZE);
-	memcpy(bytes + P2P_KEY_HASH_SIZE, token, P2P_TOKEN_SIZE);
-	p2p_hex(bytes, sizeof(bytes), text);
-	snprintf(link, (size_t)size, P2P_INVITE_PREFIX "%s", text);
-	memset(bytes, 0, sizeof(bytes));
-}
-
 /* a new invite (a new token) */
 static void make_invite(void)
 {
