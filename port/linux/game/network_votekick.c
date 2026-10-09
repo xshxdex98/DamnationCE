@@ -39,7 +39,9 @@ votes against:
 - Only the host speaks: what a client did wrong is told to it alone, at
   most once a second; the votes to everyone, only as they change.
 - A machine kicked by a vote is kept out of the host's games, by address
-  and hardware id, for votekick_ban_minutes.
+  and hardware id, for votekick_ban_minutes. One that leaves during a vote
+  against it is too, as if the vote passed, and while the vote runs it is
+  refused if it tries to join again: no one dodges a vote by leaving.
 
 A client hears the host's count every second (and as it changes), for the
 scoreboard. A build without votes drops both messages as kinds it does not
@@ -323,6 +325,18 @@ static void votekick_remember(
 	identities[oldest].until = now + milliseconds;
 }
 
+/* whether an address or hardware id is another's: the same address, or the
+same hardware id (none told: no one's) */
+static boolean votekick_same_identity(
+	unsigned long address,
+	char const *hardware_id,
+	unsigned long other_address,
+	char const *other_hardware_id)
+{
+	return (address && address == other_address) ||
+		(hardware_id && hardware_id[0] && other_hardware_id[0] && !csstrcmp(hardware_id, other_hardware_id));
+}
+
 /* whether an address or hardware id is remembered (not gone by); the
 milliseconds left */
 static boolean votekick_remembered(
@@ -340,9 +354,7 @@ static boolean votekick_remembered(
 
 		if (!identity->valid || votekick_time_reached(now, identity->until))
 			continue;
-		if ((address && identity->address == address) ||
-			(hardware_id && hardware_id[0] && identity->hardware_id[0] &&
-				!csstrcmp(hardware_id, identity->hardware_id)))
+		if (votekick_same_identity(address, hardware_id, identity->address, identity->hardware_id))
 		{
 			if (milliseconds_left)
 				*milliseconds_left = identity->until - now;
@@ -400,7 +412,16 @@ boolean network_votekick_kept_out(
 	unsigned long address,
 	char const *hardware_id)
 {
-	return votekick_remembered(votekick_kept_out_identities, distributed_real_address(address), hardware_id, NULL);
+	unsigned long real_address = distributed_real_address(address);
+
+	/* (nor the player a vote runs against, joining again during it: it
+	would drop the machine voted against for a new one, out of the vote) */
+	if (votekick.active && votekick_host() &&
+		votekick_same_identity(real_address, hardware_id, votekick.target_address, votekick.target_hardware_id))
+	{
+		return TRUE;
+	}
+	return votekick_remembered(votekick_kept_out_identities, real_address, hardware_id, NULL);
 }
 
 /* the client machines in the game with a player who has not quit, and the
@@ -556,18 +577,31 @@ static void votekick_end(
 	votekick_send_status();
 }
 
+/* the vote passed: the player kicked and kept out; or (left) the player
+left during it, which passes it too (no one dodges a vote by leaving), and
+is kept out as well */
 static void votekick_pass(
-	void)
+	boolean left)
 {
 	char notice[160];
 	long ban_minutes = PIN(config_integer("network.votekick_ban_minutes"), 1, 24 * 60);
 
-	snprintf(notice, sizeof(notice), "%s kicked by vote (%d of %d), kept out for %ld minute%s",
-		votekick.target_names, votekick.votes, votekick.needed, ban_minutes, ban_minutes == 1 ? "" : "s");
+	if (left)
+	{
+		snprintf(notice, sizeof(notice), "%s left during the vote to kick them, kept out for %ld minute%s",
+			votekick.target_names, ban_minutes, ban_minutes == 1 ? "" : "s");
+	}
+	else
+	{
+		snprintf(notice, sizeof(notice), "%s kicked by vote (%d of %d), kept out for %ld minute%s",
+			votekick.target_names, votekick.votes, votekick.needed, ban_minutes, ban_minutes == 1 ? "" : "s");
+	}
 	distributed_send_notice(notice);
 	votekick_remember(votekick_kept_out_identities, votekick.target_address, votekick.target_hardware_id,
 		(unsigned long)ban_minutes * 60 * 1000);
-	network_game_server_kick_machine(votekick.target_machine, FALSE);
+	/* (one that left is gone: its slot may be another's now) */
+	if (!left)
+		network_game_server_kick_machine(votekick.target_machine, FALSE);
 	votekick_end();
 }
 
@@ -668,7 +702,7 @@ static void votekick_host_request(
 			}
 		}
 		if (votekick.votes >= votekick.needed)
-			votekick_pass();
+			votekick_pass(FALSE);
 		else
 			votekick_send_status();
 		return;
@@ -723,7 +757,7 @@ static void votekick_host_request(
 	distributed_send_notice(notice);
 	error(_error_log, "votekick: started by machine %ld against machine %ld", machine_index, target_machine);
 	if (votekick.votes >= votekick.needed)
-		votekick_pass();
+		votekick_pass(FALSE);
 	else
 		votekick_send_status();
 }
@@ -783,13 +817,10 @@ void network_votekick_host_tick(
 	}
 	if (!votekick.active)
 		return;
+	/* (the player left: the vote passes) */
 	if (!votekick_target_present())
 	{
-		char notice[160];
-
-		snprintf(notice, sizeof(notice), "%s left: the vote ended", votekick.target_names);
-		distributed_send_notice(notice);
-		votekick_end();
+		votekick_pass(TRUE);
 		return;
 	}
 	/* (those gone counted no more, and those who have since played long
@@ -799,7 +830,7 @@ void network_votekick_host_tick(
 		votekick_recount();
 		if (votekick.votes >= votekick.needed)
 		{
-			votekick_pass();
+			votekick_pass(FALSE);
 			return;
 		}
 		if (votekick_time_reached(system_milliseconds(), votekick.started_at + VOTE_SECONDS * 1000))

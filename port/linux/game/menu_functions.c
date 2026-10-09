@@ -1867,6 +1867,7 @@ static struct
 	{ "controls.flashlight", L"FLASHLIGHT", 2 },
 	{ "controls.scoreboard", L"SHOW SCORES", 2 },
 	{ "controls.pause", L"PAUSE MENU", 2 },
+	{ "controls.screenshot", L"SCREENSHOT", 2 },
 	{ "controls.push_to_talk", L"PUSH TO TALK", 2 },
 };
 
@@ -2185,7 +2186,7 @@ void game_engine_end_game(void);
 /* the platform layer's (internet play's: p2p.h) */
 int platform_clipboard_get(char *text, int size);
 void platform_clipboard_set(char const *text);
-void platform_text_field(int typing);
+void platform_text_field(int typing, int password);
 void ui_widget_port_post_button(short controller_index, short button_index);
 
 static wchar_t const *const engine_names[] = { L"", L"CTF", L"SLAYER", L"ODDBALL", L"KING OF THE HILL", L"RACE" };
@@ -2258,8 +2259,8 @@ static boolean text_field_editing(struct widget_instance *row)
 	return text_field.row && (!row || text_field.row == row);
 }
 
-static void text_field_begin(struct widget_instance *row, char const *text, short maximum,
-	void (*done)(char const *text))
+static void text_field_open(struct widget_instance *row, char const *text, short maximum,
+	void (*done)(char const *text), boolean masked)
 {
 	struct key_stroke key;
 
@@ -2268,26 +2269,31 @@ static void text_field_begin(struct widget_instance *row, char const *text, shor
 	snprintf(text_field.before, sizeof(text_field.before), "%s", text);
 	text_field.maximum = (short)MIN(maximum, TEXT_FIELD_LENGTH - 1);
 	text_field.done = done;
-	text_field.masked = FALSE;
+	text_field.masked = masked;
 	text_field_shown_time = system_milliseconds();
 	while (input_get_key(&key))
 		;
-	platform_text_field(TRUE);
+	platform_text_field(TRUE, masked);
+}
+
+static void text_field_begin(struct widget_instance *row, char const *text, short maximum,
+	void (*done)(char const *text))
+{
+	text_field_open(row, text, maximum, done, FALSE);
 }
 
 /* a password's field: as text_field_begin, its text shown as stars */
 static void text_field_begin_masked(struct widget_instance *row, char const *text, short maximum,
 	void (*done)(char const *text))
 {
-	text_field_begin(row, text, maximum, done);
-	text_field.masked = TRUE;
+	text_field_open(row, text, maximum, done, TRUE);
 }
 
 static void text_field_end(boolean keep)
 {
 	void (*done)(char const *text) = text_field.done;
 
-	platform_text_field(FALSE);
+	platform_text_field(FALSE, FALSE);
 	text_field.row = NULL;
 	text_field.done = NULL;
 	if (!keep)
@@ -4232,7 +4238,8 @@ void menu_functions_text_box_drawn(struct widget_instance *widget, rectangle2d c
 		size = (short)MIN(14, bounds->y1 - bounds->y0);
 		icon.x1 = (short)(bounds->x1 - 4);
 		icon.y0 = (short)((bounds->y0 + bounds->y1 - size) / 2);
-		/* (the name's ink: the icon just left of it) */
+		/* (the name's ink: the icon just left of it, centred on its
+		capitals) */
 		if (widget->parameters.text_box.text && widget->parameters.text_box.text[0])
 		{
 			rectangle2d text;
@@ -4241,7 +4248,7 @@ void menu_functions_text_box_drawn(struct widget_instance *widget, rectangle2d c
 			draw_unicode_string_compute_bounds(bounds, widget->parameters.text_box.text, &text, &cursor);
 			if (text.x0 - size - 6 >= bounds->x0)
 				icon.x1 = (short)(text.x0 - 6);
-			icon.y0 = (short)((text.y0 + text.y1 - size) / 2);
+			icon.y0 = (short)(draw_unicode_string_capital_middle(bounds, widget->parameters.text_box.text) - size / 2);
 		}
 		icon.x0 = (short)(icon.x1 - size);
 		icon.y1 = (short)(icon.y0 + size);
@@ -5071,7 +5078,7 @@ static void gametype_edit_list_update(struct widget_instance *list)
 		gametype_edit_read();
 	focused = list_scroll(list, &gametype_edit.first, gametype_edit.count, GAMETYPE_EDIT_ROWS);
 	if (focused != NONE)
-		gametype_edit.chosen = (short)MIN(focused, gametype_edit.count - 1);
+		gametype_edit.chosen = (short)MAX(0, MIN(focused, gametype_edit.count - 1));
 	rows_update(list, (short)MIN(gametype_edit.count, GAMETYPE_EDIT_ROWS), gametype_edit_row_text);
 	visible_set(named(description, "gametype_right_item", 0), gametype_edit.count > 0);
 	if (gametype_edit.chosen < gametype_edit.count)

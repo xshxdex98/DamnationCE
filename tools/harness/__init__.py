@@ -4,6 +4,7 @@ import functools
 import os
 import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -14,6 +15,16 @@ HARNESS = Path(__file__).resolve().parent
 def read(relative):
     """A source file of the repository, as the compiler reads it."""
     return (ROOT / relative).read_text(encoding="latin-1")
+
+
+@functools.lru_cache(maxsize=None)
+def _sources():
+    """Every header of the game and the port, then every source file: where a
+    definition is looked for when the file a test names no longer has it."""
+    folders = [ROOT / "source", ROOT / "port/linux/game", ROOT / "port/linux/src"]
+    paths = [path for folder in folders for path in sorted(folder.rglob("*.h"))]
+    paths += [path for folder in folders for path in sorted(folder.rglob("*.c"))]
+    return "\n".join(path.read_text(encoding="latin-1") for path in paths)
 
 
 def function(source, name):
@@ -36,15 +47,47 @@ def inline(source, name):
 
 def enum_with(source, member):
     """The whole enum that declares a member."""
-    at = source.index(member)
+    # (its line in an enum: the name, perhaps a value, then a comma or the
+    # end; a member may be asked for with its " =")
+    name = member.split("=")[0].strip()
+    declared = re.compile(r"^[ \t]*" + re.escape(name) + r"\b[ \t]*(?:=[^,\n]*)?,?[ \t]*(?:/[*/].*)?$", re.M)
+    if not declared.search(source):
+        source = _sources()
+    match = declared.search(source)
+    if not match:
+        raise LookupError(f"enum member not found in the sources: {member}")
+    at = match.start()
     start = source.rindex("enum", 0, at)
     return source[start:source.index("};", at) + 2]
 
 
+def structure(source, name):
+    """An actual named structure's definition, including nested unions/structures."""
+    pattern = re.compile(r"^struct\s+" + re.escape(name) + r"\s*\{", re.M)
+    match = pattern.search(source)
+    if not match:
+        source = _sources()
+        match = pattern.search(source)
+    if not match:
+        raise LookupError(f"structure not found in the sources: {name}")
+    end = source.index("{", match.start()) + 1
+    depth = 1
+    while depth:
+        depth += (source[end] == "{") - (source[end] == "}")
+        end += 1
+    return source[match.start():source.index(";", end) + 1]
+
+
 def constant(source, name):
     """An enum constant's or #define's integer value, following a name it is set to (as the port's capacities are)."""
-    match = re.search(r"\b" + re.escape(name) + r"\s*=\s*(\w+)", source) or \
-        re.search(r"#define\s+" + re.escape(name) + r"\s+(\w+)", source)
+    def find(text):
+        return re.search(r"\b" + re.escape(name) + r"\s*=\s*(\w+)", text) or \
+            re.search(r"#define\s+" + re.escape(name) + r"\s+(\w+)", text)
+
+    match = find(source)
+    if not match:
+        source = _sources()
+        match = find(source)
     if not match:
         raise LookupError(f"constant not found in the sources: {name}")
     value = match.group(1)
@@ -77,6 +120,9 @@ def build(test, generated):
     command = [os.environ.get("CC", "clang"), "-m32", "-std=gnu99", "-O2", "-Wall", "-Werror", "-Wno-unused-function",
                "-Wno-unused-variable", "-I", str(HARNESS / "include"), "-I", str(work),
                str(HARNESS / "tests" / f"{test}.c"), "-o", str(executable)]
+    # (the C library's maths, a library of its own but on Windows, whose C
+    # library would have the tests' strcpy and the like be its _s versions)
+    command.append("-D_CRT_SECURE_NO_WARNINGS" if sys.platform == "win32" else "-lm")
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode:
         raise RuntimeError(f"{test}.c does not compile:\n{result.stderr}")

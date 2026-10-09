@@ -1247,6 +1247,8 @@ static boolean sound_set_definition_end(
 			return victim_sound_index != sound_index;
 		}
 
+		/* port: no other voice can be preempted; tell the caller this one
+		was retired before it writes to the freed channel. */
 		sound_stop(sound_index);
 		return FALSE;
 	}
@@ -2705,6 +2707,7 @@ static void update_channel_for_looping_sound(
 					(!channel->playing_permutation ||
 						channel->playing_permutation->next_permutation_index == NONE))
 				{
+					/* port: (ending the definition can stop this sound itself) */
 					if (!sound_set_definition_end(channel->sound_index))
 					{
 						return;

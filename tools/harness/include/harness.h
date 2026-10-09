@@ -26,6 +26,12 @@ typedef unsigned char byte;
 typedef struct { real x, y, z; } real_point3d;
 typedef struct { real i, j, k; } real_vector3d;
 #define DATUM_INDEX_TO_ABSOLUTE_INDEX(index) ((index) & 0xFFFF)
+/* an Xbox address field, as the game's 32-bit builds keep it (cseries/xbox_address.h) */
+#define XPTR(type) type *
+#define xbox_pointer(address) ((void *)(address))
+/* the Direct3D buffers' types: the tests' locks take any pointer */
+typedef void IDirect3DVertexBuffer8;
+typedef void IDirect3DIndexBuffer8;
 
 #define CHECK(condition, ...) \
 	do \

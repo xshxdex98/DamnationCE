@@ -39,6 +39,7 @@ THIRD_PARTY = BUILD / "third_party"
 MUSL_VERSION = "1.2.5"
 MUSL_DIR = THIRD_PARTY / f"musl-{MUSL_VERSION}"
 MUSL_URL = f"https://musl.libc.org/releases/musl-{MUSL_VERSION}.tar.gz"
+# (as tools/windows_build.py's and tools/linux_sysroot.py's SDL_VERSION)
 SDL_TAG = "release-3.4.16"
 SDL_DIR = THIRD_PARTY / "SDL3"
 SDL_URL = "https://github.com/libsdl-org/SDL.git"
