@@ -1882,8 +1882,6 @@ static void ui_point_from_window(float window_x, float window_y, short *x, short
 	ui_point_from_window_on(window_x, window_y, TRUE, x, y);
 }
 
-/* (Android: none, -1, as a pointer is not offered; the scoreboard says
-nothing of one) */
 int halo_scoreboard_pointer_update(int offered, struct halo_ui_pointer *pointer)
 {
 #ifdef HALO_ANDROID
