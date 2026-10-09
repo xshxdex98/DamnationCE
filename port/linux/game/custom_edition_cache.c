@@ -185,37 +185,24 @@ static char const *maps_folder(
 }
 #define NUMBER_OF_MAPS_FOLDERS 2
 
-/* whether <folder><name><extension>, made in path, exists */
-static boolean maps_folder_has(
-	char const *folder,
+/* whether a maps folder has <name>.map: its path, made in path */
+static boolean maps_folders_find(
 	char const *name,
-	char const *extension,
 	char *path)
 {
-	/* (the install's only when there is one: an Xbox drive of the save
-	folder is made when first looked in, port/linux/src/xbox_files.c) */
-	if (strlen(folder) + strlen(name) + strlen(extension) >= MAP_PATH_SIZE ||
-		(folder == maps_folder(1) && !custom_edition_install_present()))
-	{
-		return FALSE;
-	}
-	sprintf(path, "%s%s%s", folder, name, extension);
-
-	return file_path_exists(path);
-}
-
-/* the file that holds the map `map_name` names (a level name or a file
-name): <custom maps folder>\<name>.map */
-static boolean custom_edition_map_path(
-	char const *map_name,
-	char *path)
-{
-	char const *name = tag_name_strip_path(map_name);
 	short folder;
 
 	for (folder = 0; folder < NUMBER_OF_MAPS_FOLDERS; folder++)
 	{
-		if (maps_folder_has(maps_folder(folder), name, MAP_FILE_EXTENSION, path))
+		/* (the install's only when there is one: an Xbox drive of the save
+		folder is made when first looked in, port/linux/src/xbox_files.c) */
+		if (strlen(maps_folder(folder)) + strlen(name) + strlen(MAP_FILE_EXTENSION) >= MAP_PATH_SIZE ||
+			(folder == 1 && !custom_edition_install_present()))
+		{
+			continue;
+		}
+		sprintf(path, "%s%s%s", maps_folder(folder), name, MAP_FILE_EXTENSION);
+		if (file_path_exists(path))
 		{
 			return TRUE;
 		}
@@ -224,25 +211,29 @@ static boolean custom_edition_map_path(
 	return FALSE;
 }
 
+/* the file that holds the map `map_name` names (a level name or a file
+name): <custom maps folder>\<name>.map */
+static boolean custom_edition_map_path(
+	char const *map_name,
+	char *path)
+{
+	return maps_folders_find(tag_name_strip_path(map_name), path);
+}
+
 /* A cache's resource map of `type`, bitmaps.map and so on, in the first maps
 folder that has it; the game's when none does, for the message. */
-static boolean custom_edition_resource_map_path(
+static void custom_edition_resource_map_path(
 	enum resource_map_type type,
 	char *path)
 {
 	char const *name = resource_map_type_describe(type);
-	short folder;
 
-	for (folder = 0; folder < NUMBER_OF_MAPS_FOLDERS; folder++)
+	if (!maps_folders_find(name, path))
 	{
-		if (maps_folder_has(maps_folder(folder), name, MAP_FILE_EXTENSION, path))
-		{
-			return TRUE;
-		}
+		sprintf(path, "%s%s%s", maps_folder(0), name, MAP_FILE_EXTENSION);
 	}
-	sprintf(path, "%s%s%s", maps_folder(0), name, MAP_FILE_EXTENSION);
 
-	return TRUE;
+	return;
 }
 
 static void custom_edition_cache_files_close(
@@ -608,7 +599,6 @@ boolean custom_edition_cache_present(
 	struct custom_edition_file file;
 	struct cache_file_identity identity;
 	enum cache_file_status status = _cache_file_status_read_failed;
-	short folder;
 	short type;
 
 	if (!custom_edition_map_path(level_name, path))
@@ -654,12 +644,7 @@ boolean custom_edition_cache_present(
 		char const *resource_name = resource_map_type_describe((enum resource_map_type)type);
 		char resource_path[MAP_PATH_SIZE];
 
-		for (folder = 0; folder < NUMBER_OF_MAPS_FOLDERS; folder++)
-		{
-			if (maps_folder_has(maps_folder(folder), resource_name, MAP_FILE_EXTENSION, resource_path))
-				break;
-		}
-		if (folder == NUMBER_OF_MAPS_FOLDERS)
+		if (!maps_folders_find(resource_name, resource_path))
 		{
 			error(_error_silent, "custom edition: the map '%s' needs %s.map, which no maps folder has", level_name,
 				resource_name);
@@ -745,8 +730,8 @@ struct cache_file_tag_header *custom_edition_cache_tags_load(
 	{
 		char resource_path[MAP_PATH_SIZE];
 
-		if (!custom_edition_resource_map_path((enum resource_map_type)type, resource_path) ||
-			!custom_edition_file_open(&globals->resource_files[type], resource_path))
+		custom_edition_resource_map_path((enum resource_map_type)type, resource_path);
+		if (!custom_edition_file_open(&globals->resource_files[type], resource_path))
 		{
 			error(_error_silent, "custom edition: no resource map '%s'", resource_path);
 			continue;

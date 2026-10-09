@@ -150,22 +150,61 @@ static wchar_t const default_description[] = L"Halo Custom\r\nEdition map";
 
 /* ---------- private code */
 
+static void custom_edition_maps_look_for(void);
+
+/* the folders scanned, the first time the maps are asked for */
+static struct custom_edition_maps_globals *custom_edition_maps_get(
+	void)
+{
+	if (!custom_edition_maps_globals.looked_for)
+	{
+		custom_edition_maps_look_for();
+	}
+
+	return &custom_edition_maps_globals;
+}
+
+/* the index of the map named so among count maps, or NONE */
+static short custom_edition_map_find(
+	struct custom_edition_map const *maps,
+	short count,
+	char const *name)
+{
+	short map_index;
+
+	for (map_index = 0; map_index < count; map_index++)
+	{
+		if (!csstrcasecmp(maps[map_index].name, name))
+		{
+			return map_index;
+		}
+	}
+
+	return NONE;
+}
+
+static void custom_edition_maps_pictures_delete(
+	struct custom_edition_map *maps,
+	short count)
+{
+	short map_index;
+
+	for (map_index = 0; map_index < count; map_index++)
+	{
+		if (maps[map_index].picture)
+			bitmap_delete(maps[map_index].picture);
+	}
+
+	return;
+}
+
 static void custom_edition_maps_forget(
 	void)
 {
 	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
-	short map_index;
 
-	for (map_index = 0; map_index < globals->map_count; map_index++)
-	{
-		if (globals->maps[map_index].picture)
-			bitmap_delete(globals->maps[map_index].picture);
-	}
-	for (map_index = 0; map_index < globals->campaign_count; map_index++)
-	{
-		if (globals->campaigns[map_index].picture)
-			bitmap_delete(globals->campaigns[map_index].picture);
-	}
+	custom_edition_maps_pictures_delete(globals->maps, globals->map_count);
+	custom_edition_maps_pictures_delete(globals->campaigns, globals->campaign_count);
 	globals->map_count = 0;
 	globals->campaign_count = 0;
 
@@ -301,25 +340,12 @@ static void custom_edition_map_add(
 	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
 	struct custom_edition_map *map;
 	boolean campaign;
-	short map_index;
 
-	if (csstrcasecmp(extension, "map"))
+	if (csstrcasecmp(extension, "map") ||
+		custom_edition_map_find(globals->maps, globals->map_count, name) != NONE ||
+		custom_edition_map_find(globals->campaigns, globals->campaign_count, name) != NONE)
 	{
 		return;
-	}
-	for (map_index = 0; map_index < globals->map_count; map_index++)
-	{
-		if (!csstrcasecmp(globals->maps[map_index].name, name))
-		{
-			return;
-		}
-	}
-	for (map_index = 0; map_index < globals->campaign_count; map_index++)
-	{
-		if (!csstrcasecmp(globals->campaigns[map_index].name, name))
-		{
-			return;
-		}
 	}
 	/* campaign maps go to co-op; anything that isn't multiplayer either is skipped */
 	campaign = custom_edition_cache_campaign(name);
@@ -535,7 +561,9 @@ char **custom_edition_maps_level_list(
 	short xbox_level_count,
 	short *level_count)
 {
-	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
+	/* (the menus ask for the list every tick, so the folders are scanned
+	once, and again when a map list opens: custom_edition_maps_look_again) */
+	struct custom_edition_maps_globals *globals = custom_edition_maps_get();
 	short level_index;
 	short map_index;
 
@@ -543,12 +571,6 @@ char **custom_edition_maps_level_list(
 	for (level_index = 0; level_index < globals->xbox_level_count; level_index++)
 	{
 		globals->levels[level_index] = xbox_levels[level_index];
-	}
-	/* (the menus ask for the list every tick, so the folders are scanned
-	once, and again when a map list opens: custom_edition_maps_look_again) */
-	if (!globals->looked_for)
-	{
-		custom_edition_maps_look_for();
 	}
 	for (map_index = 0; map_index < globals->map_count; map_index++)
 	{
@@ -579,7 +601,7 @@ short custom_edition_maps_level_display_index(
 short custom_edition_maps_display_index(
 	char const *level_name)
 {
-	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
+	struct custom_edition_maps_globals *globals;
 	char const *name = tag_name_strip_path(level_name);
 	short map_index;
 
@@ -591,23 +613,14 @@ short custom_edition_maps_display_index(
 
 		return level != NONE ? FIRST_CAMPAIGN_DISPLAY_INDEX + level : NONE;
 	}
-	if (!globals->looked_for)
+	globals = custom_edition_maps_get();
+	if ((map_index = custom_edition_map_find(globals->maps, globals->map_count, name)) != NONE)
 	{
-		custom_edition_maps_look_for();
+		return FIRST_DISPLAY_INDEX + map_index;
 	}
-	for (map_index = 0; map_index < globals->map_count; map_index++)
+	if ((map_index = custom_edition_map_find(globals->campaigns, globals->campaign_count, name)) != NONE)
 	{
-		if (!csstrcasecmp(globals->maps[map_index].name, name))
-		{
-			return FIRST_DISPLAY_INDEX + map_index;
-		}
-	}
-	for (map_index = 0; map_index < globals->campaign_count; map_index++)
-	{
-		if (!csstrcasecmp(globals->campaigns[map_index].name, name))
-		{
-			return FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX + map_index;
-		}
+		return FIRST_CUSTOM_CAMPAIGN_DISPLAY_INDEX + map_index;
 	}
 
 	return NONE;
@@ -635,12 +648,7 @@ boolean custom_edition_maps_level_campaign(
 short custom_edition_maps_count(
 	boolean campaign)
 {
-	struct custom_edition_maps_globals *globals = &custom_edition_maps_globals;
-
-	if (!globals->looked_for)
-	{
-		custom_edition_maps_look_for();
-	}
+	struct custom_edition_maps_globals *globals = custom_edition_maps_get();
 
 	return campaign ? globals->campaign_count : globals->map_count;
 }
@@ -709,18 +717,18 @@ struct bitmap_data *custom_edition_maps_picture(
 	struct custom_edition_map *map;
 	short level = campaign_level_get(*frame_index);
 
-	if (level != NONE &&
-		bitmap_tag_index != NONE &&
-		!csstrcasecmp(tag_get_name(bitmap_tag_index), LEVEL_PICTURES_TAG_NAME))
+	if (bitmap_tag_index == NONE || csstrcasecmp(tag_get_name(bitmap_tag_index), LEVEL_PICTURES_TAG_NAME))
+	{
+		return NULL;
+	}
+	if (level != NONE)
 	{
 		long pictures = tag_loaded('bitm', CAMPAIGN_LEVEL_PICTURES_TAG_NAME);
 
 		*frame_index = UNKNOWN_LEVEL_FRAME;
 		return pictures != NONE ? bitmap_group_get_bitmap_from_sequence(pictures, 0, level) : NULL;
 	}
-	if (*frame_index < FIRST_DISPLAY_INDEX ||
-		bitmap_tag_index == NONE ||
-		csstrcasecmp(tag_get_name(bitmap_tag_index), LEVEL_PICTURES_TAG_NAME))
+	if (*frame_index < FIRST_DISPLAY_INDEX)
 	{
 		return NULL;
 	}
