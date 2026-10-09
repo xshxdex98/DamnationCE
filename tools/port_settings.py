@@ -1122,8 +1122,12 @@ def _lobby(overlay: bool = False) -> list:
     lines += _widget(f"{base}/lobby_desc", [("width", 640), ("height", 480)],
                      ['<child widget="main_menu/current_profile_name"/>',
                       f'<child widget="{base}/lobby_right_item" x="22" y="2"/>'])
+    # (New Game's level picture and name: a network co-op game's level, which
+    # menu_functions.c's lobby_map_show shows in the place of the map's)
     details = ([f'<child widget="{base}/lobby_info_labels"/>', f'<child widget="{base}/lobby_info_values"/>']
-               if overlay else [f'<child widget="{base}/lobby_game_data"/>'])
+               if overlay else ['<child widget="main_menu/solo_level_select/replay_level_right_pic"/>',
+                                '<child widget="main_menu/solo_level_select/replay_level_right_name"/>',
+                                f'<child widget="{base}/lobby_game_data"/>'])
     lines += _widget(f"{base}/lobby_right_item", [("controller", 1), ("left", 406), ("top", 75), ("width", 162),
                                                   ("height", 326),
                                                   ("bitmap", "bitmaps/spinner_list_3_wide_item_background")],

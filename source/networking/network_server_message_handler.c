@@ -82,12 +82,6 @@ enum network_game_packet_class
 	_network_game_packet_class_client_postgame = 7,
 };
 
-enum network_game_server_rejection_reason
-{
-	_network_game_server_rejection_reason_bad_join_token = 2,
-	_network_game_server_rejection_reason_game_not_open = 5,
-};
-
 /* ---------- macros */
 
 #define network_machine_is_valid(machine) \
@@ -172,7 +166,8 @@ struct message_client_settings_request
 
 struct message_client_game_start_request
 {
-	long countdown_time;
+	/* a countdown event (network_game_server_update_countdown) */
+	short request_type;
 };
 
 struct message_client_graceful_game_exit_pregame
@@ -1803,7 +1798,7 @@ static boolean network_game_server_handle_message_client_join_game_request(
 						join_game_request.machine_name,
 						transport_address_to_string(&source_address));
 					network_game_server_reject_joining_machine(server_client_machine,
-						_network_game_server_rejection_reason_bad_join_token);
+						_rejection_code_bad_join_token);
 					result = FALSE;
 				}
 			}
@@ -1814,7 +1809,7 @@ static boolean network_game_server_handle_message_client_join_game_request(
 					join_game_request.machine_name,
 					transport_address_to_string(&source_address));
 				network_game_server_reject_joining_machine(server_client_machine,
-					full ? _rejection_code_game_is_full : _network_game_server_rejection_reason_game_not_open);
+					full ? _rejection_code_game_is_full : _rejection_code_game_is_closed);
 
 				result = FALSE;
 			}
@@ -1829,18 +1824,9 @@ static boolean network_game_server_handle_message_client_join_game_request(
 	{
 		/* port: a game that cannot be joined now (full, loading, over) says
 		so, rather than leaving the machine to time out */
-		struct message_server_machine_rejected rejection;
-		struct network_message *reply;
-
-		rejection.reason = network_game_server_get_state(server, NULL) == _network_game_server_state_ingame &&
-			network_game_server_game_is_open(server) ?
-			_rejection_code_game_is_full : _network_game_server_rejection_reason_game_not_open;
-		reply = create_network_game_message(_message_server_machine_rejected, &rejection, sizeof(rejection));
-		if (reply)
-		{
-			network_game_server_write(network_game_server_get_client_connection(server_client_machine), reply,
-				GET_MESSAGE_SIZE(reply->header), NULL, 1);
-		}
+		network_game_server_reject_joining_machine(server_client_machine,
+			network_game_server_get_state(server, NULL) == _network_game_server_state_ingame &&
+				network_game_server_game_is_open(server) ? _rejection_code_game_is_full : _rejection_code_game_is_closed);
 		result = FALSE;
 	}
 
@@ -2134,8 +2120,7 @@ static boolean network_game_server_handle_message_client_game_start_request(
 			&packet_version,
 			_network_game_packet_class_client_pregame))
 		{
-			/* (a short on the wire: the rest of the long is not written) */
-			short countdown_event = (short)game_start_request.countdown_time;
+			short countdown_event = game_start_request.request_type;
 
 			/* port: a host by itself starts at once with its faster: there is
 			no countdown to shorten, and no one to wait for */

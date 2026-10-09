@@ -1834,7 +1834,8 @@ void platform_ui_pointer_set_active(BOOL active)
 	}
 	else
 	{
-		show_pointer(FALSE);
+		/* (a pointer F12 freed, or the scoreboard's, stays) */
+		show_pointer(input_state.mouse_released || scoreboard_pointer_active);
 	}
 }
 

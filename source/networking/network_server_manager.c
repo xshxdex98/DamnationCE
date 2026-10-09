@@ -62,7 +62,6 @@ enum
 	MAXIMUM_NETWORK_MACHINE_COUNT = HALO_PORT_MAXIMUM_NETWORK_MACHINES,
 	MAXIMUM_NETWORK_PLAYER_COUNT = HALO_PORT_MAXIMUM_NETWORK_PLAYERS,
 	NETWORK_GAME_NAME_LENGTH = 16,
-	NETWORK_GAME_MAP_NAME_LENGTH = 0x80,
 	NETWORK_PLAYER_NAME_LENGTH = 12,
 	MAXIMUM_MACHINE_NAME_LENGTH = 32,
 	NUMBER_OF_MULTIPLAYER_TEAMS = 2,
@@ -2967,8 +2966,8 @@ void network_game_server_change_map_name(
 	csstrncpy(
 		server->game.map.name,
 		map_name,
-		NETWORK_GAME_MAP_NAME_LENGTH - 1);
-	server->game.map.name[NETWORK_GAME_MAP_NAME_LENGTH - 1] = 0;
+		NUMBEROF(server->game.map.name) - 1);
+	server->game.map.name[NUMBEROF(server->game.map.name) - 1] = 0;
 	server->game.map.version = (long)cache_files_map_version(server->game.map.name);
 
 	if (!network_game_server_send_game_data_pregame(server))
