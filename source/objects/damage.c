@@ -1505,6 +1505,10 @@ void object_cause_damage(
 			being_damaged_flags = 0;
 			body_part = NONE;
 			friendly_damage = _friendly_damage_all;
+			/* port: none until the collision model gives one: an object without
+			one (a grenade's explosion reaches dropped weapons and projectiles)
+			has none, and Delta Stats' recorder below reads it */
+			damage_material = NULL;
 
 			if (collision_model_index != NONE)
 			{
