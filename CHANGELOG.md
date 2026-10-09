@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.3.33
+
+### From OpenCE
+
+- Voice chat in network games, in the lobby and in game: push to talk (V),
+  open mic, or off (Settings > Audio, which on desktops also picks the
+  output and input devices). The host chooses who hears whom (teammates,
+  players near, or both) and the quality, in Server Setup.
+- Votes to kick: open the scores, right-click, and pick a player's name.
+  More than half of the players must vote, counted once per address. The
+  host's scoreboard also offers Kick and Ban.
+- Co-op's Server Setup options (friendly fire, extra enemies, player
+  collisions) have a screen of their own.
+
+### From ChupathingyCE
+
+- Android: the menus work by touch, with on-screen controls in game, and
+  start on more devices.
+- macOS: a window again, on OpenGL 4.1; V-Sync from Settings applies.
+- Windows 7 can run the game again.
+- Keyboard: the crouch key crouches while moving.
+- A network game's pause menu no longer moves the player behind it.
+- Streamed sounds no longer stay silent after running dry or being cut
+  off, and the plasma pistol's charging sound no longer sticks.
+- Custom Edition maps: fewer than three multiplayer vehicles, text with
+  format codes and over-long names no longer crash or halt the game, and
+  rotational particles missing a sequence are drawn.
+- The zoom no longer leaves ghosts at high resolutions.
+- Split screen: the motion sensor works for three and four players.
+
+### Fixes
+
+- Voice chat at 48 and 64 kbps no longer drops loud words.
+
+Network version 24, as before: 0.3.32 and 0.3.33 play together, with voice
+chat and votes only between 0.3.33 machines.
+
 ## 0.3.32
 
 ### Fixes
