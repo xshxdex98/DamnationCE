@@ -53,7 +53,9 @@ struct font_character
 	short bitmap_origin_x;
 	short bitmap_origin_y;
 	short hardware_character_index;
-	word pad;
+	/* the tag's padding: the stamp rasterizer_text.c's character cache
+	marks it with (signed, as the counter it is compared with) */
+	short cache_stamp;
 	long pixels_offset;
 };
 

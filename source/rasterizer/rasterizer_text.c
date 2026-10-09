@@ -990,7 +990,7 @@ flush_hardware_character(
 	{
 		hardware_character->character->hardware_character_index = NONE;
 
-		if (hardware_character->character->pad == magic_number)
+		if (hardware_character->character->cache_stamp == magic_number)
 			error(_error_log, "font cache overwrote character in use");
 
 		hardware_character->character = NULL;
@@ -1025,7 +1025,7 @@ cache_hardware_format_character(
 		match_assert("c:\\halo\\SOURCE\\rasterizer\\rasterizer_text.c", 645, font_character->bitmap_width<=HARDWARE_CHARACTER_CACHE_BITMAP_WIDTH);
 		match_assert("c:\\halo\\SOURCE\\rasterizer\\rasterizer_text.c", 646, font_character->bitmap_height<=HARDWARE_CHARACTER_CACHE_BITMAP_HEIGHT);
 
-		font_character->pad = magic_number;
+		font_character->cache_stamp = magic_number;
 
 		if (cell_width + hardware_character_cache.x0 > HARDWARE_CHARACTER_CACHE_BITMAP_WIDTH)
 		{

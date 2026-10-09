@@ -1045,11 +1045,11 @@ static struct tag_schema_definition const font_character_table_schema =
 	TAG_SCHEMA_DEFINITION(font_character_table, struct font_character_table, font_character_table_fields);
 
 /* (the character's place in the rasterizer's character cache is the
-rasterizer's, and its pad the cache's mark: rasterizer_text.c) */
+rasterizer's, and its cache stamp the cache's mark: rasterizer_text.c) */
 static struct tag_schema_field const font_character_fields[] =
 {
 	TAG_SCHEMA_RESET(struct font_character, hardware_character_index, NONE),
-	TAG_SCHEMA_RESET(struct font_character, pad, 0),
+	TAG_SCHEMA_RESET(struct font_character, cache_stamp, 0),
 	TAG_SCHEMA_END
 };
 
