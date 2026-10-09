@@ -9,19 +9,17 @@ compiles it (gnu89).
 """
 from pathlib import Path
 import random
-import shutil
 import struct
 import subprocess
-import sys
 
 import pytest
+
+from tools.report_tool import build_report_tool, check_compiles_as_game_code
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE = ROOT / "port/linux/game/bmp_files.c"
 TOOL = ROOT / "port/tools/bmp_file_report.c"
 
-STRICT_FLAGS = ["-Wall", "-Wextra", "-Wpedantic", "-Werror"]
-UB_TRAP_FLAGS = ["-fsanitize=undefined", "-fsanitize-trap=undefined"]
 
 OK = "ok"
 NOT_BMP = "not a bmp file, or too short for its headers"
@@ -36,52 +34,15 @@ BLUE_GREEN_RED_MASKS = (0x00FF0000, 0x0000FF00, 0x000000FF)
 # ---------- the report tool
 
 
-def find_clang():
-    for candidate in (shutil.which("clang"), r"C:\Program Files\LLVM\bin\clang.exe"):
-        if candidate and Path(candidate).is_file():
-            return candidate
-    return None
-
-
-def target_flag_sets():
-    if sys.platform == "win32":
-        return [["--target=i686-pc-windows-msvc", "-fuse-ld=lld", "-D_CRT_SECURE_NO_WARNINGS"]]
-    # the game is 32-bit; the module is written for any width
-    return [["-m32"], []]
-
-
 @pytest.fixture(scope="session")
 def report_tool(tmp_path_factory):
-    clang = find_clang()
-    if clang is None:
-        pytest.skip("clang is needed to build the report tool")
-    folder = tmp_path_factory.mktemp("bmp-file-report")
-    output = folder / ("bmp_file_report.exe" if sys.platform == "win32" else "bmp_file_report")
-    errors = []
-    for target in target_flag_sets():
-        command = [clang, *target, "-std=c99", *STRICT_FLAGS, *UB_TRAP_FLAGS, "-O1", "-g",
-                   f"-I{MODULE.parent}", str(MODULE), str(TOOL), "-o", str(output)]
-        result = subprocess.run(command, capture_output=True, text=True)
-        if result.returncode == 0:
-            return output
-        errors.append(result.stdout + result.stderr)
-    # a compile error is a failure, not a missing tool: report it
-    pytest.fail("could not build the report tool:\n" + "\n".join(errors))
+    return build_report_tool(MODULE, TOOL, tmp_path_factory.mktemp("bmp-file-report"))
 
 
 def test_module_compiles_as_game_code_without_warnings(tmp_path):
     """The game compiles port/linux/game with -std=gnu89 -w; check the
     warnings it hides."""
-    clang = find_clang()
-    if clang is None:
-        pytest.skip("clang is needed")
-    for target in target_flag_sets():
-        command = [clang, *target, "-std=gnu89", *STRICT_FLAGS, "-Wno-long-long", "-c", str(MODULE),
-                   "-o", str(tmp_path / "bmp_files.o")]
-        result = subprocess.run(command, capture_output=True, text=True)
-        if result.returncode == 0:
-            return
-    pytest.fail(result.stdout + result.stderr)
+    check_compiles_as_game_code(MODULE, tmp_path)
 
 
 def report(tool, tmp_path, data, *options):

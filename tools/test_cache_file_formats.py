@@ -15,13 +15,13 @@ docs/custom_edition_caches.md.
 import os
 from pathlib import Path
 import random
-import shutil
 import struct
 import subprocess
-import sys
 import zlib
 
 import pytest
+
+from tools.report_tool import build_report_tool, check_compiles_as_game_code
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE = ROOT / "port/linux/game/cache_file_formats.c"
@@ -34,8 +34,6 @@ TAG_CACHE_BYTES = 0x01700000
 HEADER_BYTES = 0x800
 NONE = 0xFFFFFFFF
 
-STRICT_FLAGS = ["-Wall", "-Wextra", "-Wpedantic", "-Werror"]
-UB_TRAP_FLAGS = ["-fsanitize=undefined", "-fsanitize-trap=undefined"]
 
 
 def code(text):
@@ -46,52 +44,15 @@ def code(text):
 # ---------- the report tool
 
 
-def find_clang():
-    for candidate in (shutil.which("clang"), r"C:\Program Files\LLVM\bin\clang.exe"):
-        if candidate and Path(candidate).is_file():
-            return candidate
-    return None
-
-
-def target_flag_sets():
-    if sys.platform == "win32":
-        return [["--target=i686-pc-windows-msvc", "-fuse-ld=lld", "-D_CRT_SECURE_NO_WARNINGS"]]
-    # the game is 32-bit; the module is written for any width
-    return [["-m32"], []]
-
-
 @pytest.fixture(scope="session")
 def report_tool(tmp_path_factory):
-    clang = find_clang()
-    if clang is None:
-        pytest.skip("clang is needed to build the report tool")
-    folder = tmp_path_factory.mktemp("cache-file-report")
-    output = folder / ("cache_file_report.exe" if sys.platform == "win32" else "cache_file_report")
-    errors = []
-    for target in target_flag_sets():
-        command = [clang, *target, "-std=c99", *STRICT_FLAGS, *UB_TRAP_FLAGS, "-O1", "-g",
-                   f"-I{MODULE.parent}", str(MODULE), str(TOOL), "-o", str(output)]
-        result = subprocess.run(command, capture_output=True, text=True)
-        if result.returncode == 0:
-            return output
-        errors.append(result.stdout + result.stderr)
-    # a compile error is a failure, not a missing tool: report it
-    pytest.fail("could not build the report tool:\n" + "\n".join(errors))
+    return build_report_tool(MODULE, TOOL, tmp_path_factory.mktemp("cache-file-report"))
 
 
 def test_module_compiles_as_game_code_without_warnings(tmp_path):
     """The game compiles port/linux/game with -std=gnu89 -w; check the
     warnings it hides."""
-    clang = find_clang()
-    if clang is None:
-        pytest.skip("clang is needed")
-    for target in target_flag_sets():
-        command = [clang, *target, "-std=gnu89", *STRICT_FLAGS, "-Wno-long-long", "-c", str(MODULE),
-                   "-o", str(tmp_path / "cache_file_formats.o")]
-        result = subprocess.run(command, capture_output=True, text=True)
-        if result.returncode == 0:
-            return
-    pytest.fail(result.stdout + result.stderr)
+    check_compiles_as_game_code(MODULE, tmp_path)
 
 
 def run_report(tool, *arguments):
