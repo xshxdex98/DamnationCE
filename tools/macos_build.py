@@ -47,6 +47,8 @@ from .linux_build import (
     game_browser_defines,
     miniupnpc_sources,
     musl_math_sources,
+    opus_cflags,
+    opus_sources,
     updater_defines,
 )
 from .embed_assets import hud_assets_build, hud_configure_inputs, ui_fonts_build
@@ -383,6 +385,10 @@ def generate_macos_build(n: Writer, sln: Any) -> None:
         # types (expat.h, which menu_files.c includes unrewritten)
         for name in EXPAT_SOURCES:
             add_object(EXPAT_DIR / name, " ".join([target, "-std=gnu11", OPTIMISATION, "-g", "-w", f"-I{EXPAT_DIR}"]))
+        # voice chat's codec (port/third_party/opus; voice_audio.c), with the
+        # host's ABI, as Expat
+        for source in opus_sources():
+            add_object(source, f"{opus_cflags(target)} -g")
         # the port's zlib (port/third_party/zlib), with the host's ABI, as Expat
         for name in ZLIB_SOURCES:
             add_object(ZLIB_DIR / name, " ".join([target, "-std=gnu11", OPTIMISATION, "-g", "-w", *ZLIB_DEFINES]))

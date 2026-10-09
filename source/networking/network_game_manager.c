@@ -347,7 +347,7 @@ boolean network_game_has_free_player_slot(
 }
 
 boolean network_player_is_valid(
-	struct network_player *player)
+	struct network_player const *player)
 {
 	if (player &&
 		player->controller_index >= 0 &&
