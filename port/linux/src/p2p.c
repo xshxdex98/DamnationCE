@@ -1146,36 +1146,45 @@ static void stun_send(struct stun_server *server)
 	server->attempts++;
 }
 
+int p2p_list_endpoint(const char **text, char *host, int host_size, unsigned short default_port,
+	unsigned short *port)
+{
+	const char *entry = *text;
+	const char *end = entry + strcspn(entry, ",");
+	char *colon;
+	int length;
+
+	*text = *end ? end + 1 : end;
+	while (entry < end && *entry == ' ')
+		entry++;
+	length = (int)(end - entry);
+	while (length > 0 && entry[length - 1] == ' ')
+		length--;
+	if (length <= 0 || length >= host_size)
+		return 0;
+	memcpy(host, entry, (size_t)length);
+	host[length] = 0;
+	*port = network_short(default_port);
+	colon = strchr(host, ':');
+	if (colon)
+	{
+		*port = network_short((unsigned short)atoi(colon + 1));
+		*colon = 0;
+	}
+	return 1;
+}
+
 static void stun_setup(void)
 {
 	const char *text = config_string("network.stun_servers");
 
 	while (*text && p2p.stun_count < MAXIMUM_STUN_SERVERS)
 	{
-		const char *end = text + strcspn(text, ",");
 		struct stun_server *server = &p2p.stun[p2p.stun_count];
-		const char *colon;
-		int length;
 
-		while (text < end && *text == ' ')
-			text++;
-		length = (int)(end - text);
-		while (length > 0 && text[length - 1] == ' ')
-			length--;
-		if (length > 0 && length < (int)sizeof(server->host))
-		{
-			memset(server, 0, sizeof(*server));
-			memcpy(server->host, text, (size_t)length);
-			colon = strchr(server->host, ':');
-			server->port = network_short(3478);
-			if (colon)
-			{
-				server->port = network_short((unsigned short)atoi(colon + 1));
-				server->host[colon - server->host] = 0;
-			}
+		memset(server, 0, sizeof(*server));
+		if (p2p_list_endpoint(&text, server->host, (int)sizeof(server->host), 3478, &server->port))
 			p2p.stun_count++;
-		}
-		text = *end ? end + 1 : end;
 	}
 }
 

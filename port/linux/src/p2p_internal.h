@@ -68,6 +68,11 @@ go of the p2p lock while it may wait for a program */
 void p2p_register_url_scheme(const char *scheme, const char *description);
 /* formats bytes as lower-case hexadecimal (text holds 2 * size + 1) */
 void p2p_hex(const unsigned char *bytes, int size, char *text);
+/* the next entry of a comma-separated list of "host[:port]", moving text
+past it: its host, spaces trimmed, and its port in network order
+(default_port when it names none); 0 for an entry empty or too long */
+int p2p_list_endpoint(const char **text, char *host, int host_size, unsigned short default_port,
+	unsigned short *port);
 /* the addresses this machine can be reached at; returns their count */
 int p2p_local_candidates(struct p2p_candidate *candidates, int maximum_count);
 /* this run's X25519 public key (P2P_KEY_SIZE bytes), whose hash the
