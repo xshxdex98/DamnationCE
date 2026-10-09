@@ -11,9 +11,8 @@ TELNET_CONSOLE.C
 #include "bungie_net/network/transport_endpoint.h"
 #include "hs/hs.h"
 #include "networking/telnet_console.h"
-#ifdef HALO_64BIT
-#include "cseries/errors.h"
-#endif
+
+#include <ctype.h>
 
 /* ---------- constants */
 

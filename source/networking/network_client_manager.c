@@ -212,6 +212,10 @@ struct message_client_ping
 
 /* port/linux/src/p2p.c's */
 void p2p_hardware_id(char *hex, int size);
+#ifdef HALO_GAME_BROWSER
+/* server/src/dedicated.c's */
+boolean dedicated_server_active(void);
+#endif
 
 struct message_client_join_game_request
 {
@@ -1117,9 +1121,8 @@ boolean network_game_client_add_player(
 #ifdef HALO_GAME_BROWSER
 	/* the dedicated server plays no one on its own machine (server/src/dedicated.c):
 	its pregame screen's players stay out */
-	{ boolean dedicated_server_active(void);
-	  if (dedicated_server_active())
-		return TRUE; }
+	if (dedicated_server_active())
+		return TRUE;
 #endif
 
 	/* port: the pregame screen asks each frame until the host's settings
@@ -1441,9 +1444,8 @@ boolean network_game_client_remove_player(
 #ifdef HALO_GAME_BROWSER
 			/* the dedicated server never had a player of its own
 			(server/src/dedicated.c): a player leaving is not its cue to go */
-			{ boolean dedicated_server_active(void);
-			  if (dedicated_server_active())
-				network_player_index = 0; }
+			if (dedicated_server_active())
+				network_player_index = 0;
 #endif
 			if (network_player_index == MAXIMUM_NUMBER_OF_PLAYERS)
 			{
@@ -2125,15 +2127,12 @@ static boolean add_advertised_game(
 		advertised_game->update_time = system_milliseconds();
 		advertised_game->platform = advertisement->platform;
 		/* (a host built before there was a version sends zeros: 0) */
-		{
-			long game_index = advertised_game - available_games;
-
-			network_game_client_advertised_versions[game_index].version = (word)(
-				advertisement->__unknown5A[HALO_PORT_ADVERTISED_VERSION_OFFSET] |
-				(advertisement->__unknown5A[HALO_PORT_ADVERTISED_VERSION_OFFSET + 1] << 8));
-			network_game_client_advertised_versions[game_index].flags =
-				advertisement->__unknown5A[HALO_PORT_ADVERTISED_FLAGS_OFFSET];
-		}
+		game_index = advertised_game - available_games;
+		network_game_client_advertised_versions[game_index].version = (word)(
+			advertisement->__unknown5A[HALO_PORT_ADVERTISED_VERSION_OFFSET] |
+			(advertisement->__unknown5A[HALO_PORT_ADVERTISED_VERSION_OFFSET + 1] << 8));
+		network_game_client_advertised_versions[game_index].flags =
+			advertisement->__unknown5A[HALO_PORT_ADVERTISED_FLAGS_OFFSET];
 
 		if (advertisement->game_name[0] != L'\0')
 		{

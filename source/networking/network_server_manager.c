@@ -35,9 +35,12 @@ NETWORK_SERVER_MANAGER.C
 #include "cache/cache_files.h"
 #ifdef HALO_GAME_BROWSER
 #include "../../port/linux/src/browser.h"
+#include "memory/byte_swapping.h"
 /* port: the map picker forgets the game Online Games created
 (port/linux/game/map_screen.c) */
 void map_screen_server_disposed(void);
+/* server/src/dedicated.c's */
+boolean dedicated_server_active(void);
 #endif
 #include "interface/player_ui.h"
 #include "tag_files/tag_files.h"
@@ -1130,6 +1133,7 @@ boolean network_game_server_idle(
 
 		if (game)
 		{
+			boolean teams = game->variant.universal_variant.teams == TRUE;
 			/* (who is in it, for the list's roster) */
 			static struct browser_roster_player roster[BROWSER_HOSTED_ROSTER];
 			long roster_count = 0;
@@ -1142,7 +1146,7 @@ boolean network_game_server_idle(
 				if (!network_player_is_valid(player))
 					continue;
 				csmemcpy(roster[roster_count].name, player->name, sizeof(roster[roster_count].name));
-				roster[roster_count].team = game->variant.universal_variant.teams == TRUE ? (short)player->team_index : -1;
+				roster[roster_count].team = teams ? (short)player->team_index : -1;
 				roster_count++;
 			}
 			browser_host_update(
@@ -1155,7 +1159,7 @@ boolean network_game_server_idle(
 					? network_game_server_accepts_late_joins(server)
 					: network_game_server_game_is_open(server),
 				(short)game->variant.universal_variant.score_to_win,
-				game->variant.universal_variant.teams == TRUE,
+				teams,
 				roster,
 				(int)roster_count);
 		}
@@ -2639,13 +2643,9 @@ boolean server_has_a_player_on_each_machine(
 			}
 
 #ifdef HALO_GAME_BROWSER
-			{
-				/* (a dedicated server's own machine has none: server/src/dedicated.c) */
-				boolean dedicated_server_active(void);
-
-				if (!has_a_player && dedicated_server_active())
-					continue;
-			}
+			/* (a dedicated server's own machine has none: server/src/dedicated.c) */
+			if (!has_a_player && dedicated_server_active())
+				continue;
 #endif
 			if (!has_a_player)
 				return FALSE;
@@ -2694,12 +2694,8 @@ boolean network_game_server_host_alone(
 	long client_machine_index;
 
 #ifdef HALO_GAME_BROWSER
-	{
-		boolean dedicated_server_active(void);
-
-		if (dedicated_server_active())
-			return FALSE;
-	}
+	if (dedicated_server_active())
+		return FALSE;
 #endif
 	for (client_machine_index = 0;
 		client_machine_index < MAXIMUM_NETWORK_MACHINE_COUNT;
@@ -4083,7 +4079,7 @@ static boolean network_game_server_handle_client_machines(
 			{
 				short machine_index = client_machine->machine_index;
 				struct message_server_machine_rejected rejection = { _rejection_code_blacklisted_machine };
-				struct network_message *message;
+				struct network_message *rejection_message;
 				unsigned long address = network_game_server_client_machine_addresses[machine_index];
 				boolean kept_out = network_game_server_kick_pending[machine_index] == _kick_kept_out;
 
@@ -4093,9 +4089,10 @@ static boolean network_game_server_handle_client_machines(
 					network_game_server_kicked_addresses[network_game_server_kicked_address_next++ %
 						MAXIMUM_KICKED_ADDRESSES] = address;
 				}
-				message = create_network_game_message(_message_server_machine_rejected, &rejection, sizeof(rejection));
-				if (message)
-					network_game_server_send_message_to_client_machine(server, client_machine, message);
+				rejection_message = create_network_game_message(_message_server_machine_rejected, &rejection,
+					sizeof(rejection));
+				if (rejection_message)
+					network_game_server_send_message_to_client_machine(server, client_machine, rejection_message);
 				if (!network_game_server_drop_client_machine(server, client_machine))
 					network_event("failed to remove client machine %x from game", machine_index);
 			}
@@ -4617,10 +4614,6 @@ void network_game_server_dedicated_start_countdown(
 
 	return;
 }
-#endif
-
-#ifdef HALO_GAME_BROWSER
-#include "memory/byte_swapping.h"
 
 /* the IPv4 address a client machine is connected from, in network byte
 order (the game keeps its addresses swapped, transport_endpoint_winsock.c):

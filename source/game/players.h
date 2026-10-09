@@ -363,6 +363,8 @@ long player_new(
 	long player_index,
 	short local_player_index,
 	struct network_player const *network_player);
+void player_delete(
+	long player_index);
 boolean player_teleport(
 	long player_index,
 	long source_unit_index,
