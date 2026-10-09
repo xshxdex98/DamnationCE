@@ -97,24 +97,27 @@ static const char *register_expression(unsigned long reg, int stage, BOOL unique
 	}
 }
 
+/* a register as a vec3 of its rgb or its alpha (alpha_channel), or for the
+alpha portion a float of its blue or its alpha */
+static void register_value(char *value, size_t size, const char *source, BOOL alpha_portion, BOOL alpha_channel)
+{
+	if (alpha_portion)
+		snprintf(value, size, "%s.%s", source, alpha_channel ? "a" : "b");
+	else if (alpha_channel)
+		snprintf(value, size, "vec3(%s.a)", source);
+	else
+		snprintf(value, size, "%s.rgb", source);
+}
+
 /* one combiner input byte as a vec3 (rgb) or float (alpha) expression */
 static void combiner_input(struct xgpu_text *text, unsigned long input, BOOL alpha_portion, int stage,
 	BOOL unique_c0, BOOL unique_c1)
 {
-	unsigned long reg = input & 0x0f;
-	BOOL alpha_channel = (input & 0x10) != 0;
-	unsigned long mapping = input & 0xe0;
-	const char *source = register_expression(reg, stage, unique_c0, unique_c1);
 	char value[64];
 
-	if (alpha_portion)
-		snprintf(value, sizeof(value), "%s.%s", source, alpha_channel ? "a" : "b");
-	else if (alpha_channel)
-		snprintf(value, sizeof(value), "vec3(%s.a)", source);
-	else
-		snprintf(value, sizeof(value), "%s.rgb", source);
-
-	switch (mapping)
+	register_value(value, sizeof(value), register_expression(input & 0x0f, stage, unique_c0, unique_c1),
+		alpha_portion, (input & 0x10) != 0);
+	switch (input & 0xe0)
 	{
 	case 0x00: xgpu_text_append(text, "max(%s, 0.0)", value); break;
 	case 0x20: xgpu_text_append(text, "(1.0 - clamp(%s, 0.0, 1.0))", value); break;
@@ -130,17 +133,10 @@ static void combiner_input(struct xgpu_text *text, unsigned long input, BOOL alp
 /* final combiner inputs only have the unsigned identity and invert mappings */
 static void final_input(struct xgpu_text *text, unsigned long input, BOOL alpha_portion)
 {
-	unsigned long reg = input & 0x0f;
-	BOOL alpha_channel = (input & 0x10) != 0;
-	const char *source = register_expression(reg, -1, FALSE, FALSE);
 	char value[64];
 
-	if (alpha_portion)
-		snprintf(value, sizeof(value), "%s.%s", source, alpha_channel ? "a" : "b");
-	else if (alpha_channel)
-		snprintf(value, sizeof(value), "vec3(%s.a)", source);
-	else
-		snprintf(value, sizeof(value), "%s.rgb", source);
+	register_value(value, sizeof(value), register_expression(input & 0x0f, -1, FALSE, FALSE), alpha_portion,
+		(input & 0x10) != 0);
 	if (input & 0x20)
 		xgpu_text_append(text, "(1.0 - clamp(%s, 0.0, 1.0))", value);
 	else
@@ -184,7 +180,8 @@ static void combiner_stage(struct xgpu_text *text, const DWORD *state, int stage
 	BOOL unique_c0 = (combiner_count & 0x1000) != 0;
 	BOOL unique_c1 = (combiner_count & 0x10000) != 0;
 	BOOL mux_msb = (combiner_count & 0x100) != 0;
-	int portion;
+	static const char *const results[] = { "AB", "CD", "SUM" };
+	int portion, index;
 
 	xgpu_text_append(text, "\t/* combiner stage %d */\n\t{\n", stage);
 	for (portion = 0; portion < 2; portion++)
@@ -198,15 +195,13 @@ static void combiner_stage(struct xgpu_text *text, const DWORD *state, int stage
 		const char *mapping = output_mapping(flags);
 		char mapped[64];
 
-		xgpu_text_append(text, "\t\t%s %sA = ", type, prefix);
-		combiner_input(text, (inputs >> 24) & 0xff, alpha, stage, unique_c0, unique_c1);
-		xgpu_text_append(text, ";\n\t\t%s %sB = ", type, prefix);
-		combiner_input(text, (inputs >> 16) & 0xff, alpha, stage, unique_c0, unique_c1);
-		xgpu_text_append(text, ";\n\t\t%s %sC = ", type, prefix);
-		combiner_input(text, (inputs >> 8) & 0xff, alpha, stage, unique_c0, unique_c1);
-		xgpu_text_append(text, ";\n\t\t%s %sD = ", type, prefix);
-		combiner_input(text, inputs & 0xff, alpha, stage, unique_c0, unique_c1);
-		xgpu_text_append(text, ";\n");
+		/* A, B, C and D, from the inputs' high byte down */
+		for (index = 0; index < 4; index++)
+		{
+			xgpu_text_append(text, "\t\t%s %s%c = ", type, prefix, 'A' + index);
+			combiner_input(text, (inputs >> (24 - 8 * index)) & 0xff, alpha, stage, unique_c0, unique_c1);
+			xgpu_text_append(text, ";\n");
+		}
 
 		if (!alpha && (flags & 0x02))
 			xgpu_text_append(text, "\t\tvec3 cAB = vec3(dot(cA, cB));\n");
@@ -228,18 +223,13 @@ static void combiner_stage(struct xgpu_text *text, const DWORD *state, int stage
 		{
 			xgpu_text_append(text, "\t\t%s %sSUM = %sAB + %sCD;\n", type, prefix, prefix, prefix);
 		}
-		snprintf(mapped, sizeof(mapped), mapping, "%sAB");
-		xgpu_text_append(text, "\t\t%sAB = clamp(", prefix);
-		xgpu_text_append(text, mapped, prefix);
-		xgpu_text_append(text, ", -1.0, 1.0);\n");
-		snprintf(mapped, sizeof(mapped), mapping, "%sCD");
-		xgpu_text_append(text, "\t\t%sCD = clamp(", prefix);
-		xgpu_text_append(text, mapped, prefix);
-		xgpu_text_append(text, ", -1.0, 1.0);\n");
-		snprintf(mapped, sizeof(mapped), mapping, "%sSUM");
-		xgpu_text_append(text, "\t\t%sSUM = clamp(", prefix);
-		xgpu_text_append(text, mapped, prefix);
-		xgpu_text_append(text, ", -1.0, 1.0);\n");
+		snprintf(mapped, sizeof(mapped), mapping, "%s%s");
+		for (index = 0; index < 3; index++)
+		{
+			xgpu_text_append(text, "\t\t%s%s = clamp(", prefix, results[index]);
+			xgpu_text_append(text, mapped, prefix, results[index]);
+			xgpu_text_append(text, ", -1.0, 1.0);\n");
+		}
 	}
 
 	/* write back only after both portions have read their inputs */
@@ -314,51 +304,35 @@ static void dot_input(struct xgpu_text *text, const DWORD *state, int stage)
 	}
 }
 
-#ifdef HALO_ANDROID
-/* ES samplers have no LOD bias: pass D3DTSS_MIPMAPLODBIAS to the lookup */
-#define SAMPLE_BIAS ", texture_lod_bias[%d]"
+#if defined(HALO_ANDROID)
 #define SHADER_VERSION \
 	"precision highp float;\n" \
 	"precision highp int;\n" \
 	"precision highp sampler2D;\n" \
 	"precision highp sampler3D;\n" \
 	"precision highp samplerCube;\n"
-#else
-#define SAMPLE_BIAS ""
-#ifdef __APPLE__
+#elif defined(__APPLE__)
 /* macOS stops at OpenGL 4.1 */
 #define SHADER_VERSION "#version 410 core\n"
 #else
 #define SHADER_VERSION "#version 450 core\n"
 #endif
-#endif
 
 static void sample(struct xgpu_text *text, const struct nv2a_pixel_shader_key *key, int stage, const char *coordinates)
 {
-	switch (key->sampler_type[stage])
-	{
-	case _xgpu_sampler_3d:
-		xgpu_text_append(text, "texture(tex%d, (%s).xyz" SAMPLE_BIAS ")", stage, coordinates
 #ifdef HALO_ANDROID
-			, stage
+	/* (ES samplers have no LOD bias: D3DTSS_MIPMAPLODBIAS goes to the lookup) */
+	char bias[32];
+
+	snprintf(bias, sizeof(bias), ", texture_lod_bias[%d]", stage);
+#else
+	const char *bias = "";
 #endif
-			);
-		break;
-	case _xgpu_sampler_cube:
-		xgpu_text_append(text, "texture(tex%d, (%s).xyz" SAMPLE_BIAS ")", stage, coordinates
-#ifdef HALO_ANDROID
-			, stage
-#endif
-			);
-		break;
-	default:
-		xgpu_text_append(text, "texture(tex%d, (%s).xy * texture_scale[%d].xy" SAMPLE_BIAS ")", stage, coordinates, stage
-#ifdef HALO_ANDROID
-			, stage
-#endif
-			);
-		break;
-	}
+
+	if (key->sampler_type[stage] == _xgpu_sampler_3d || key->sampler_type[stage] == _xgpu_sampler_cube)
+		xgpu_text_append(text, "texture(tex%d, (%s).xyz%s)", stage, coordinates, bias);
+	else
+		xgpu_text_append(text, "texture(tex%d, (%s).xy * texture_scale[%d].xy%s)", stage, coordinates, stage, bias);
 }
 
 static void texture_stage(struct xgpu_text *text, const struct nv2a_pixel_shader_key *key, int stage)
@@ -436,6 +410,7 @@ static void texture_stage(struct xgpu_text *text, const struct nv2a_pixel_shader
 		break;
 	}
 	case _mode_dot_product:
+	case _mode_dot_zw:
 		xgpu_text_append(text, "\tdot%d = dot(xT%d.xyz, ", stage, stage);
 		dot_input(text, state, stage);
 		xgpu_text_append(text, ");\n\tt%d = vec4(0.0);\n", stage);
@@ -447,11 +422,6 @@ static void texture_stage(struct xgpu_text *text, const struct nv2a_pixel_shader
 		snprintf(coordinates, sizeof(coordinates), "vec4(dot%d, dot%d, 0.0, 1.0)", stage - 1, stage);
 		sample(text, key, stage, coordinates);
 		xgpu_text_append(text, ";\n");
-		break;
-	case _mode_dot_zw:
-		xgpu_text_append(text, "\tdot%d = dot(xT%d.xyz, ", stage, stage);
-		dot_input(text, state, stage);
-		xgpu_text_append(text, ");\n\tt%d = vec4(0.0);\n", stage);
 		break;
 	case _mode_dot_reflect_diffuse:
 		/* the normal takes its third component from stage 3's dot product */
@@ -687,6 +657,7 @@ char *nv2a_pixel_shader_to_glsl(const struct nv2a_pixel_shader_key *key)
 	else
 	{
 		unsigned long settings = final_efg & 0xff;
+		int index;
 
 		xgpu_text_append(&text, "\tvec4 ef_product = vec4(");
 		final_input(&text, (final_efg >> 24) & 0xff, FALSE);
@@ -698,15 +669,13 @@ char *nv2a_pixel_shader_to_glsl(const struct nv2a_pixel_shader_key *key)
 			(settings & 0x20) ? "(1.0 - clamp(r0.rgb, 0.0, 1.0))" : "clamp(r0.rgb, 0.0, 1.0)");
 		if (settings & 0x80)
 			xgpu_text_append(&text, "\tv1r0_sum = clamp(v1r0_sum, 0.0, 1.0);\n");
-		xgpu_text_append(&text, "\tvec3 fA = ");
-		final_input(&text, (final_abcd >> 24) & 0xff, FALSE);
-		xgpu_text_append(&text, ";\n\tvec3 fB = ");
-		final_input(&text, (final_abcd >> 16) & 0xff, FALSE);
-		xgpu_text_append(&text, ";\n\tvec3 fC = ");
-		final_input(&text, (final_abcd >> 8) & 0xff, FALSE);
-		xgpu_text_append(&text, ";\n\tvec3 fD = ");
-		final_input(&text, final_abcd & 0xff, FALSE);
-		xgpu_text_append(&text, ";\n\tfloat fG = ");
+		for (index = 0; index < 4; index++)
+		{
+			xgpu_text_append(&text, "\tvec3 f%c = ", 'A' + index);
+			final_input(&text, (final_abcd >> (24 - 8 * index)) & 0xff, FALSE);
+			xgpu_text_append(&text, ";\n");
+		}
+		xgpu_text_append(&text, "\tfloat fG = ");
 		final_input(&text, (final_efg >> 8) & 0xff, TRUE);
 		xgpu_text_append(&text, ";\n\tvec4 result = vec4(fA * fB + (1.0 - fA) * fC + fD, fG);\n");
 	}

@@ -1,7 +1,7 @@
 /*
 D3D8_RESOURCES.C
 
-Xbox Direct3D resources for the Linux build: creation, locking,
+Xbox Direct3D resources for the native builds: creation, locking,
 registration and release of textures, surfaces, vertex and index buffers
 and palettes, plus the few D3DX helpers the game uses.
 
@@ -13,12 +13,33 @@ follows xbox_textures.c, so locks and uploads agree.
 
 #include "xgpu.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 static void *resource_data(DWORD data)
 {
 	return data ? PLATFORM_PHYSICAL_TO_VIRTUAL(data) : NULL;
+}
+
+/* a resource's header, zeroed: on 64-bit hosts in the game's heap, so that
+the game's 32-bit fields can hold its address (xbox_heap.c) */
+static void *header_new(size_t size)
+{
+#ifdef HALO_64BIT
+	return xbox_heap_allocate(size, TRUE);
+#else
+	return calloc(1, size);
+#endif
+}
+
+static void header_delete(void *header)
+{
+#ifdef HALO_64BIT
+	xbox_heap_free(header);
+#else
+	free(header);
+#endif
 }
 
 static void *allocate_resource_memory(unsigned long size)
@@ -29,25 +50,6 @@ static void *allocate_resource_memory(unsigned long size)
 	if (!memory)
 		platform_log("Direct3D: out of contiguous memory for a %lu byte resource", size);
 	return memory;
-}
-
-static unsigned long floor_log2_unsigned(unsigned long value)
-{
-	unsigned long result = 0;
-
-	while (value > 1)
-	{
-		value >>= 1;
-		result++;
-	}
-	return result;
-}
-
-static unsigned long level_dimension(unsigned long base, unsigned long level)
-{
-	unsigned long value = base >> level;
-
-	return value ? value : 1;
 }
 
 static BOOL format_is_linear(D3DFORMAT format)
@@ -66,12 +68,25 @@ static unsigned long bytes_per_texel(D3DFORMAT format)
 	return description.pitch; /* width 1 */
 }
 
+/* a linear surface's rows, in bytes, aligned as the GPU reads them */
+static unsigned long linear_pitch(D3DFORMAT format, unsigned long width)
+{
+	return (width * bytes_per_texel(format) + D3DTEXTURE_PITCH_ALIGNMENT - 1) &
+		~(unsigned long)(D3DTEXTURE_PITCH_ALIGNMENT - 1);
+}
+
+/* a linear surface's Size field */
+static DWORD linear_size(unsigned long pitch, unsigned long width, unsigned long height)
+{
+	return ((pitch / D3DTEXTURE_PITCH_ALIGNMENT - 1) << D3DSIZE_PITCH_SHIFT) |
+		((height - 1) << D3DSIZE_HEIGHT_SHIFT) | (width - 1);
+}
+
 /* ---------- surfaces used as the device's own targets */
 
 void d3d8_surface_initialize(D3DSurface *surface, D3DFORMAT format, unsigned long width, unsigned long height)
 {
-	unsigned long pitch = (width * bytes_per_texel(format) + D3DTEXTURE_PITCH_ALIGNMENT - 1) &
-		~(unsigned long)(D3DTEXTURE_PITCH_ALIGNMENT - 1);
+	unsigned long pitch = linear_pitch(format, width);
 	void *memory = allocate_resource_memory(pitch * height);
 
 	memset(surface, 0, sizeof(*surface));
@@ -79,19 +94,14 @@ void d3d8_surface_initialize(D3DSurface *surface, D3DFORMAT format, unsigned lon
 	surface->Common = D3DCOMMON_TYPE_SURFACE | 1;
 	surface->Data = memory ? PLATFORM_VIRTUAL_TO_PHYSICAL(memory) : 0;
 	surface->Format = ((DWORD)format << D3DFORMAT_FORMAT_SHIFT) | (2 << D3DFORMAT_DIMENSION_SHIFT) | D3DFORMAT_DMACHANNEL_A;
-	surface->Size = ((pitch / D3DTEXTURE_PITCH_ALIGNMENT - 1) << D3DSIZE_PITCH_SHIFT) |
-		((height - 1) << D3DSIZE_HEIGHT_SHIFT) | (width - 1);
+	surface->Size = linear_size(pitch, width, height);
 }
 
 /* changes the size a surface describes, keeping its memory, which must
 hold the new size (the back buffer, when the screen's width changes) */
 void d3d8_surface_resize(D3DSurface *surface, D3DFORMAT format, unsigned long width, unsigned long height)
 {
-	unsigned long pitch = (width * bytes_per_texel(format) + D3DTEXTURE_PITCH_ALIGNMENT - 1) &
-		~(unsigned long)(D3DTEXTURE_PITCH_ALIGNMENT - 1);
-
-	surface->Size = ((pitch / D3DTEXTURE_PITCH_ALIGNMENT - 1) << D3DSIZE_PITCH_SHIFT) |
-		((height - 1) << D3DSIZE_HEIGHT_SHIFT) | (width - 1);
+	surface->Size = linear_size(linear_pitch(format, width), width, height);
 }
 
 /* ---------- registration and release */
@@ -131,11 +141,7 @@ ULONG WINAPI D3DResource_Release(D3DResource *resource)
 #endif
 		else if (fields[1])
 			platform_contiguous_free(PLATFORM_PHYSICAL_TO_VIRTUAL(fields[1]));
-#ifdef HALO_64BIT
-		xbox_heap_free(resource);
-#else
-		free(resource);
-#endif
+		header_delete(resource);
 	}
 	return count;
 }
@@ -156,13 +162,9 @@ void WINAPI D3DResource_BlockUntilNotBusy(D3DResource *resource)
 static HRESULT create_texture(unsigned long width, unsigned long height, unsigned long depth, unsigned long levels,
 	D3DFORMAT format, BOOL cube_map, D3DBaseTexture **result)
 {
-#ifdef HALO_64BIT
-	D3DBaseTexture *texture = xbox_heap_allocate(sizeof(*texture), TRUE);
-#else
-	D3DBaseTexture *texture = calloc(1, sizeof(*texture));
-#endif
+	D3DBaseTexture *texture = header_new(sizeof(*texture));
 	struct xgpu_texture_description description;
-	unsigned long maximum_levels = floor_log2_unsigned(width > height ? width : height) + 1;
+	unsigned long maximum_levels = xgpu_floor_log2(width > height ? width : height) + 1;
 	void *memory;
 
 	if (!texture)
@@ -172,19 +174,15 @@ static HRESULT create_texture(unsigned long width, unsigned long height, unsigne
 	texture->Common = D3DCOMMON_TYPE_TEXTURE | D3DCOMMON_D3DCREATED | 1;
 	if (format_is_linear(format))
 	{
-		unsigned long pitch = (width * bytes_per_texel(format) + D3DTEXTURE_PITCH_ALIGNMENT - 1) &
-			~(unsigned long)(D3DTEXTURE_PITCH_ALIGNMENT - 1);
-
 		texture->Format = ((DWORD)format << D3DFORMAT_FORMAT_SHIFT) | (1 << D3DFORMAT_MIPMAP_SHIFT) |
 			(2 << D3DFORMAT_DIMENSION_SHIFT) | D3DFORMAT_DMACHANNEL_A;
-		texture->Size = ((pitch / D3DTEXTURE_PITCH_ALIGNMENT - 1) << D3DSIZE_PITCH_SHIFT) |
-			((height - 1) << D3DSIZE_HEIGHT_SHIFT) | (width - 1);
+		texture->Size = linear_size(linear_pitch(format, width), width, height);
 	}
 	else
 	{
-		texture->Format = (floor_log2_unsigned(depth) << D3DFORMAT_PSIZE_SHIFT) |
-			(floor_log2_unsigned(height) << D3DFORMAT_VSIZE_SHIFT) |
-			(floor_log2_unsigned(width) << D3DFORMAT_USIZE_SHIFT) |
+		texture->Format = (xgpu_floor_log2(depth) << D3DFORMAT_PSIZE_SHIFT) |
+			(xgpu_floor_log2(height) << D3DFORMAT_VSIZE_SHIFT) |
+			(xgpu_floor_log2(width) << D3DFORMAT_USIZE_SHIFT) |
 			((DWORD)format << D3DFORMAT_FORMAT_SHIFT) |
 			(levels << D3DFORMAT_MIPMAP_SHIFT) |
 			((depth > 1 ? 3 : 2) << D3DFORMAT_DIMENSION_SHIFT) |
@@ -196,11 +194,7 @@ static HRESULT create_texture(unsigned long width, unsigned long height, unsigne
 	memory = allocate_resource_memory(xgpu_texture_face_size(&description) * (cube_map ? 6 : 1));
 	if (!memory)
 	{
-#ifdef HALO_64BIT
-		xbox_heap_free(texture);
-#else
-		free(texture);
-#endif
+		header_delete(texture);
 		return E_OUTOFMEMORY;
 	}
 	texture->Data = PLATFORM_VIRTUAL_TO_PHYSICAL(memory);
@@ -248,10 +242,10 @@ static void lock_level(const DWORD *resource, unsigned long face, unsigned long 
 	{
 		/* swizzled textures cannot be addressed by rectangle; only linear
 		and compressed layouts have a meaningful row pitch */
-		unsigned long bytes = pitch / level_dimension(description.width, level);
+		unsigned long bytes = pitch / xgpu_level_dimension(description.width, level);
 
 		if (description.compressed)
-			bits += (rectangle->top / 4) * pitch + (rectangle->left / 4) * (pitch / ((level_dimension(description.width, level) + 3) / 4));
+			bits += (rectangle->top / 4) * pitch + (rectangle->left / 4) * (pitch / ((xgpu_level_dimension(description.width, level) + 3) / 4));
 		else
 			bits += rectangle->top * pitch + rectangle->left * bytes;
 	}
@@ -283,12 +277,12 @@ void WINAPI D3DVolumeTexture_LockBox(D3DVolumeTexture *texture, UINT level, D3DL
 	(void)flags;
 	xgpu_texture_describe(resource[3], resource[4], &description);
 	row_pitch = xgpu_texture_level_pitch(&description, level);
-	slice = row_pitch * level_dimension(description.height, level);
+	slice = row_pitch * xgpu_level_dimension(description.height, level);
 	bits = (char *)resource_data(resource[1]);
 	if (bits)
 		bits += xgpu_texture_level_offset(&description, level);
 	if (box && bits)
-		bits += box->Front * slice + box->Top * row_pitch + box->Left * (row_pitch / level_dimension(description.width, level));
+		bits += box->Front * slice + box->Top * row_pitch + box->Left * (row_pitch / xgpu_level_dimension(description.width, level));
 	locked->RowPitch = (INT)row_pitch;
 	locked->SlicePitch = (INT)slice;
 	locked->pBits = bits;
@@ -300,8 +294,8 @@ static void describe_level(const DWORD *resource, unsigned long level, D3DSURFAC
 	unsigned long width, height;
 
 	xgpu_texture_describe(resource[3], resource[4], &texture);
-	width = level_dimension(texture.width, level);
-	height = level_dimension(texture.height, level);
+	width = xgpu_level_dimension(texture.width, level);
+	height = xgpu_level_dimension(texture.height, level);
 	memset(description, 0, sizeof(*description));
 	description->Format = (D3DFORMAT)texture.format;
 	description->Type = D3DRTYPE_SURFACE;
@@ -320,24 +314,19 @@ HRESULT WINAPI D3DTexture_GetSurfaceLevel(D3DTexture *texture, UINT level, D3DSu
 {
 	D3DBaseTexture *base = (D3DBaseTexture *)texture;
 	struct xgpu_texture_description description;
-#ifdef HALO_64BIT
-	D3DSurface *surface = xbox_heap_allocate(sizeof(*surface), TRUE);
-	unsigned int width, height;
-#else
-	D3DSurface *surface = calloc(1, sizeof(*surface));
+	D3DSurface *surface = header_new(sizeof(*surface));
 	unsigned long width, height;
-#endif
 
 	if (!surface)
 		return E_OUTOFMEMORY;
 	xgpu_texture_describe(base->Format, base->Size, &description);
-	width = level_dimension(description.width, level);
-	height = level_dimension(description.height, level);
+	width = xgpu_level_dimension(description.width, level);
+	height = xgpu_level_dimension(description.height, level);
 	surface->Common = D3DCOMMON_TYPE_SURFACE | 1;
 	surface->Data = base->Data + xgpu_texture_level_offset(&description, level);
 	surface->Format = (base->Format & ~(D3DFORMAT_USIZE_MASK | D3DFORMAT_VSIZE_MASK | D3DFORMAT_PSIZE_MASK | D3DFORMAT_MIPMAP_MASK)) |
-		(floor_log2_unsigned(width) << D3DFORMAT_USIZE_SHIFT) |
-		(floor_log2_unsigned(height) << D3DFORMAT_VSIZE_SHIFT) |
+		(xgpu_floor_log2(width) << D3DFORMAT_USIZE_SHIFT) |
+		(xgpu_floor_log2(height) << D3DFORMAT_VSIZE_SHIFT) |
 		(1 << D3DFORMAT_MIPMAP_SHIFT);
 	surface->Size = base->Size;
 	surface->Parent = base;
@@ -360,11 +349,7 @@ void WINAPI D3DSurface_LockRect(D3DSurface *surface, D3DLOCKED_RECT *locked, CON
 
 HRESULT WINAPI D3DDevice_CreateVertexBuffer(UINT length, DWORD usage, DWORD fvf, D3DPOOL pool, D3DVertexBuffer **result)
 {
-#ifdef HALO_64BIT
-	D3DVertexBuffer *buffer = xbox_heap_allocate(sizeof(*buffer), TRUE);
-#else
-	D3DVertexBuffer *buffer = calloc(1, sizeof(*buffer));
-#endif
+	D3DVertexBuffer *buffer = header_new(sizeof(*buffer));
 	void *memory;
 
 	(void)usage;
@@ -375,11 +360,7 @@ HRESULT WINAPI D3DDevice_CreateVertexBuffer(UINT length, DWORD usage, DWORD fvf,
 	memory = allocate_resource_memory(length ? length : 1);
 	if (!memory)
 	{
-#ifdef HALO_64BIT
-		xbox_heap_free(buffer);
-#else
-		free(buffer);
-#endif
+		header_delete(buffer);
 		return E_OUTOFMEMORY;
 	}
 	buffer->Common = D3DCOMMON_TYPE_VERTEXBUFFER | D3DCOMMON_D3DCREATED | 1;
@@ -397,11 +378,7 @@ void WINAPI D3DVertexBuffer_Lock(D3DVertexBuffer *buffer, UINT offset, UINT size
 
 HRESULT WINAPI D3DDevice_CreateIndexBuffer(UINT length, DWORD usage, D3DFORMAT format, D3DPOOL pool, D3DIndexBuffer **result)
 {
-#ifdef HALO_64BIT
-	D3DIndexBuffer *buffer = xbox_heap_allocate(sizeof(*buffer), TRUE);
-#else
-	D3DIndexBuffer *buffer = calloc(1, sizeof(*buffer));
-#endif
+	D3DIndexBuffer *buffer = header_new(sizeof(*buffer));
 	void *memory;
 
 	(void)usage;
@@ -409,66 +386,39 @@ HRESULT WINAPI D3DDevice_CreateIndexBuffer(UINT length, DWORD usage, D3DFORMAT f
 	(void)pool;
 	if (!buffer)
 		return E_OUTOFMEMORY;
+	/* index data stays in ordinary memory on the Xbox: Data is a virtual
+	address (on 64-bit hosts an Xbox address in the contiguous window) */
 #ifdef HALO_64BIT
-	/* index data stays in ordinary memory on the Xbox; Data is virtual */
 	memory = allocate_resource_memory(length ? length : 1);
 #else
-	/* index data stays in ordinary memory on the Xbox too; Data is virtual */
 	memory = calloc(1, length ? length : 1);
 #endif
 	if (!memory)
 	{
-#ifdef HALO_64BIT
-		xbox_heap_free(buffer);
-#else
-		free(buffer);
-#endif
+		header_delete(buffer);
 		return E_OUTOFMEMORY;
 	}
 	buffer->Common = D3DCOMMON_TYPE_INDEXBUFFER | D3DCOMMON_D3DCREATED | 1;
-#ifdef HALO_64BIT
-	buffer->Data = xbox_address(memory);
-#else
-	buffer->Data = (DWORD)memory;
-#endif
+	buffer->Data = (DWORD)(uintptr_t)xbox_address(memory);
 	*result = buffer;
 	return S_OK;
 }
 
 /* ---------- palettes */
 
-static unsigned long palette_entry_count(D3DPALETTESIZE size)
-{
-	switch (size)
-	{
-	case D3DPALETTE_128: return 128;
-	case D3DPALETTE_64: return 64;
-	case D3DPALETTE_32: return 32;
-	default: return 256;
-	}
-}
-
 HRESULT WINAPI D3DDevice_CreatePalette(D3DPALETTESIZE size, D3DPalette **result)
 {
-#ifdef HALO_64BIT
-	D3DPalette *palette = xbox_heap_allocate(sizeof(*palette), TRUE);
-#else
-	D3DPalette *palette = calloc(1, sizeof(*palette));
-#endif
+	D3DPalette *palette = header_new(sizeof(*palette));
 	void *memory;
 
 	if (!palette)
 		return E_OUTOFMEMORY;
-	/* always room for 256 entries, which the texture decoder may read */
+	/* always room for 256 entries, which the texture decoder may read,
+	whatever the size */
 	memory = allocate_resource_memory(256 * sizeof(D3DCOLOR));
-	(void)palette_entry_count(size);
 	if (!memory)
 	{
-#ifdef HALO_64BIT
-		xbox_heap_free(palette);
-#else
-		free(palette);
-#endif
+		header_delete(palette);
 		return E_OUTOFMEMORY;
 	}
 	palette->Common = D3DCOMMON_TYPE_PALETTE | D3DCOMMON_D3DCREATED | 1 | ((DWORD)size << D3DPALETTE_COMMON_PALETTESIZE_SHIFT);

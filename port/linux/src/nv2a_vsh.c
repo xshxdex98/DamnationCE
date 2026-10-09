@@ -443,6 +443,7 @@ char *nv2a_vertex_shader_to_glsl(const DWORD *instructions, unsigned long instru
 		unsigned long output_address = field(instruction, 3, 3, 8);
 		unsigned long output_from_ilu = field(instruction, 3, 2, 1);
 		int relative = (int)field(instruction, 3, 1, 1);
+		struct operand_fields c;
 		char mask[5];
 
 		xgpu_text_append(&text, "\t/* %lu */\n", index);
@@ -490,8 +491,8 @@ char *nv2a_vertex_shader_to_glsl(const DWORD *instructions, unsigned long instru
 		}
 		/* the screen-space conversion takes the reciprocal of the clip-space
 		position's w (rcc of r12.w); keep the position it converts */
-		if (ilu == _ilu_rcc && field(instruction, 3, 28, 2) == _mux_temporary &&
-			((field(instruction, 2, 0, 2) << 2) | field(instruction, 3, 30, 2)) == 12)
+		operand_fields(instruction, 'C', &c);
+		if (ilu == _ilu_rcc && c.mux == _mux_temporary && c.index == 12)
 		{
 			xgpu_text_append(&text, "\tclip_position = oPos;\n\tclip_captured = true;\n");
 		}

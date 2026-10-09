@@ -9,9 +9,9 @@ port/linux/game/hud_hires_tags.c). Each texture is decoded from its PNG when
 first drawn and kept: up to 69 of the HUD's, about 225 MB with their mip
 levels, though a game draws only some (the scopes' only when zoomed), and
 the titles of the menus shown, about 3 MB each (11 MB for the carnage
-report's, a whole panel).
-They are drawn with linear filtering and their mip levels (d3d8_gl.c,
-configure_sampler), as they are larger than they appear.
+report's, a whole panel). They are drawn with linear filtering and their
+mip levels (d3d8_gl.c, configure_sampler), as they are larger than they
+appear.
 
 The PNGs are the ones tools/hud_assets.py and title_assets.py write, so only
 what they write is read: 8-bit RGBA, not interlaced, its data inflated with
@@ -114,12 +114,8 @@ long hud_hires_override_find(unsigned long address, unsigned long width, unsigne
 	has its own pixels) */
 	if (hud_hires_asset_stock_custom_edition(address, (long)width, (long)height, asset))
 		return asset;
-#ifdef HALO_64BIT
 	/* (an Xbox address: the texture's pixels in the contiguous memory) */
 	if (crc32(0L, (const Bytef *)xbox_pointer(address), (uInt)level0_size) != hud_hires_embedded[asset].crc)
-#else
-	if (crc32(0L, (const Bytef *)address, (uInt)level0_size) != hud_hires_embedded[asset].crc)
-#endif
 	{
 		if (!textures[asset].other_pixels_logged)
 		{
