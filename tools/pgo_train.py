@@ -28,6 +28,7 @@ import glob
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import time
@@ -53,7 +54,9 @@ def remove_data_root(root: Path) -> None:
     if not root.exists():
         return
     for entry in root.iterdir():
-        if entry.is_symlink() or (WINDOWS and entry.is_dir() and os.path.isjunction(entry)):
+        # (a junction is a reparse point: os.path.isjunction is Python 3.12's)
+        if entry.is_symlink() or (WINDOWS and entry.is_dir() and
+                                  os.lstat(entry).st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT):
             if WINDOWS and entry.is_dir():
                 os.rmdir(entry)
             else:
