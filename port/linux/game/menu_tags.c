@@ -1729,17 +1729,15 @@ static boolean menus_pc_chosen(void)
 	static boolean said;
 	char const *value = config_string("display.menus");
 
-	if (!_stricmp(value, "pc"))
+	if (!csstrcasecmp(value, "pc"))
 		return TRUE;
-	if (_stricmp(value, "xbox") && !said)
+	if (csstrcasecmp(value, "xbox") && !said)
 	{
 		platform_log("menus: display.menus \"%s\" is not \"xbox\" or \"pc\": the Xbox's", value);
 		said = TRUE;
 	}
 	return FALSE;
 }
-
-/* ---------- public code */
 
 void menu_tags_loaded(
 	char const *map_name)

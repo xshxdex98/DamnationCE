@@ -203,11 +203,12 @@ jobs:
         if: ${{ !inputs.release }}
         run: python3 tools/ci_build.py android debug
 
-      - name: Touch layout tests
-        run: python3 tools/test_touch_layout.py
-
       - name: Release
         run: python3 tools/ci_build.py android release
+
+      # the touch controls' layout and gyroscope maths (the runner's JDK)
+      - name: Test the touch layout
+        run: python3 tools/test_touch_layout.py
 
       - name: Compile cache
         run: ccache --show-stats

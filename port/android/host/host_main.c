@@ -313,10 +313,10 @@ static uint32_t make_boot(const struct environment *environment)
 #define MAIN_STACK_SIZE (16 * 1024 * 1024)
 
 /* the thread that runs the game: passes the display and its density, the
-time zone, the settings and the data and save folders to the guest through
-its environment, chooses the write tracking (page protection, or page
-hashes when translated or when debug.memory_watch is false), and runs the
-guest's main; never returns normally */
+time zone and the data and save folders to the guest through its
+environment, chooses the write tracking (page protection, or page hashes when
+translated or when debug.memory_watch is false), and runs the guest's main;
+never returns normally */
 static void *game_main(void *unused)
 {
 	struct environment environment = { { 0 }, 0 };

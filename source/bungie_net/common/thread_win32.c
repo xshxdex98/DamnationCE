@@ -102,8 +102,15 @@ boolean create_thread(
 		else
 		{
 			CloseHandle(reference->handle);
+			reference->handle = NULL;
+			reference->in_use = FALSE;
 			reference = NULL;
 		}
+	}
+	else if (reference)
+	{
+		reference->in_use = FALSE;
+		reference = NULL;
 	}
 
 	*thread_reference = reference;
@@ -158,9 +165,14 @@ boolean create_mutex(
 			thread_globals.mutex_index++);
 		reference->handle = CreateMutexA(NULL, FALSE, reference->name);
 		if (reference->handle)
+		{
 			success = TRUE;
+		}
 		else
+		{
+			reference->in_use = FALSE;
 			reference = NULL;
+		}
 	}
 
 	*mutex_reference = reference;

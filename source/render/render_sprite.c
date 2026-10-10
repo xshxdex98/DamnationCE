@@ -19,6 +19,7 @@ RENDER_SPRITE.C
 #include "tag_files/tag_files.h"
 #include "tag_files/tag_groups.h"
 #include "rasterizer/rasterizer_geometry.h"
+#include "custom_edition_cache.h" /* port: port/linux/game/custom_edition_cache.c */
 
 /* ---------- constants */
 
@@ -686,33 +687,34 @@ static short build_sprite_get_group(
 			break;
 	}
 
-#ifdef HALO_CUSTOM_EDITION
 	/* port: a Halo PC map's particle may be drawn from more bitmaps than a
 	call takes (beavercreek_rev_beta's fluid bursts have a bitmap a frame, up
 	to 56), which halted a debug build: its sprites on the others are not
-	drawn, as a release build already did, and it is logged once */
-	if (group_index >= data->group_count && data->group_count >= MAXIMUM_BUILD_SPRITE_GROUPS)
+	drawn, as a release build already did, and it is logged once. The Xbox's
+	maps' particles stay within the limit. */
+	if (custom_edition_cache_tags_loaded())
 	{
 		static boolean logged;
 
-		if (!logged)
+		if (group_index >= data->group_count && data->group_count >= MAXIMUM_BUILD_SPRITE_GROUPS && !logged)
 		{
 			error(_error_silent, "%s: a particle's sprites on more than %d bitmaps; those past them are not drawn",
 				tag_get_name(data->bitmap_group_index), MAXIMUM_BUILD_SPRITE_GROUPS);
 			logged = TRUE;
 		}
 	}
-#else
-	match_vassert(
-		"c:\\halo\\SOURCE\\render\\render_sprite.c",
-		275,
-		group_index < data->group_count ||
-			data->group_count < MAXIMUM_BUILD_SPRITE_GROUPS,
-		csprintf(
-			temporary,
-			"a build_sprites_begin call can accomodate at most %d bitmaps",
-			MAXIMUM_BUILD_SPRITE_GROUPS));
-#endif
+	else
+	{
+		match_vassert(
+			"c:\\halo\\SOURCE\\render\\render_sprite.c",
+			275,
+			group_index < data->group_count ||
+				data->group_count < MAXIMUM_BUILD_SPRITE_GROUPS,
+			csprintf(
+				temporary,
+				"a build_sprites_begin call can accomodate at most %d bitmaps",
+				MAXIMUM_BUILD_SPRITE_GROUPS));
+	}
 
 	if (group_index < data->group_count ||
 		data->group_count < MAXIMUM_BUILD_SPRITE_GROUPS)
