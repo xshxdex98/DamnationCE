@@ -19,6 +19,7 @@ RASTERIZER_TRANSPARENT_GEOMETRY.C
 #ifdef HALO_64BIT
 #include "rasterizer/rasterizer_transparent_geometry.h"
 #endif
+#include "view_fov.h" /* port: port/linux/game/view_fov.c */
 
 /* ---------- prototypes */
 static void rasterizer_sort_external(
@@ -484,6 +485,8 @@ void rasterizer_transparent_geometry_draw(
 					global_window_parameters.rasterizer_target==_rasterizer_target_render_primary);
 				if (!first_person_flag)
 				{
+					/* port: the first-person weapon's projection (view_fov.c) */
+					viewmodel_projection_begin();
 					rasterizer_set_stencil_mode(0);
 					rasterizer_set_frustum_z(
 						rasterizer_globals.first_person_weapon_near_clip_distance,
@@ -511,6 +514,7 @@ void rasterizer_transparent_geometry_draw(
 		rasterizer_debug_options.transparent_pixel_counter_active = FALSE;
 		if (first_person_flag)
 		{
+			viewmodel_projection_end();	/* port: (view_fov.c) */
 			rasterizer_set_frustum_z(0.0f, 0.0f);
 		}
 	}

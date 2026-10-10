@@ -16,6 +16,11 @@ PROFILE.C
 #include <stdarg.h>
 #include <xtl.h>
 
+#ifdef HALO_PROFILE
+#include "profile_console.h"
+#include "profile_trace.h"
+#endif
+
 /* ---------- constants */
 
 enum
@@ -185,6 +190,24 @@ boolean profile_timebase_ticks = FALSE;
 boolean profile_global_enable = FALSE;
 boolean profile_dump_frames = FALSE;
 boolean profile_dump_lost_frames = FALSE;
+
+#ifdef HALO_PROFILE
+/* port: the profiling build: each section's name in the trace
+(port/linux/src/profile_trace.c) by section_index, as struct
+profile_section's size is fixed (profile.h's assertions); the frame
+timers' names; and whether the first frame has set the recording up */
+static short profile_trace_section_names[MAXIMUM_PROFILE_SECTIONS];
+static struct
+{
+	int frame;
+	int game_tick;
+	int render;
+	int render_window;
+	int idle;
+	int texture;
+} profile_trace_timer_names;
+static boolean profile_trace_launched;
+#endif
 
 /* ---------- public code */
 
@@ -813,16 +836,60 @@ void profile_initialize(
 	profile_globals.lost_frame_count = 999;
 	profile_globals.framedump_file = NULL;
 
+#ifdef HALO_PROFILE
+	profile_trace_timer_names.frame = profile_trace_name("frame");
+	profile_trace_timer_names.game_tick = profile_trace_name("game_tick");
+	profile_trace_timer_names.render = profile_trace_name("render");
+	profile_trace_timer_names.render_window = profile_trace_name("render_window");
+	profile_trace_timer_names.idle = profile_trace_name("idle");
+	profile_trace_timer_names.texture = profile_trace_name("texture");
+	/* (many times a frame: a record each would cost more than the work it
+	times, so a count and a total a frame) */
+	profile_trace_name_aggregate("texture");
+	profile_trace_name_aggregate("render_model");
+	profile_trace_name_aggregate("memory_dynamic_array_resize");
+	profile_trace_name_aggregate("memory_dynamic_array_add_element");
+	profile_trace_name_aggregate("memory_dynamic_array_delete_element");
+	profile_trace_name_aggregate("item_update");
+	profile_trace_name_aggregate("weapon_update");
+	profile_trace_name_aggregate("unit_update");
+	profile_trace_name_aggregate("biped_update");
+	profile_trace_name_aggregate("vehicle_update");
+	profile_trace_name_aggregate("projectile_update");
+	profile_trace_name_aggregate("render_structure_shadows");
+	profile_trace_name_aggregate("render_structure_shadows_draw");
+	profile_trace_name_aggregate("render_structure_diffuse_lights");
+	profile_trace_name_aggregate("render_structure_diffuse_lights_draw");
+	profile_trace_name_aggregate("render_structure_specular_lights");
+	profile_trace_name_aggregate("render_structure_specular_lights_draw");
+#endif
+
 	return;
 }
 
 void profile_frame_start(
 	void)
 {
+#ifdef HALO_PROFILE
+	if (!profile_trace_launched)
+	{
+		profile_trace_launched = TRUE;
+		profile_console_launch();
+	}
+	/* (no section is open here: where a recording starts, is cut and
+	stops) */
+	profile_trace_frame_boundary();
+	profile_console_frame();
+#endif
 	if (!profile_timebase_ticks)
 	{
 		profile_internal_step();
 	}
+#ifdef HALO_PROFILE
+	/* (after the step, which rolls up what the sections timed last frame:
+	the console no longer turns it off mid-frame, console.c) */
+	profile_global_enable = profile_trace_recording();
+#endif
 
 	csmemset(&profile_globals.current_frame, 0, sizeof(profile_globals.current_frame));
 
@@ -830,6 +897,9 @@ void profile_frame_start(
 	profile_globals.current_frame.vertical_blank_index = rasterizer_globals.vertical_blank_index;
 	profile_globals.current_frame.game_tick_count = 0;
 	profile_timesection_begin_now(&profile_globals.current_frame.frame);
+#ifdef HALO_PROFILE
+	profile_trace_begin(profile_trace_timer_names.frame);
+#endif
 
 	return;
 }
@@ -856,6 +926,10 @@ void profile_tick_start(
 
 	timer = &profile_globals.current_frame.game_ticks[profile_globals.current_frame.game_tick_count-1];
 	profile_timesection_begin_now(timer);
+#ifdef HALO_PROFILE
+	profile_trace_tick();
+	profile_trace_begin(profile_trace_timer_names.game_tick);
+#endif
 
 	return;
 }
@@ -870,6 +944,9 @@ void profile_tick_end(
 
 	timer = &profile_globals.current_frame.game_ticks[profile_globals.current_frame.game_tick_count-1];
 	profile_timesection_end_now(timer);
+#ifdef HALO_PROFILE
+	profile_trace_end(profile_trace_timer_names.game_tick);
+#endif
 
 	return;
 }
@@ -892,6 +969,9 @@ void profile_render_window_start(
 
 	timer = &profile_globals.current_frame.windows[profile_globals.current_frame.window_count-1];
 	profile_timesection_begin_now(timer);
+#ifdef HALO_PROFILE
+	profile_trace_begin(profile_trace_timer_names.render_window);
+#endif
 
 	return;
 }
@@ -906,6 +986,9 @@ void profile_render_window_end(
 
 	timer = &profile_globals.current_frame.windows[profile_globals.current_frame.window_count-1];
 	profile_timesection_end_now(timer);
+#ifdef HALO_PROFILE
+	profile_trace_end(profile_trace_timer_names.render_window);
+#endif
 
 	return;
 }
@@ -915,6 +998,9 @@ void profile_render_start(
 {
 	profile_globals.current_frame.window_count = 0;
 	profile_timesection_begin_now(&profile_globals.current_frame.render);
+#ifdef HALO_PROFILE
+	profile_trace_begin(profile_trace_timer_names.render);
+#endif
 
 	return;
 }
@@ -923,6 +1009,9 @@ void profile_render_end(
 	void)
 {
 	profile_timesection_end_now(&profile_globals.current_frame.render);
+#ifdef HALO_PROFILE
+	profile_trace_end(profile_trace_timer_names.render);
+#endif
 
 	return;
 }
@@ -938,6 +1027,9 @@ void profile_texture_start(
 	if (PROFILE_TEXTURE_TIMED())
 	{
 		profile_timesection_begin_now(&profile_globals.current_frame.texture);
+#ifdef HALO_PROFILE
+		profile_trace_begin(profile_trace_timer_names.texture);
+#endif
 	}
 
 	return;
@@ -949,6 +1041,9 @@ void profile_texture_end(
 	if (PROFILE_TEXTURE_TIMED())
 	{
 		profile_timesection_end_now(&profile_globals.current_frame.texture);
+#ifdef HALO_PROFILE
+		profile_trace_end(profile_trace_timer_names.texture);
+#endif
 	}
 
 	return;
@@ -958,6 +1053,9 @@ void profile_idle_start(
 	void)
 {
 	profile_timesection_begin_now(&profile_globals.current_frame.idle);
+#ifdef HALO_PROFILE
+	profile_trace_begin(profile_trace_timer_names.idle);
+#endif
 
 	return;
 }
@@ -966,6 +1064,9 @@ void profile_idle_end(
 	void)
 {
 	profile_timesection_end_now(&profile_globals.current_frame.idle);
+#ifdef HALO_PROFILE
+	profile_trace_end(profile_trace_timer_names.idle);
+#endif
 
 	return;
 }
@@ -987,6 +1088,9 @@ void profile_enter_private(
 	QUERY_TIMEBASE(timebase);
 	section->entry_timebase = timebase;
 	section->frame_call_count++;
+#ifdef HALO_PROFILE
+	profile_trace_begin(profile_trace_section_names[section->section_index]);
+#endif
 
 	return;
 }
@@ -1009,6 +1113,9 @@ void profile_exit_private(
 		QUERY_TIMEBASE(timebase);
 		section->frame_elapsed_timebase += timebase-section->entry_timebase;
 		section->stack_depth = NONE;
+#ifdef HALO_PROFILE
+		profile_trace_end(profile_trace_section_names[section->section_index]);
+#endif
 	}
 	else
 	{
@@ -1229,6 +1336,9 @@ void profile_frame_end(
 	short frame_index;
 
 	profile_timesection_end_now(&profile_globals.current_frame.frame);
+#ifdef HALO_PROFILE
+	profile_trace_end(profile_trace_timer_names.frame);
+#endif
 
 	match_assert("c:\\halo\\SOURCE\\cseries\\profile.c", 448,
 		(profile_globals.current_frame.game_tick_count >= 0) && (profile_globals.current_frame.game_tick_count <= MAXIMUM_GAME_TICKS_PER_FRAME));
@@ -1482,6 +1592,9 @@ void find_profile_section(
 		section->section_index = profile_globals.section_count;
 		profile_globals.section_count++;
 		profile_globals.sections[section->section_index] = section;
+#ifdef HALO_PROFILE
+		profile_trace_section_names[section->section_index] = (short)profile_trace_name(section->name);
+#endif
 
 		csmemset(section->frame_elapsed_timebase_history, 0, sizeof(section->frame_elapsed_timebase_history));
 		csmemset(section->frame_call_count_history, 0, sizeof(section->frame_call_count_history));

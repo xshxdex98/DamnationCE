@@ -80,6 +80,38 @@ roughly as the game does, from the XML (and the theme's layer), with the
 widgets that draw nothing outlined: a quick look for overlaps without
 running the game.
 
+## Writing them again
+
+`tools/ce_menus.py` writes every file in `ce/` and `menus.json` again,
+the settings screens too (it runs `tools/port_settings.py`'s):
+
+```sh
+python3 tools/ce_menus.py \
+    --tags <halopc-restored>/tags \
+    --definitions <invader>/src/tag/hek/definition \
+    --redraws <ui-svg-handmade> \
+    --placeholder <placeholder.png> \
+    --pictures <extracted-ui-assets-fixed>
+```
+
+- `--tags`: the PC version's tags (its `ui\shell` widgets, strings and
+  bitmaps).
+- `--definitions`: Invader's tag definitions, which say how the tags are
+  laid out.
+- `--redraws`: the hand-made SVG redraws, copied to `svg/`.
+- `--placeholder`: the picture drawn where a picture has no redraw and the
+  Xbox's map has not got it.
+- `--pictures` (optional): the PC version's pictures, of which only where
+  each sits in its frame is read.
+
+It needs `rsvg-convert`, Pillow, NumPy and SciPy. It writes every file, so
+`git status` should show only the screens meant to change; then
+`ninja linux` (or `ninja android`) embeds them in the game.
+
+A settings screen (Controls Setup, Gamepads, Mouse, Audio, Video or Network
+Setup) is changed in `tools/port_settings.py`, not in its XML, and written
+with the command above.
+
 ## Elements
 
 A file holds one `<menus>` element (`root` names the main menu's widget, in

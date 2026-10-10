@@ -47,10 +47,8 @@ enum
 {
 	MAXIMUM_RENDERED_DISTANT_LIGHTS = 2,
 	MAXIMUM_RENDERED_POINT_LIGHTS = 2,
-	/* port: the most structure surfaces drawn in a frame (16384), raised
-	as Chimera raises it for Custom Edition maps: as many as the count's
-	short holds */
-	MAXIMUM_RENDERED_ENVIRONMENT_SURFACES = 0x7FFE,
+	/* port: twice the Xbox's 16384 structure triangles a frame */
+	MAXIMUM_RENDERED_ENVIRONMENT_SURFACES = 32768,
 	MAXIMUM_RENDERED_CLUSTERS = 128,
 	MAXIMUM_SURFACES_PER_STRUCTURE = 0x20000,
 	MAXIMUM_RENDERED_LIGHTS = 128,
@@ -117,7 +115,8 @@ struct render_globals
 	struct rendered_cluster rendered_clusters[MAXIMUM_RENDERED_CLUSTERS];
 	short rendered_cluster_count;
 	unsigned long environment_surface_flags[MAXIMUM_SURFACES_PER_STRUCTURE];
-	short environment_surface_count;
+	/* port: a long, as a short would wrap at the raised count */
+	long environment_surface_count;
 	long environment_surface_indices[MAXIMUM_RENDERED_ENVIRONMENT_SURFACES];
 };
 

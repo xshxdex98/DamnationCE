@@ -278,7 +278,7 @@ void stack_walk_with_context(
 #ifdef HALO_64BIT
 			error(_error_silent, "%s", symbol_name);
 #else
-#ifdef HALO_ANDROID
+#ifdef HALO_ARM64_GUEST
 			/* the call site (the BL before the return address), for
 			llvm-symbolizer --obj=build/android/halo_guest.elf */
 			unsigned long routine_address = routine_addresses[frame_number] - 4;
@@ -286,7 +286,7 @@ void stack_walk_with_context(
 			unsigned long routine_address = routine_addresses[frame_number] + *(long *)(routine_addresses[frame_number] - sizeof(long));
 #endif
 			char const *symbol_name;
-#if defined(_MSC_VER) && !defined(HALO_ANDROID)
+#if defined(_MSC_VER) && !defined(HALO_ARM64_GUEST)
 			/* port: the native Windows build names the call (the byte before the
 			return address) from halo.pdb (port/windows/src/win32_symbols.c) */
 			extern int win32_describe_address(unsigned long address, char *text, unsigned long size);
@@ -297,7 +297,7 @@ void stack_walk_with_context(
 			{
 				symbol_name = symbol_name_from_address(routine_address, &stack_walk_globals.symbol_table);
 			}
-#if defined(_MSC_VER) && !defined(HALO_ANDROID)
+#if defined(_MSC_VER) && !defined(HALO_ARM64_GUEST)
 			else if (win32_describe_address(routine_addresses[frame_number] - 1, call_site, sizeof(call_site)))
 			{
 				symbol_name = call_site;
@@ -696,7 +696,7 @@ static unsigned long walk_up(
 		routine_address = (unsigned int)((__UINTPTR_TYPE__ *)walk_up_current_frame)[1];
 		walk_up_current_frame = ((__UINTPTR_TYPE__ *)walk_up_current_frame)[0];
 #else
-#ifdef HALO_ANDROID
+#ifdef HALO_ARM64_GUEST
 		/* an AArch64 frame record: the caller's frame pointer, then the
 		return address, 8 bytes each (the upper halves are zero) */
 		routine_address = ((unsigned long *)walk_up_current_frame)[2];
