@@ -982,10 +982,10 @@ void platform_video_drawable_size(int *width, int *height)
 }
 
 #ifndef HALO_ANDROID
-/* with vsync off, the time between frames display.max_fps asks for (0:
-twice the display's refresh rate), or 0 for no limit. A GPU never left idle
-can hang (Intel's Raptor Lake graphics, whose reset then takes the desktop
-with it); the limit gives it a rest every frame. */
+/* with vsync off, the time between frames display.max_fps asks for, or 0
+for no limit. Its default (0) is no limit but on Intel's graphics: one never
+left idle can hang (Raptor Lake's, whose reset then takes the desktop with
+it), so there it is twice the display's refresh rate, a rest every frame. */
 static Uint64 frame_interval_ns(void)
 {
 	static int vsync;
@@ -999,7 +999,7 @@ static Uint64 frame_interval_ns(void)
 		vsync = config_boolean("display.vsync");
 		maximum = config_integer("display.max_fps");
 	}
-	if (vsync || maximum < 0)
+	if (vsync || maximum < 0 || (!maximum && !halo_gpu_is_intel()))
 		return 0;
 	rate = (float)maximum;
 	if (!maximum)
