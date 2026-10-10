@@ -43,6 +43,7 @@ pause it as its pause menu does.
 #include "halo_menus.h"
 #include "cache/cache_files.h"
 #include "interface/ui_widget.h"
+#include "interface/ui_widget_event_handler_functions.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -70,7 +71,6 @@ void cache_files_set_tag_instances(void *instances, long count);
 
 /* the game's (port) */
 char *tag_get_name(long tag_index);
-char const *ui_widget_event_handler_function_name(long function_index);
 
 void menu_tags_loaded(char const *map_name);
 void menu_tags_unloaded(void);
@@ -334,6 +334,9 @@ static char const *const port_function_names[] =
 	"port password init", "port password edit", "port password join", "port password back",
 	/* (Gamepads' OK in a single-player campaign: pause_settings_patch) */
 	"port profile settings save",
+	/* (a new profile's screens: Settings' is then being edited, which the
+	Xbox's leaves to its own screens) */
+	"new campaign decision",
 };
 
 /* the PC version's game data functions that the Xbox's have not, from

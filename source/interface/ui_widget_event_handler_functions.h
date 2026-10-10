@@ -22,4 +22,9 @@ boolean ui_widget_event_handler_function_invoke(
 void reset_last_player1_profile_index(
 	void);
 
+/* port: a function's name by its index, as the tags name it (NULL past
+the last) */
+char const *ui_widget_event_handler_function_name(
+	long function_index);
+
 #endif // __UI_WIDGET_EVENT_HANDLER_FUNCTIONS_H
