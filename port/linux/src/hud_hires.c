@@ -176,7 +176,7 @@ int hud_hires_sprites_drawable(long asset, unsigned long address, unsigned long 
 	{
 		return 0;
 	}
-	if (crc32(0L, (const Bytef *)address, (uInt)level0_size) != hud_hires_embedded[asset].crc)
+	if (crc32(0L, (const Bytef *)xbox_pointer(address), (uInt)level0_size) != hud_hires_embedded[asset].crc)
 	{
 		if (!textures[asset].other_pixels_logged)
 		{
