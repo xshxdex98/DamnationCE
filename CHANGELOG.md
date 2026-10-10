@@ -20,8 +20,14 @@ Network version 25, as before: 0.3.37 and 0.3.38 play together.
 
 - FOV and viewmodel settings: Video Setup > FOV AND VIEWMODELS sets the
   field of view, the weapon's own field of view, and whether the weapon is
-  drawn. The graphics options moved to Video Setup > GRAPHICS.
-- Settings in the single-player pause menu.
+  drawn. The graphics options moved to Video Setup > GRAPHICS. Arm
+  Shields (off by default) draws your shield's flare on your
+  first-person arms.
+- Settings in the single-player pause menu. With no profile, the main
+  menu's Settings asks for a new profile's name.
+- Co-op: a client riding an elevator no longer falls through it.
+- Custom Edition maps: the map folders are listed through their own
+  handle, so the start-up clean-up can no longer delete maps.
 - Co-op games of five or more players respawn the dead beside the largest
   group of teammates.
 - Any controller can drive the menus while one person plays, and a saved
