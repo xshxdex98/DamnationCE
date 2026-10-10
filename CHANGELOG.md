@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.3.38
+
+Network version 25, as before: 0.3.37 and 0.3.38 play together.
+
+### Fixes
+
+- Picking a campaign level starts that level again, not always The Pillar
+  of Autumn, and co-op lobbies treat the stock levels as campaign levels.
+- The frame rate is no longer capped when vsync is off. A frame limit of
+  `0` (the default) now means no limit, except on Intel graphics, which
+  keep a cap at twice the display's refresh rate.
+
+### Improvements
+
+- The Windows build is optimised with a new profile of the current code.
+
+### From OpenCE
+
+- FOV and viewmodel settings: Video Setup > FOV AND VIEWMODELS sets the
+  field of view, the weapon's own field of view, and whether the weapon is
+  drawn. The graphics options moved to Video Setup > GRAPHICS.
+- Settings in the single-player pause menu.
+- Co-op games of five or more players respawn the dead beside the largest
+  group of teammates.
+- Any controller can drive the menus while one person plays, and a saved
+  profile's controls apply to the player using it.
+- Controller button icons and weapon reticles are drawn in high resolution.
+- A frame can draw up to 32768 level triangles, so large maps lose fewer
+  surfaces.
+- With Smooth Motion off, the wait between the game's 30 frames a second
+  sleeps instead of keeping a CPU core busy.
+- Android: the game starts on devices whose Java runtime covers the fixed
+  addresses it needs, and gives memory back more reliably.
+
 ## 0.3.37
 
 **Network version 25:** 0.3.37 plays only with other 0.3.37 players and
