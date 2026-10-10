@@ -88,6 +88,9 @@ void platform_video_swap(void);
 /* frames between the 30 Hz ticks at the display's refresh rate, unless
 display.interpolation is false (port/linux/game/render_interpolation.c) */
 int halo_interpolation_enabled(void);
+/* whether the GPU is Intel's, as its OpenGL renderer names it once the
+device is made (d3d8_gl.c): the frame limit's default keeps it a rest */
+int halo_gpu_is_intel(void);
 void platform_mouse_capture(BOOL capture);
 
 /* handles the window's and input devices' events; main thread only, a no-op

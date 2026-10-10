@@ -285,6 +285,14 @@ long halo_shadow_map_scale(void)
 	return shadow_scale;
 }
 
+/* set by gl_initialize from the renderer's name */
+static BOOL gpu_intel;
+
+int halo_gpu_is_intel(void)
+{
+	return gpu_intel;
+}
+
 /* how many pixels the screen's targets draw to the Xbox's one, the larger
 of the two ways (the screen effects' convolutions: rasterizer_xbox_screen_effect.c) */
 float halo_screen_scale(void)
@@ -1659,6 +1667,9 @@ static void gl_initialize(void)
 		long every = config_integer("debug.gpu_flush_draws");
 		const char *renderer = (const char *)glGetString(GL_RENDERER);
 
+		/* ("Intel(R) UHD Graphics 770" on Windows and macOS, "Mesa Intel(R)
+		..." on Linux) */
+		gpu_intel = renderer && strstr(renderer, "Intel") != NULL;
 		if (every < 0)
 			every = renderer && strstr(renderer, "Mesa Intel") ? 3 : 0;
 		if (every > 0 && glMemoryBarrier)
