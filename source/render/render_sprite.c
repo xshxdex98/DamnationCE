@@ -20,6 +20,7 @@ RENDER_SPRITE.C
 #include "tag_files/tag_groups.h"
 #include "rasterizer/rasterizer_geometry.h"
 #include "custom_edition_cache.h" /* port: port/linux/game/custom_edition_cache.c */
+#include "view_fov.h" /* port: port/linux/game/view_fov.c */
 
 /* ---------- constants */
 
@@ -126,6 +127,9 @@ void build_sprites_begin(
 		!TEST_FLAG(flags, _build_sprites_valid_bit));
 
 	data->bitmap_group_index = bitmap_group_index;
+	/* port: the first-person weapon's projection (view_fov.c) */
+	if (TEST_FLAG(flags, _build_sprites_first_person_bit))
+		viewmodel_projection_begin();
 	data->flags = flags;
 	data->shader = shader;
 	data->group_count = 0;
@@ -195,6 +199,9 @@ void build_sprites_end(
 	}
 
 	SET_FLAG(data->flags, _build_sprites_valid_bit, FALSE);
+	/* port: (view_fov.c) */
+	if (TEST_FLAG(data->flags, _build_sprites_first_person_bit))
+		viewmodel_projection_end();
 	return;
 }
 

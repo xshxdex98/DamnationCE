@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Embeds the high-res HUD textures (port/assets/hud, made by
 tools/hud_assets.py), the menus' titles (port/assets/titles, made by
-tools/title_assets.py), the fonts the text is drawn with
+tools/title_assets.py), their controller button icons (port/assets/buttons,
+made by tools/button_assets.py), the fonts the text is drawn with
 (port/assets/fonts), the menus' files (port/assets/menus, made by
 tools/ce_menus.py) and SMAA's shader and lookup textures
 (port/third_party/smaa) in the game as C data:
@@ -10,13 +11,17 @@ tools/ce_menus.py) and SMAA's shader and lookup textures
     python tools/embed_assets.py --fonts OUTPUT.c
 
 writes OUTPUT.c with each PNG and the bitmap it stands for (its tag, index
-and the checksum of its pixels, from port/assets/hud/layout.json and
-port/assets/titles/titles.json), as port/linux/src/hud_hires.h declares
-them, and the text's fonts, as port/linux/src/text_hires.h does; with
---fonts, the overlay's fonts (port/linux/ui/fonts, the game browser's), as
-port/linux/src/posix_ui_font.c declares them. The builds generate them
+and checksum of its pixels, from port/assets/hud/layout.json and
+custom_edition.json, port/assets/titles/titles.json, the menus' skins'
+textures.json and port/assets/buttons/buttons.json), the fonts and their
+tags from port/assets/fonts/fonts.json, the menu files listed in
+port/assets/menus/menus.json, and SMAA's shader and lookup textures, as
+port/linux/src/hud_hires.h, text_hires.h, menu_files.h and xgpu_post.c
+declare them; with --fonts, the overlay's fonts (port/linux/ui/fonts, the
+game browser's), as port/linux/src/posix_ui_font.c declares them. The
+builds generate them
 (hud_assets_build, called by tools/linux_build.py, windows_build.py and
-android_build.py), so the PNGs are the committed source and Android needs
+android_build.py), so the assets are the committed source and Android needs
 no files beside its guest image.
 
 The data are 32-bit words, not bytes: the Android build passes the guest's
@@ -37,6 +42,8 @@ LAYOUT = HUD_ASSETS / "layout.json"
 CUSTOM_EDITION_HUD = HUD_ASSETS / "custom_edition.json"
 TITLE_ASSETS = Path("port/assets/titles")
 TITLE_LIST = TITLE_ASSETS / "titles.json"
+BUTTON_ASSETS = Path("port/assets/buttons")
+BUTTON_LIST = BUTTON_ASSETS / "buttons.json"
 FONT_ASSETS = Path("port/assets/fonts")
 FONT_LIST = FONT_ASSETS / "fonts.json"
 MENU_ASSETS = Path("port/assets/menus")
@@ -71,13 +78,14 @@ def font_files() -> List[str]:
 
 def textures() -> List[tuple]:
     """The textures: each one's folder, its entry in its list, whether it is
-    a title, and the menus theme whose it is (None: every theme's)."""
+    the menus' (a title or a button icon, drawn with the high-res text), and
+    the menus theme whose it is (None: every theme's)."""
     result = []
     # (the themes' before the titles, which stand for some of the same bitmaps
     # in the Vanilla theme: hud_hires.c takes the first that applies)
     sources = [(HUD_ASSETS, LAYOUT, False, None),
                *((folder, folder / "textures.json", True, theme) for folder, theme in SKIN_ASSETS),
-               (TITLE_ASSETS, TITLE_LIST, True, None)]
+               (TITLE_ASSETS, TITLE_LIST, True, None), (BUTTON_ASSETS, BUTTON_LIST, True, None)]
     for folder, listing, title, theme in sources:
         if (ROOT / listing).is_file():
             result += [(folder, asset, title, theme) for asset in json.loads((ROOT / listing).read_text())["assets"]]
@@ -103,7 +111,8 @@ def smaa_files() -> List[tuple]:
 
 def hud_asset_inputs() -> List[Path]:
     """The files the generated source is made from."""
-    inputs = [listing for listing in (LAYOUT, CUSTOM_EDITION_HUD, TITLE_LIST, *SKIN_LISTS, FONT_LIST, MENU_LIST)
+    inputs = [listing for listing in (LAYOUT, CUSTOM_EDITION_HUD, TITLE_LIST, BUTTON_LIST, *SKIN_LISTS, FONT_LIST,
+                                      MENU_LIST)
               if (ROOT / listing).is_file()]
     return [*inputs, *(folder / f"{asset['name']}.png" for folder, asset, _, _ in textures()),
             *(FONT_ASSETS / name for name in font_files()), *(MENU_ASSETS / name for name in menu_files()),
@@ -116,7 +125,7 @@ def hud_configure_inputs() -> List[Path]:
     folders, for files added or removed), not each file, which a change of a
     list may rename or remove."""
     inputs = []
-    for folder, listing in ((HUD_ASSETS, LAYOUT), (TITLE_ASSETS, TITLE_LIST),
+    for folder, listing in ((HUD_ASSETS, LAYOUT), (TITLE_ASSETS, TITLE_LIST), (BUTTON_ASSETS, BUTTON_LIST),
                             *((folder, folder / "textures.json") for folder, _ in SKIN_ASSETS),
                             (FONT_ASSETS, FONT_LIST), (MENU_ASSETS, MENU_LIST)):
         if (ROOT / listing).is_file():
@@ -231,8 +240,14 @@ def main() -> None:
         coverage = int(any(cell["kind"] == "meter" for cell in asset.get("cells", [])))
         point_threshold = int(any(cell.get("thresholds") for cell in asset.get("cells", [])))
         theme_name = f'"{theme}"' if theme else "NULL"
-        table.append(f'\t{{ "{tag}", {asset["bitmap"]}, {width}, {height}, 0x{asset["crc"]:08x}u, {coverage}, {point_threshold}, '
-                     f'{int(title)}, {theme_name}, {int((asset["tag"], asset["bitmap"]) in custom_edition)}, '
+        # (the sequences whose sprites it stands for, a bit each of 32; 0: the whole bitmap)
+        sequences = [sprite["sequence"] for sprite in asset.get("sprites", [])]
+        if any(not 0 <= sequence < 32 for sequence in sequences):
+            sys.exit(f"{name}: sprite sequences must be 0 to 31 (hud_hires.h: sprites)")
+        sprites = sum(1 << sequence for sequence in sequences)
+        table.append(f'\t{{ "{tag}", {asset["bitmap"]}, {width}, {height}, 0x{asset["crc"]:08x}u, {coverage}, '
+                     f'{point_threshold}, {int(title)}, {theme_name}, '
+                     f'{int((asset["tag"], asset["bitmap"]) in custom_edition)}, 0x{sprites:x}u, '
                      f'asset{index}, {len(data)} }},')
     lines.append("const struct hud_hires_embedded hud_hires_embedded[] =")
     lines.append("{")
@@ -289,8 +304,8 @@ def main() -> None:
     lines.append("")
     # SMAA's shader, as text a GLSL compiler takes (ASCII, ending in a NUL),
     # and its lookup textures (xgpu_post.c); each of size 0 that the
-    # checkout does not have. Android has no SMAA.
-    lines.append("#ifndef HALO_ANDROID")
+    # checkout does not have. The OpenGL ES renderer has no SMAA.
+    lines.append("#ifndef HALO_GLES")
     present = dict(smaa_files())
     for name, symbol in SMAA_FILES:
         data = (ROOT / SMAA_ASSETS / name).read_bytes() if name in present else b""

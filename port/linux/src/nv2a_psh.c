@@ -298,7 +298,7 @@ static void dot_input(struct xgpu_text *text, const DWORD *state, int stage)
 	}
 }
 
-#if defined(HALO_ANDROID)
+#if defined(HALO_GLES)
 #define SHADER_VERSION \
 	"precision highp float;\n" \
 	"precision highp int;\n" \
@@ -314,7 +314,7 @@ static void dot_input(struct xgpu_text *text, const DWORD *state, int stage)
 
 static void sample(struct xgpu_text *text, const struct nv2a_pixel_shader_key *key, int stage, const char *coordinates)
 {
-#ifdef HALO_ANDROID
+#ifdef HALO_GLES
 	/* (ES samplers have no LOD bias: D3DTSS_MIPMAPLODBIAS goes to the lookup) */
 	char bias[32];
 
@@ -563,7 +563,7 @@ char *nv2a_pixel_shader_to_glsl(const struct nv2a_pixel_shader_key *key)
 	if (combiner_count > 8)
 		combiner_count = 8;
 
-#ifdef HALO_ANDROID
+#ifdef HALO_GLES
 	xgpu_text_append(&text, "#version %s\n", xgpu_capabilities.shading_language);
 	if (key->count_samples)
 	{
@@ -709,7 +709,7 @@ char *nv2a_pixel_shader_to_glsl(const struct nv2a_pixel_shader_key *key)
 		xgpu_text_append(&text, "\tresult = vec4(t0.rgb, 1.0);\n");
 	if (config_boolean("debug.gpu_debug_flat"))
 		xgpu_text_append(&text, "\tresult = xD0.a > 0.0 ? vec4(xD0.rgb, 1.0) : vec4(1.0, 0.0, 1.0, 1.0);\n");
-#ifdef HALO_ANDROID
+#ifdef HALO_GLES
 	if (key->count_samples)
 		xgpu_text_append(&text, "\tatomicCounterIncrement(visible_samples);\n");
 #endif

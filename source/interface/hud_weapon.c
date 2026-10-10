@@ -1110,7 +1110,8 @@ static void crosshairs_draw(
 												color,
 												in_multiplayer,
 												interface_bitmap,
-												TRUE);
+												/* port: not scaled with display.fov (view_fov.c) */
+												FALSE);
 										}
 										else
 										{
@@ -1126,7 +1127,10 @@ static void crosshairs_draw(
 												color,
 												in_multiplayer,
 												bitmap_group->type == _bitmap_group_type_interface_bitmaps,
-												TRUE);
+												/* port: a reticle, scaled with display.fov
+												(view_fov.c); a scope's picture keeps its
+												place */
+												state_index != _crosshair_state_zoom);
 										}
 									}
 								}

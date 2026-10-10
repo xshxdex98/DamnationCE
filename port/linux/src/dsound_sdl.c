@@ -1388,7 +1388,7 @@ static void audio_start(void)
 
 	if (config_boolean("audio.enabled") && platform_sdl_initialize())
 	{
-#ifdef HALO_ANDROID
+#ifdef HALO_ARM64_GUEST
 		/* frames per callback: on Android each callback is handed to a thread
 		that can run the guest (host_sdl.c): 512 left it too little time and
 		the menus' music broke up, which 1024 does not (about 21 ms at 48 kHz,
