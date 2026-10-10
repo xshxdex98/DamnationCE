@@ -100,6 +100,27 @@ menus are XML and pictures in `port/assets/menus`
 ([its README](port/assets/menus/README.md) explains the themes and the tools
 that draw them).
 
+### Profiling builds
+
+`python3 configure.py --profile` makes a profiling build, which records
+where the game spends its time. It plays with normal builds, but not with
+`--pgo=train`.
+
+| Command | Result |
+| --- | --- |
+| `profile_record [seconds]` | Starts a recording (in the console or the telnet console), stopping after that many seconds if given. |
+| `profile_stop` | Stops it; so does loading another map or quitting. |
+
+`debug.profile_record = true` in `config.toml` records without a command
+(`debug.profile_record_when = "game"`: each game of the session), and
+`debug.profile_memory` sets its memory (MB, 4 to 1024, 256 by default): a
+recording has no length limit, the game writing a part each time the memory
+is full. The parts are numbered `.part<n>.json` files under `profiles/` in
+the game's data root (on Android,
+`/sdcard/Android/data/com.halo.decomp/files/profiles/`), and their paths are
+logged. `python tools/net_report.py <recording.part1.json>` reads one as
+tables and writes `<recording>.summary.txt`.
+
 ## Credits
 
 - The decompilation: [punpckhdq/halo](https://github.com/punpckhdq/halo) and

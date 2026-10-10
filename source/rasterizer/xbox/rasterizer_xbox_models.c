@@ -39,6 +39,7 @@ long rasterizer_frame_statistics_count_static_vertices(
 	struct triangle_buffer const *triangle_buffer,
 	struct vertex_buffer const *vertex_buffer);
 #endif
+#include "view_fov.h" /* port: port/linux/game/view_fov.c */
 
 /* ---------- constants */
 
@@ -270,6 +271,7 @@ void _rasterizer_model_end(
 			!local_do_not_change_z_stencil_states)
 		{
 			rasterizer_set_stencil_mode(RASTERIZER_STENCIL_MODE_REJECT);
+			viewmodel_projection_end();	/* port: (view_fov.c) */
 			rasterizer_set_frustum_z(0.0f, 0.0f);
 		}
 		local_parameters = NULL;
@@ -298,6 +300,8 @@ void _rasterizer_model_begin(
 			!do_not_change_z_stencil_states)
 		{
 			rasterizer_set_stencil_mode(RASTERIZER_STENCIL_MODE_WRITE);
+			/* port: the first-person weapon's projection (view_fov.c) */
+			viewmodel_projection_begin();
 			rasterizer_set_frustum_z(
 				rasterizer_globals.first_person_weapon_near_clip_distance,
 				rasterizer_globals.first_person_weapon_far_clip_distance);

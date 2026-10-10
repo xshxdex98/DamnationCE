@@ -19,8 +19,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .linux_build import (KCP_DIR, LINUX_PROFILE, MBEDTLS_DIR, MINIUPNPC_DIR, MONOCYPHER_DIR, OPTIMISATION, STB_DIR,
-                          TOML_DIR, WINDOWS_PROFILE, XDK_INCLUDE, ZLIB_DEFINES, ZLIB_DIR, ZLIB_SOURCES, updater_defines, game_browser_defines, lto_mode, march_flag, miniupnpc_sources, pgo_mode, compile_launcher, game_defines_and_includes,
-                          game_sources, musl_math_cflags, musl_math_sources, opus_cflags, opus_sources, pgo_profile, profile_use_flags,
+                          TOML_DIR, WINDOWS_PROFILE, XDK_INCLUDE, ZLIB_DEFINES, ZLIB_DIR, ZLIB_SOURCES,
+                          compile_launcher, configuration_defines, game_browser_defines, game_defines_and_includes,
+                          game_sources, lto_mode, march_flag, miniupnpc_sources, musl_math_cflags, musl_math_sources,
+                          opus_cflags, opus_sources, pgo_mode, pgo_profile, profile_use_flags, updater_defines,
                           xdk_headers)
 from .embed_assets import hud_assets_build, hud_configure_inputs, ui_fonts_build
 from .ninja_syntax import Writer
@@ -301,14 +303,11 @@ def generate_windows_build(n: Writer, sln: Any) -> None:
     embedded_assets = (hud_assets_build(n, "windows", BUILD / "generated" / "hud_hires_assets.c")
                        + ui_fonts_build(n, "windows", BUILD / "generated" / "ui_fonts.c", sln))
 
-    # (the game browser, the game list and dedicated servers, as every
-    # desktop build has them: HALO_GAME_BROWSER, configure.py; and a debug
-    # build checks its stack frames, and stops at the first one overrun, as
-    # at the first failed assertion, where a release build does not, so that
-    # an overrun nobody has met cannot end a game)
-    release = getattr(sln, "port_release", False)
-    abi = " ".join(WINDOWS_ABI_FLAGS + [march_flag(sln)] + (["-DHALO_RELEASE"] if release else ["-fstack-protector-strong"])
-                   + game_browser_defines(sln))
+    # (a debug build checks its stack frames (/GS), and stops at the first
+    # one overrun, as at the first failed assertion; a release build does
+    # not, so that an overrun nobody has met cannot end a game)
+    abi = " ".join(WINDOWS_ABI_FLAGS + [march_flag(sln)] + configuration_defines(sln) + game_browser_defines(sln)
+                   + ([] if getattr(sln, "port_release", False) else ["-fstack-protector-strong"]))
     sdl_include = SDL_DIR / "include"
     libs = " ".join(
         [_quote(SDL_DIR / "lib" / "x86" / "SDL3.lib")]

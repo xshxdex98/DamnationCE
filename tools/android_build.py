@@ -26,9 +26,9 @@ from typing import Any, Dict, List, Optional
 
 from .linux_build import (EXPAT_DIR, EXPAT_SOURCES, KCP_DIR, LINUX_PROFILE, MBEDTLS_DIR, MINIUPNPC_DEFINES,
                           MINIUPNPC_DIR, MONOCYPHER_DIR, MUSL_MATH_DIR, STB_DIR, TOML_DIR, XDK_INCLUDE, ZLIB_DEFINES,
-                          ZLIB_DIR, ZLIB_SOURCES, compile_launcher, game_browser_defines, game_defines_and_includes, game_sources, miniupnpc_sources,
-                          musl_math_sources, opus_cflags, opus_sources, pgo_mode, pgo_profile,
-                          profile_use_flags, updater_defines, xdk_headers)
+                          ZLIB_DIR, ZLIB_SOURCES, compile_launcher, configuration_defines, game_browser_defines,
+                          game_defines_and_includes, game_sources, miniupnpc_sources, musl_math_sources, opus_cflags,
+                          opus_sources, pgo_mode, pgo_profile, profile_use_flags, updater_defines, xdk_headers)
 from .embed_assets import hud_assets_build, hud_configure_inputs, ui_fonts_build
 from .ninja_syntax import Writer
 
@@ -57,6 +57,10 @@ GUEST_ABI_FLAGS = [
     "-fno-define-target-os-macros",
     "-D__linux__=1",
     "-D__unix__=1",
+    # the ILP32 guest's code paths, the OpenGL ES renderer's, and the app's
+    # (in the port's sources, each its own macro)
+    "-DHALO_ARM64_GUEST=1",
+    "-DHALO_GLES=1",
     "-DHALO_ANDROID=1",
     # ARMv8.0: nothing the emulator's binary translation or an older
     # device could lack (Darwin targets otherwise assume pointer
@@ -367,10 +371,7 @@ def generate_android_build(n: Writer, sln: Any) -> None:
         f"-isystem {libc_include}", f"-isystem {arch}", f"-isystem {MUSL_DIR}/arch/generic",
         f"-isystem {MUSL_DIR}/include",
     ]
-    # (the game browser, the game list and dedicated servers, as every other
-    # build has them: HALO_GAME_BROWSER, configure.py)
-    guest_abi = " ".join(GUEST_ABI_FLAGS + (["-DHALO_RELEASE"] if getattr(sln, "port_release", False) else [])
-                         + game_browser_defines(sln))
+    guest_abi = " ".join(GUEST_ABI_FLAGS + configuration_defines(sln) + game_browser_defines(sln))
     guest_code = " ".join(GUEST_CODE_FLAGS)
     tool_implicit = [Path("tools/android_asm_convert.py"), *generated_headers]
     # profile-guided optimisation with the Linux build's profile (committed,
