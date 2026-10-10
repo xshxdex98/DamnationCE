@@ -1759,7 +1759,8 @@ static char const *const pause_settings_hidden_items[] =
 for SETTINGS, back to its own size) */
 static void pause_list_fit(struct ui_widget_definition *list, short span)
 {
-	struct ui_widget_child_reference *children = list->child_widgets.address;
+	struct ui_widget_child_reference *children =
+		XBOX_POINTER(struct ui_widget_child_reference, list->child_widgets.address);
 	long count = list->child_widgets.count, child;
 
 	for (child = 1; child < count; child++)
@@ -1797,7 +1798,7 @@ static void pause_settings_patch(void)
 	if (list_widget == NONE || ok_widget == NONE)
 		return;
 	list = tag_get(UI_WIDGET_DEFINITION_TAG, build.widget_tags[list_widget]);
-	children = list->child_widgets.address;
+	children = XBOX_POINTER(struct ui_widget_child_reference, list->child_widgets.address);
 	for (child = 0; child < list->child_widgets.count && place_count < (long)NUMBEROF(places); child++)
 	{
 		struct ui_widget_definition *item = tag_get(UI_WIDGET_DEFINITION_TAG, children[child].widget_tag.index);
@@ -1826,7 +1827,7 @@ static void pause_settings_patch(void)
 		}
 	}
 	ok = tag_get(UI_WIDGET_DEFINITION_TAG, build.widget_tags[ok_widget]);
-	handlers = ok->event_handlers.address;
+	handlers = XBOX_POINTER(struct ui_widget_event_handler_reference, ok->event_handlers.address);
 	for (handler = 0; handler < ok->event_handlers.count; handler++)
 	{
 		if (handlers[handler].function == settings_save)
@@ -1844,7 +1845,7 @@ static void pause_campaign_patch(struct cache_file_tag_instance *instances)
 	if (screen == NONE)
 		return;
 	definition = tag_get(UI_WIDGET_DEFINITION_TAG, screen);
-	children = definition->child_widgets.address;
+	children = XBOX_POINTER(struct ui_widget_child_reference, definition->child_widgets.address);
 	for (child = 0; child < definition->child_widgets.count; child++)
 	{
 		struct ui_widget_definition *list;
@@ -1857,7 +1858,7 @@ static void pause_campaign_patch(struct cache_file_tag_instance *instances)
 		list = tag_get(UI_WIDGET_DEFINITION_TAG, children[child].widget_tag.index);
 		if (list->type != _widget_type_column_list || list->child_widgets.count < 2)
 			continue;
-		rows = list->child_widgets.address;
+		rows = XBOX_POINTER(struct ui_widget_child_reference, list->child_widgets.address);
 		/* (REVERT TO SAVED, by its tag: it opens its confirmation rather
 		than running a function, and a map's list need not have it second) */
 		for (revert = 0; revert < list->child_widgets.count; revert++)

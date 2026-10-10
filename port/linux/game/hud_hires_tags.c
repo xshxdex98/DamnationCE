@@ -80,7 +80,7 @@ static struct
 	long asset;
 	struct bitmap_data *placeholder;
 	boolean placeholder_failed;
-	void *checked_address;
+	unsigned long checked_address;
 	unsigned long checked_at;
 	boolean drawable;
 } hires_sprite_bitmaps[MAXIMUM_HIRES_SPRITE_BITMAPS];
@@ -201,10 +201,10 @@ struct bitmap_data const *hud_hires_sprite_bitmap(
 		/* (checked on its pixels in the texture cache, once they are loaded) */
 		if (sprite_bitmap->cache_block_index == NONE || !sprite_bitmap->base_address)
 			break;
-		if (hires_sprite_bitmaps[index].checked_address != sprite_bitmap->base_address ||
+		if (hires_sprite_bitmaps[index].checked_address != (unsigned long)sprite_bitmap->base_address ||
 			hires_sprite_bitmaps[index].checked_at != config_changes())
 		{
-			hires_sprite_bitmaps[index].checked_address = sprite_bitmap->base_address;
+			hires_sprite_bitmaps[index].checked_address = (unsigned long)sprite_bitmap->base_address;
 			hires_sprite_bitmaps[index].checked_at = config_changes();
 			hires_sprite_bitmaps[index].drawable = hud_hires_sprites_drawable(
 				hires_sprite_bitmaps[index].asset,
@@ -230,7 +230,7 @@ struct bitmap_data const *hud_hires_sprite_bitmap(
 			{
 				hud_hires_register_placeholder(
 					hires_sprite_bitmaps[index].asset,
-					(unsigned long const *)placeholder->hardware_format);
+					(unsigned long const *)xbox_pointer(placeholder->hardware_format));
 			}
 			else
 			{
