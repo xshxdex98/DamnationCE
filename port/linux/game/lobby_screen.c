@@ -97,8 +97,7 @@ static struct widget_instance *lobby_list(
 static boolean game_cooperative(
 	struct network_game const *game)
 {
-	return !game->variant.game_engine_index &&
-		custom_edition_maps_campaign(custom_edition_maps_display_index(game->map.name));
+	return !game->variant.game_engine_index && custom_edition_maps_level_campaign(game->map.name);
 }
 
 /* one of the panel's lines: a label, and its value right-aligned */
