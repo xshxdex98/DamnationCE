@@ -122,7 +122,6 @@ boolean ui_widget_port_dispatch_event(struct widget_instance *widget, short even
 void ui_widget_port_go_back(struct widget_instance *widget);
 short ui_widget_port_list_index(struct widget_instance *list_widget);
 boolean ui_widget_port_saved_game(char const **map_name, short *level, short *difficulty);
-short main_get_solo_level_from_name(char const *name);
 boolean player_name_clean(wchar_t *name, long count);
 short players_port_local_player_count(void);
 

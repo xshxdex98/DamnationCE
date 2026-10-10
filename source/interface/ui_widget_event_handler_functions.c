@@ -2574,8 +2574,6 @@ char const *ui_widget_event_handler_function_name(
 reads player 1's saved game, as the Xbox's level list does (which the
 difficulty menu and its warning then use), and gives its map, its level and
 its difficulty; FALSE if there is none */
-short main_get_solo_level_from_name(char const *name);
-
 boolean ui_widget_port_saved_game(
 	char const **map_name,
 	short *level,

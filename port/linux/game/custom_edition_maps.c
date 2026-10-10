@@ -642,7 +642,8 @@ short custom_edition_maps_campaign_level(
 boolean custom_edition_maps_level_campaign(
 	char const *level_name)
 {
-	return level_name && custom_edition_maps_campaign(custom_edition_maps_display_index(level_name));
+	return level_name && (main_get_solo_level_from_name(level_name) != NONE ||
+		custom_edition_maps_campaign(custom_edition_maps_display_index(level_name)));
 }
 
 short custom_edition_maps_count(

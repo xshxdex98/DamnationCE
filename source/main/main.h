@@ -116,6 +116,10 @@ short main_get_current_solo_level(
 
 char const *main_get_solo_level_name(
 	short level);
+/* port: the campaign level a map name is (NONE: none, a Custom Edition
+map's included) */
+short main_get_solo_level_from_name(
+	char const *name);
 
 void main_run_demos(
 	void);
