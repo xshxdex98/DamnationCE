@@ -184,6 +184,8 @@ void ai_profile_update(
 			meter->history_sum -= meter->history[meter->history_next_index];
 		}
 		meter->history[meter->history_next_index] = meter->current_value;
+		/* port: the new sample counted too (the original only took the old one
+		off, so the averages were wrong) */
 		meter->history_sum += meter->current_value;
 		meter->history_next_index++;
 		meter->history_count = MAX(meter->history_count, meter->history_next_index);

@@ -5026,14 +5026,15 @@ static short ui_mouse_presses[UI_MOUSE_MAXIMUM_PRESSES];
 static long ui_mouse_press_count = 0;
 static boolean ui_mouse_hover_pending = FALSE;
 static boolean ui_mouse_click_pending = FALSE;
-/* TRUE if the mouse last moved the focus (the keys clear it). Lists then
-don't scroll at their ends, which a resting mouse would trigger every frame
-(menu_functions.c). */
+/* whether the pointer moved the focus last (the d-pad clears it): a list
+then doesn't scroll on at its end, which the pointer, moving, would make it
+do every frame (menu_functions.c) */
 static boolean ui_mouse_focused_last = FALSE;
 static short ui_mouse_hover_x, ui_mouse_hover_y;
 static short ui_mouse_click_x, ui_mouse_click_y;
 /* whether the latest pointer read was the touchscreen: the taller legend
-areas are for a finger only, the desktop mouse keeps their original height */
+areas, the merged setting rows and the widened values are for a finger only
+(render_ui_widgets); the desktop mouse keeps their original areas */
 static boolean ui_mouse_pointer_is_touch = FALSE;
 
 /* ---------- the debug view of the targets (debug.touch_targets)
@@ -5791,7 +5792,8 @@ static void ui_mouse_give_focus(
 	return;
 }
 
-/* port: TRUE if the mouse, not the keys, last moved the menus' focus */
+/* port: whether the pointer moved the menus' focus last, rather than the
+d-pad (menu_functions.c's lists) */
 boolean ui_widget_port_pointer_focused(
 	void)
 {
@@ -6009,23 +6011,6 @@ static boolean ui_mouse_selection_row(
 		(!strncmp(widget->name, "list_item_", 10) || !strncmp(widget->name, "server_item_", 12));
 }
 
-/* port: a press the menus post from their updates (menu_functions.c: the
-server browser's join, once its game is reached), posted where the mouse's
-are: one posted while the widgets update or draw would be overwritten by the
-next frame's events (queue_event keeps the latest) */
-static short ui_widget_port_press_controller = NONE;
-static short ui_widget_port_press_button;
-
-void ui_widget_port_post_button(
-	short controller_index,
-	short button_index)
-{
-	ui_widget_port_press_controller = controller_index;
-	ui_widget_port_press_button = button_index;
-
-	return;
-}
-
 /* logs a tap the menus resolved: where it was and the target the click acts
 on; a click waits for the presses the mouse queued, so it is resolved
 against the targets of a later frame than the one the tap arrived in; the
@@ -6065,6 +6050,23 @@ static void ui_debug_log_click(
 	{
 		platform_log("touch targets: tap at %d,%d hit none after %ld frames", x, y, frames);
 	}
+
+	return;
+}
+
+/* port: a press the menus post from their updates (menu_functions.c: the
+server browser's join, once its game is reached), posted where the mouse's
+are: one posted while the widgets update or draw would be overwritten by the
+next frame's events (queue_event keeps the latest) */
+static short ui_widget_port_press_controller = NONE;
+static short ui_widget_port_press_button;
+
+void ui_widget_port_post_button(
+	short controller_index,
+	short button_index)
+{
+	ui_widget_port_press_controller = controller_index;
+	ui_widget_port_press_button = button_index;
 
 	return;
 }
@@ -6744,10 +6746,14 @@ void render_ui_widgets(
 		{
 			/* fit the legends while the rows are still targets (merging
 			removes them); widen after merging (the merged values are
-			row-tall) */
+			row-tall). A finger's targets only: the mouse clicks the
+			labels and values where CE's menus have them */
 			ui_mouse_fit_button_targets();
-			ui_mouse_merge_setting_rows();
-			ui_mouse_widen_values();
+			if (ui_mouse_pointer_is_touch)
+			{
+				ui_mouse_merge_setting_rows();
+				ui_mouse_widen_values();
+			}
 			ui_mouse_targets_settled = TRUE;
 		}
 #ifdef HALO_GAME_BROWSER

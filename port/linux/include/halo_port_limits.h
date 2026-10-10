@@ -66,16 +66,16 @@ is newer (network_client_manager.c). A host advertises it, with its netcode,
 in its game's advertisement's reserved bytes (network_server_message_handler.c),
 which hosts built before there was a version send as zeros: version 0.
 Raise it with any change to what the machines send each other. */
-#define HALO_PORT_NETWORK_VERSION 24
+#define HALO_PORT_NETWORK_VERSION 25
 /* ... the versions whose hosts a client joins: its own, and those that differ
 from it only in what the other machines leave out (a message a machine of
-the other version does not know it drops). Version 24 (OpenCE's) plays with
-no other version: 23 places none of a Custom Edition map's PC vehicle set,
-which the host places. A host never checks a client's version: the client
+the other version does not know it drops). Version 25 (OpenCE's) plays with
+no other version: 24's object states carry no unit's integrated light, which
+25 sets from every state. A host never checks a client's version: the client
 does (network_client_manager.c), so the range is the client's. Widen it
 only for a version read and found to differ so. */
-#define HALO_PORT_NETWORK_VERSION_MINIMUM 24
-#define HALO_PORT_NETWORK_VERSION_MAXIMUM 24
+#define HALO_PORT_NETWORK_VERSION_MINIMUM 25
+#define HALO_PORT_NETWORK_VERSION_MAXIMUM 25
 /* ... the advertisement's reserved bytes: the version (a little-endian word),
 then flags */
 #define HALO_PORT_ADVERTISED_VERSION_OFFSET 0
