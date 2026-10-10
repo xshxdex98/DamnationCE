@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.37
+
+**Network version 25:** 0.3.37 plays only with other 0.3.37 players and
+OpenCE's current builds. Update before joining or hosting.
+
+### From OpenCE
+
+- Android touch controls, reworked: the stick moves the player at full
+  speed on a diagonal, the swipe aims with a controller's aim assist
+  (`input.touch_aim_assist` turns it off), the buttons are named after
+  your profile's button layout, the gyroscope turns the view apart from
+  the swipe, and an optional floating stick and an opacity setting are in
+  Options > General. By default the controls now hide while a controller
+  is connected (`input.touch_controls = "on"` shows them anyway).
+- Memory leaks fixed: render targets left behind when the resolution or
+  shadow quality changes, controllers that were unplugged, Android audio
+  streams, and Windows file handles and surfaces.
+- Custom Edition maps: a particle drawn from more bitmaps than one draw
+  takes no longer stops a debug build (the earlier fix for it was never
+  built in).
+
 ## 0.3.36
 
 A hotfix for 0.3.35.
