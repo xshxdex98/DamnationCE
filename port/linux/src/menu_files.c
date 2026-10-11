@@ -1115,7 +1115,11 @@ static void art_free(long index)
 {
 	free(art[index].png);
 	if (art[index].texture)
+	{
+		/* (the renderer's state forgets it: GL may give its name again) */
+		xgpu_gl_texture_deleted(art[index].texture);
 		glDeleteTextures(1, &art[index].texture);
+	}
 }
 
 void halo_menus_art_register(void const *texture, char const *png)

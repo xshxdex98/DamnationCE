@@ -30,8 +30,10 @@ where its offset falls in their combined offset space.
 #include "cache_file_formats.h"
 #include "custom_edition_cache.h"
 #include "tag_schema.h"
+#include "map_share.h"
 
 #include <stdlib.h>
+#include <xtl.h>
 
 /* ---------- constants */
 
@@ -71,6 +73,9 @@ struct custom_edition_file
 struct custom_edition_cache_globals
 {
 	boolean tags_loaded;
+	/* the loaded map's file (custom_edition_cache_loaded_path), while it
+	is open */
+	char map_path[MAP_PATH_SIZE];
 	/* the Halo PC behaviours the loaded map relies on (enum
 	custom_edition_behaviour, flags) */
 	uint32_t behaviours;
@@ -185,7 +190,26 @@ static char const *maps_folder(
 }
 #define NUMBER_OF_MAPS_FOLDERS 2
 
-/* whether a maps folder has <name>.map: its path, made in path */
+/* whether a maps folder has <name><extension>: its path, made in path */
+static boolean maps_folder_has(
+	char const *folder,
+	char const *name,
+	char const *extension,
+	char *path)
+{
+	/* (the install's only when there is one: an Xbox drive of the save
+	folder is made when first looked in, port/linux/src/xbox_files.c) */
+	if (strlen(folder) + strlen(name) + strlen(extension) >= MAP_PATH_SIZE ||
+		(folder == maps_folder(1) && !custom_edition_install_present()))
+	{
+		return FALSE;
+	}
+	sprintf(path, "%s%s%s", folder, name, extension);
+
+	return file_path_exists(path);
+}
+
+/* whether any maps folder has <name>.map, the first: its path, made in path */
 static boolean maps_folders_find(
 	char const *name,
 	char *path)
@@ -194,30 +218,74 @@ static boolean maps_folders_find(
 
 	for (folder = 0; folder < NUMBER_OF_MAPS_FOLDERS; folder++)
 	{
-		/* (the install's only when there is one: an Xbox drive of the save
-		folder is made when first looked in, port/linux/src/xbox_files.c) */
-		if (strlen(maps_folder(folder)) + strlen(name) + strlen(MAP_FILE_EXTENSION) >= MAP_PATH_SIZE ||
-			(folder == 1 && !custom_edition_install_present()))
-		{
-			continue;
-		}
-		sprintf(path, "%s%s%s", maps_folder(folder), name, MAP_FILE_EXTENSION);
-		if (file_path_exists(path))
-		{
+		if (maps_folder_has(maps_folder(folder), name, MAP_FILE_EXTENSION, path))
 			return TRUE;
-		}
 	}
 
 	return FALSE;
 }
 
+/* The custom_maps folder's one map named <name>_<hash>.map, for a name
+without the hash its file has: its file name (without the extension) in
+`hashed` (MAP_PATH_SIZE characters). Maps there are named for their hash as
+the map lists find them (map_share_name_map), so a level name of before (a
+saved last map, a test's) still finds its map; FALSE if there are more. */
+static boolean maps_folder_hashed_name(
+	char const *name,
+	char *hashed)
+{
+	char pattern[MAP_PATH_SIZE];
+	WIN32_FIND_DATAA data;
+	HANDLE find;
+	short count = 0;
+
+	if (map_share_name_hashed(name) ||
+		strlen(CUSTOM_EDITION_MAP_DIRECTORY) + strlen(name) + 1 + MAP_SHARE_NAME_DIGITS + 4 >= MAP_PATH_SIZE)
+	{
+		return FALSE;
+	}
+	sprintf(pattern, "%s%s_*%s", CUSTOM_EDITION_MAP_DIRECTORY, name, MAP_FILE_EXTENSION);
+	find = FindFirstFileA(pattern, &data);
+	if (find == INVALID_HANDLE_VALUE)
+		return FALSE;
+	do
+	{
+		char found[sizeof(data.cFileName) + 1];
+		size_t length;
+
+		memcpy(found, data.cFileName, sizeof(data.cFileName));
+		found[sizeof(data.cFileName)] = 0;
+		length = strlen(found);
+		if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || length <= strlen(MAP_FILE_EXTENSION))
+			continue;
+		found[length - strlen(MAP_FILE_EXTENSION)] = 0;
+		/* (the name and a hash: not a longer name that starts the same) */
+		if (!map_share_name_hashed(found) || (size_t)map_share_name_base_length(found) != strlen(name) ||
+			_strnicmp(found, name, strlen(name)))
+		{
+			continue;
+		}
+		if (count++)
+			break;
+		strcpy(hashed, found);
+	} while (FindNextFileA(find, &data));
+	CloseHandle(find);
+
+	return count == 1;
+}
+
 /* the file that holds the map `map_name` names (a level name or a file
-name): <custom maps folder>\<name>.map */
+name): <custom maps folder>\<name>.map (custom_maps' <name>_<hash>.map for
+a name without the hash, if it has one map of that name) */
 static boolean custom_edition_map_path(
 	char const *map_name,
 	char *path)
 {
-	return maps_folders_find(tag_name_strip_path(map_name), path);
+	char const *name = tag_name_strip_path(map_name);
+	char hashed[MAP_PATH_SIZE];
+
+	return maps_folders_find(name, path) ||
+		(maps_folder_hashed_name(name, hashed) && maps_folder_has(maps_folder(0), hashed, MAP_FILE_EXTENSION, path));
 }
 
 /* A cache's resource map of `type`, bitmaps.map and so on, in the first maps
@@ -229,11 +297,7 @@ static void custom_edition_resource_map_path(
 	char const *name = resource_map_type_describe(type);
 
 	if (!maps_folders_find(name, path))
-	{
 		sprintf(path, "%s%s%s", maps_folder(0), name, MAP_FILE_EXTENSION);
-	}
-
-	return;
 }
 
 static void custom_edition_cache_files_close(
@@ -252,6 +316,7 @@ static void custom_edition_cache_files_close(
 		custom_edition_file_close(&globals->resource_files[type]);
 	}
 	custom_edition_file_close(&globals->map);
+	globals->map_path[0] = 0;
 
 	return;
 }
@@ -559,6 +624,43 @@ boolean custom_edition_level_name(
 		!_strnicmp(level_name, CUSTOM_EDITION_LEVEL_NAME_PREFIX, csstrlen(CUSTOM_EDITION_LEVEL_NAME_PREFIX));
 }
 
+boolean custom_edition_map_file_path(
+	char const *map_name,
+	char *path)
+{
+	return custom_edition_map_path(map_name, path);
+}
+
+boolean custom_edition_resource_map_file_path(
+	short type,
+	char *path)
+{
+	return type > _resource_map_none && type < NUMBER_OF_RESOURCE_MAP_TYPES &&
+		maps_folders_find(resource_map_type_describe((enum resource_map_type)type), path);
+}
+
+unsigned long custom_edition_map_resource_maps_needed(
+	char const *level_name)
+{
+	char path[MAP_PATH_SIZE];
+	struct custom_edition_file file;
+	uint32_t types = 0;
+
+	if (custom_edition_map_path(level_name, path) && custom_edition_file_open(&file, path))
+	{
+		if (cache_file_resource_maps_needed(&file.source, &types) != _cache_file_status_ok)
+			types = 0;
+		custom_edition_file_close(&file);
+	}
+	return types;
+}
+
+char const *custom_edition_cache_loaded_path(
+	void)
+{
+	return custom_edition_cache_globals.map.stream ? custom_edition_cache_globals.map_path : NULL;
+}
+
 boolean custom_edition_map_file_present(
 	char const *map_name)
 {
@@ -599,12 +701,13 @@ boolean custom_edition_cache_present(
 	struct custom_edition_file file;
 	struct cache_file_identity identity;
 	enum cache_file_status status = _cache_file_status_read_failed;
+	uint32_t needed = 0;
 	short type;
 
 	if (!custom_edition_map_path(level_name, path))
 	{
-		snprintf(message, message_size, "You don't have the map %.64s.map. If you have it, copy it into custom_maps.",
-			name);
+		snprintf(message, message_size, "You don't have the map %.*s.map. If you have it, copy it into custom_maps.",
+			(int)MIN(64, map_share_name_base_length(name)), name);
 		return FALSE;
 	}
 	if (!halo_custom_edition_tag_cache())
@@ -618,6 +721,13 @@ boolean custom_edition_cache_present(
 	if (custom_edition_file_open(&file, path))
 	{
 		status = cache_file_identify(&file.source, &identity);
+		/* (the resource maps the map's tags are read from: those its tag
+		index says it holds tags in) */
+		if (status == _cache_file_status_ok && identity.format == _cache_file_format_custom_edition_cache &&
+			cache_file_resource_maps_needed(&file.source, &needed) != _cache_file_status_ok)
+		{
+			needed = (1u << _resource_map_bitmaps) | (1u << _resource_map_sounds) | (1u << _resource_map_locale);
+		}
 		custom_edition_file_close(&file);
 	}
 	if (status != _cache_file_status_ok || identity.format != _cache_file_format_custom_edition_cache)
@@ -638,18 +748,19 @@ boolean custom_edition_cache_present(
 			"Your %.64s.map is a different version from the host's. Copy the host's into custom_maps.", name);
 		return FALSE;
 	}
-	/* (the resource maps every Custom Edition map's tags are read from) */
 	for (type = _resource_map_bitmaps; type < NUMBER_OF_RESOURCE_MAP_TYPES; type++)
 	{
 		char const *resource_name = resource_map_type_describe((enum resource_map_type)type);
 		char resource_path[MAP_PATH_SIZE];
 
+		if (!(needed & (1u << type)))
+			continue;
 		if (!maps_folders_find(resource_name, resource_path))
 		{
 			error(_error_silent, "custom edition: the map '%s' needs %s.map, which no maps folder has", level_name,
 				resource_name);
 			snprintf(message, message_size,
-				"The map %.64s needs Custom Edition's bitmaps.map, sounds.map and loc.map in custom_maps.", name);
+				"The map %.64s needs Custom Edition's %s.map in custom_maps.", name, resource_name);
 			return FALSE;
 		}
 	}
@@ -708,6 +819,7 @@ struct cache_file_tag_header *custom_edition_cache_tags_load(
 			map_name);
 		return NULL;
 	}
+	strcpy(globals->map_path, path);
 	status = cache_file_identify(&globals->map.source, &identity);
 	if (status != _cache_file_status_ok ||
 		identity.format != _cache_file_format_custom_edition_cache ||
