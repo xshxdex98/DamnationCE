@@ -34,7 +34,7 @@
 	</widget>
 	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_names_label" type="text" controller="1" width="300" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels" string_index="0" font="ui\large_ui" color="#FFD2D6DA" text_x="13" text_y="4">
 	</widget>
-	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_names_spinner" type="spinner" left="3" top="2" width="147" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" strings="AIMED|ALL|ALLIES|ENEMIES|NONE" setting="display.player_names" values="aimed|all|allies|enemies|none" font="ui\large_ui" color="#FFD2D6DA" align="center" text_y="1" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 150 19 156">
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_names_spinner" type="spinner" left="3" top="2" width="147" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" strings="AIMED|ALL|ALLIES|ENEMIES" setting="display.player_names" values="aimed|all|allies|enemies" font="ui\large_ui" color="#FFD2D6DA" align="center" text_y="1" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 150 19 156">
 		<on event="created" run="port setting load" />
 	</widget>
 	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_player_name_scale" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FFD2D6DA">
@@ -131,7 +131,7 @@
 	</strings>
 	<strings name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/help_strings">
 		<string text="" />
-		<string text="Aimed: the name of the player you aim at, as in\nHalo PC. Or always all, allies' or enemies'." />
+		<string text="Aimed: the original game's, the name of the player\nyou aim at. Or all, allies' or enemies' always." />
 		<string text="How large the players' names are drawn." />
 		<string text="Your legs in first person, seen looking down,\nmoving as you run. Your body as others see it." />
 		<string text="Grenade throws that keep your legs moving, and\nriders' hands off the grips to throw and reload." />

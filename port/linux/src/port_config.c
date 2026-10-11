@@ -157,12 +157,12 @@ static const struct config_setting config_settings[] =
 		"Edition's menus as they were, \"glassed\", this client's, or \"cairo\", in\n"
 		"the look of Halo 2's menus; the main menu's MENUS button chooses it too." },
 	{ "display.player_names", _config_string, "\"aimed\"", "HALO_PLAYER_NAMES", _environment_value, _platform_all,
-		"In multiplayer, whose names are drawn above their heads: \"aimed\", as\n"
-		"Halo PC draws them, only the player the crosshair is on; or always\n"
-		"\"all\", \"allies\" or \"enemies\" (an enemy's only within the motion\n"
-		"sensor's reach, in sight and not camouflaged; none if the gametype's\n"
-		"motion tracker shows no players, only allies' if it shows only\n"
-		"friends); or \"none\"." },
+		"In multiplayer, whose names are drawn above their heads: \"aimed\", the\n"
+		"original game's alone (its name of the player the crosshair is on); or\n"
+		"always \"all\", \"allies\" or \"enemies\" too (an enemy's only within the\n"
+		"motion sensor's reach, in sight and not camouflaged; none if the\n"
+		"gametype's motion tracker shows no players, only allies' if it shows\n"
+		"only friends)." },
 	{ "display.player_name_scale", _config_real, "1.0", "HALO_PLAYER_NAME_SCALE", _environment_value, _platform_all,
 		"How large the players' names are drawn: 1.0 three quarters of the size of\n"
 		"the HUD's text, 0.25 to 4." },

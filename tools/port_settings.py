@@ -155,8 +155,8 @@ SCREENS = {
             ("CHECK FOR UPDATES:", "update.check", ON_OFF,
              "Look for a new version when the game starts.", "desktop android"),
             ("PLAYER NAMES:", "display.player_names",
-             [("AIMED", "aimed"), ("ALL", "all"), ("ALLIES", "allies"), ("ENEMIES", "enemies"), ("NONE", "none")],
-             "Aimed: the name of the player you aim at, as in\nHalo PC. Or always all, allies' or enemies'.", None),
+             [("AIMED", "aimed"), ("ALL", "all"), ("ALLIES", "allies"), ("ENEMIES", "enemies")],
+             "Aimed: the original game's, the name of the player\nyou aim at. Or all, allies' or enemies' always.", None),
             ("PLAYER NAME SIZE:", "display.player_name_scale",
              [(f"{value:g}x", f"{value:g}") for value in (0.5, 0.75, 1, 1.25, 1.5, 2)],
              "How large the players' names are drawn.", None),
@@ -212,7 +212,7 @@ _video["categories"] = [
 # OPENCE ADDITIONS: a tab of Settings of its own (the profile list's row
 # after ABOUT, PROFILE_ADDITIONS_ROW) holding what OpenCE adds to the
 # original game, each off or the stock look by default: the players' names
-# over their heads (the aimed player's, as Halo PC), the first-person legs,
+# over their heads (the original game's alone), the first-person legs,
 # the animations, arm shields, the shield's color and glow, and the field of
 # view and viewmodels (a screen of its own)
 ADDITIONS = "opence_additions"
