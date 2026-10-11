@@ -83,6 +83,10 @@
 		<on event="a start" run="port theme vanilla" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
+	<widget name="shell/item_xbox" type="text" width="300" height="22" bitmap="shell/item" text="XBOX" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
+		<on event="a start" run="port theme xbox" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
 	<widget name="shell/item_back" type="text" width="300" height="22" bitmap="shell/item" text="BACK" font="ui\large_ui" color="#FFC8D6EA" text_x="0" text_y="1" align="center">
 		<on event="a start" back="true" />
 		<on event="left_mouse" run="mouse emit accept event" />
@@ -109,7 +113,8 @@
 		<child widget="shell/item_glassed" x="170" y="214" />
 		<child widget="shell/item_cairo" x="170" y="237" />
 		<child widget="shell/item_vanilla" x="170" y="260" />
-		<child widget="shell/item_back" x="170" y="292" />
+		<child widget="shell/item_xbox" x="170" y="283" />
+		<child widget="shell/item_back" x="170" y="315" />
 	</widget>
 	<widget name="shell/multiplayer_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="shell/list_description">
 		<child widget="shell/item_online" x="170" y="214" />

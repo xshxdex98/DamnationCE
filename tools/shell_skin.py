@@ -30,8 +30,8 @@ lobby screens), drawn in place of the maps' bitmaps as the high-res HUD is
 (port/linux/src/hud_hires.c), listed in its textures.json for
 tools/embed_assets.py. The maps', levels' and game types' pictures are
 enlarged for every theme, in skin/xbox, which is not kept in the repository
-(it is the maps' own pictures); the looks' redrawings are. Needs Pillow,
-NumPy and SciPy.
+(it is the maps' own pictures); the looks' redrawings are. Needs Pillow
+and NumPy.
 """
 
 import argparse
@@ -45,7 +45,6 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import numpy as np
-from scipy import ndimage
 from PIL import Image, ImageFilter
 
 import cairo_art
@@ -59,6 +58,8 @@ MENUS = Path(__file__).resolve().parent.parent / "port" / "assets" / "menus"
 SKIN = MENUS / "skin"
 VANILLA = SKIN / "vanilla"
 LOBBY_FILE = "main_menu.multiplayer_type_select.lobby.xml"
+# the Xbox's menus' additions, in its look (port_settings.py): never restyled
+XBOX_FILE = f"{port_settings.PE}/{port_settings.XBOX_ADDITIONS}".replace("/", ".") + ".xml"
 
 # ---------- the pictures redrawn
 
@@ -410,6 +411,8 @@ def look_layer(look):
                 pictures += 1
     screens = 0
     for file in sorted((MENUS / "ce").glob("*.xml")):
+        if file.name == XBOX_FILE:
+            continue
         if file.name == LOBBY_FILE:
             # the lobby is the overlay's form (port_settings.py), not the stock one restyled
             tree = ET.ElementTree(ET.fromstring("\n".join(port_settings.glassed_lobby_file()).encode("utf-8")))
@@ -486,18 +489,20 @@ def cairo_shell():
 # ---------- the Vanilla layer
 
 # The MENUS item, under the stock main menu's QUIT, and the screen it opens,
-# whose theme items are set out as the main menu's. Their pictures are drawn
-# as the stock items' are (stock_item_picture).
+# whose theme items are set out as the main menu's: text in the menus' font,
+# as Custom Edition's own items have no picture of these words.
 VANILLA_ITEM_X, VANILLA_ITEM_TOP, VANILLA_ITEM_SPACING = 192, 247, 36
-VANILLA_MENUS_ITEM = """
-<widget name="main_menu/main_menu_item_menus" type="text" width="256" height="33" bitmap="main_menu/menu_menus">
+VANILLA_ITEM = ('type="text" width="256" height="33" font="ui\\large_ui" color="#FF2896FF" align="center" '
+                'text_y="6"')
+VANILLA_MENUS_ITEM = f"""
+<widget name="main_menu/main_menu_item_menus" {VANILLA_ITEM} text="MENUS">
  <on event="a start" open="main_menu/themes_screen"/>
  <on event="left_mouse" run="mouse emit accept event"/>
 </widget>"""
-VANILLA_THEMES = ("glassed", "cairo", "vanilla")
-VANILLA_THEME_ITEM = """
-<widget name="main_menu/theme_{theme}" type="text" width="256" height="33" bitmap="main_menu/menu_{theme}">
- <on event="a start" run="port theme {theme}"/>
+VANILLA_THEMES = ("glassed", "cairo", "vanilla", "xbox")
+VANILLA_THEME_ITEM = f"""
+<widget name="main_menu/theme_{{theme}}" {VANILLA_ITEM} text="{{text}}">
+ <on event="a start" run="port theme {{theme}}"/>
  <on event="left_mouse" run="mouse emit accept event"/>
 </widget>"""
 VANILLA_THEMES_SCREEN = """
@@ -512,62 +517,11 @@ VANILLA_THEMES_SCREEN = """
  <child widget="main_menu/themes_list"/>
 </widget>
 </menus>"""
-VANILLA_ITEM_PICTURES = {"main_menu/menu_menus": "MENUS", **{f"main_menu/menu_{theme}": theme.upper()
-                                                              for theme in VANILLA_THEMES}}
-# the stock items' pictures (1024x256, the text centred on x 520, its capitals
-# 27 to 103 high), whose glow is fitted from SETTINGS's
-STOCK_ITEM = MENUS / "ce" / "shell" / "main_menu"
-STOCK_ITEM_CENTRE, STOCK_ITEM_CAP_TOP, STOCK_ITEM_CAP_HEIGHT = 520, 27, 77
-STOCK_ITEM_BLUE = (39, 148, 255, 119)
-STOCK_ITEM_GLOW = (38, 149, 255)
-TITLE_FONT = MENUS.parent / "fonts" / "OpenCE-Regular.ttf"
-
-
-def stock_item_glow():
-    """The stock items' glow when selected, fitted to SETTINGS's: a blur of
-    the letters (its sigma) times a gain, clipped. Returns (sigma, gain)."""
-    image = np.asarray(Image.open(STOCK_ITEM / "menu_settings__1.png").convert("RGBA")).astype(float) / 255
-    letters = (image[..., 3] > 0.99) & (image[..., :3].min(axis=-1) > 0.99)
-    around = ~ndimage.binary_dilation(letters, iterations=2) & (image[..., 3] > 0)
-    best = None
-    for sigma in np.arange(2.0, 30.0, 0.5):
-        blur = ndimage.gaussian_filter(letters.astype(float), sigma)[around]
-        gain = float((blur * image[..., 3][around]).sum() / max((blur * blur).sum(), 1e-9))
-        error = float(((np.minimum(1, gain * blur) - image[..., 3][around]) ** 2).sum())
-        if best is None or error < best[0]:
-            best = (error, sigma, gain)
-    return best[1], best[2]
-
-
-def stock_item_picture(text, glow):
-    """A main menu item's two pictures as the stock items are drawn: the text
-    in translucent blue, and selected, white with a blue glow"""
-    from PIL import ImageDraw, ImageFont
-    probe = ImageFont.truetype(str(TITLE_FONT), 1000)
-    left, top, right, bottom = probe.getbbox("H")
-    font = ImageFont.truetype(str(TITLE_FONT), round(STOCK_ITEM_CAP_HEIGHT * 1000 / (bottom - top)))
-    origin = (STOCK_ITEM_CENTRE - font.getlength(text) / 2, STOCK_ITEM_CAP_TOP - font.getbbox("H")[1])
-    mask = Image.new("L", (1024, 256), 0)
-    ImageDraw.Draw(mask).text(origin, text, font=font, fill=255)
-    letters = np.asarray(mask).astype(float) / 255
-    plain = np.zeros((256, 1024, 4), np.uint8)
-    plain[..., :3] = STOCK_ITEM_BLUE[:3]
-    plain[..., 3] = np.round(letters * STOCK_ITEM_BLUE[3]).astype(np.uint8)
-    sigma, gain = glow
-    halo = np.minimum(1, gain * ndimage.gaussian_filter(letters, sigma))
-    alpha = letters + halo * (1 - letters)
-    selected = np.zeros((256, 1024, 4), np.uint8)
-    for channel in range(3):
-        colour = 255 * letters + STOCK_ITEM_GLOW[channel] * halo * (1 - letters)
-        selected[..., channel] = np.round(np.divide(colour, alpha, out=np.zeros_like(colour), where=alpha > 0))
-    selected[..., 3] = np.round(alpha * 255).astype(np.uint8)
-    return Image.fromarray(plain, "RGBA"), Image.fromarray(selected, "RGBA")
 
 
 def vanilla_layer():
     """skin/vanilla/ce: the stock main menu, this theme's main menu (root),
-    with a MENUS item under QUIT and the screen it opens, drawn as the stock
-    items are."""
+    with a MENUS item under QUIT and the screen it opens."""
     if VANILLA.exists():
         shutil.rmtree(VANILLA)
     tree = ET.parse(MENUS / "ce" / "main_menu.xml")
@@ -576,17 +530,9 @@ def vanilla_layer():
     for widget in menus.iter("widget"):
         if widget.get("name") == "main_menu/build_number":
             widget.set("color", VERSION_COLOR)
-    glow = stock_item_glow()
-    for name, text in VANILLA_ITEM_PICTURES.items():
-        bitmap = ET.SubElement(menus, "bitmap", {"name": name})
-        for index, picture in enumerate(stock_item_picture(text, glow)):
-            png = f"ce/port/{name}__{index}.png"
-            (VANILLA / png).parent.mkdir(parents=True, exist_ok=True)
-            picture.save(VANILLA / png, optimize=True)
-            ET.SubElement(bitmap, "frame", {"png": png, "width": "256", "height": "64"})
     menus.append(ET.fromstring(VANILLA_MENUS_ITEM.strip()))
     for theme in VANILLA_THEMES:
-        menus.append(ET.fromstring(VANILLA_THEME_ITEM.format(theme=theme).strip()))
+        menus.append(ET.fromstring(VANILLA_THEME_ITEM.format(theme=theme, text=theme.upper()).strip()))
     for widget in ET.fromstring(VANILLA_THEMES_SCREEN.strip()):
         if widget.get("name") == "main_menu/themes_list":
             for row, theme in enumerate(VANILLA_THEMES):
@@ -602,7 +548,7 @@ def vanilla_layer():
         tree = ET.parse(file)
         if any([add_handlers(widget, VANILLA_HANDLER_ADDITIONS) for widget in tree.getroot().iter("widget")]):
             write_xml(tree, VANILLA / "ce" / file.name)
-    print(f"vanilla: the main menu, glow sigma {glow[0]:.1f} gain {glow[1]:.2f}")
+    print("vanilla: the main menu")
 
 
 # ---------- the maps' own pictures

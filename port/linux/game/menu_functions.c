@@ -1603,9 +1603,10 @@ profile's button settings as the Xbox's Controller Setup shows them */
 /* the picture's frames (the bitmap's: tools/port_settings.py's
 BITMAP_FRAMES): Gamepad Setup's row's, as the list numbers its rows
 (player_profile_edit_select_menu_update_extended_description), and after
-the PC version's nine the Xbox's five of the button settings */
+the PC version's nine and OPENCE ADDITIONS' the Xbox's five of the button
+settings */
 #define PROFILE_GAMEPAD_FRAME 2
-#define PROFILE_FIRST_LAYOUT_FRAME 9
+#define PROFILE_FIRST_LAYOUT_FRAME 10
 
 /* "port gamepad layout preview" (the picture's own): on Gamepad Setup's
 row, the edited profile's button settings */
@@ -2149,6 +2150,8 @@ Xbox's networking, run by the engine's port entry points
 /* (a key stroke's modifier, as input_xbox.c has them: shift, control) */
 #define KEY_MODIFIER_CONTROL_BIT 1
 #define LOBBY_NAME "pc\\main_menu\\multiplayer_type_select\\lobby\\lobby_screen"
+/* the server browser (Join Game > Internet's) */
+#define SERVER_BROWSER_NAME "pc\\main_menu\\multiplayer_type_select\\join_game\\join_game_screen"
 #define SERVER_SETUP_NAME "pc\\main_menu\\multiplayer_type_select\\server_settings\\server_settings_screen"
 #define PREVIEW_NAME "pc\\main_menu\\multiplayer_type_select\\lobby\\preview_screen"
 /* the server browser's password screen (tools/port_settings.py), and the
@@ -2471,6 +2474,21 @@ void pc_menu_host_internet(void)
 {
 	multiplayer.mode = _multiplayer_mode_host_internet;
 	multiplayer_hosting_begin();
+}
+
+/* the Xbox's ONLINE GAMES, `item` (ui_widget.c), in its menus: the PC
+version's server browser, as Join Game > Internet opens it, whose B goes
+back to the item; FALSE when the PC version's tags are not there */
+boolean pc_menu_server_browser_open(struct widget_instance *item)
+{
+	long screen = tag_loaded('DeLa', SERVER_BROWSER_NAME);
+
+	if (screen == NONE)
+		return FALSE;
+	multiplayer.mode = _multiplayer_mode_server_browser;
+	ui_widget_load_by_name_or_tag(NULL, screen, NULL, NONE, widget_instance_get_topmost_parent(item)->definition_tag_index,
+		item->parent->definition_tag_index, (short)widget_instance_get_child_index_from_parent(item));
+	return TRUE;
 }
 
 /* ---- the map list (the Map screen's): its chooser's SINGLEPLAYER levels,
@@ -5443,7 +5461,7 @@ boolean pc_menu_event_function_invoke(
 			return gametype_setup_edit();
 		}
 		else if (!strcmp(name, "port theme glassed") || !strcmp(name, "port theme vanilla") ||
-			!strcmp(name, "port theme cairo"))
+			!strcmp(name, "port theme cairo") || !strcmp(name, "port theme xbox"))
 		{
 			extern void pc_menus_theme_choose(char const *theme);
 

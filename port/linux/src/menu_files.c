@@ -968,12 +968,17 @@ enum halo_menu_theme halo_menus_theme(void)
 		int index;
 
 		read_at = config_changes();
-		theme = HALO_MENU_THEME_GLASSED;
+		theme = HALO_MENU_THEME_VANILLA;
 		for (index = 0; index < NUMBER_OF_HALO_MENU_THEMES; index++)
 		{
 			if (!strcmp(config_string("display.theme"), theme_names[index]))
 				theme = (enum halo_menu_theme)index;
 		}
+		/* (the Xbox's menus, display.menus "xbox": the screens of the PC
+		version's they open, its server browser and OPENCE ADDITIONS, as
+		Custom Edition has them; menu_tags.c's xbox_menus_patch) */
+		if (SDL_strcasecmp(config_string("display.menus"), "pc"))
+			theme = HALO_MENU_THEME_VANILLA;
 	}
 	return theme;
 }

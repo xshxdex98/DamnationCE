@@ -79,6 +79,8 @@ void lobby_screen_render(void);
 void overlay_lit_row_render(void);
 /* (ONLINE GAMES, below: its list moves focus item by item) */
 boolean ui_widget_online_games_list(struct widget_instance *widget);
+/* port/linux/game/menu_functions.c: ONLINE GAMES' server browser in the Xbox's menus */
+boolean pc_menu_server_browser_open(struct widget_instance *item);
 #endif
 /* port/linux/game/menu_tags.c: the PC menus' screen standing for an Xbox one, by name */
 char const *pc_menus_screen(char const *name);
@@ -2615,13 +2617,17 @@ static void event_handler_dispatch(
 	boolean close_all = FALSE;
 
 #ifdef HALO_GAME_BROWSER
-	/* ONLINE GAMES (System Link's item copied): the game list's screen, not
-	System Link's */
+	/* ONLINE GAMES (System Link's item copied): the PC version's server
+	browser, in place of the Multiplayer menu, else the game list's screen;
+	not System Link's */
 	if (ui_widget_online_games_item(widget) &&
 		(handler->event_type == _gamepad_analog_button_a || handler->event_type == _gamepad_binary_button_start))
 	{
 		ui_play_audio_feedback_sound(_ui_audio_feedback_forward);
-		browser_screen_open();
+		if (pc_menu_server_browser_open(widget))
+			*calling_widget_deleted = TRUE;
+		else
+			browser_screen_open();
 		return;
 	}
 #endif
