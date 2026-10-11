@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.39
+
+**Network version 26:** 0.3.39 plays only with other 0.3.39 players and
+OpenCE's current builds. Update before joining or hosting.
+
+### From OpenCE
+
+- Internet play with browsers: players on OpenCE's web build can join your
+  games through an invite link, and you theirs.
+- Shield Glow (Video Setup > GRAPHICS, off by default): energy shields light
+  what is around them as they flare, in their own color. Glow Intensity's
+  Light Show reaches three times as far.
+- Video Setup > FOV AND VIEWMODELS: Legs draws your own legs in first person
+  as you look down, and Shield Color draws your shield's flare in an armor
+  color that only you see. Both are off by default.
+- The campaign pause menu's rows are spaced as the PC version's.
+- Co-op: a crash from a player who had left is fixed, and a respawned
+  vehicle keeps the name its teleporter uses.
+
 ## 0.3.38
 
 Network version 25, as before: 0.3.37 and 0.3.38 play together.
