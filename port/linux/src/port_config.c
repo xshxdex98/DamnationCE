@@ -147,19 +147,22 @@ static const struct config_setting config_settings[] =
 		"The size the objects' shadows are drawn at, in pixels each way: 128 as\n"
 		"on the Xbox, or 256, 512 or 1024 for smoother edges, as soft." },
 	{ "display.menus", _config_string, "\"pc\"", "HALO_MENUS", _environment_value, _platform_all,
-		"The menus: \"xbox\" for the Xbox's (with Online Games), \"pc\" for the\n"
-		"PC version's main menu (port/assets/menus, and a menus folder here for\n"
-		"your own; not all of it is wired yet)." },
-	{ "display.theme", _config_string, "\"glassed\"", "HALO_THEME", _environment_value, _platform_all,
-		"The menus' theme (with menus = \"pc\"): \"glassed\", this client's,\n"
-		"\"cairo\", in the look of Halo 2's menus, or \"vanilla\", the menus as\n"
-		"they were; the main menu's MENUS button chooses it too." },
-	{ "display.player_names", _config_string, "\"all\"", "HALO_PLAYER_NAMES", _environment_value, _platform_all,
-		"In multiplayer, whose names are drawn above their heads: \"all\",\n"
-		"\"allies\", \"enemies\" or \"none\". An enemy's shows only within the\n"
-		"motion sensor's reach, in sight and not camouflaged; none show if the\n"
-		"gametype's motion tracker shows no players, only allies' if it shows\n"
-		"only friends." },
+		"The menus: \"pc\" for the PC version's (port/assets/menus, and a menus\n"
+		"folder here for your own), in display.theme; \"xbox\" for the Xbox's own,\n"
+		"as they were, with only a MENUS item to choose others and OPENCE\n"
+		"ADDITIONS in Settings (ONLINE GAMES opens Custom Edition's server\n"
+		"browser). The main menu's MENUS button chooses it too (XBOX)." },
+	{ "display.theme", _config_string, "\"vanilla\"", "HALO_THEME", _environment_value, _platform_all,
+		"The PC version's menus' theme (with menus = \"pc\"): \"vanilla\", Custom\n"
+		"Edition's menus as they were, \"glassed\", this client's, or \"cairo\", in\n"
+		"the look of Halo 2's menus; the main menu's MENUS button chooses it too." },
+	{ "display.player_names", _config_string, "\"aimed\"", "HALO_PLAYER_NAMES", _environment_value, _platform_all,
+		"In multiplayer, whose names are drawn above their heads: \"aimed\", as\n"
+		"Halo PC draws them, only the player the crosshair is on; or always\n"
+		"\"all\", \"allies\" or \"enemies\" (an enemy's only within the motion\n"
+		"sensor's reach, in sight and not camouflaged; none if the gametype's\n"
+		"motion tracker shows no players, only allies' if it shows only\n"
+		"friends); or \"none\"." },
 	{ "display.player_name_scale", _config_real, "1.0", "HALO_PLAYER_NAME_SCALE", _environment_value, _platform_all,
 		"How large the players' names are drawn: 1.0 three quarters of the size of\n"
 		"the HUD's text, 0.25 to 4." },
@@ -298,12 +301,12 @@ static const struct config_setting config_settings[] =
 	{ "game.language", _config_string, "\"\"", "HALO_LANGUAGE", _environment_value, _platform_all,
 		"The language the game asks the Xbox for: \"ja\", \"de\", \"fr\", \"es\" or \"it\";\n"
 		"empty for English. The game data decides what is translated." },
-	{ "game.enhanced_animations", _config_boolean, "true", "HALO_ENHANCED_ANIMATIONS", _environment_value, _platform_all,
+	{ "game.enhanced_animations", _config_boolean, "false", "HALO_ENHANCED_ANIMATIONS", _environment_value, _platform_all,
 		"The player bipeds' grenade throws keep their legs moving (crouched,\n"
 		"in the air and in a vehicle's seat too), riders' hands leave the grips\n"
 		"to throw and reload, and a player turns with the aim while throwing;\n"
 		"false: the original animations, which freeze the legs and stand a\n"
-		"rider up." },
+		"rider up. Settings > OPENCE ADDITIONS chooses it too." },
 	{ "game.custom_edition", _config_boolean, "true", "HALO_CUSTOM_EDITION", _environment_value, _platform_all,
 		"Load and run Halo Custom Edition maps (not those that need OpenSauce):\n"
 		"put them and Custom Edition's bitmaps.map, sounds.map and loc.map in\n"

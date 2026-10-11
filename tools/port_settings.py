@@ -155,8 +155,8 @@ SCREENS = {
             ("CHECK FOR UPDATES:", "update.check", ON_OFF,
              "Look for a new version when the game starts.", "desktop android"),
             ("PLAYER NAMES:", "display.player_names",
-             [("ALL", "all"), ("ALLIES", "allies"), ("ENEMIES", "enemies"), ("NONE", "none")],
-             "In multiplayer, whose names are drawn above their\nheads.", None),
+             [("AIMED", "aimed"), ("ALL", "all"), ("ALLIES", "allies"), ("ENEMIES", "enemies"), ("NONE", "none")],
+             "Aimed: the name of the player you aim at, as in\nHalo PC. Or always all, allies' or enemies'.", None),
             ("PLAYER NAME SIZE:", "display.player_name_scale",
              [(f"{value:g}x", f"{value:g}") for value in (0.5, 0.75, 1, 1.25, 1.5, 2)],
              "How large the players' names are drawn.", None),
@@ -195,21 +195,35 @@ SCREENS = {
 # pending edits, Defaults, OK and Cancel as the other settings screens.
 _video = SCREENS["video_settings"]
 _graphics = {"display.high_res_hud", "display.high_res_text", "display.anti_aliasing",
-             "display.shadow_resolution", "display.per_pixel_lighting",
-             "display.shield_glow", "display.shield_glow_intensity"}
+             "display.shadow_resolution", "display.per_pixel_lighting"}
+# (OPENCE ADDITIONS', below)
+_additions = {"display.shield_glow", "display.shield_glow_intensity"}
+_additions_rows = [row for row in _video["rows"] if row[1] in _additions]
 SCREENS["video_settings/graphics"] = {
     "screen": "graphics_settings_screen", "header": _video["header"], "spacing": 30,
     "same_place": ["anti_aliasing_android"],
     "rows": [row for row in _video["rows"] if row[1] in _graphics],
 }
-_video["rows"] = [row for row in _video["rows"] if row[1] not in _graphics]
+_video["rows"] = [row for row in _video["rows"] if row[1] not in _graphics | _additions]
 _video["categories"] = [
     ("GRAPHICS:", "video_settings/graphics", "The HUD, text, anti-aliasing, shadows and\nlighting."),
-    ("FOV AND VIEWMODELS:", "video_settings/fov_viewmodels",
-     "The field of view and the first-person\nweapon. Their defaults keep the stock view."),
 ]
+
+# OPENCE ADDITIONS: a tab of Settings of its own (the profile list's row
+# after ABOUT, PROFILE_ADDITIONS_ROW) holding what OpenCE adds to the
+# original game, each off or the stock look by default: the players' names
+# over their heads (the aimed player's, as Halo PC), the first-person legs,
+# the animations, arm shields, the shield's color and glow, and the field of
+# view and viewmodels (a screen of its own)
+ADDITIONS = "opence_additions"
+# (its row of the profile list: after ABOUT, the tenth, as the list numbers
+# its rows from 0: its name, description and picture after the PC
+# version's nine of each)
+PROFILE_ADDITIONS_ROW = 9
+# (its title in the menus' own font, as the port draws no titles of its own)
+ADDITIONS_HEADER = ("header_profile_opence_additions", None, "OPENCE ADDITIONS")
 SCREENS["video_settings/fov_viewmodels"] = {
-    "screen": "fov_viewmodel_settings_screen", "header": _video["header"], "spacing": 30,
+    "screen": "fov_viewmodel_settings_screen", "header": ADDITIONS_HEADER, "spacing": 30,
     "rows": [
         ("FOV:", "display.fov", [("DEFAULT", "0")] + [(str(n), str(n)) for n in range(80, 151, 5)],
          "On foot, horizontal at 16:9, in degrees.\nDefault keeps the stock view.", None),
@@ -217,19 +231,40 @@ SCREENS["video_settings/fov_viewmodels"] = {
          "The weapon and hands, horizontal at 16:9.\nDefault keeps the weapon's stock view.", None),
         ("VIEWMODELS:", "display.viewmodel_visible", ON_OFF,
          "Draw first-person weapons, hands and attached\nvisuals. Gameplay and sound continue when off.", None),
-        ("ARM SHIELDS:", "display.viewmodel_shield", ON_OFF,
-         "The energy shield's flare on your first-person\narms too, as on your body.", None),
+    ],
+}
+_network = SCREENS["network_setup"]
+_names = {"display.player_names", "display.player_name_scale"}
+SCREENS[ADDITIONS] = {
+    "screen": "opence_additions_screen", "header": ADDITIONS_HEADER, "spacing": 30,
+    "rows": [row for row in _network["rows"] if row[1] in _names] + [
         ("LEGS:", "display.first_person_legs", ON_OFF,
          "Your legs in first person, seen looking down,\nmoving as you run. Your body as others see it.", None),
+        ("ANIMATIONS:", "game.enhanced_animations", ON_OFF,
+         "Grenade throws that keep your legs moving, and\nriders' hands off the grips to throw and reload.", None),
+        ("ARM SHIELDS:", "display.viewmodel_shield", ON_OFF,
+         "The energy shield's flare on your first-person\narms too, as on your body.", None),
         ("SHIELD COLOR:", "display.shield_color", [("DEFAULT", "default")] + [(c.upper(), c) for c in SHIELD_COLORS],
          "Your shield's flare in an armor color, whatever\nyour armor. Only you see it. Default: its own.", None),
+    ] + _additions_rows,
+    "categories": [
+        ("FOV AND VIEWMODELS:", "video_settings/fov_viewmodels",
+         "The field of view and the first-person\nweapon. Their defaults keep the stock view."),
     ],
+}
+_network["rows"] = [row for row in _network["rows"] if row[1] not in _names]
+# ... and in the Xbox's menus (display.menus "xbox": menu_tags.c's
+# xbox_menus_patch opens it from the Xbox's Settings), in their look: with
+# no help line, the field of view's rows fit with the others
+XBOX_ADDITIONS = "opence_additions_xbox"
+SCREENS[XBOX_ADDITIONS] = {
+    "screen": "opence_additions_xbox_screen", "header": ADDITIONS_HEADER, "spacing": 30, "look": "xbox",
+    "rows": SCREENS[ADDITIONS]["rows"] + SCREENS["video_settings/fov_viewmodels"]["rows"],
 }
 
 # Network Setup's map sharing (port/linux/game/map_share.c): this machine's
 # part in another's game, a screen of its own (a category, as Video Setup's)
 SEED_UPLOADS = (64, 128, 256, 512, 1024, 2048)
-_network = SCREENS["network_setup"]
 _network["categories"] = [
     ("MAP SHARING:", "network_setup/map_sharing",
      "Downloading Custom Edition maps you do not have,\nand helping send them to other players.",
@@ -322,34 +357,63 @@ def _button(name: str, caption: int, handlers: list) -> list:
     return _widget(name, pairs, handlers + ['<on event="left_mouse" run="mouse emit accept event"/>'])
 
 
+# a screen in the Xbox's look ("look": "xbox", for its menus): its pictures
+# the Xbox's own, ui.map's, in place of the PC version's
+XBOX_ART = {name: f"ui\\shell\\bitmaps\\{name.split('/')[1]}"
+            for name in ("bitmaps/gradient", "bitmaps/option_bkds", "bitmaps/arrow_sm_left", "bitmaps/arrow_sm_right")}
+
+
+def art(name: str, spec: dict) -> str:
+    """a picture of the screen's look"""
+    return XBOX_ART[name] if spec.get("look") == "xbox" else name
+
+
 def _screen(folder: str, spec: dict, rows: list, list_inputs: list, list_handlers: list, extra: list) -> list:
     """a screen: its header, the list of rows (with the help line as its
-    description), and the buttons"""
+    description), and the buttons; in the Xbox's look, no help line and the
+    Xbox's B and A (as its Controller Setup has them), A saving"""
     base = folder if folder.startswith("main_menu/") else f"{PE}/{folder}"
-    header, header_bitmap = spec["header"]
+    xbox = spec.get("look") == "xbox"
+    header, header_bitmap, *header_text = spec["header"]
     lines = []
     lines += _widget(f"{base}/{spec['screen']}",
                      [("width", 640), ("height", 480), ("flags", "pass_unhandled_to_focused_child pause_game"),
-                      ("bitmap", "bitmaps/gradient")],
+                      ("bitmap", art("bitmaps/gradient", spec))],
                      ['<on event="b" back="true"/>', '<on event="back" back="true"/>',
                       f'<child{attributes([("widget", f"{base}/{header}")])}/>',
-                      f'<child{attributes([("widget", f"{base}/options_menu")])}/>'])
-    lines += _widget(f"{base}/{header}", [("controller", 1), ("left", 35), ("top", 11), ("width", 605), ("height", 59),
-                                          ("bitmap", header_bitmap)], [])
-    lines += _widget(f"{base}/help", [("type", "text"), ("controller", 1), ("left", 68),
-                                      ("top", spec.get("help_top", 350)), ("width", 482),
-                                      ("height", 60), ("string_list", f"{base}/help_strings"),
-                                      ("font", "ui\\large_ui"), ("color", "#FFFFFFFF")], [])
+                      f'<child{attributes([("widget", f"{base}/options_menu")])}/>'] +
+                     ([f'<child{attributes([("widget", f"{base}/button_keys")])}/>'] if xbox else []))
+    # (a header's picture, else its text in the title's place and colour)
+    lines += _widget(f"{base}/{header}", [("type", "text" if header_text else None), ("controller", 1), ("left", 35),
+                                          ("top", 11), ("width", 605), ("height", 59), ("bitmap", header_bitmap),
+                                          ("text", header_text[0] if header_text else None),
+                                          ("font", "ui\\large_ui" if header_text else None),
+                                          ("color", "#FF2995FD" if header_text else None),
+                                          ("text_x", 31 if header_text else None),
+                                          ("text_y", 26 if header_text else None)], [])
+    if not xbox:
+        lines += _widget(f"{base}/help", [("type", "text"), ("controller", 1), ("left", 68),
+                                          ("top", spec.get("help_top", 350)), ("width", 482),
+                                          ("height", 60), ("string_list", f"{base}/help_strings"),
+                                          ("font", "ui\\large_ui"), ("color", "#FFFFFFFF")], [])
     children = [f'<data input="{name}"/>' for name in list_inputs] + list_handlers
+    if xbox:
+        children += ['<on event="a" run="port settings save" back="true"/>',
+                     '<on event="start" run="port settings save" back="true"/>']
     # (each row: its widget, platform, and the place it is in, else the next)
     for index, (row, platform, *place) in enumerate(rows):
         y = 73 + (place[0] if place else index) * spec["spacing"]
         children.append(f'<child{attributes([("widget", row), ("x", 54), ("y", y), ("platform", platform)])}/>')
-    children.append(f'<child{attributes([("widget", f"{base}/button_bar"), ("y", 414)])}/>')
+    if not xbox:
+        children.append(f'<child{attributes([("widget", f"{base}/button_bar"), ("y", 414)])}/>')
     lines += _widget(f"{base}/options_menu",
                      [("type", "column_list"), ("width", 640), ("height", 480),
                       ("flags", "pass_unhandled_to_focused_child up_down_tabs_children"),
-                      ("description", f"{base}/help")], children)
+                      ("description", None if xbox else f"{base}/help")], children)
+    if xbox:
+        lines += _xbox_button_keys(base)
+        lines += extra
+        return lines
     lines += _widget(f"{base}/button_bar",
                      [("type", "column_list"), ("width", 640), ("height", 28),
                       ("flags", "pass_unhandled_to_focused_child left_right_tabs_items")],
@@ -357,6 +421,24 @@ def _screen(folder: str, spec: dict, rows: list, list_inputs: list, list_handler
                       f'<child{attributes([("widget", f"{base}/button_ok"), ("x", 380), ("y", 1)])}/>',
                       '<child widget="common_button_cancel" x="510" y="1"/>'])
     lines += extra
+    return lines
+
+
+def _xbox_button_keys(base: str) -> list:
+    """the Xbox's B CANCEL and A ACCEPT under a screen, as its Controller
+    Setup has them (ui.map's pictures and button_key strings)"""
+    keys = [("b_butn", 346, "ui\\shell\\bitmaps\\b_butn"), ("a_butn", 471, "ui\\shell\\bitmaps\\a_butn")]
+    texts = [("cancel", 368, 100, 5), ("accept", 492, 95, 1)]
+    lines = _widget(f"{base}/button_keys", [("width", 640), ("height", 480)],
+                    [f'<child widget="{base}/{name}" x="{x}" y="414"/>' for name, x, _ in keys] +
+                    [f'<child widget="{base}/{name}_key" x="{x}" y="414"/>' for name, x, _, _ in texts])
+    for name, _, bitmap in keys:
+        lines += _widget(f"{base}/{name}", [("width", 21), ("height", 26), ("bitmap", bitmap)], [])
+    for name, _, width, index in texts:
+        lines += _widget(f"{base}/{name}_key", [("type", "text"), ("width", width), ("height", 22),
+                                                 ("string_list", "ui\\shell\\main_menu\\button_key"),
+                                                 ("string_index", index), ("font", "ui\\large_ui"),
+                                                 ("color", "#FFFFFFFF")], [])
     return lines
 
 
@@ -398,7 +480,8 @@ def _setting_screen(folder: str, spec: dict) -> list:
         # have: WIDE_SETTINGS)
         wide = setting in WIDE_SETTINGS
         extra += _widget(row, [("width", 512), ("height", 28), ("flags", "pass_unhandled_to_focused_child"),
-                               ("bitmap", "bitmaps/option_bkds"), ("color", "#FF2896FF"), ("platform", platform)],
+                               ("bitmap", art("bitmaps/option_bkds", spec)), ("color", "#FF2896FF"),
+                               ("platform", platform)],
                          [f'<child{attributes([("widget", f"{base}/{key}_label")])}/>',
                           f'<child{attributes([("widget", f"{base}/{key}_spinner"), ("x", 286 if wide else 320), ("y", 1)])}/>'])
         extra += _widget(f"{base}/{key}_label",
@@ -411,7 +494,8 @@ def _setting_screen(folder: str, spec: dict) -> list:
                           ("strings", "|".join(shown for shown, _ in choices)), ("setting", setting),
                           ("values", "|".join(value for _, value in choices)), ("font", "ui\\large_ui"),
                           ("color", "#FF2896FF"), ("align", "center"), ("text_y", 4 if wide else 1),
-                          ("header_bitmap", "bitmaps/arrow_sm_left"), ("footer_bitmap", "bitmaps/arrow_sm_right"),
+                          ("header_bitmap", art("bitmaps/arrow_sm_left", spec)),
+                          ("footer_bitmap", art("bitmaps/arrow_sm_right", spec)),
                           ("header_bounds", "7 -13 19 -7" if wide else "7 -6 19 0"),
                           ("footer_bounds", "7 208 19 214" if wide else "7 150 19 156")],
                          ['<on event="created" run="port setting load"/>'])
@@ -438,17 +522,19 @@ def _setting_screen(folder: str, spec: dict) -> list:
                          [("type", "text"), ("controller", 1), ("width", 512), ("height", 22),
                           ("string_list", f"{base}/labels"), ("string_index", len(spec["rows"]) + index),
                           ("font", "ui\\large_ui"), ("color", "#FF2896FF"), ("text_x", 13), ("text_y", 4)], [])
-    extra += _button(f"{base}/button_defaults", 3, ['<on event="a" run="port settings defaults"/>',
-                                                    '<on event="start" run="port settings defaults"/>'])
-    extra += _button(f"{base}/button_ok", 1, ['<on event="a" run="port settings save" back="true"/>',
-                                              '<on event="start" run="port settings save" back="true"/>'])
+    if spec.get("look") != "xbox":
+        extra += _button(f"{base}/button_defaults", 3, ['<on event="a" run="port settings defaults"/>',
+                                                        '<on event="start" run="port settings defaults"/>'])
+        extra += _button(f"{base}/button_ok", 1, ['<on event="a" run="port settings save" back="true"/>',
+                                                  '<on event="start" run="port settings save" back="true"/>'])
     extra += _strings(f"{base}/labels", [label for label, *_ in spec["rows"]] +
                       [label for label, *_ in spec.get("categories", ())])
-    # (the help of the row whose label is string n is n + 1: the buttons' is 0)
-    extra += _strings(f"{base}/help_strings",
-                      [""] + [help_text.replace("\n", "\\n") for _, _, _, help_text, *_ in spec["rows"]] +
-                      [help_text.replace("\n", "\\n") for _, _, help_text, *_ in spec.get("categories", ())])
-    return _screen(folder, spec, rows, ["port settings help"], [], extra)
+    if spec.get("look") != "xbox":
+        # (the help of the row whose label is string n is n + 1: the buttons' is 0)
+        extra += _strings(f"{base}/help_strings",
+                          [""] + [help_text.replace("\n", "\\n") for _, _, _, help_text, *_ in spec["rows"]] +
+                          [help_text.replace("\n", "\\n") for _, _, help_text, *_ in spec.get("categories", ())])
+    return _screen(folder, spec, rows, [] if spec.get("look") == "xbox" else ["port settings help"], [], extra)
 
 
 def _controls_screen() -> list:
@@ -502,11 +588,69 @@ def _controls_screen() -> list:
                    extra)
 
 
+def _additions_profile_item() -> list:
+    """OPENCE ADDITIONS' row of the profile list, as the PC version's rows
+    are (the list's child: WIDGET_PATCHES)"""
+    target = f"{PE}/{ADDITIONS}/{SCREENS[ADDITIONS]['screen']}"
+    return _widget(f"{PE}/opence_additions_profile_item",
+                   [("type", "text"), ("left", 51), ("top", 310), ("width", 232), ("height", 32),
+                    ("bitmap", "bitmaps/list_item_bkd"), ("string_list", f"{PE}/profile_edit_options"),
+                    ("string_index", 10), ("font", "ui\\large_ui"), ("color", "#FF2896FF"), ("text_x", 13),
+                    ("text_y", 5)],
+                   [f'<on event="a" open="{target}"/>', f'<on event="start" open="{target}"/>',
+                    '<on event="left_mouse" run="mouse emit accept event"/>'])
+
+
+# the Xbox's main menu's items: their place and spacing (ui.map's), and the
+# themes MENUS opens there (menu_functions.c's "port theme <name>")
+XBOX_MENU_ITEM_X, XBOX_MENU_ITEM_TOP, XBOX_MENU_ITEM_SPACING = 192, 247, 36
+XBOX_THEMES = ("glassed", "cairo", "vanilla", "xbox")
+
+
+def _xbox_text_item(name: str, text: str, handlers: list, pairs: list) -> list:
+    return _widget(name, [("type", "text"), *pairs, ("text", text), ("font", "ui\\large_ui"),
+                          ("color", "#FF2896FF")],
+                   handlers + ['<on event="left_mouse" run="mouse emit accept event"/>'])
+
+
+def _xbox_menus_items() -> list:
+    """the Xbox's menus' additions (menu_tags.c's xbox_menus_patch): MENUS
+    under its main menu's items and the themes screen it opens, as its main
+    menu is (ui.map's Halo logo, the items at their place), and OPENCE
+    ADDITIONS' row of its profile, as that list's rows are (its picture)"""
+    centred = [("width", 256), ("height", 33), ("align", "center"), ("text_y", 6)]
+    lines = _xbox_text_item("main_menu/xbox_menus_item", "MENUS",
+                            ['<on event="a" open="main_menu/xbox_themes_screen"/>',
+                             '<on event="start" open="main_menu/xbox_themes_screen"/>'], centred)
+    for theme in XBOX_THEMES:
+        lines += _xbox_text_item(f"main_menu/xbox_theme_{theme}", theme.upper(),
+                                 [f'<on event="a" run="port theme {theme}"/>',
+                                  f'<on event="start" run="port theme {theme}"/>'], centred)
+    lines += _widget("main_menu/xbox_themes_list",
+                     [("type", "column_list"), ("width", 640), ("height", 480),
+                      ("flags", "pass_unhandled_to_focused_child up_down_tabs_items")],
+                     [f'<child{attributes([("widget", f"main_menu/xbox_theme_{theme}"), ("x", XBOX_MENU_ITEM_X), ("y", XBOX_MENU_ITEM_TOP + row * XBOX_MENU_ITEM_SPACING)])}/>'
+                      for row, theme in enumerate(XBOX_THEMES)])
+    lines += _widget("main_menu/xbox_themes_screen",
+                     [("width", 640), ("height", 480), ("flags", "pass_unhandled_to_focused_child")],
+                     ['<on event="b" back="true"/>', '<on event="back" back="true"/>',
+                      '<child widget="ui\\shell\\main_menu\\halo_logo" y="28"/>',
+                      '<child widget="main_menu/xbox_themes_list"/>'])
+    additions = f"{PE}/{XBOX_ADDITIONS}/{SCREENS[XBOX_ADDITIONS]['screen']}"
+    lines += _xbox_text_item(f"{PE}/opence_additions_xbox_item", "OPENCE ADDITIONS",
+                             [f'<on event="a" open="{additions}"/>', f'<on event="start" open="{additions}"/>'],
+                             [("left", 51), ("top", 211), ("width", 232), ("height", 32),
+                              ("bitmap", "ui\\shell\\bitmaps\\list_item_bkd"), ("text_x", 13), ("text_y", 5)])
+    return lines
+
+
 def settings_files() -> dict:
     """the files of the port's screens, by their names in ce/"""
     files = {}
     for folder, spec in SCREENS.items():
         files[f"{PE}/{folder}".replace("/", ".") + ".xml"] = _setting_screen(folder, spec)
+    files[f"{PE}/{ADDITIONS}".replace("/", ".") + ".xml"] += _additions_profile_item()
+    files[f"{PE}/{XBOX_ADDITIONS}".replace("/", ".") + ".xml"] += _xbox_menus_items()
     files[f"{PE}/controls_setup".replace("/", ".") + ".xml"] = _controls_screen()
     return {name: ['<?xml version="1.0" encoding="UTF-8"?>',
                    "<!-- The port's settings screen, in the PC version's style (tools/port_settings.py) -->",
@@ -531,6 +675,10 @@ MT = "main_menu/multiplayer_type_select"
 # in turn: menu_functions.c's gametype_option_help)
 SLAYER_EDIT = "main_menu/settings_select/multiplayer_setup/playlist_edit/slayer_edit"
 STRING_INSERTS = {
+    # (OPENCE ADDITIONS' row: PROFILE_ADDITIONS_ROW)
+    f"{PE}/profile_edit_options": [(10, ["OPENCE ADDITIONS"])],
+    f"{PE}/profile_edit_descriptions": [(PROFILE_ADDITIONS_ROW, [
+        "Turn on or off what OpenCE adds\\nto the original game.\\n\\nProfile:"])],
     # (Teamplay Options' voice chat and vote kick rows, after its own:
     # TEAMPLAY_ROWS)
     f"{TEAMPLAY_EDIT}/teamplay_options_labels": [(3, [label for _, label, *_ in TEAMPLAY_ROWS])],
@@ -618,6 +766,9 @@ MAP_KIND_CHOOSER = "main_menu/new_select/list_item_0_map_kind"
 # changes to the PC version's widgets (by our names): attributes set, all
 # their handlers replaced, children added, game data inputs added
 WIDGET_PATCHES = {
+    # (OPENCE ADDITIONS' row, under ABOUT: _additions_profile_item)
+    f"{PE}/profile_edit_select_list": {"children": [
+        f'<child widget="{PE}/opence_additions_profile_item" y="65"/>']},
     # (the profile settings' picture: on Gamepad Setup's row, the profile's
     # button settings, BITMAP_FRAMES; menu_functions.c's
     # profile_gamepad_layout)
@@ -705,8 +856,13 @@ WIDGET_PATCHES = {
 # 512 by 235 of their 512 by 512: drawn at 279 wide, in the middle of the
 # picture's 279 by 202
 XBOX_CONTROLLER_PICTURES = f"ui\\shell\\{PE.replace('/', chr(92))}\\controller_edit\\config_controller"
+XBOX_PROFILE_PICTURES = f"ui\\shell\\{PE.replace('/', chr(92))}\\profile_options"
 BITMAP_FRAMES = {
-    f"{PE}/profile_options": [(XBOX_CONTROLLER_PICTURES, 4 + preset, 279, 279, 0, 34) for preset in range(5)],
+    # (OPENCE ADDITIONS' row's, the Xbox's configuration picture; then
+    # Gamepad Setup's of the button settings: menu_functions.c's
+    # PROFILE_FIRST_LAYOUT_FRAME)
+    f"{PE}/profile_options": [(XBOX_PROFILE_PICTURES, 2, None, None, 0, 0)] +
+                             [(XBOX_CONTROLLER_PICTURES, 4 + preset, 279, 279, 0, 34) for preset in range(5)],
 }
 
 # the titles this port has that the PC version has not, set as its headers

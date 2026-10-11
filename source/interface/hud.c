@@ -904,8 +904,10 @@ static void hud_draw_players(
 }
 
 /* port: in multiplayer and network co-op, players' names above their heads
-(display.player_names: "all", "allies", "enemies" or "none"), a speaker
-beside the name of one talking in voice chat. An ally's goes
+(display.player_names), a speaker beside the name of one talking in voice
+chat. "aimed", as Halo PC has it: only the player the crosshair is on,
+ally or enemy, while the view sees them (HUD_PLAYER_NAME_AIMED_RANGE). "all", "allies" or
+"enemies" (OpenCE's): those always, as follows; "none". An ally's goes
 above the triangle the game draws over teammates; an enemy's only within the
 motion sensor's reach, while the view sees them and they are not
 camouflaged, so that it never gives away where they hide. Whose names show
@@ -924,10 +926,14 @@ void network_voice_draw_icon(rectangle2d const *bounds, boolean muted, real alph
 enum
 {
 	_player_names_none,
+	_player_names_aimed,
 	_player_names_all,
 	_player_names_allies,
 	_player_names_enemies,
 };
+
+/* how far away the player the crosshair is on has a name shown */
+#define HUD_PLAYER_NAME_AIMED_RANGE 100.0f
 
 static short hud_player_names_setting(
 	void)
@@ -941,11 +947,13 @@ static short hud_player_names_setting(
 		const char *value = config_string("display.player_names");
 
 		read_at = config_changes();
-		setting = _player_names_all;
+		setting = _player_names_aimed;
 		if (value)
 		{
 			if (!csstrcmp(value, "none"))
 				setting = _player_names_none;
+			else if (!csstrcmp(value, "all"))
+				setting = _player_names_all;
 			else if (!csstrcmp(value, "allies") || !csstrcmp(value, "allys"))
 				setting = _player_names_allies;
 			else if (!csstrcmp(value, "enemies"))
@@ -1128,6 +1136,47 @@ static void hud_draw_player_name(
 	return;
 }
 
+/* the player the crosshair is on: the nearest whose body the view's centre
+passes through, in sight, within HUD_PLAYER_NAME_AIMED_RANGE; else NONE */
+static long hud_player_name_aimed(
+	long player_index)
+{
+	struct data_iterator iterator;
+	struct player_datum *player;
+	long aimed_index = NONE;
+	real aimed_distance = HUD_PLAYER_NAME_AIMED_RANGE;
+
+	data_iterator_new(&iterator, player_data);
+	while ((player = data_iterator_next(&iterator)) != NULL)
+	{
+		real_point3d center;
+		real_point3d head_position;
+		real_vector3d to_center;
+		real radius;
+		real along;
+		real across_squared;
+
+		if (iterator.datum_index == player_index || player->unit_index == NONE)
+			continue;
+		object_get_bounding_sphere(player->unit_index, &center, &radius);
+		vector_from_points3d(&render.camera.position, &center, &to_center);
+		along = dot_product3d(&to_center, &render.camera.forward);
+		across_squared = dot_product3d(&to_center, &to_center) - along * along;
+		if (along <= 0.0f || along >= aimed_distance || across_squared > radius * radius)
+			continue;
+		unit_get_head_position(player->unit_index, &head_position);
+		if (unit_get(player->unit_index)->unit.active_camouflage > 0.5f ||
+			!hud_player_name_in_sight(player->unit_index, &head_position))
+		{
+			continue;
+		}
+		aimed_index = iterator.datum_index;
+		aimed_distance = along;
+	}
+
+	return aimed_index;
+}
+
 static void hud_draw_player_names(
 	void)
 {
@@ -1144,6 +1193,18 @@ static void hud_draw_player_names(
 	team_index = player_get(player_index)->team_index;
 	/* the campaign always draws teammate triangles (hud_draw_players) */
 	indicators = game_engine_display_team_indicators() || !game_engine_running();
+	if (setting == _player_names_aimed)
+	{
+		long aimed_index = hud_player_name_aimed(player_index);
+
+		if (aimed_index != NONE)
+		{
+			boolean ally = player_get(aimed_index)->team_index == team_index;
+
+			hud_draw_player_name(aimed_index, ally, ally && indicators, HUD_PLAYER_NAME_AIMED_RANGE);
+		}
+		return;
+	}
 	enemy_range = hud_player_name_enemy_range();
 	/* (the players the motion tracker would show this local player) */
 	game_engine_motion_sensor_viewer(render.local_player_index);
