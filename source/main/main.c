@@ -73,12 +73,10 @@ MAIN.C
 #include "text/draw_string.h"
 #include "text/font_group.h"
 #include "tag_files/files.h"
-#ifdef HALO_64BIT
 #include "input/input_abstraction.h"
 #include "interface/player_ui.h"
 #include "interface/marketing_and_strategic_business_development.h"
 #include "editor_play.h" /* port: port/linux/game/editor_play.c */
-#endif
 #include "custom_edition_cache.h" /* port: custom_edition_level_name */
 #include "game/game.h"
 #include "view_fov.h" /* port: display.fov, before the projection and culling */
