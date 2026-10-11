@@ -956,6 +956,9 @@ static GLuint texture_entry_result(struct texture_entry *entry, GLenum *target,
 			return art;
 		}
 	}
+#ifndef HALO_WEB
+	/* (Custom Edition maps, whose channel orders these are, do not run on the
+	web, which has no texture swizzle) */
 	if (entry->override < 0 && texture_channel_order(entry->channel_order) != entry->sampled_order)
 	{
 		entry->sampled_order = texture_channel_order(entry->channel_order);
@@ -963,6 +966,7 @@ static GLuint texture_entry_result(struct texture_entry *entry, GLenum *target,
 		xgpu_gl_state_invalidate();
 		texture_swizzle(entry->target, texture_converted(&entry->description), entry->sampled_order);
 	}
+#endif
 	/* (a high-res texture drawn for some sprites, for the placeholder the
 	game draws them from: hud_hires.h) */
 	{
