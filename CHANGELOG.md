@@ -1,5 +1,90 @@
 # Changelog
 
+## 0.3.41
+
+The vanilla update: DamnationCE starts as Halo Custom Edition did, with
+Custom Edition's own menus and the original game's look, and everything
+OpenCE adds on top is in one Settings tab to turn on as you like.
+
+**Network version 27:** 0.3.41 joins 0.3.39 and 0.3.40 hosts, but those
+versions cannot join a 0.3.41 host. Update before hosting. The server
+browser lists only 0.3.41 games.
+
+### Menus
+
+- **Vanilla is the default theme:** Custom Edition's own menus, laid out as
+  Gearbox's. Its MENUS item (under QUIT) switches between Vanilla, Glassed,
+  Cairo and XBOX, as plain menu text.
+- **The Xbox's menus are a theme:** MENUS > XBOX, or `display.menus = "xbox"`
+  in config.toml, gives the original Xbox menus as they shipped. They gain
+  only a MENUS item under the main menu's items (to switch back) and OPENCE
+  ADDITIONS in the profile's settings. ONLINE GAMES opens Custom Edition's
+  server browser.
+- **Settings > OPENCE ADDITIONS:** a tab of its own (in every theme, and in
+  the Xbox's look in the Xbox menus) holding everything OpenCE adds that the
+  original game does not: names over players, player name size, first-person
+  legs, enhanced animations, arm shields, shield color, shield glow and its
+  intensity, and the field of view and viewmodels. Each starts off, or as the
+  original game has it.
+- The Glassed and Cairo themes' titles read DamnationCE.
+- Clicking a setting's left or right arrow steps it (before, only a click
+  just inside its box did).
+
+### Defaults closer to the original game
+
+- Names over players: the original game's alone (its name of the player you
+  aim at). ALL, ALLIES and ENEMIES in OPENCE ADDITIONS add OpenCE's.
+- Enhanced animations (grenade throws that keep the legs moving, riders'
+  hands off the grips) start off.
+
+### Server browser
+
+- **Real pings:** the PING column shows each host's round trip in
+  milliseconds, timed over the same connection a join would use (made with
+  the game's invite, three pings, then closed), green under 80 ms, yellow
+  under 160, red above. A few hosts are timed at once, each again every two
+  minutes and on REFRESH. Joining a host just timed uses that connection, so
+  the join is quicker. Direct Link's games show their connection's ping.
+  A game with a password shows none (its invite is hidden).
+- **Selecting as in Custom Edition:** a click selects a game, outlined in
+  Custom Edition's yellow; a click on the selected game, a double click, A,
+  Enter or JOIN joins it. The mouse passing over the rows no longer changes
+  the selection. Online Games (the Xbox look) selects the same way.
+
+### Controllers
+
+- **PlayStation buttons:** while a PlayStation controller is the one you
+  last used, the game's button icons show its buttons: cross, circle, square
+  and triangle for A, B, X and Y, on the Xbox menus' button prompts, the
+  icons in the menus' text, and the in-game prompts ("Hold X to pick up").
+  Using the keyboard or an Xbox controller brings the Xbox icons back.
+- **Linux:** DualSense and DualShock 4 controllers go through the kernel's
+  own driver of them where the kernel has one (Linux 5.12 and later), so they
+  are found without Steam's udev rules. `debug.txt` names each controller's
+  kind and the device it is read through.
+
+### Fixes
+
+- Map sharing: a game's LAN sources are used only at local addresses, and a
+  downloaded map that fails its check is deleted rather than kept.
+- A player whose download of the map does not finish before the game ends
+  comes back to the lobby with their players.
+
+### From OpenCE
+
+- **Custom Edition map sharing:** joining a game on a Custom Edition map you
+  do not have downloads it from the other players (Settings > Network Setup >
+  MAP SHARING), checked piece by piece.
+- Players who already have the map no longer wait for one still downloading
+  it, and a player still downloading it no longer spawns until they join.
+- A player joining or leaving the lobby no longer restarts the countdown.
+- The custom_maps folder is made at startup when it is missing (map
+  downloads failed without it).
+- The first-person shield's flare is kept close to the arms (with Arm
+  Shields on).
+- Fewer draws and GL calls, and text drawn a string at a time: smoother
+  frame rates, the web build's most of all.
+
 ## 0.3.40
 
 A hotfix for 0.3.39. Network version 26, as before: 0.3.39 and 0.3.40 play
