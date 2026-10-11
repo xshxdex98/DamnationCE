@@ -41,6 +41,7 @@ int hud_hires_asset_custom_edition(long asset);
 boolean custom_edition_cache_stock_tag(long tag_index);
 unsigned long hud_hires_asset_sprites(long asset);
 int hud_hires_sprites_drawable(long asset, unsigned long address, unsigned long level0_size);
+int hud_hires_sprites_drawn(long asset);
 void hud_hires_register_placeholder(long asset, unsigned long const *texture);
 
 void hud_hires_tags_loaded(void);
@@ -240,8 +241,13 @@ struct bitmap_data const *hud_hires_sprite_bitmap(
 			}
 			hires_sprite_bitmaps[index].placeholder = placeholder;
 		}
-		if (hires_sprite_bitmaps[index].drawable && hires_sprite_bitmaps[index].placeholder)
+		/* (a texture of them for the controller last used: a PlayStation
+		one's may be all they have) */
+		if (hires_sprite_bitmaps[index].drawable && hires_sprite_bitmaps[index].placeholder &&
+			hud_hires_sprites_drawn(hires_sprite_bitmaps[index].asset))
+		{
 			return hires_sprite_bitmaps[index].placeholder;
+		}
 		break;
 	}
 

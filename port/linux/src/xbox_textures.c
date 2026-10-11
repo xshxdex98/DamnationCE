@@ -959,7 +959,8 @@ static GLuint texture_entry_result(struct texture_entry *entry, GLenum *target,
 #ifndef HALO_WEB
 	/* (Custom Edition maps, whose channel orders these are, do not run on the
 	web, which has no texture swizzle) */
-	if (entry->override < 0 && texture_channel_order(entry->channel_order) != entry->sampled_order)
+	if ((entry->override < 0 || hud_hires_override_switches(entry->override)) &&
+		texture_channel_order(entry->channel_order) != entry->sampled_order)
 	{
 		entry->sampled_order = texture_channel_order(entry->channel_order);
 		glBindTexture(entry->target, entry->texture);
@@ -1107,10 +1108,16 @@ GLuint xgpu_texture_get(const DWORD *resource, const D3DCOLOR *palette, GLenum *
 			entry->override = hud_hires_override_find(entry->address, entry->description.width,
 				entry->description.height, entry->description.levels > 1 ?
 				xgpu_texture_level_offset(&entry->description, 1) : xgpu_texture_face_size(&entry->description));
-			if (entry->override >= 0 && !hud_hires_override_texture(entry->override, &levels))
+			if (entry->override >= 0 && !hud_hires_override_texture(entry->override, &levels) &&
+				!hud_hires_override_switches(entry->override))
+			{
 				entry->override = -1;
+			}
 		}
-		if (entry->override < 0 && entry->size && platform_is_contiguous(xbox_pointer(entry->address)) &&
+		/* (the pixels too of one whose texture depends on the controller,
+		for when it draws none: a PlayStation controller's buttons) */
+		if ((entry->override < 0 || hud_hires_override_switches(entry->override)) && entry->size &&
+			platform_is_contiguous(xbox_pointer(entry->address)) &&
 			platform_is_contiguous(xbox_pointer(entry->address + entry->size - 1)))
 		{
 			if (config_boolean("debug.texture_log"))

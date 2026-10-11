@@ -212,6 +212,10 @@ typedef char hud_globals_timer_definition_offset_assert[
 
 /* ---------- prototypes */
 
+/* port: a sprite's bitmap, or the placeholder a texture of its own is drawn
+for (port/linux/game/hud_hires_tags.c) */
+struct bitmap_data const *hud_hires_sprite_bitmap(struct bitmap_data const *bitmap, short sequence_index);
+
 static struct hud_message_definition *find_free_hud_message(
 	struct hud_messaging_datum_definition *datum,
 	long item_definition_index,
@@ -299,6 +303,9 @@ static void render_state_bitmap(
 	if (bitmap && _texture_cache_bitmap_get_hardware_format(
 		(struct bitmap_data *)bitmap, FALSE, TRUE))
 	{
+		/* port: the sprite from a texture of its own (a PlayStation
+		controller's button), if it has one, as the menus' icons are */
+		bitmap = hud_hires_sprite_bitmap(bitmap, icon->sequence_index);
 		scale = local_player_count() > 1 ? 0.75f : 1.0f;
 		point.x = (short)(icon->offset.x * scale + cursor_bounds->x0);
 		point.y = (short)(cursor_bounds->y1 - icon->offset.y * scale);

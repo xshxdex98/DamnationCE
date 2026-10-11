@@ -295,10 +295,9 @@ static void arrows_dpad(const unsigned char *keys, XINPUT_GAMEPAD *pad)
 	if (keys[SDL_SCANCODE_RIGHT]) pad->wButtons |= XINPUT_GAMEPAD_DPAD_RIGHT;
 }
 
-#ifdef HALO_GAME_BROWSER
 /* the device the player last used (the overlay's button prompts,
-ui_overlay.c): 0 the keyboard (or mouse), 1 an Xbox-like pad, 2 a
-PlayStation pad, 3 a Nintendo pad */
+ui_overlay.c, and the button icons' textures, hud_hires.c): 0 the keyboard
+(or mouse), 1 an Xbox-like pad, 2 a PlayStation pad, 3 a Nintendo pad */
 static int last_input_scheme = 1;
 static BOOL last_input_seen = FALSE;
 
@@ -327,7 +326,6 @@ static int scheme_of(SDL_Gamepad *gamepad)
 		return 1;
 	}
 }
-#endif
 
 /* the game's on-screen keyboard is up (platform_text_typing): the keys type
 into it (XInputDebugGetKeystroke passes them to the game), but for the
@@ -385,7 +383,6 @@ static void keyboard_gamepad(const struct platform_input_state *input, XINPUT_GA
 	const unsigned char *m = input->mouse_buttons;
 	int x = 0, y = 0;
 
-#ifdef HALO_GAME_BROWSER
 	{
 		int scancode;
 
@@ -402,7 +399,6 @@ static void keyboard_gamepad(const struct platform_input_state *input, XINPUT_GA
 			}
 		}
 	}
-#endif
 	if (text_typing)
 	{
 		typing_gamepad(input, pad);
@@ -981,7 +977,6 @@ static void sdl_gamepad_state(SDL_Gamepad *gamepad, XINPUT_GAMEPAD *pad)
 	if (right_trigger > pad->bAnalogButtons[XINPUT_GAMEPAD_RIGHT_TRIGGER])
 		pad->bAnalogButtons[XINPUT_GAMEPAD_RIGHT_TRIGGER] = (BYTE)right_trigger;
 
-#ifdef HALO_GAME_BROWSER
 	/* (a button pressed, a trigger pulled or a stick pushed: this pad) */
 	{
 		int button;
@@ -997,7 +992,6 @@ static void sdl_gamepad_state(SDL_Gamepad *gamepad, XINPUT_GAMEPAD *pad)
 			last_input_seen = TRUE;
 		}
 	}
-#endif
 	merge_stick(&pad->sThumbLX, SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX), FALSE);
 	merge_stick(&pad->sThumbLY, SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY), TRUE);
 	merge_stick(&pad->sThumbRX, SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTX), FALSE);
