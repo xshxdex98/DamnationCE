@@ -313,6 +313,7 @@ static char const *const port_function_names[] =
 	"port theme glassed",
 	"port theme vanilla",
 	"port theme cairo",
+	"port theme xbox",
 	"port pause end game",
 	"port coop begin", "port coop player 2 list initialize", "port coop player 2",
 	"port lobby open", "port lobby add player", "port lobby join", "port lobby leave",
@@ -375,6 +376,17 @@ static struct
 	struct pc_menu_setting *settings;
 	long setting_count;
 	boolean loaded;
+	/* built beside the Xbox's menus (display.menus "xbox"), whose own
+	screens stay theirs (pc_menus_screen) */
+	boolean xbox_menus;
+	/* the Xbox's lists xbox_list_insert grew, and their own children, put
+	back as the menus are let go */
+	struct
+	{
+		struct tag_block *block;
+		struct tag_block original;
+	} xbox_lists[2];
+	short xbox_list_count;
 	char root[300];
 	/* an empty name, in the game's memory as the map's names are (which a
 	64-bit build's tag fields can address) */
@@ -1391,6 +1403,8 @@ static void menu_tags_release(void)
 			rasterizer_bitmap_delete(menu_tags.bitmaps[index]);
 	}
 	halo_menus_art_forget();
+	for (index = 0; index < menu_tags.xbox_list_count; index++)
+		*menu_tags.xbox_lists[index].block = menu_tags.xbox_lists[index].original;
 	if (menu_tags.original_instances)
 		cache_files_set_tag_instances(menu_tags.original_instances, menu_tags.original_count);
 	/* (the game's free takes no NULL: settings is, with no setting spinners) */
@@ -2023,6 +2037,94 @@ static void pause_campaign_patch(struct cache_file_tag_instance *instances)
 	}
 }
 
+/* ---------- the Xbox's menus (display.menus "xbox")
+
+The Xbox's menus as they were, and two items of this port's in its own
+lists: MENUS under its main menu's, which opens the themes (and so the PC
+version's menus again), and OPENCE ADDITIONS before its profile's SAVE
+CHANGES (the screen in the Xbox's look, tools/port_settings.py's
+XBOX_ADDITIONS). Both are menu files' widgets, built with the PC version's
+(whose server browser its ONLINE GAMES opens: ui_widget.c). */
+
+#define XBOX_MAIN_MENU_LIST "ui\\shell\\main_menu\\main_menu_select_list"
+#define XBOX_MENUS_ITEM "main_menu/xbox_menus_item"
+/* (the main menu's items' place: under the last, at their spacing) */
+#define XBOX_MAIN_MENU_SPACING 36
+#define XBOX_PROFILE_LIST "ui\\shell\\main_menu\\settings_select\\player_setup\\player_profile_edit\\" \
+	"profile_edit_select_list"
+#define XBOX_ADDITIONS_ITEM "main_menu/settings_select/player_setup/player_profile_edit/opence_additions_xbox_item"
+/* (the profile's items' spacing: SAVE CHANGES, the last, a row lower to
+make room) */
+#define XBOX_PROFILE_SPACING 33
+
+/* the list `list_name` with the widget `widget_name` (a menu file's) as its
+child at `at`, offset as given, the children after it `shift` lower;
+FALSE when either is not there */
+static boolean xbox_list_insert(char const *list_name, char const *widget_name, long at,
+	short vertical_offset, short horizontal_offset, short shift)
+{
+	long list_tag = tag_loaded(UI_WIDGET_DEFINITION_TAG, list_name);
+	long widget = widget_named(widget_name);
+	struct ui_widget_definition *list;
+	struct ui_widget_child_reference *children, *grown;
+	long count, child;
+
+	if (list_tag == NONE || widget == NONE)
+		return FALSE;
+	list = tag_get(UI_WIDGET_DEFINITION_TAG, list_tag);
+	count = list->child_widgets.count;
+	if (menu_tags.xbox_list_count >= NUMBEROF(menu_tags.xbox_lists) || at < 0 || at > count ||
+		!(grown = allocate((count + 1) * sizeof(*grown))))
+	{
+		return FALSE;
+	}
+	menu_tags.xbox_lists[menu_tags.xbox_list_count].block = &list->child_widgets;
+	menu_tags.xbox_lists[menu_tags.xbox_list_count++].original = list->child_widgets;
+	children = XBOX_POINTER(struct ui_widget_child_reference, list->child_widgets.address);
+	if (count)
+		memcpy(grown, children, count * sizeof(*grown));
+	memmove(&grown[at + 1], &grown[at], (count - at) * sizeof(*grown));
+	memset(&grown[at], 0, sizeof(*grown));
+	reference_set(&grown[at].widget_tag, UI_WIDGET_DEFINITION_TAG, build.widget_tags[widget]);
+	grown[at].vertical_offset = vertical_offset;
+	grown[at].horizontal_offset = horizontal_offset;
+	for (child = at + 1; child <= count; child++)
+		grown[child].vertical_offset = (short)(grown[child].vertical_offset + shift);
+	list->child_widgets.address = XBOX_ADDRESS(grown);
+	list->child_widgets.count = count + 1;
+	return TRUE;
+}
+
+static void xbox_menus_patch(void)
+{
+	long list_tag = tag_loaded(UI_WIDGET_DEFINITION_TAG, XBOX_MAIN_MENU_LIST);
+	long profile_tag = tag_loaded(UI_WIDGET_DEFINITION_TAG, XBOX_PROFILE_LIST);
+
+	/* MENUS, under the main menu's last item */
+	if (list_tag != NONE)
+	{
+		struct ui_widget_definition *list = tag_get(UI_WIDGET_DEFINITION_TAG, list_tag);
+		struct ui_widget_child_reference const *items =
+			XBOX_POINTER(struct ui_widget_child_reference, list->child_widgets.address);
+		long count = list->child_widgets.count;
+
+		if (count && !xbox_list_insert(XBOX_MAIN_MENU_LIST, XBOX_MENUS_ITEM, count,
+			(short)(items[count - 1].vertical_offset + XBOX_MAIN_MENU_SPACING), items[count - 1].horizontal_offset, 0))
+		{
+			platform_log("menus: the Xbox's main menu has no MENUS item");
+		}
+	}
+	/* OPENCE ADDITIONS, before the profile's last item (SAVE CHANGES) */
+	if (profile_tag != NONE)
+	{
+		struct ui_widget_definition const *profile = tag_get(UI_WIDGET_DEFINITION_TAG, profile_tag);
+		long count = profile->child_widgets.count;
+
+		if (!count || !xbox_list_insert(XBOX_PROFILE_LIST, XBOX_ADDITIONS_ITEM, count - 1, 0, 0, XBOX_PROFILE_SPACING))
+			platform_log("menus: the Xbox's Settings have no OPENCE ADDITIONS");
+	}
+}
+
 /* the campaign played here by one player: not network co-op, nor split
 screen */
 static boolean single_player_campaign_map(void)
@@ -2057,11 +2159,15 @@ void menu_tags_loaded(
 	long widget_count, own_lists = 0, total, index;
 	boolean game_map = strcmp(map_name, "ui") != 0;
 	boolean campaign = game_map && single_player_campaign_map();
+	boolean xbox_menus = !menus_pc_chosen();
 	char *slot_name;
 
-	if (!menus_pc_chosen())
+	/* (the Xbox's menus: a game's pause menus as they are; the user
+	interface's with the PC version's tags beside them, xbox_menus_patch) */
+	if (xbox_menus && game_map)
 		return;
-	recolor_map_widgets(halo_menus_theme());
+	if (!xbox_menus)
+		recolor_map_widgets(halo_menus_theme());
 	/* (ui.map, and a multiplayer map: its pause menu's SETTINGS; a
 	single-player campaign's too) */
 	if (game_map && tag_loaded('Soul', MULTIPLAYER_COLLECTION) == NONE && !campaign)
@@ -2165,6 +2271,12 @@ void menu_tags_loaded(
 		/* (those it made) */
 		cache_files_set_tag_instances(instances, build.first_index + build.next);
 	}
+	else if (xbox_menus)
+	{
+		/* (the Xbox's main menu stays the root: pc_menus_root_name) */
+		menu_tags.root[0] = 0;
+		xbox_menus_patch();
+	}
 	else if (widget_named(menus->root) != NONE)
 	{
 		tag_name_of(menu_tags.root, sizeof(menu_tags.root), menus->root, "");
@@ -2174,6 +2286,7 @@ void menu_tags_loaded(
 		platform_log("menus: there is no widget named %s, the main menu", menus->root);
 	}
 	menu_tags.loaded = TRUE;
+	menu_tags.xbox_menus = xbox_menus;
 	platform_log("menus: %ld widgets, %ld string lists and %ld bitmaps added to the map's %ld tags",
 		widget_count, own_lists + menus->string_list_count, menus->bitmap_count, build.first_index);
 	goto done;
@@ -2200,15 +2313,22 @@ void menu_tags_unloaded(
 
 /* the theme a menu chose ("port theme glassed"), to be put on at the start
 of the next frame: its menus are built anew, which deletes the widget that
-chose it */
+chose it. XBOX is the Xbox's own menus (display.menus "xbox"); the others
+the PC version's (display.menus "pc") in that theme */
 static char theme_chosen[16];
 
 void pc_menus_theme_choose(
 	char const *theme)
 {
-	if (strcmp(config_string("display.theme"), theme))
+	boolean xbox_menus = !strcmp(theme, "xbox");
+	char const *menus = xbox_menus ? "xbox" : "pc";
+
+	if (csstrcasecmp(config_string("display.menus"), menus) ||
+		(!xbox_menus && strcmp(config_string("display.theme"), theme)))
 	{
-		config_write("display.theme", theme);
+		config_write("display.menus", menus);
+		if (!xbox_menus)
+			config_write("display.theme", theme);
 		snprintf(theme_chosen, sizeof(theme_chosen), "%s", theme);
 	}
 }
@@ -2325,7 +2445,7 @@ char const *pc_menus_screen(
 	};
 	short index;
 
-	if (!menu_tags.loaded)
+	if (!menu_tags.loaded || menu_tags.xbox_menus)
 		return name;
 	for (index = 0; index < NUMBEROF(screens); index++)
 	{

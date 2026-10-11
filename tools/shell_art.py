@@ -9,7 +9,7 @@ edges. A picture is drawn SCALE times its size in the menus' 640x480 screen,
 so it stays sharp in a large window (menu_drawing.py). Needs Pillow.
 tools/shell_skin.py draws the other screens' pictures with what is here.
 
-The title, OpenCE, is set in a typeface given with --title-font (the
+The title, DamnationCE, is set in a typeface given with --title-font (the
 pictures are kept; the font is not part of the repository) in glass
 letters, as a resting frame and then TITLE_SHINE_FRAMES frames of a band of
 light sliding across them, which the menus show every so often (the port's
@@ -33,7 +33,7 @@ PANEL = (346, 480)      # 106 of it lies left of the 4:3 screen, for wide window
 ITEM = (300, 22)
 RULE = (420, 2)
 TITLE = (330, 48)
-TITLE_TEXT = "OpenCE"
+TITLE_TEXT = "DamnationCE"
 TITLE_SHINE_FRAMES = 16
 TITLE_SHINE_WIDTH = 46  # the band of light, across, in the menus' units
 

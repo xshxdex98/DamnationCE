@@ -14,6 +14,11 @@ MB for the message icons' sheet).
 They are drawn with linear filtering and their mip levels (d3d8_gl.c,
 configure_sampler), as they are larger than they appear.
 
+A button icon may have a second texture, of a PlayStation controller's
+buttons, drawn instead while one is the controller last used
+(platform_input_scheme), whatever display.high_res_text says; one that has
+only that is drawn only then.
+
 The embedded PNGs are the ones tools/hud_assets.py, title_assets.py and
 button_assets.py write. A menus folder's PNGs can be anyone's. Only 8-bit
 RGBA, non-interlaced PNGs are read, with their data inflated by the port's
@@ -31,6 +36,9 @@ zlib (port/third_party/zlib).
 #include <stdlib.h>
 #include <string.h>
 
+/* xinput_sdl.c's: the controller last used (2: a PlayStation one) */
+int platform_input_scheme(void);
+
 /* the game's (port/linux/game/hud_hires_tags.c) */
 long hud_hires_asset_at(unsigned long address, long width, long height);
 long hud_hires_asset_after(unsigned long address, long width, long height, long asset);
@@ -43,11 +51,15 @@ a 4096 by 4096 sheet (the largest shipped, 2048 by 2048, takes 32 MB), and
 no more for a small file that names a large size (a menus folder's) */
 #define MAXIMUM_DECODED_SIZE (192UL << 20)
 
+/* each asset's textures: [0] its own, [1] its PlayStation one */
 static struct
 {
-	unsigned int texture;
-	unsigned long levels;
-	int failed;
+	struct
+	{
+		unsigned int texture;
+		unsigned long levels;
+		int failed;
+	} decoded[2];
 	int other_pixels_logged;
 } textures[MAXIMUM_TEXTURES];
 
@@ -89,12 +101,12 @@ static int in_chosen_theme(const struct hud_hires_embedded *embedded)
 	return !embedded->theme || !strcmp(embedded->theme, halo_menus_theme_name(halo_menus_theme()));
 }
 
-long hud_hires_override_find(unsigned long address, unsigned long width, unsigned long height,
-	unsigned long level0_size)
+/* whether the asset's own texture is drawn: its setting (display.high_res_hud,
+or display.high_res_text for the menus') on */
+static int setting_on(const struct hud_hires_embedded *embedded)
 {
 	static int hud_enabled, titles_enabled;
 	static unsigned long read_at = (unsigned long)-1;
-	long asset;
 
 	if (read_at != config_changes())
 	{
@@ -102,15 +114,56 @@ long hud_hires_override_find(unsigned long address, unsigned long width, unsigne
 		hud_enabled = config_boolean("display.high_res_hud");
 		titles_enabled = config_boolean("display.high_res_text");
 	}
-	if (!hud_enabled && !titles_enabled)
-		return -1;
+	return embedded->title ? titles_enabled : hud_enabled;
+}
+
+/* whether the asset is drawn now: its PlayStation texture (a PlayStation
+controller the last used), else its own (its setting on) */
+static int drawn_now(const struct hud_hires_embedded *embedded, int *playstation)
+{
+	*playstation = embedded->png_playstation && platform_input_scheme() == 2;
+	return *playstation || (embedded->png && setting_on(embedded));
+}
+
+/* one of the asset's textures (1: its PlayStation one), decoded on first use */
+static unsigned int decoded_texture(long asset, int playstation, unsigned long *levels)
+{
+	const struct hud_hires_embedded *embedded = &hud_hires_embedded[asset];
+	const unsigned int *png = playstation ? embedded->png_playstation : embedded->png;
+
+	if (!png || textures[asset].decoded[playstation].failed)
+		return 0;
+	if (!textures[asset].decoded[playstation].texture)
+	{
+		textures[asset].decoded[playstation].texture = hud_hires_png_texture(png,
+			playstation ? embedded->png_playstation_size : embedded->png_size,
+			&textures[asset].decoded[playstation].levels);
+		if (!textures[asset].decoded[playstation].texture)
+		{
+			platform_log("high-res hud: could not decode the %stexture for %s bitmap %d",
+				playstation ? "PlayStation " : "", embedded->tag, embedded->bitmap);
+			textures[asset].decoded[playstation].failed = 1;
+			return 0;
+		}
+	}
+	*levels = textures[asset].decoded[playstation].levels;
+	return textures[asset].decoded[playstation].texture;
+}
+
+long hud_hires_override_find(unsigned long address, unsigned long width, unsigned long height,
+	unsigned long level0_size)
+{
+	long asset;
+
 	/* (a bitmap may have a texture in each theme, and then a title's) */
 	asset = hud_hires_asset_at(address, (long)width, (long)height);
 	while (asset >= 0 && asset < hud_hires_asset_count() && !in_chosen_theme(&hud_hires_embedded[asset]))
 		asset = hud_hires_asset_after(address, (long)width, (long)height, asset);
 	if (asset < 0 || asset >= hud_hires_asset_count())
 		return -1;
-	if (!(hud_hires_embedded[asset].title ? titles_enabled : hud_enabled))
+	/* (one with a PlayStation texture whatever its setting: which is drawn
+	is chosen as it is drawn, hud_hires_override_texture) */
+	if (!setting_on(&hud_hires_embedded[asset]) && !hud_hires_embedded[asset].png_playstation)
 		return -1;
 	/* (a Custom Edition map's stock HUD bitmap, laid out as this texture's,
 	has its own pixels) */
@@ -136,6 +189,11 @@ int hud_hires_override_coverage(long asset)
 	return asset >= 0 && asset < hud_hires_asset_count() && hud_hires_embedded[asset].coverage;
 }
 
+int hud_hires_override_switches(long asset)
+{
+	return asset >= 0 && asset < hud_hires_asset_count() && hud_hires_embedded[asset].png_playstation;
+}
+
 /* ---------- sprites */
 
 /* the placeholders of the textures drawn for some of a bitmap's sprites
@@ -157,25 +215,20 @@ unsigned long hud_hires_asset_sprites(long asset)
 
 /* whether the texture drawn for some of a bitmap's sprites can be drawn for
 the bitmap whose pixels are at address (guest virtual; its first mip level
-level0_size bytes): its setting on, the pixels those it was drawn for, and
-the texture decoded */
+level0_size bytes): its setting on (or a PlayStation texture, whatever it
+says), the pixels those it was drawn for, and a texture of it decoded.
+Which is drawn, if either, is chosen as the sprites are
+(hud_hires_sprites_drawn) */
 int hud_hires_sprites_drawable(long asset, unsigned long address, unsigned long level0_size)
 {
-	static int hud_enabled, titles_enabled;
-	static unsigned long read_at = (unsigned long)-1;
+	const struct hud_hires_embedded *embedded;
 	unsigned long levels;
 
-	if (read_at != config_changes())
-	{
-		read_at = config_changes();
-		hud_enabled = config_boolean("display.high_res_hud");
-		titles_enabled = config_boolean("display.high_res_text");
-	}
-	if (asset < 0 || asset >= hud_hires_asset_count() || !hud_hires_embedded[asset].sprites ||
-		!(hud_hires_embedded[asset].title ? titles_enabled : hud_enabled))
-	{
+	if (asset < 0 || asset >= hud_hires_asset_count() || !hud_hires_embedded[asset].sprites)
 		return 0;
-	}
+	embedded = &hud_hires_embedded[asset];
+	if (!(embedded->png && setting_on(embedded)) && !embedded->png_playstation)
+		return 0;
 	if (crc32(0L, (const Bytef *)xbox_pointer(address), (uInt)level0_size) != hud_hires_embedded[asset].crc)
 	{
 		if (!textures[asset].other_pixels_logged)
@@ -187,6 +240,15 @@ int hud_hires_sprites_drawable(long asset, unsigned long address, unsigned long 
 		}
 		return 0;
 	}
+	return decoded_texture(asset, embedded->png && setting_on(embedded) ? 0 : 1, &levels) != 0;
+}
+
+/* whether the texture's sprites are drawn now (a texture of it for the
+controller last used), not the bitmap's own */
+int hud_hires_sprites_drawn(long asset)
+{
+	unsigned long levels;
+
 	return hud_hires_override_texture(asset, &levels) != 0;
 }
 
@@ -377,23 +439,9 @@ unsigned int hud_hires_png_texture(const void *png, unsigned long size, unsigned
 
 unsigned int hud_hires_override_texture(long asset, unsigned long *levels)
 {
-	const struct hud_hires_embedded *embedded;
+	int playstation;
 
-	if (asset < 0 || asset >= hud_hires_asset_count() || textures[asset].failed)
+	if (asset < 0 || asset >= hud_hires_asset_count() || !drawn_now(&hud_hires_embedded[asset], &playstation))
 		return 0;
-	if (textures[asset].texture)
-	{
-		*levels = textures[asset].levels;
-		return textures[asset].texture;
-	}
-	embedded = &hud_hires_embedded[asset];
-	textures[asset].texture = hud_hires_png_texture(embedded->png, embedded->png_size, &textures[asset].levels);
-	if (!textures[asset].texture)
-	{
-		platform_log("high-res hud: could not decode the texture for %s bitmap %d", embedded->tag, embedded->bitmap);
-		textures[asset].failed = 1;
-		return 0;
-	}
-	*levels = textures[asset].levels;
-	return textures[asset].texture;
+	return decoded_texture(asset, playstation, levels);
 }

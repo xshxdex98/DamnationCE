@@ -6,6 +6,7 @@ RASTERIZER_XBOX_PLASMA_ENERGY.C
 
 #include "cseries.h"
 #include "rasterizer/rasterizer.h"
+#include "rasterizer/rasterizer_geometry.h"
 #include "real_math.h"
 #include "rasterizer/rasterizer_transparent_geometry.h"
 #include "rasterizer/xbox/rasterizer_xbox_plasma_energy.h"
@@ -15,6 +16,13 @@ RASTERIZER_XBOX_PLASMA_ENERGY.C
 #include <xtl.h>
 #include "rasterizer/xbox/rasterizer_xbox_pixel_shader.h"
 #include "rasterizer/rasterizer_console_vars.h"
+#include "view_fov.h" /* port: port/linux/game/view_fov.c */
+
+/* port: the farthest the shield's flare is pushed out from the first-person
+arms (display.viewmodel_shield), in world units: a body's shield stands off
+much farther than an arm's radius, which so close to the camera fills the
+view */
+#define PLASMA_FIRST_PERSON_MAXIMUM_OFFSET 0.0075f
 
 /* ---------- structures */
 
@@ -30,7 +38,8 @@ shader's names: its permutation index is the bitmap sequence index, and its
 animation field carries the runtime parameters */
 struct rasterizer_transparent_geometry_group_plasma
 {
-	byte reserved00[offsetof(struct transparent_geometry_group, shader)];
+	unsigned int geometry_flags; /* port: (the first-person bit) */
+	byte reserved04[offsetof(struct transparent_geometry_group, shader) - sizeof(unsigned int)];
 	struct shader *shader;
 	short bitmap_sequence_index;
 	byte reserved12[offsetof(struct transparent_geometry_group, animation) -
@@ -38,6 +47,9 @@ struct rasterizer_transparent_geometry_group_plasma
 	struct plasma_runtime_parameters const *runtime_parameters;
 };
 
+typedef char plasma_group_flags_offset_assert[
+	offsetof(struct rasterizer_transparent_geometry_group_plasma, geometry_flags) ==
+		offsetof(struct transparent_geometry_group, geometry_flags) ? 1 : -1];
 typedef char plasma_group_shader_offset_assert[
 	offsetof(struct rasterizer_transparent_geometry_group_plasma, shader) ==
 		offsetof(struct transparent_geometry_group, shader) ? 1 : -1];
@@ -50,7 +62,8 @@ typedef char plasma_group_runtime_offset_assert[
 #else
 struct rasterizer_transparent_geometry_group_plasma
 {
-	byte reserved00[0xC];
+	unsigned long geometry_flags; /* port: (the first-person bit) */
+	byte reserved04[8];
 	struct shader *shader;
 	short bitmap_sequence_index;
 	byte reserved12[0x5A];
@@ -118,6 +131,7 @@ void rasterizer_plasma_energy_draw(
 	real_rgb_color const *tint;
 	real intensity;
 	real offset;
+	real offset_amount; /* port: PLASMA_FIRST_PERSON_MAXIMUM_OFFSET */
 	real primary_time;
 	real secondary_time;
 	real primary_scale;
@@ -140,6 +154,14 @@ void rasterizer_plasma_energy_draw(
 		tint = global_real_rgb_white;
 		intensity = 1.0f;
 		offset = 0.0f;
+		/* port: the shield on the first-person arms kept close to them */
+		offset_amount = plasma->offset_amount;
+		if (viewmodel_shield_is_visible() &&
+			TEST_FLAG(group->geometry_flags, _rasterizer_geometry_first_person_bit) &&
+			offset_amount > PLASMA_FIRST_PERSON_MAXIMUM_OFFSET)
+		{
+			offset_amount = PLASMA_FIRST_PERSON_MAXIMUM_OFFSET;
+		}
 		runtime = group->runtime_parameters;
 		if (runtime)
 		{
@@ -160,7 +182,7 @@ void rasterizer_plasma_energy_draw(
 				if (source >= 1 && source <= 4)
 					offset = (real)pow(
 						(double)runtime->exponents[source - 1],
-						(double)plasma->offset_exponent) * plasma->offset_amount;
+						(double)plasma->offset_exponent) * offset_amount;
 			}
 		}
 

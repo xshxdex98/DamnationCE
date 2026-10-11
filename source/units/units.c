@@ -2636,8 +2636,8 @@ void unit_impulse(
 int config_boolean(const char *name);
 unsigned long config_changes(void);
 
-/* port: the animation enhancements (game.enhanced_animations, on unless
-config.toml turns them off) are for the player bipeds (cyborg and
+/* port: the animation enhancements (game.enhanced_animations, off unless
+turned on) are for the player bipeds (cyborg and
 cyborg_mp), whose animations they were made with; every other unit keeps
 the original animations */
 static char const *const enhanced_animation_units[] =
@@ -2649,7 +2649,7 @@ static char const *const enhanced_animation_units[] =
 boolean unit_animation_enhanced(
 	long unit_index)
 {
-	static boolean enhanced = TRUE;
+	static boolean enhanced = FALSE;
 	static unsigned long read_at = (unsigned long)-1;
 	struct unit_datum *unit;
 	char const *name;

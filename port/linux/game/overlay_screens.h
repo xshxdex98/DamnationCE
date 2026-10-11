@@ -69,6 +69,9 @@ enum
 	OVERLAY_COLOR_GOOD = 0x5ED38CFF,
 	OVERLAY_COLOR_FAIR = 0xE8C547FF,
 	OVERLAY_COLOR_POOR = 0xE86A5AFF,
+	/* a ping (milliseconds) below which it is good, and fair */
+	OVERLAY_PING_GOOD = 80,
+	OVERLAY_PING_FAIR = 160,
 };
 
 /* ---------- prototypes */

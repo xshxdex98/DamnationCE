@@ -1354,6 +1354,7 @@
 		<string text="Internet play, updates and the\nmultiplayer HUD.\n\nProfile:"/>
 		<string text="Change the current profile's\nfree-for-all multiplayer color.\n\nProfile:"/>
 		<string text="Halo: Combat Evolved, the Xbox\ngame, on this computer.\n\nProfile:"/>
+		<string text="Turn on or off what OpenCE adds\nto the original game.\n\nProfile:"/>
 	</strings>
 	<strings name="main_menu/settings_select/player_setup/player_profile_edit/profile_edit_options">
 		<string text="CHANGE NAME"/>
@@ -1366,6 +1367,7 @@
 		<string text="SAVE CHANGES "/>
 		<string text="NETWORK SETUP "/>
 		<string text="ABOUT"/>
+		<string text="OPENCE ADDITIONS"/>
 	</strings>
 	<strings name="main_menu/settings_select/player_setup/player_profile_edit/video_settings/cap_video_settings_strings">
 		<string text="Select a display resolution."/>

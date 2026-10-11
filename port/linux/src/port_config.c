@@ -147,19 +147,22 @@ static const struct config_setting config_settings[] =
 		"The size the objects' shadows are drawn at, in pixels each way: 128 as\n"
 		"on the Xbox, or 256, 512 or 1024 for smoother edges, as soft." },
 	{ "display.menus", _config_string, "\"pc\"", "HALO_MENUS", _environment_value, _platform_all,
-		"The menus: \"xbox\" for the Xbox's (with Online Games), \"pc\" for the\n"
-		"PC version's main menu (port/assets/menus, and a menus folder here for\n"
-		"your own; not all of it is wired yet)." },
-	{ "display.theme", _config_string, "\"glassed\"", "HALO_THEME", _environment_value, _platform_all,
-		"The menus' theme (with menus = \"pc\"): \"glassed\", this client's,\n"
-		"\"cairo\", in the look of Halo 2's menus, or \"vanilla\", the menus as\n"
-		"they were; the main menu's MENUS button chooses it too." },
-	{ "display.player_names", _config_string, "\"all\"", "HALO_PLAYER_NAMES", _environment_value, _platform_all,
-		"In multiplayer, whose names are drawn above their heads: \"all\",\n"
-		"\"allies\", \"enemies\" or \"none\". An enemy's shows only within the\n"
-		"motion sensor's reach, in sight and not camouflaged; none show if the\n"
+		"The menus: \"pc\" for the PC version's (port/assets/menus, and a menus\n"
+		"folder here for your own), in display.theme; \"xbox\" for the Xbox's own,\n"
+		"as they were, with only a MENUS item to choose others and OPENCE\n"
+		"ADDITIONS in Settings (ONLINE GAMES opens Custom Edition's server\n"
+		"browser). The main menu's MENUS button chooses it too (XBOX)." },
+	{ "display.theme", _config_string, "\"vanilla\"", "HALO_THEME", _environment_value, _platform_all,
+		"The PC version's menus' theme (with menus = \"pc\"): \"vanilla\", Custom\n"
+		"Edition's menus as they were, \"glassed\", this client's, or \"cairo\", in\n"
+		"the look of Halo 2's menus; the main menu's MENUS button chooses it too." },
+	{ "display.player_names", _config_string, "\"aimed\"", "HALO_PLAYER_NAMES", _environment_value, _platform_all,
+		"In multiplayer, whose names are drawn above their heads: \"aimed\", the\n"
+		"original game's alone (its name of the player the crosshair is on); or\n"
+		"always \"all\", \"allies\" or \"enemies\" too (an enemy's only within the\n"
+		"motion sensor's reach, in sight and not camouflaged; none if the\n"
 		"gametype's motion tracker shows no players, only allies' if it shows\n"
-		"only friends." },
+		"only friends)." },
 	{ "display.player_name_scale", _config_real, "1.0", "HALO_PLAYER_NAME_SCALE", _environment_value, _platform_all,
 		"How large the players' names are drawn: 1.0 three quarters of the size of\n"
 		"the HUD's text, 0.25 to 4." },
@@ -298,12 +301,12 @@ static const struct config_setting config_settings[] =
 	{ "game.language", _config_string, "\"\"", "HALO_LANGUAGE", _environment_value, _platform_all,
 		"The language the game asks the Xbox for: \"ja\", \"de\", \"fr\", \"es\" or \"it\";\n"
 		"empty for English. The game data decides what is translated." },
-	{ "game.enhanced_animations", _config_boolean, "true", "HALO_ENHANCED_ANIMATIONS", _environment_value, _platform_all,
+	{ "game.enhanced_animations", _config_boolean, "false", "HALO_ENHANCED_ANIMATIONS", _environment_value, _platform_all,
 		"The player bipeds' grenade throws keep their legs moving (crouched,\n"
 		"in the air and in a vehicle's seat too), riders' hands leave the grips\n"
 		"to throw and reload, and a player turns with the aim while throwing;\n"
 		"false: the original animations, which freeze the legs and stand a\n"
-		"rider up." },
+		"rider up. Settings > OPENCE ADDITIONS chooses it too." },
 	{ "game.custom_edition", _config_boolean, "true", "HALO_CUSTOM_EDITION", _environment_value, _platform_all,
 		"Load and run Halo Custom Edition maps (not those that need OpenSauce):\n"
 		"put them and Custom Edition's bitmaps.map, sounds.map and loc.map in\n"
@@ -403,6 +406,28 @@ static const struct config_setting config_settings[] =
 		_platform_all,
 		"Hosting: the minutes a player kicked by a vote cannot join again (1 to\n"
 		"1440)." },
+	{ "network.map_share", _config_boolean, "true", "HALO_NET_MAP_SHARE", _environment_value, _platform_all,
+		"Hosting: send a player who joins without the game's Custom Edition map\n"
+		"the map (from custom_maps), and the resource maps it needs that the\n"
+		"player lacks (bitmaps.map, sounds.map, loc.map). The game's other\n"
+		"players help (network.map_seed)." },
+	{ "network.map_share_upload", _config_integer, "1024", "HALO_NET_MAP_SHARE_UPLOAD", _environment_value,
+		_platform_all,
+		"Hosting: the most kilobytes a second the host sends of maps (16 to\n"
+		"65536), so that the game's own traffic keeps the rest of the upload." },
+	{ "network.map_seed", _config_boolean, "true", "HALO_NET_MAP_SEED", _environment_value, _platform_all,
+		"Playing in another's game: help send its map to players who join\n"
+		"without it, as a torrent's peers do (the pieces this machine has, at\n"
+		"most network.map_seed_upload)." },
+	{ "network.map_seed_upload", _config_integer, "256", "HALO_NET_MAP_SEED_UPLOAD", _environment_value,
+		_platform_all,
+		"Playing in another's game: the most kilobytes a second this machine\n"
+		"sends of maps to other players (16 to 65536)." },
+	{ "network.map_download", _config_boolean, "true", "HALO_NET_MAP_DOWNLOAD", _environment_value, _platform_all,
+		"Joining a game on a Custom Edition map this machine does not have:\n"
+		"download it (and the resource maps it needs) from the game's players\n"
+		"into custom_maps, if its host shares it (network.map_share); false\n"
+		"leaves the game, saying which map is missing." },
 	{ "network.coop_public", _config_boolean, "false", "HALO_NET_COOP_PUBLIC", _environment_value, _platform_all,
 		"Whether an online co-op game (Create Game > Internet, a SINGLEPLAYER\n"
 		"map) starts as PUBLIC or, false, PRIVATE: Server Setup's LISTING in\n"
@@ -498,7 +523,8 @@ static const struct config_setting config_settings[] =
 	{ "debug.network_test", _config_string, "\"\"", "HALO_NETWORK_TEST", _environment_value, _platform_all,
 		"Automated system link sessions for testing (port/linux/game/network_test.c):\n"
 		"\"host:<map>\" hosts a game on that map, \"join\" joins the first game found,\n"
-		"\"browse\" the first the server browser lists; empty for none." },
+		"\"browse\" the one with the most players the server browser lists (not\n"
+		"co-op, if it can); empty for none." },
 	{ "debug.network_test_start", _config_real, "15.0", "HALO_NETWORK_TEST_START", _environment_value, _platform_all,
 		"Seconds after hosting that an automated test game starts." },
 	{ "debug.network_test_kill", _config_real, "0.0", "HALO_NETWORK_TEST_KILL", _environment_value, _platform_all,

@@ -15,9 +15,11 @@ ping, and the selected game's details (map picture, settings, who is in it)
 are on the right.
 
 Controls: arrow keys pick a game (left and right turn the page), A or Enter
-joins it, and Escape (B) goes back. Everything else is clicked: a game, the
-buttons along the bottom (JOIN, CREATE GAME, REFRESH, SORT, PROFILE, BACK)
-and the column headings, which sort by that column.
+joins it, and Escape (B) goes back. Everything else is clicked: a game (as
+Custom Edition's list: a click chooses it, outlined in yellow, and a click
+on the chosen game joins it), the buttons along the bottom (JOIN, CREATE
+GAME, REFRESH, SORT, PROFILE, BACK) and the column headings, which sort by
+that column.
 
 Joining opens a tunnel to the host through the invite; once the host's game
 is advertised through it, we join and open its lobby (wait_for_host).
@@ -119,6 +121,8 @@ static struct
 {
 	boolean active;
 	short selected;
+	/* the game under the mouse, or NONE */
+	short hovered;
 	short count;
 	struct browser_game games[BROWSER_MAXIMUM_GAMES];
 	char status[96];
@@ -480,6 +484,7 @@ void browser_screen_open(
 {
 	browser_screen.active = TRUE;
 	browser_screen.selected = 0;
+	browser_screen.hovered = NONE;
 	browser_screen.status[0] = 0;
 	browser_screen.button_hovered = NONE;
 	browser_screen.connecting = FALSE;
@@ -634,6 +639,8 @@ static struct overlay_palette const *palette;
 #define COLOR_GOOD OVERLAY_COLOR_GOOD
 #define COLOR_FAIR OVERLAY_COLOR_FAIR
 #define COLOR_POOR OVERLAY_COLOR_POOR
+/* the chosen game's outline: Custom Edition's (its server rows' third frame) */
+#define COLOR_CHOSEN 0xFFFF00CC
 
 /* The list's columns: each spans a share of the list's width, and the
 numbers are right-aligned. Clicking a heading sorts by it. */
@@ -798,10 +805,10 @@ static short sort_heading_at(short x, short y)
 	return NONE;
 }
 
-/* The mouse: hovering a row selects it and clicking joins it. A finger has
-no hover: a tap selects a row and a tap on the selected row joins it. The
-wheel (a drag on the touchscreen) moves the selection; the buttons and
-column headings are clicked. */
+/* The mouse, as Custom Edition's list: hovering a row lights it, a click
+selects it and a click on the selected row joins it; a finger's taps the
+same. The wheel (a drag on the touchscreen) moves the selection; the
+buttons and column headings are clicked. */
 void browser_screen_pointer(
 	struct halo_ui_pointer const *pointer)
 {
@@ -849,15 +856,18 @@ void browser_screen_pointer(
 		browser_screen.selected = (short)PIN(browser_screen.selected + (pointer->wheel_steps > 0 ? -1 : 1),
 			0, MAX(0, browser_screen.count - 1));
 	}
-	row = pointer->moved && !pointer->touch ? row_at(pointer->x, pointer->y) : NONE;
-	if (row != NONE && page_first + row < browser_screen.count)
-		browser_screen.selected = (short)(page_first + row);
+	if (pointer->moved && !pointer->touch)
+	{
+		row = row_at(pointer->x, pointer->y);
+		browser_screen.hovered = row != NONE && page_first + row < browser_screen.count ?
+			(short)(page_first + row) : NONE;
+	}
 	row = pointer->left_clicks ? row_at(pointer->click_x, pointer->click_y) : NONE;
 	if (row != NONE && page_first + row < browser_screen.count &&
 		system_milliseconds() - browser_screen.opened_time > OPEN_SETTLE)
 	{
 		short game = (short)(page_first + row);
-		boolean join = !pointer->touch || game == browser_screen.selected;
+		boolean join = game == browser_screen.selected;
 
 		browser_screen.selected = game;
 		if (join)
@@ -921,15 +931,18 @@ static void render_columns(
 static unsigned int ping_color(
 	short ping)
 {
-	return ping < 0 ? COLOR_DIM : ping < 80 ? COLOR_GOOD : ping < 160 ? COLOR_FAIR : COLOR_POOR;
+	return ping < 0 ? COLOR_DIM : ping < OVERLAY_PING_GOOD ? COLOR_GOOD : ping < OVERLAY_PING_FAIR ? COLOR_FAIR :
+		COLOR_POOR;
 }
 
 /* A game's row: a dot for whether it can be joined, then a column each for
-its name, map, mode, players and ping. */
+its name, map, mode, players and ping; lit under the mouse, the chosen
+game's outlined in yellow. */
 static void render_row(
 	struct browser_game const *game,
 	short row,
-	boolean chosen)
+	boolean chosen,
+	boolean hovered)
 {
 	struct known_map const *map = known_map(game->map);
 	float y = (float)(LIST_Y + row * ROW_HEIGHT);
@@ -940,7 +953,9 @@ static void render_row(
 	char text[96];
 	float x;
 
-	overlay_row(layout.list_x, y, layout.list_width, ROW_HEIGHT - 1, chosen, row % 2);
+	overlay_row(layout.list_x, y, layout.list_width, ROW_HEIGHT - 1, hovered, row % 2);
+	if (chosen)
+		ui_overlay_outline(layout.list_x, y, layout.list_width, ROW_HEIGHT - 1, palette->radius / 2, 1.5f, COLOR_CHOSEN);
 	ui_overlay_rect(layout.list_x + 0.013f * layout.list_width - 2.5f, y + ROW_HEIGHT / 2 - 3, 5, 5, 2.5f, dot);
 
 	overlay_utf8(game->name, NUMBEROF(game->name), text, sizeof(text));
@@ -1109,7 +1124,8 @@ void browser_screen_render(
 		}
 	}
 	for (row = 0; row < ROWS_PER_PAGE && page_first + row < browser_screen.count; row++)
-		render_row(&browser_screen.games[page_first + row], row, page_first + row == browser_screen.selected);
+		render_row(&browser_screen.games[page_first + row], row, page_first + row == browser_screen.selected,
+			page_first + row == browser_screen.hovered);
 	if (page_count > 1)
 	{
 		snprintf(text, sizeof(text), "\xE2\x80\xB9  %d / %d  \xE2\x80\xBA", page_first / ROWS_PER_PAGE + 1, page_count);

@@ -50,8 +50,13 @@ struct hud_hires_embedded
 	layout is its own (port/assets/hud/custom_edition.json) */
 	int custom_edition;
 	unsigned int sprites;
+	/* its texture (NULL: none, the bitmap drawn as the map has it), and
+	the same with a PlayStation controller's buttons (port/assets/buttons),
+	drawn in its place while one is the controller last used, or NULL */
 	const unsigned int *png;
 	unsigned int png_size;
+	const unsigned int *png_playstation;
+	unsigned int png_playstation_size;
 };
 
 extern const struct hud_hires_embedded hud_hires_embedded[];
@@ -66,13 +71,17 @@ or modified ones) */
 long hud_hires_override_find(unsigned long address, unsigned long width, unsigned long height,
 	unsigned long level0_size);
 /* its GL texture (decoded and uploaded, mipmapped, on first use; 0 if it
-could not be), and the number of its mip levels */
+could not be, or it has none now: its setting off, or no texture for the
+controller last used), and the number of its mip levels */
 unsigned int hud_hires_override_texture(long asset, unsigned long *levels);
 /* a GL texture drawn from an 8-bit RGBA PNG (as the tools write them), with
 all its mip levels, and their number; 0 if it could not be */
 unsigned int hud_hires_png_texture(const void *png, unsigned long size, unsigned long *levels);
 /* whether its green is its coverage (d3d8_gl.c, nv2a_psh.c: coverage_alpha) */
 int hud_hires_override_coverage(long asset);
+/* whether which texture it draws, if any, depends on the controller last
+used (a PlayStation one's): the bitmap's own pixels are kept for it too */
+int hud_hires_override_switches(long asset);
 /* the GL texture of the texture drawn for some of a bitmap's sprites whose
 placeholder's D3D texture has this Data, and the number of its mip levels;
 0 if data is no placeholder's */

@@ -904,8 +904,10 @@ static void hud_draw_players(
 }
 
 /* port: in multiplayer and network co-op, players' names above their heads
-(display.player_names: "all", "allies", "enemies" or "none"), a speaker
-beside the name of one talking in voice chat. An ally's goes
+(display.player_names: "all", "allies" or "enemies"), a speaker beside the
+name of one talking in voice chat; none with "aimed" (the default) or
+"none", which leave the game's own name of the player the crosshair is on,
+as the original game has it. An ally's goes
 above the triangle the game draws over teammates; an enemy's only within the
 motion sensor's reach, while the view sees them and they are not
 camouflaged, so that it never gives away where they hide. Whose names show
@@ -941,11 +943,11 @@ static short hud_player_names_setting(
 		const char *value = config_string("display.player_names");
 
 		read_at = config_changes();
-		setting = _player_names_all;
+		setting = _player_names_none;
 		if (value)
 		{
-			if (!csstrcmp(value, "none"))
-				setting = _player_names_none;
+			if (!csstrcmp(value, "all"))
+				setting = _player_names_all;
 			else if (!csstrcmp(value, "allies") || !csstrcmp(value, "allys"))
 				setting = _player_names_allies;
 			else if (!csstrcmp(value, "enemies"))

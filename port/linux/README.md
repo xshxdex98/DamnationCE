@@ -197,6 +197,14 @@ controller 1. The gamepad changes controller only when none of its buttons
 is held. The profile's button layout (Settings > Gamepads) is the
 gamepads' only.
 
+On Linux a PlayStation controller (DualSense, DualShock 4) goes through the
+kernel's driver of it (`hid-playstation` since Linux 5.12, `hid-sony`):
+the buttons, sticks, triggers and rumble, with no setup. An older kernel
+leaves it to SDL's own driver, which needs access to the controller's
+`/dev/hidraw` device: Steam's udev rules give it (`steam-devices`, or
+Steam installed). Each gamepad found has a line in `debug.txt`
+(`gamepad: <name> (<kind>, <device>)`).
+
 | Action | Keys and buttons (default) |
 | --- | --- |
 | move | W, A, S, D |
@@ -262,7 +270,17 @@ other functions behind the screens are not wired to this game yet
 servers, key bindings) are empty, and the settings they change do not
 change. The screens open, close and move between each other as the PC
 version's. DamnationCE starts on these (`display.menus = "pc"`), in the theme
-`display.theme` chooses; `display.menus = "xbox"` gives the Xbox's menus.
+`display.theme` chooses: Vanilla, Custom Edition's own menus, unless another
+is chosen. `display.menus = "xbox"` gives the Xbox's menus as they were, with
+two additions: MENUS under the main menu's items, to choose a theme (and so
+the PC version's menus again), and OPENCE ADDITIONS in the profile's
+settings. Their ONLINE GAMES opens the PC version's server browser.
+
+Settings > the profile > OPENCE ADDITIONS (in every theme, and the Xbox's
+menus) holds what OpenCE draws that the original game does not: names over
+players beyond the original game's, the first-person legs, arm shields, the shield's color
+and glow, and the field of view and viewmodels. All but the field of view
+start as the original game has them.
 
 Multiplayer > CO-OP CAMPAIGN is the Xbox's cooperative play, which the PC
 version does not have: two players on this computer play the campaign in
@@ -343,14 +361,14 @@ the setting for one start of the game. It has priority over the file.
 | `display.fov` | `0.0` | `HALO_FOV` | The first-person view's field of view on foot, in degrees across at 16:9, from 20 to 150. `0`: the stock view. Refer to "Field of view". |
 | `display.viewmodel_fov` | `0.0` | `HALO_VIEWMODEL_FOV` | The first-person weapon's and hands' field of view, in degrees across at 16:9, from 20 to 150. `0`: the weapon's stock view, also when `display.fov` widens the world. Refer to "Field of view". |
 | `display.viewmodel_visible` | `true` | `HALO_VIEWMODEL_VISIBLE` | `true`: the first-person weapon, hands and what is attached to them are drawn. `false`: they are not; firing, animation, sound and lights go on, and other players' models are drawn. |
-| `display.viewmodel_shield` | `false` | `HALO_VIEWMODEL_SHIELD` | `true`: the energy shield's flare (its hits, its charging, its fall) is drawn on the first-person arms too, as on the body, with the unit's own shield shader. The stock game draws it on the body only. |
+| `display.viewmodel_shield` | `false` | `HALO_VIEWMODEL_SHIELD` | `true`: the energy shield's flare (its hits, its charging, its fall) is drawn on the first-person arms too, as on the body, with the unit's own shield shader, kept closer to the arms than to the body. The stock game draws it on the body only. |
 | `display.first_person_legs` | `false` | `HALO_FIRST_PERSON_LEGS` | `true`: your own body is drawn from the waist down in first person, so you see your legs when you look down, moving as the body's animation moves them. Refer to "Field of view". |
 | `display.shield_color` | `default` | `HALO_SHIELD_COLOR` | Your energy shield's flare as this machine draws it: `default` (the shield's own) or a multiplayer armor color (`white`, `black`, `red`, `blue`, `gray`, `yellow`, `green`, `pink`, `purple`, `cyan`, `cobalt`, `orange`, `teal`, `sage`, `brown`, `tan`, `maroon`, `salmon`), whatever the armor's, on the body and, with `display.viewmodel_shield`, on the first-person arms. The shield's own shader is drawn with its two colors replaced at their brightness; the flare is added to what is behind it, so `black` is drawn a faint grey. Only this machine sees it. |
 | `display.high_res_hud` | `true` | `HALO_HIGH_RES_HUD` | `true`: the HUD (meters, counters, panels and their outlines, the motion sensor, reticles, waypoints, scopes) is drawn from the high-res assets in `port/assets/hud`, 8x the size of the maps' bitmaps. The bitmaps with English text keep the maps' own. `false`: the maps' own bitmaps. |
 | `display.high_res_text` | `true` | `HALO_HIGH_RES_TEXT` | `true`: the menus' and HUD's text is drawn with the fonts in `port/assets/fonts` (Overpass, in place of the maps' Interstate) at the resolution the game draws at, laid out as before; the menus' titles are drawn from the high-res pictures in `port/assets/titles`, and the controller button icons from those in `port/assets/buttons`. `false`: the maps' bitmap fonts, titles and button icons. |
 | `display.shadow_resolution` | `128` | `HALO_SHADOW_RESOLUTION` | The size of the maps that the shadows of the objects are drawn in, in pixels each way: `128`, `256`, `512` or `1024` (other values go down to one of these). The game draws the shadow of each object into a map of 128x128 pixels, blurs it and projects it onto the ground. On a large screen, the edges of these shadows show steps that move when the object moves. A larger map makes the edges smooth; the blur is made wider to match, so the shadows are as soft as on the Xbox. Each doubling adds two passes of the blur. `128`: as on the Xbox. |
 | `display.menus` | `"pc"` | `HALO_MENUS` | `"pc"`: the PC version's menus, from the files in `port/assets/menus` and a `menus` folder next to `config.toml`. Refer to "Menus". `"xbox"`: the Xbox's menus. |
-| `display.player_names` | `"all"` | `HALO_PLAYER_NAMES` | In multiplayer, whose names are drawn above their heads: `"all"`, `"allies"`, `"enemies"` or `"none"`. An ally's name is drawn above the triangle the game shows over teammates. An enemy's name shows only within the motion sensor's reach, while the enemy is in sight and not camouflaged, so it never shows where an enemy hides. The gametype's motion tracker setting also applies: no names if it shows no players, only allies' if it shows only friends. |
+| `display.player_names` | `"aimed"` | `HALO_PLAYER_NAMES` | In multiplayer, whose names are drawn above their heads: `"aimed"` (the original game's alone: its name of the player the crosshair is on), or always `"all"`, `"allies"` or `"enemies"` too. With the last three, an ally's name is drawn above the triangle the game shows over teammates. An enemy's name shows only within the motion sensor's reach, while the enemy is in sight and not camouflaged, so it never shows where an enemy hides. The gametype's motion tracker setting also applies: no names if it shows no players, only allies' if it shows only friends. |
 | `display.player_name_scale` | `1.0` | `HALO_PLAYER_NAME_SCALE` | How large the players' names are drawn: `1.0` is three quarters of the size of the HUD's text, from `0.25` to `4`. With high-res text, larger names are rasterized at their size, so they stay sharp. |
 | `display.scoreboard_team_layout` | `"teams"` | `HALO_SCOREBOARD_TEAM_LAYOUT` | How the multiplayer scoreboard (hold BACK, or tab) lists a team game's players. `"teams"`: a column for each team, red on the left and blue on the right. `"score"`: all the players in order of score. With more players than fit, the mouse wheel and Page Up / Page Down scroll the scoreboard. |
 | `display.scoreboard_background` | `true` | `HALO_SCOREBOARD_BACKGROUND` | `true`: the multiplayer scoreboard (hold BACK, or tab) has a panel behind its text, for clearer text. |
@@ -375,7 +393,7 @@ the setting for one start of the game. It has priority over the file.
 | `game.console_log` | `"important"` | `HALO_CONSOLE_LOG` | What the console shows on the screen. `"important"`: bans, players that the host drops for cheating, the reasons that the game refuses a command, and the asserts that stop the game. `"all"`: all the lines. `"none"`: only the asserts that stop the game. The output of a command always shows. `debug.txt` gets all the lines. |
 | `game.language` | `""` | `HALO_LANGUAGE` | The language of the menus: `ja`, `de`, `fr`, `es` or `it`. Empty: English. |
 | `game.custom_edition` | `false` | `HALO_CUSTOM_EDITION=1` sets `true` | `true`: the game loads and runs Halo Custom Edition maps. This function is experimental. Refer to [docs/custom_edition_caches.md](../../docs/custom_edition_caches.md). `false`: the game refuses these maps. |
-| `game.enhanced_animations` | `true` | `HALO_ENHANCED_ANIMATIONS` | `true`: the player bipeds' grenade throws keep their legs moving, blended by speed and direction (crouched throws stay crouched, throws in the air use the jump's legs), Warthog and Scorpion riders stay seated to throw and let go of the grips to throw and reload, and a player turns with the aim while throwing, as while meleeing. `false`: the original animations, which freeze the legs during a throw and stand a rider up. Only in config.toml, not in the menus. |
+| `game.enhanced_animations` | `false` | `HALO_ENHANCED_ANIMATIONS` | `true`: the player bipeds' grenade throws keep their legs moving, blended by speed and direction (crouched throws stay crouched, throws in the air use the jump's legs), Warthog and Scorpion riders stay seated to throw and let go of the grips to throw and reload, and a player turns with the aim while throwing, as while meleeing. `false`: the original animations, which freeze the legs during a throw and stand a rider up. Settings > OPENCE ADDITIONS > ANIMATIONS chooses it too. |
 | `paths.data` | `""` | `HALO_DATA_ROOT` | The data root. Refer to "Start the game". |
 | `paths.saves` | `""` | `HALO_SAVE_ROOT` | The save root. Refer to "Files and folders". |
 | `network.address` | `""` | `HALO_NET_ADDRESS` | The IPv4 address of this machine for system link. Refer to "Play on one computer". |
@@ -398,6 +416,11 @@ the setting for one start of the game. It has priority over the file.
 | `network.votekick` | `true` | `HALO_NET_VOTEKICK` | When you host: `true`, the players can vote to kick a player. Refer to "Security". `false`: no votes. VOTE KICK in Server Setup > Teamplay Options (in co-op, Voice and Voting) writes its choice here. |
 | `network.votekick_minutes` | `5` | `HALO_NET_VOTEKICK_MINUTES` | When you host: the minutes that a player must play on the server before the player can start a vote to kick (`0` to `60`). To vote, a player must play for 2 minutes, or for this time if it is less. |
 | `network.votekick_ban_minutes` | `30` | `HALO_NET_VOTEKICK_BAN_MINUTES` | When you host: the minutes that a player who is kicked by a vote cannot join again (`1` to `1440`). |
+| `network.map_share` | `true` | `HALO_NET_MAP_SHARE` | When you host: send a player who joins without the game's Custom Edition map the map, and the resource maps that it needs and that the player does not have. SHARE MAPS in Server Setup > Map Sharing writes its choice here. Refer to "Map sharing". |
+| `network.map_share_upload` | `1024` | `HALO_NET_MAP_SHARE_UPLOAD` | When you host: the most kilobytes per second that the game sends of maps (`16` to `65536`). UPLOAD LIMIT in Server Setup > Map Sharing writes its choice here. |
+| `network.map_seed` | `true` | `HALO_NET_MAP_SEED` | When you play in the game of another machine: help send its map to players who join without it. HELP SEND MAPS in Settings > Network Setup > Map Sharing. |
+| `network.map_seed_upload` | `256` | `HALO_NET_MAP_SEED_UPLOAD` | When you play in the game of another machine: the most kilobytes per second that the game sends of maps to other players (`16` to `65536`). UPLOAD LIMIT in Settings > Network Setup > Map Sharing. |
+| `network.map_download` | `true` | `HALO_NET_MAP_DOWNLOAD` | When you join a game on a Custom Edition map that you do not have: download it from the players of the game. `false`: leave the game and show which map is missing. DOWNLOAD MAPS in Settings > Network Setup > Map Sharing. |
 | `network.coop_public` | `false` | `HALO_NET_COOP_PUBLIC` | `true`: an online co-op game (Create Game > Internet, a SINGLEPLAYER map) starts as PUBLIC. `false`: it starts as PRIVATE. LISTING in co-op's Server Setup writes its choice here. Refer to "Server browser". |
 | `network.brokers_file` | `"brokers.txt"` | `HALO_NET_BROKERS_FILE` | The file of the public MQTT brokers that let the machines of an invite find each other, and that carry the listings of the server browser: next to `config.toml`, unless a full path. One `host:port` on each line, up to 4; `#` starts a comment. |
 | `network.stun_servers` | Google and Cloudflare | `HALO_NET_STUN` | The public STUN servers (`host:port`, with commas between them) that give the internet address of a machine. |
@@ -716,11 +739,20 @@ GAME joins only with the correct password. The invite link of the game joins
 it without the password. The host keeps the password only while the game
 runs.
 
-In the Server Browser, select a game to join it. The game joins the invite
-of the game, as for a link. When it reaches the host, it opens the lobby.
-If it cannot reach the host in 30 seconds, it marks the game FAILED. A game
-that is full or starting shows CLOSED. REFRESH asks the hosts for their
-listings again.
+In the Server Browser, as in Custom Edition's, a click selects a game
+(outlined in yellow), and a click on the selected game, a double click, A,
+Enter or JOIN joins it. The game joins the invite of the game, as for a
+link. When it reaches the host, it opens the lobby. If it cannot reach the
+host in 30 seconds, it marks the game FAILED.
+
+The PING column shows the round trip to each host in milliseconds. The
+browser times it as a join would reach the host: it makes the tunnel with
+the listing's invite, keeps the shortest of three pings, and closes the
+tunnel again. It times a few hosts at once, each again every two minutes
+and on REFRESH. Joining a host whose tunnel is open uses that tunnel. A
+game with a password, whose invite the listing hides, shows no ping, nor
+does a host not reached; a game that is full or starting then shows
+CLOSED. REFRESH also asks the hosts for their listings again.
 
 How it operates (`src/p2p_lobby.c`):
 
@@ -766,6 +798,48 @@ same broker to see each other's games. The game uses
 MQTT 5 if the broker has it, else MQTT 3.1.1. A broker that does not keep
 retained messages, or does not let clients subscribe with wildcards, carries
 only invites, not listings.
+
+### Map sharing
+
+When you join a game on a Custom Edition map that you do not have, the game
+downloads the map from the players of the game, if the host shares its maps
+(SHARE MAPS in Server Setup > Map Sharing, `network.map_share`, on by
+default). This operates on a local network and
+on the internet. It also downloads the resource maps that the map needs
+(`bitmaps.map`, `sounds.map`, `loc.map`) if you do not have them. A line at
+the top of the screen shows the progress. In the lobby, the game starts when
+every player has the map. If the game already operates, you join it when
+the download is complete. If no player sends any of the map for a minute,
+you leave the game, and the main menu tells you why.
+
+All the players help (HELP SEND MAPS in Settings > Network Setup > Map
+Sharing, `network.map_seed`), as the peers of a torrent do:
+the downloaded map comes in pieces from the host and from each player who
+has it or has a part of it. The game checks each piece against its hash, so
+a player cannot send a different map. A player who sends a bad piece is not
+asked again. To keep the upload free for the game, the host sends at most
+`network.map_share_upload` (1024 KB/s: UPLOAD LIMIT in Server Setup > Map
+Sharing) and each other player at most `network.map_seed_upload` (256 KB/s:
+UPLOAD LIMIT in Settings > Network Setup > Map Sharing). Set these lower on
+a slow connection. DOWNLOAD MAPS there (`network.map_download`) turns
+downloading off: you then leave a game whose map you do not have.
+
+The name of each map in `custom_maps` ends with the start of its hash: when
+the map lists find `hugeass.map`, the game renames it `hugeass_0e2b3ee4.map`
+(and its picture and description). Thus two versions of a map have different
+names, and a game always loads the version of the host. The menus show the
+map without the hash, and with it only when you have two versions of the
+map. The downloaded map has the same name. A download that stops leaves a
+`.part` file in `custom_maps`; the next download of that map continues from
+it. Maps in the folder of a Halo Custom Edition install
+(`paths.custom_edition`) keep their names, and the host does not share them.
+Copy a map to `custom_maps` to share it.
+
+Over the internet, the players of a game connect only to the host. To send
+each other a map, a player answers the other players of the game (who have
+its invite) as the host does, and a player who downloads connects to them in
+the same way that it connected to the host. Map sharing uses port 5153 for
+its connections. Refer to `NETCODE.md`, "Map sharing".
 
 ### Security
 
@@ -1110,6 +1184,13 @@ Other changes:
 | `render/render_objects.c`, `objects/objects.c` | In first person, your own body is drawn from the waist down with the pose `first_person_legs.c` makes (`display.first_person_legs`); the waist it found and the mesh `object_mesh.c` read are forgotten on a new map. |
 | `objects/object_lights.c` | Glows the port lights itself (`shield_glow.c`): dynamic lights attached to an object's node, colored and sized each frame by their maker, drawn with a light definition the map has. |
 | `render/render_objects.c`, `interface/first_person_weapons.c`, `rasterizer/xbox/rasterizer_xbox_plasma_energy.c` | A local player's shield plasma is drawn in the chosen armor color (`display.shield_color`, `shield_color.c`), on the body and on the first-person arms. |
+| `rasterizer/xbox/rasterizer_xbox_text.c`, `rasterizer/rasterizer_text.c` | The characters of a string are one draw, not a draw each (and a second for the drop shadow). The batch is drawn early before a character is cached and before the high-res glyph atlas starts over (`src/text_hires.c`). |
+| `rasterizer/xbox/rasterizer_xbox_decals.c` | Decals drawn one after another with the same blend function and bitmap are one draw, with each decal's color in its vertices, not a draw each: a long fight leaves hundreds in view. Within a run of decals whose blend functions commute (multiply, add, min, max, reverse subtract), they are drawn by bitmap, so more of them share a draw. |
+| `rasterizer/xbox/rasterizer_xbox_widgets.c`, `objects/widgets/light_volumes.c` | A light volume's sprites (a plasma bolt's glow, a couple of hundred) are one draw. |
+| `structures/structure_render.c` | The structure's visible surfaces are put in order by a radix sort, not `qsort_4byte`: the same order. |
+| `cache/cache_files.c`, `networking/network_client_manager.c`, `networking/network_server_manager.c`, `networking/network_server_message_handler.c`, `main/main.c`, `interface/interface.c` | Map sharing (`game/map_share.c`): a client that does not have the game's Custom Edition map asks the host for it instead of leaving, is not given time to precache it until it has it, and adds its players to a game in progress only then; the host names the game's map for its hash, takes the requests from any machine in the game, lobby too, and does not drop a machine that downloads; the transfers run each frame, and their progress is drawn over the screen. |
+| `tag_files/tag_groups.h` | `TAG_BLOCK_GET_ELEMENT` returns an element in the block without a call, and calls `tag_block_get_element_with_size` for anything else. |
+| `input/input_xbox.c`, `physics/collision_usage.c` | The clock is read only for a button held, and for collision tests only when their times are shown: a read of the clock is slow in a browser. |
 
 The x86 inline assembly of the game is replaced by C. Thus the compiler
 can optimize that code for each processor:

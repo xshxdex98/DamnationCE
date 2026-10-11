@@ -23,6 +23,8 @@ def generated(fault=False):
     names = sorted(set(re.findall(r'SDL_SCANCODE_\w+', keyboard + function(inputs, 'typing_gamepad') +
                                   function(inputs, 'arrows_dpad'))))
     config += '\nenum {' + ','.join(names) + ', TEST_SCANCODE_COUNT};\n'
+    # (the controller last used, which keyboard_gamepad sets: xinput_sdl.c's)
+    config += 'static int last_input_scheme, last_input_seen;\n'
     start = vk.index('static char const virtual_keyboard_layout_table')
     config += vk[start:vk.index('\n};', start)+3] + '\n'
     names = ['text_typing_update', 'platform_text_typing', 'platform_text_field',

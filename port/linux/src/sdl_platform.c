@@ -138,6 +138,17 @@ BOOL platform_sdl_initialize(void)
 	controller emulation in xinput_sdl.c) */
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 #endif
+#if defined(__linux__) && !defined(HALO_ANDROID)
+	/* a PlayStation pad through the kernel's driver of it (hid-playstation's,
+	hid-sony's: its buttons, sticks, triggers and rumble) where the kernel has
+	one, not SDL's own: SDL's reads the pad's hidraw node, which only udev
+	rules (Steam's) open to the player, and a pad it took and could not open
+	was not found at all */
+	if (SDL_GetPathInfo("/sys/bus/hid/drivers/playstation", NULL))
+		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5, "0");
+	if (SDL_GetPathInfo("/sys/bus/hid/drivers/sony", NULL))
+		SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4, "0");
+#endif
 #ifdef HALO_GAME_BROWSER
 	/* the dedicated server and a probe play no sound and need no display
 	(server/src) */
@@ -1820,12 +1831,18 @@ void platform_pump_events(void)
 				SDL_Gamepad *gamepad = SDL_OpenGamepad(event.gdevice.which);
 
 				/* (which pads the game drives: under Steam Input, Steam's
-				virtual ones, named for the controllers behind them) */
+				virtual ones, named for the controllers behind them; its
+				kind, and the device SDL reads it through: on Linux, a
+				hidraw node is SDL's own driver of the pad, an event node
+				the kernel's) */
 				if (gamepad)
 				{
 					const char *name = SDL_GetGamepadName(gamepad);
+					const char *type = SDL_GetGamepadStringForType(SDL_GetGamepadType(gamepad));
+					const char *path = SDL_GetGamepadPath(gamepad);
 
-					platform_log("gamepad: %s", name ? name : "(unnamed)");
+					platform_log("gamepad: %s (%s%s%s)", name ? name : "(unnamed)", type ? type : "unknown",
+						path ? ", " : "", path ? path : "");
 				}
 			}
 #endif

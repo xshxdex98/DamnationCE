@@ -83,6 +83,7 @@ their handlers open opens.
 #include "custom_edition_cache.h"
 #include "custom_edition_maps.h"
 #include "network_voice.h"
+#include "overlay_screens.h"
 #include "text/draw_string.h"
 /* (internet play's server browser: the platform layer's) */
 #include "../src/p2p.h"
@@ -513,6 +514,7 @@ reached, and (map_data) a saved game on the level */
 #define ROW_TEXT_LENGTH 64
 #define MAXIMUM_PROFILES 32
 #define SOUND_ERROR 4
+#define SOUND_CURSOR 1
 #define SOUND_FORWARD 2
 #define SOUND_BACK 3
 
@@ -669,8 +671,10 @@ static void focus_row(struct widget_instance *list, short row)
 /* the text of a list's row or entry */
 typedef void (*row_text_proc)(short row, wchar_t *text);
 
-/* ui_widget.c: TRUE if the mouse, not the keys, last moved the focus */
+/* ui_widget.c: TRUE if the mouse, not the keys, last moved the focus; TRUE
+if the pointer passing over a widget did, not a click */
 boolean ui_widget_port_pointer_focused(void);
+boolean ui_widget_port_hover_focused(void);
 
 /* Whether a list should scroll when its focus sits on the first or last row.
 Only when the keys put it there: a mouse resting on that row would scroll the
@@ -1603,9 +1607,10 @@ profile's button settings as the Xbox's Controller Setup shows them */
 /* the picture's frames (the bitmap's: tools/port_settings.py's
 BITMAP_FRAMES): Gamepad Setup's row's, as the list numbers its rows
 (player_profile_edit_select_menu_update_extended_description), and after
-the PC version's nine the Xbox's five of the button settings */
+the PC version's nine and OPENCE ADDITIONS' the Xbox's five of the button
+settings */
 #define PROFILE_GAMEPAD_FRAME 2
-#define PROFILE_FIRST_LAYOUT_FRAME 9
+#define PROFILE_FIRST_LAYOUT_FRAME 10
 
 /* "port gamepad layout preview" (the picture's own): on Gamepad Setup's
 row, the edited profile's button settings */
@@ -2149,6 +2154,8 @@ Xbox's networking, run by the engine's port entry points
 /* (a key stroke's modifier, as input_xbox.c has them: shift, control) */
 #define KEY_MODIFIER_CONTROL_BIT 1
 #define LOBBY_NAME "pc\\main_menu\\multiplayer_type_select\\lobby\\lobby_screen"
+/* the server browser (Join Game > Internet's) */
+#define SERVER_BROWSER_NAME "pc\\main_menu\\multiplayer_type_select\\join_game\\join_game_screen"
 #define SERVER_SETUP_NAME "pc\\main_menu\\multiplayer_type_select\\server_settings\\server_settings_screen"
 #define PREVIEW_NAME "pc\\main_menu\\multiplayer_type_select\\lobby\\preview_screen"
 /* the server browser's password screen (tools/port_settings.py), and the
@@ -2473,6 +2480,21 @@ void pc_menu_host_internet(void)
 	multiplayer_hosting_begin();
 }
 
+/* the Xbox's ONLINE GAMES, `item` (ui_widget.c), in its menus: the PC
+version's server browser, as Join Game > Internet opens it, whose B goes
+back to the item; FALSE when the PC version's tags are not there */
+boolean pc_menu_server_browser_open(struct widget_instance *item)
+{
+	long screen = tag_loaded('DeLa', SERVER_BROWSER_NAME);
+
+	if (screen == NONE)
+		return FALSE;
+	multiplayer.mode = _multiplayer_mode_server_browser;
+	ui_widget_load_by_name_or_tag(NULL, screen, NULL, NONE, widget_instance_get_topmost_parent(item)->definition_tag_index,
+		item->parent->definition_tag_index, (short)widget_instance_get_child_index_from_parent(item));
+	return TRUE;
+}
+
 /* ---- the map list (the Map screen's): its chooser's SINGLEPLAYER levels,
 MULTIPLAYER maps, CUSTOM SINGLEPLAYER or CUSTOM MULTIPLAYER maps (the map
 lists', above). A level or Custom Edition campaign map chosen lists the
@@ -2791,10 +2813,11 @@ static char const *const server_settings_gametype_rows[] =
 /* the most players a co-op game hosted starts with (maximum_players') */
 #define COOPERATIVE_DEFAULT_PLAYERS 16
 /* Server Setup's help for co-op's options' rows (CO-OP OPTIONS, VOICE AND
-VOTING), and PASSWORD's (its help_strings, tools/port_settings.py) */
+VOTING), PASSWORD's and MAP SHARING's (its help_strings, tools/port_settings.py) */
 #define COOPERATIVE_OPTIONS_HELP 12
 #define COOPERATIVE_VOICE_OPTIONS_HELP 13
 #define SERVER_PASSWORD_HELP 14
+#define MAP_SHARE_OPTIONS_HELP 15
 
 /* co-op's EXTRA ENEMIES' choices (network.coop_enemies_mode's values, as
 gametype_options' coop_extra_enemies_spinner has them, in this order): its
@@ -2928,6 +2951,9 @@ static void server_settings_update(struct widget_instance *list)
 		help->parameters.text_box.string_list_index = COOPERATIVE_OPTIONS_HELP;
 	else if (help && list->focused_child == named(list, "op_voice_options", 0))
 		help->parameters.text_box.string_list_index = COOPERATIVE_VOICE_OPTIONS_HELP;
+	/* (MAP SHARING's, any game's: map_share.c) */
+	else if (help && list->focused_child == named(list, "op_map_share_options", 0))
+		help->parameters.text_box.string_list_index = MAP_SHARE_OPTIONS_HELP;
 	/* LISTING (an internet game's): PUBLIC, listed in everyone's server
 	browser, or PRIVATE, for this game. Its help is its choice's */
 	visible_set(listing, multiplayer.mode == _multiplayer_mode_host_internet && config_boolean("network.online") &&
@@ -3089,6 +3115,31 @@ static short browser_row_index(struct widget_instance *row)
 	return row && !strncmp(row->name, "server_item_", 12) ? (short)(atoi(row->name + 12) - 1) : NONE;
 }
 
+/* the ping each row shows (-1: none), coloured by pc_menu_text_color */
+static short browser_row_pings[BROWSER_ROWS];
+
+/* ui_widget.c: a text's colour in place of its own (FALSE: its own): a
+server browser row's ping by how good it is, as the Online Games browser
+colours it */
+boolean pc_menu_text_color(struct widget_instance *widget, real_argb_color *color)
+{
+	short row = widget->parent ? browser_row_index(widget->parent) : NONE;
+	short ping;
+	unsigned long rgba;
+
+	if (row < 0 || row >= BROWSER_ROWS || strcmp(widget->name, "server_item_ping"))
+		return FALSE;
+	ping = browser_row_pings[row];
+	if (ping < 0)
+		return FALSE;
+	rgba = ping < OVERLAY_PING_GOOD ? OVERLAY_COLOR_GOOD : ping < OVERLAY_PING_FAIR ? OVERLAY_COLOR_FAIR :
+		OVERLAY_COLOR_POOR;
+	color->red = (real)((rgba >> 24) & 0xFF) / 255.0f;
+	color->green = (real)((rgba >> 16) & 0xFF) / 255.0f;
+	color->blue = (real)((rgba >> 8) & 0xFF) / 255.0f;
+	return TRUE;
+}
+
 /* a bar of buttons' focus, off one hidden: on its first one shown */
 static void focus_off_hidden(struct widget_instance *bar)
 {
@@ -3114,21 +3165,25 @@ static boolean browser_item_usable(struct widget_instance *child)
 }
 
 /* the browser's focus, off what cannot have it (at the start, or a row whose
-game went): the first game, else the buttons (off those hidden) */
-static void browser_focus(struct widget_instance *list)
+game went): the first game, else the buttons (off those hidden); the row of
+the game chosen is `chosen_row` (NONE: none shown) */
+static void browser_focus(struct widget_instance *list, short chosen_row)
 {
 	char const *const choices[] = { "server_item_1", "join_game_button_bar" };
 	struct widget_instance *focused = list->focused_child;
 	struct widget_instance *row;
 	short index;
 
-	/* (the rows' backgrounds: the focused one's outlined frame. The engine
-	shows a list item's focus only on a bitmap of two frames, and theirs has
-	three: normal, focused, selected) */
+	/* (the rows' backgrounds, as Custom Edition's: the chosen game's
+	outlined in yellow, the focused one's in blue. The engine shows a list
+	item's focus only on a bitmap of two frames, and theirs has three:
+	normal, focused, selected) */
 	for (row = list->child; row; row = row->next)
 	{
-		if (browser_row_index(row) != NONE)
-			row->animation.current_frame_index = row == focused ? 1 : 0;
+		short row_index = browser_row_index(row);
+
+		if (row_index != NONE)
+			row->animation.current_frame_index = row_index == chosen_row ? 2 : row == focused ? 1 : 0;
 	}
 	focus_off_hidden(named(list, "join_game_button_bar", 0));
 	if (focused && focused->visible && !focused->disabled)
@@ -3181,7 +3236,7 @@ static boolean browser_initialize(struct widget_instance *screen, struct event_r
 		for (child = list ? list->child : NULL; child; child = child->next)
 			child->disabled = !browser_item_usable(child);
 		if (list)
-			browser_focus(list);
+			browser_focus(list, NONE);
 	}
 	visible_set(named(screen, "scroll_up_button", 0), FALSE);
 	visible_set(named(screen, "scroll_down_button", 0), FALSE);
@@ -3312,6 +3367,17 @@ static struct
 	struct p2p_listing password_game;
 	boolean password_joined;
 } lobby_browser;
+
+/* the row of the browser's chosen game, NONE if it is not on the rows */
+static short browser_chosen_row(void)
+{
+	boolean server_browser = multiplayer.mode == _multiplayer_mode_server_browser;
+	short chosen = server_browser ? lobby_browser.chosen : multiplayer.game_chosen;
+	short row = server_browser ? (short)(chosen - lobby_browser.first) : chosen;
+
+	return chosen < (server_browser ? lobby_browser.count : multiplayer.game_count) && row >= 0 &&
+		row < BROWSER_ROWS ? row : NONE;
+}
 
 static void lobby_browser_begin(void)
 {
@@ -3470,9 +3536,10 @@ static void lobby_browser_update(struct widget_instance *list)
 			first_row->visible = TRUE;
 			lobby_browser_focus_row(list, 0);
 			focused = 0;
+			lobby_browser.chosen = lobby_browser.first;
 		}
 	}
-	if (focused != NONE)
+	if (focused != NONE && !ui_widget_port_hover_focused())
 		lobby_browser.chosen = (short)(lobby_browser.first + focused);
 	chosen = lobby_browser.chosen;
 	for (row = list->child; row; row = row->next)
@@ -3494,9 +3561,11 @@ static void lobby_browser_update(struct widget_instance *list)
 		text_set(named(row, "server_item_type", 0), game_type_name(game->engine_type));
 		usnprintf(text, ROW_TEXT_LENGTH - 1, L"%d/%d", game->player_count, game->maximum_player_count);
 		text_set(named(row, "server_item_players", 0), text);
-		/* (no ping yet: its host is reached only on joining) */
-		text_set(named(row, "server_item_ping", 0), game->failed ? L"FAILED" : !game->open ? L"CLOSED" :
-			game->in_progress ? L"LIVE" : L"-");
+		/* (its host's ping, once probed: p2p_lobby.c) */
+		browser_row_pings[index - lobby_browser.first] = game->failed ? -1 : game->ping;
+		usnprintf(text, ROW_TEXT_LENGTH - 1, L"%d", game->ping);
+		text_set(named(row, "server_item_ping", 0), game->failed ? L"FAILED" : game->ping >= 0 ? text :
+			!game->open ? L"CLOSED" : game->in_progress ? L"LIVE" : L"-");
 		/* (the lock: a game with a password. Its bitmap's first frame is
 		empty, the PC version's for no lock; the next is the lock, in the
 		menus' blue) */
@@ -3613,7 +3682,7 @@ static void lobby_browser_update(struct widget_instance *list)
 		browser_counts_show(stats, players, chosen / BROWSER_ROWS + 1,
 			MAX(1, (lobby_browser.count + BROWSER_ROWS - 1) / BROWSER_ROWS), lobby_browser.count);
 	}
-	browser_focus(list);
+	browser_focus(list, browser_chosen_row());
 }
 
 /* the game's host reached by its invite (joined, once it is reached:
@@ -3807,13 +3876,14 @@ static void browser_update(struct widget_instance *list)
 		return;
 	}
 	browser_games_read();
-	if (focused != NONE && focused < multiplayer.game_count)
+	if (focused != NONE && focused < multiplayer.game_count && !ui_widget_port_hover_focused())
 		multiplayer.game_chosen = focused;
 	for (row = list->child; row; row = row->next)
 	{
 		short index = browser_row_index(row);
 		struct advertised_game *game;
 		wchar_t text[ROW_TEXT_LENGTH];
+		int ping;
 
 		if (index == NONE)
 			continue;
@@ -3829,7 +3899,11 @@ static void browser_update(struct widget_instance *list)
 		text_set(named(row, "server_item_type", 0), game_type_name(game->engine_type));
 		usnprintf(text, ROW_TEXT_LENGTH - 1, L"%d/%d", game->player_count, game->maximum_player_count);
 		text_set(named(row, "server_item_players", 0), text);
-		text_set(named(row, "server_item_ping", 0), advertised_in_progress(game) ? L"LIVE" : L"");
+		/* (a Direct Link game's host: the tunnel's ping) */
+		ping = multiplayer.mode == _multiplayer_mode_direct_link ? p2p_peer_ping(game->xnaddr + 2) : -1;
+		browser_row_pings[index] = (short)ping;
+		usnprintf(text, ROW_TEXT_LENGTH - 1, L"%d", ping);
+		text_set(named(row, "server_item_ping", 0), ping >= 0 ? text : advertised_in_progress(game) ? L"LIVE" : L"");
 		visible_set(named(row, "server_item_locked", 0), FALSE);
 		visible_set(named(row, "server_item_dedicated", 0), FALSE);
 		visible_set(named(row, "server_item_classic", 0), FALSE);
@@ -3862,7 +3936,7 @@ static void browser_update(struct widget_instance *list)
 		/* (one page: the list holds every game found) */
 		browser_counts_show(stats, players, 1, 1, multiplayer.game_count);
 	}
-	browser_focus(list);
+	browser_focus(list, browser_chosen_row());
 }
 
 /* "direct ip connect go" (Direct Link's PASTE LINK): the invite
@@ -3898,13 +3972,25 @@ static boolean browser_join(struct widget_instance *widget, short controller, bo
 	return ui_widget_port_join(widget, multiplayer.games[multiplayer.game_chosen], LOBBY_NAME, widget_deleted);
 }
 
-/* "gamespy select item" (a row: joins its game) and "gamespy select button"
-(Join) */
+/* "gamespy select item" (a row: chooses its game, or joins it once chosen)
+and "gamespy select button" (Join) */
 static boolean browser_select(struct widget_instance *widget, struct event_record *event, short controller,
 	boolean *widget_deleted)
 {
 	short row = browser_row_index(widget);
 
+	/* (a row not chosen, clicked after the pointer passed over it: chosen,
+	as Custom Edition's; a click on it chosen, a double click, A or JOIN
+	joins its game. Not the A press a join posts: lobby_browser_select) */
+	if (row != NONE && row != browser_chosen_row() && !lobby_browser.ready)
+	{
+		if (multiplayer.mode == _multiplayer_mode_server_browser)
+			lobby_browser.chosen = (short)(lobby_browser.first + row);
+		else
+			multiplayer.game_chosen = row;
+		ui_play_audio_feedback_sound(SOUND_CURSOR);
+		return TRUE;
+	}
 	if (multiplayer.mode == _multiplayer_mode_server_browser)
 		return lobby_browser_select(widget, controller, row, widget_deleted);
 	if (row != NONE)
@@ -4750,6 +4836,11 @@ static struct gametype_option const gametype_options[] =
 		{ "2", "4", "8", "16", "32" } },
 	{ "coop_player_collisions_spinner", _option_setting, 0, 0, 2, { 0 }, "network.coop_player_collisions",
 		{ "true", "false" } },
+	/* map sharing's (Server Setup's MAP SHARING: tools/port_settings.py's
+	MAP_SHARE_SETUP; map_share.c) */
+	{ "map_share_spinner", _option_setting, 0, 0, 2, { 0 }, "network.map_share", { "true", "false" } },
+	{ "map_share_upload_spinner", _option_setting, 0, 0, 6, { 0 }, "network.map_share_upload",
+		{ "256", "512", "1024", "2048", "4096", "8192" } },
 	/* vehicle options (the side's set and counts: vehicles_update) */
 	{ "vehicles_respawn_spinner", _option_short, OPTIONS_FIELD(vehicle_respawn_time), 0, 7,
 		{ 0, 30, 60, 90, 120, 180, 300 } },
@@ -5434,7 +5525,7 @@ boolean pc_menu_event_function_invoke(
 			return gametype_setup_edit();
 		}
 		else if (!strcmp(name, "port theme glassed") || !strcmp(name, "port theme vanilla") ||
-			!strcmp(name, "port theme cairo"))
+			!strcmp(name, "port theme cairo") || !strcmp(name, "port theme xbox"))
 		{
 			extern void pc_menus_theme_choose(char const *theme);
 

@@ -79,7 +79,12 @@ void lobby_screen_render(void);
 void overlay_lit_row_render(void);
 /* (ONLINE GAMES, below: its list moves focus item by item) */
 boolean ui_widget_online_games_list(struct widget_instance *widget);
+/* port/linux/game/menu_functions.c: ONLINE GAMES' server browser in the Xbox's menus */
+boolean pc_menu_server_browser_open(struct widget_instance *item);
 #endif
+/* port/linux/game/menu_functions.c: a text's colour in place of its own (the
+server browser's pings) */
+boolean pc_menu_text_color(struct widget_instance *widget, real_argb_color *color);
 /* port/linux/game/menu_tags.c: the PC menus' screen standing for an Xbox one, by name */
 char const *pc_menus_screen(char const *name);
 #include "custom_edition_maps.h"
@@ -2615,13 +2620,17 @@ static void event_handler_dispatch(
 	boolean close_all = FALSE;
 
 #ifdef HALO_GAME_BROWSER
-	/* ONLINE GAMES (System Link's item copied): the game list's screen, not
-	System Link's */
+	/* ONLINE GAMES (System Link's item copied): the PC version's server
+	browser, in place of the Multiplayer menu, else the game list's screen;
+	not System Link's */
 	if (ui_widget_online_games_item(widget) &&
 		(handler->event_type == _gamepad_analog_button_a || handler->event_type == _gamepad_binary_button_start))
 	{
 		ui_play_audio_feedback_sound(_ui_audio_feedback_forward);
-		browser_screen_open();
+		if (pc_menu_server_browser_open(widget))
+			*calling_widget_deleted = TRUE;
+		else
+			browser_screen_open();
 		return;
 	}
 #endif
@@ -4689,6 +4698,8 @@ static void widget_instance_render_text_box(
 			color_alpha = color.alpha;
 		}
 	}
+	/* port: a colour of the port's for the text (its alpha the box's) */
+	pc_menu_text_color(widget, &color);
 	color.alpha = alpha_modifier * color_alpha;
 	if (TEST_FLAG(definition->text_box_flags, _text_box_flashing_text_bit))
 	{
@@ -4980,6 +4991,8 @@ for the next frame's processing (ui_widgets_process_mouse), which forgets
 them: widgets can be deleted from then on. */
 
 #define UI_MOUSE_MAXIMUM_TARGETS 96
+/* how far around a value's arrows a click still steps it */
+#define UI_MOUSE_ARROW_MARGIN 4
 
 enum ui_mouse_target_kind
 {
@@ -5045,6 +5058,10 @@ static boolean ui_mouse_click_pending = FALSE;
 then doesn't scroll on at its end, which the pointer, moving, would make it
 do every frame (menu_functions.c) */
 static boolean ui_mouse_focused_last = FALSE;
+/* whether the pointer passing over a widget moved the focus last, not a
+click (or the d-pad): the server browser's game stays chosen
+(menu_functions.c) */
+static boolean ui_mouse_hovered_last = FALSE;
 static short ui_mouse_hover_x, ui_mouse_hover_y;
 static short ui_mouse_click_x, ui_mouse_click_y;
 /* whether the latest pointer read was the touchscreen: the taller legend
@@ -5397,6 +5414,37 @@ static void ui_mouse_note_slot_band(
 	return;
 }
 
+/* a value's tap area: its box, and its arrows (drawn as
+widget_instance_render_spinner_list does: the left one beside a wider
+box's extra items) with UI_MOUSE_ARROW_MARGIN around them */
+static void ui_mouse_value_bounds(
+	struct ui_widget_definition const *definition,
+	point2d offset,
+	rectangle2d *bounds)
+{
+	rectangle2d arrows[2];
+	short index;
+
+	arrows[0] = definition->list_header_bounds;
+	arrows[1] = definition->list_footer_bounds;
+	if (spinner_string_list_extra_count(definition->text_label_string_list.index))
+	{
+		arrows[0].x0 -= SPINNER_EXTRA_WIDTH;
+		arrows[0].x1 -= SPINNER_EXTRA_WIDTH;
+	}
+	for (index = 0; index < 2; index++)
+	{
+		if ((index ? definition->list_footer_bitmap.index : definition->list_header_bitmap.index) == NONE)
+			continue;
+		bounds->x0 = MIN(bounds->x0, (short)(arrows[index].x0 + offset.x - UI_MOUSE_ARROW_MARGIN));
+		bounds->x1 = MAX(bounds->x1, (short)(arrows[index].x1 + offset.x + UI_MOUSE_ARROW_MARGIN));
+		bounds->y0 = MIN(bounds->y0, (short)(arrows[index].y0 + offset.y - UI_MOUSE_ARROW_MARGIN));
+		bounds->y1 = MAX(bounds->y1, (short)(arrows[index].y1 + offset.y + UI_MOUSE_ARROW_MARGIN));
+	}
+
+	return;
+}
+
 /* notes a widget as a tap target of this frame, if it is one: an item,
 a value, a list slot, or a legend button (kept in parts that
 ui_mouse_fit_button_targets settles into the tap area); a list showing
@@ -5497,11 +5545,13 @@ static void ui_mouse_note_target(
 	}
 	target = &ui_mouse_targets[ui_mouse_target_count++];
 	target->widget = widget;
-	target->bounds = bounds;
 	target->kind = kind;
 	target->button_index = button_index;
 	target->split_x = (bounds.x0 + bounds.x1) / 2;
 	target->split_y = (bounds.y0 + bounds.y1) / 2;
+	if (kind == _ui_mouse_target_value)
+		ui_mouse_value_bounds(definition, offset, &bounds);
+	target->bounds = bounds;
 	target->icon_bounds = icon_bounds;
 	target->label = target_label;
 	target->label_bounds = target_label_bounds;
@@ -5593,7 +5643,8 @@ static void ui_mouse_widen_values(
 
 		if (value->kind != _ui_mouse_target_value)
 			continue;
-		value->split_x = (box->x0 + box->x1) / 2;
+		/* (split_x stays the box's middle, as noted: the arrows' area is
+		noted with it) */
 		value->split_y = (box->y0 + box->y1) / 2;
 		left = MAX(left, (short)(-(screen_width - 640) / 2));
 		right = MIN(right, (short)(640 + (screen_width - 640) / 2));
@@ -5813,6 +5864,14 @@ boolean ui_widget_port_pointer_focused(
 	void)
 {
 	return ui_mouse_focused_last;
+}
+
+/* port: whether the pointer passing over a widget, not a click or the
+d-pad, moved the menus' focus last (menu_functions.c's server browser) */
+boolean ui_widget_port_hover_focused(
+	void)
+{
+	return ui_mouse_hovered_last;
 }
 
 /* the d-pad buttons that step a widget back and forward */
@@ -6237,6 +6296,7 @@ static void ui_widgets_process_mouse(
 					/* (a selection list's row too, as the main menu's
 					items: the row under the pointer is the one chosen) */
 					ui_mouse_give_focus(target->widget);
+					ui_mouse_hovered_last = TRUE;
 					break;
 				case _ui_mouse_target_list_slot:
 					ui_mouse_step_list_to_slot(target->widget);
@@ -6253,6 +6313,7 @@ static void ui_widgets_process_mouse(
 		if (!ui_mouse_press_count && ui_mouse_click_pending)
 		{
 			ui_mouse_click_pending = FALSE;
+			ui_mouse_hovered_last = FALSE;
 			target = ui_mouse_target_at(ui_mouse_click_x, ui_mouse_click_y);
 			if (ui_debug_targets_enabled())
 				ui_debug_log_click(ui_mouse_click_x, ui_mouse_click_y, target, ui_debug_frame - ui_debug_click_frame);
@@ -7095,6 +7156,7 @@ static void widget_instance_process_one_event_recursive(
 		event->data.button.index <= _widget_event_dpad_right)
 	{
 		ui_mouse_focused_last = FALSE;
+		ui_mouse_hovered_last = FALSE;
 	}
 	if (event->type == _event_type_button &&
 		event->data.button.value > 1 &&

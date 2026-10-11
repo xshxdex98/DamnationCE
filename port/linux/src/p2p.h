@@ -39,6 +39,9 @@ const unsigned char *p2p_identifier(void);
 /* the address the game reaches the machine with this identifier at, if it
 is an internet play peer (reached yet or not) */
 int p2p_peer_address(const unsigned char *identifier, unsigned long *address);
+/* the ping to the machine with this identifier, in milliseconds, if the
+tunnel reaches it; -1 if not, or not timed yet */
+int p2p_peer_ping(const unsigned char *identifier);
 
 /* a destination the game sends to or connects to (stream: a TCP socket;
 socket: the game's UDP socket connected to it, else -1): 1 if it is a peer's
@@ -187,5 +190,40 @@ void p2p_hardware_id_sanitize(char *destination, int size, const char *source);
 virtual address (network byte order): where its packets come from; 0 if
 it is no peer's */
 unsigned long p2p_peer_endpoint_address(unsigned long virtual_address);
+
+/* ---- map sharing between the players of a game (port/linux/game/map_share.c)
+
+The players of an internet game reach its host alone. To share a map they
+reach each other too: a host tells a player the key hash of another, which
+answers holders of the invite it joined with as its host does (only while
+answering), and the player asks it for a session as it asked the host. */
+
+enum
+{
+	/* the hash of a machine's public key, which reaches it */
+	P2P_PLAYER_KEY_HASH_SIZE = 16,
+	/* the port each machine takes the others' map sharing connections on:
+	its game listens there without hosting */
+	P2P_MAP_SHARE_PORT = 5153,
+};
+
+/* the identifier (6 bytes) and key hash of the internet play peer of this
+virtual address (network byte order): 0 if it is no peer's */
+int p2p_peer_key_hash(unsigned long virtual_address, unsigned char *identifier, unsigned char *key_hash);
+/* whether this machine, a player of an internet game (not its host),
+answers the game's other players: holders of the invite it joined with */
+void p2p_set_answering_players(int on);
+/* asks for a session with another player of the internet game this
+machine joined, whose key has this hash (as the game's host told), if there
+is none: nonzero if there is one, or it is asked for (for some seconds, or
+until reached; asked again, it is asked for anew) */
+int p2p_reach_player(const unsigned char *key_hash);
+/* whether the tunnel reaches the machine with this identifier, and the
+virtual address (network byte order) the game reaches it at */
+int p2p_peer_reached(const unsigned char *identifier, unsigned long *address);
+
+/* BLAKE2b with a 32-byte digest (Monocypher's): a map's pieces
+(map_share.c) */
+void p2p_blake2b_256(const void *data, unsigned long size, unsigned char *digest);
 
 #endif

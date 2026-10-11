@@ -67,36 +67,24 @@
 		<on event="deleted" run="NULL" open="main_menu/difficulty_select/difficulty_select_list_screen" />
 		<child widget="error/warning_creating_player_profile_screen" />
 	</widget>
-	<bitmap name="main_menu/menu_menus">
-		<frame png="ce/port/main_menu/menu_menus__0.png" width="256" height="64" />
-		<frame png="ce/port/main_menu/menu_menus__1.png" width="256" height="64" />
-	</bitmap>
-	<bitmap name="main_menu/menu_glassed">
-		<frame png="ce/port/main_menu/menu_glassed__0.png" width="256" height="64" />
-		<frame png="ce/port/main_menu/menu_glassed__1.png" width="256" height="64" />
-	</bitmap>
-	<bitmap name="main_menu/menu_cairo">
-		<frame png="ce/port/main_menu/menu_cairo__0.png" width="256" height="64" />
-		<frame png="ce/port/main_menu/menu_cairo__1.png" width="256" height="64" />
-	</bitmap>
-	<bitmap name="main_menu/menu_vanilla">
-		<frame png="ce/port/main_menu/menu_vanilla__0.png" width="256" height="64" />
-		<frame png="ce/port/main_menu/menu_vanilla__1.png" width="256" height="64" />
-	</bitmap>
-	<widget name="main_menu/main_menu_item_menus" type="text" width="256" height="33" bitmap="main_menu/menu_menus">
+	<widget name="main_menu/main_menu_item_menus" type="text" width="256" height="33" font="ui\large_ui" color="#FF2896FF" align="center" text_y="6" text="MENUS">
 		<on event="a start" open="main_menu/themes_screen" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
-	<widget name="main_menu/theme_glassed" type="text" width="256" height="33" bitmap="main_menu/menu_glassed">
+	<widget name="main_menu/theme_glassed" type="text" width="256" height="33" font="ui\large_ui" color="#FF2896FF" align="center" text_y="6" text="GLASSED">
 		<on event="a start" run="port theme glassed" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
-	<widget name="main_menu/theme_cairo" type="text" width="256" height="33" bitmap="main_menu/menu_cairo">
+	<widget name="main_menu/theme_cairo" type="text" width="256" height="33" font="ui\large_ui" color="#FF2896FF" align="center" text_y="6" text="CAIRO">
 		<on event="a start" run="port theme cairo" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
-	<widget name="main_menu/theme_vanilla" type="text" width="256" height="33" bitmap="main_menu/menu_vanilla">
+	<widget name="main_menu/theme_vanilla" type="text" width="256" height="33" font="ui\large_ui" color="#FF2896FF" align="center" text_y="6" text="VANILLA">
 		<on event="a start" run="port theme vanilla" />
+		<on event="left_mouse" run="mouse emit accept event" />
+	</widget>
+	<widget name="main_menu/theme_xbox" type="text" width="256" height="33" font="ui\large_ui" color="#FF2896FF" align="center" text_y="6" text="XBOX">
+		<on event="a start" run="port theme xbox" />
 		<on event="left_mouse" run="mouse emit accept event" />
 	</widget>
 	<widget name="main_menu/themes_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_items" description="main_menu/main_menu_list_ext_desc">
@@ -104,6 +92,7 @@
 		<child widget="main_menu/theme_glassed" x="192" y="247" />
 		<child widget="main_menu/theme_cairo" x="192" y="283" />
 		<child widget="main_menu/theme_vanilla" x="192" y="319" />
+		<child widget="main_menu/theme_xbox" x="192" y="355" />
 	</widget>
 	<widget name="main_menu/themes_screen" width="640" height="480" flags="pass_unhandled_to_focused_child">
 		<on event="b back" back="true" />

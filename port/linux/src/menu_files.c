@@ -27,6 +27,7 @@ high-res HUD's are (hud_hires.c).
 #include "expat.h"
 
 #include <SDL3/SDL.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -968,11 +969,21 @@ enum halo_menu_theme halo_menus_theme(void)
 		int index;
 
 		read_at = config_changes();
-		theme = HALO_MENU_THEME_GLASSED;
+		theme = HALO_MENU_THEME_VANILLA;
 		for (index = 0; index < NUMBER_OF_HALO_MENU_THEMES; index++)
 		{
 			if (!strcmp(config_string("display.theme"), theme_names[index]))
 				theme = (enum halo_menu_theme)index;
+		}
+		/* (the Xbox's menus, display.menus not "pc" in any case: the screens
+		of the PC version's they open, its server browser and OPENCE
+		ADDITIONS, as Custom Edition has them; menu_tags.c's
+		xbox_menus_patch) */
+		{
+			const char *menus = config_string("display.menus");
+
+			if (tolower((unsigned char)menus[0]) != 'p' || tolower((unsigned char)menus[1]) != 'c' || menus[2])
+				theme = HALO_MENU_THEME_VANILLA;
 		}
 	}
 	return theme;
@@ -1115,7 +1126,11 @@ static void art_free(long index)
 {
 	free(art[index].png);
 	if (art[index].texture)
+	{
+		/* (the renderer's state forgets it: GL may give its name again) */
+		xgpu_gl_texture_deleted(art[index].texture);
 		glDeleteTextures(1, &art[index].texture);
+	}
 }
 
 void halo_menus_art_register(void const *texture, char const *png)

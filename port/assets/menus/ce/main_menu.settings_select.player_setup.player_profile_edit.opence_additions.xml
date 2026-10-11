@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The port's settings screen, in the PC version's style (tools/port_settings.py) -->
+<menus>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/opence_additions_screen" width="640" height="480" flags="pass_unhandled_to_focused_child pause_game" bitmap="bitmaps/gradient">
+		<on event="b" back="true"/>
+		<on event="back" back="true"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/header_profile_opence_additions"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/options_menu"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/header_profile_opence_additions" type="text" controller="1" left="35" top="11" width="605" height="59" text="OPENCE ADDITIONS" font="ui\large_ui" color="#FF2995FD" text_x="31" text_y="26">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/help" type="text" controller="1" left="68" top="350" width="482" height="60" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/help_strings" font="ui\large_ui" color="#FFFFFFFF">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/options_menu" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children" description="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/help">
+		<data input="port settings help"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_player_names" x="54" y="73"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_player_name_scale" x="54" y="103"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_first_person_legs" x="54" y="133"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_enhanced_animations" x="54" y="163"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_viewmodel_shield" x="54" y="193"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_shield_color" x="54" y="223"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_shield_glow" x="54" y="253"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_shield_glow_intensity" x="54" y="283"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_fov_viewmodels" x="54" y="313"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/button_bar" y="414"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/button_bar" type="column_list" width="640" height="28" flags="pass_unhandled_to_focused_child left_right_tabs_items">
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/button_defaults" y="1"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/button_ok" x="380" y="1"/>
+		<child widget="common_button_cancel" x="510" y="1"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_player_names" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FF2896FF">
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_names_label"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_names_spinner" x="320" y="1"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_names_label" type="text" controller="1" width="300" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels" string_index="0" font="ui\large_ui" color="#FF2896FF" text_x="13" text_y="4">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_names_spinner" type="spinner" left="3" top="2" width="147" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" strings="AIMED|ALL|ALLIES|ENEMIES" setting="display.player_names" values="aimed|all|allies|enemies" font="ui\large_ui" color="#FF2896FF" align="center" text_y="1" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 150 19 156">
+		<on event="created" run="port setting load"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_player_name_scale" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FF2896FF">
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_name_scale_label"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_name_scale_spinner" x="320" y="1"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_name_scale_label" type="text" controller="1" width="300" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels" string_index="1" font="ui\large_ui" color="#FF2896FF" text_x="13" text_y="4">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/player_name_scale_spinner" type="spinner" left="3" top="2" width="147" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" strings="0.5x|0.75x|1x|1.25x|1.5x|2x" setting="display.player_name_scale" values="0.5|0.75|1|1.25|1.5|2" font="ui\large_ui" color="#FF2896FF" align="center" text_y="1" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 150 19 156">
+		<on event="created" run="port setting load"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_first_person_legs" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FF2896FF">
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/first_person_legs_label"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/first_person_legs_spinner" x="320" y="1"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/first_person_legs_label" type="text" controller="1" width="300" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels" string_index="2" font="ui\large_ui" color="#FF2896FF" text_x="13" text_y="4">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/first_person_legs_spinner" type="spinner" left="3" top="2" width="147" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" strings="ON|OFF" setting="display.first_person_legs" values="true|false" font="ui\large_ui" color="#FF2896FF" align="center" text_y="1" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 150 19 156">
+		<on event="created" run="port setting load"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_enhanced_animations" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FF2896FF">
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/enhanced_animations_label"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/enhanced_animations_spinner" x="320" y="1"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/enhanced_animations_label" type="text" controller="1" width="300" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels" string_index="3" font="ui\large_ui" color="#FF2896FF" text_x="13" text_y="4">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/enhanced_animations_spinner" type="spinner" left="3" top="2" width="147" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" strings="ON|OFF" setting="game.enhanced_animations" values="true|false" font="ui\large_ui" color="#FF2896FF" align="center" text_y="1" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 150 19 156">
+		<on event="created" run="port setting load"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_viewmodel_shield" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FF2896FF">
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/viewmodel_shield_label"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/viewmodel_shield_spinner" x="320" y="1"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/viewmodel_shield_label" type="text" controller="1" width="300" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels" string_index="4" font="ui\large_ui" color="#FF2896FF" text_x="13" text_y="4">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/viewmodel_shield_spinner" type="spinner" left="3" top="2" width="147" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" strings="ON|OFF" setting="display.viewmodel_shield" values="true|false" font="ui\large_ui" color="#FF2896FF" align="center" text_y="1" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 150 19 156">
+		<on event="created" run="port setting load"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_shield_color" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FF2896FF">
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_color_label"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_color_spinner" x="320" y="1"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_color_label" type="text" controller="1" width="300" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels" string_index="5" font="ui\large_ui" color="#FF2896FF" text_x="13" text_y="4">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_color_spinner" type="spinner" left="3" top="2" width="147" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" strings="DEFAULT|WHITE|BLACK|RED|BLUE|GRAY|YELLOW|GREEN|PINK|PURPLE|CYAN|COBALT|ORANGE|TEAL|SAGE|BROWN|TAN|MAROON|SALMON" setting="display.shield_color" values="default|white|black|red|blue|gray|yellow|green|pink|purple|cyan|cobalt|orange|teal|sage|brown|tan|maroon|salmon" font="ui\large_ui" color="#FF2896FF" align="center" text_y="1" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 150 19 156">
+		<on event="created" run="port setting load"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_shield_glow" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FF2896FF">
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_glow_label"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_glow_spinner" x="320" y="1"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_glow_label" type="text" controller="1" width="300" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels" string_index="6" font="ui\large_ui" color="#FF2896FF" text_x="13" text_y="4">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_glow_spinner" type="spinner" left="3" top="2" width="147" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" strings="ON|OFF" setting="display.shield_glow" values="true|false" font="ui\large_ui" color="#FF2896FF" align="center" text_y="1" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 150 19 156">
+		<on event="created" run="port setting load"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_shield_glow_intensity" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FF2896FF">
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_glow_intensity_label"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_glow_intensity_spinner" x="320" y="1"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_glow_intensity_label" type="text" controller="1" width="300" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels" string_index="7" font="ui\large_ui" color="#FF2896FF" text_x="13" text_y="4">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/shield_glow_intensity_spinner" type="spinner" left="3" top="2" width="147" height="20" flags="pass_unhandled_to_focused_child left_right_tabs_items" strings="DEFAULT|LIGHT SHOW" setting="display.shield_glow_intensity" values="default|light_show" font="ui\large_ui" color="#FF2896FF" align="center" text_y="1" header_bitmap="bitmaps/arrow_sm_left" footer_bitmap="bitmaps/arrow_sm_right" header_bounds="7 -6 19 0" footer_bounds="7 150 19 156">
+		<on event="created" run="port setting load"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/op_fov_viewmodels" width="512" height="28" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/option_bkds" color="#FF2896FF">
+		<on event="a" open="main_menu/settings_select/player_setup/player_profile_edit/video_settings/fov_viewmodels/fov_viewmodel_settings_screen"/>
+		<on event="start" open="main_menu/settings_select/player_setup/player_profile_edit/video_settings/fov_viewmodels/fov_viewmodel_settings_screen"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/fov_viewmodels_label"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/fov_viewmodels_label" type="text" controller="1" width="512" height="22" string_list="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels" string_index="8" font="ui\large_ui" color="#FF2896FF" text_x="13" text_y="4">
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/button_defaults" type="text" width="128" height="24" bitmap="bitmaps/text_button_background" string_list="strings/common_button_captions" string_index="3" font="ui\small_ui" color="#FFFFFFFF" align="center" text_y="2">
+		<on event="a" run="port settings defaults"/>
+		<on event="start" run="port settings defaults"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/button_ok" type="text" width="128" height="24" bitmap="bitmaps/text_button_background" string_list="strings/common_button_captions" string_index="1" font="ui\small_ui" color="#FFFFFFFF" align="center" text_y="2">
+		<on event="a" run="port settings save" back="true"/>
+		<on event="start" run="port settings save" back="true"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+	<strings name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/labels">
+		<string text="PLAYER NAMES:"/>
+		<string text="PLAYER NAME SIZE:"/>
+		<string text="LEGS:"/>
+		<string text="ANIMATIONS:"/>
+		<string text="ARM SHIELDS:"/>
+		<string text="SHIELD COLOR:"/>
+		<string text="SHIELD GLOW:"/>
+		<string text="GLOW INTENSITY:"/>
+		<string text="FOV AND VIEWMODELS:"/>
+	</strings>
+	<strings name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/help_strings">
+		<string text=""/>
+		<string text="Aimed: the original game's, the name of the player\nyou aim at. Or all, allies' or enemies' always."/>
+		<string text="How large the players' names are drawn."/>
+		<string text="Your legs in first person, seen looking down,\nmoving as you run. Your body as others see it."/>
+		<string text="Grenade throws that keep your legs moving, and\nriders' hands off the grips to throw and reload."/>
+		<string text="The energy shield's flare on your first-person\narms too, as on your body."/>
+		<string text="Your shield's flare in an armor color, whatever\nyour armor. Only you see it. Default: its own."/>
+		<string text="Shields light their surroundings as they flare,\nin the shield's own color."/>
+		<string text="Light Show: the shield glow three times as far,\nat full from a third of the flare."/>
+		<string text="The field of view and the first-person\nweapon. Their defaults keep the stock view."/>
+	</strings>
+	<widget name="main_menu/settings_select/player_setup/player_profile_edit/opence_additions_profile_item" type="text" left="51" top="310" width="232" height="32" bitmap="bitmaps/list_item_bkd" string_list="main_menu/settings_select/player_setup/player_profile_edit/profile_edit_options" string_index="10" font="ui\large_ui" color="#FF2896FF" text_x="13" text_y="5">
+		<on event="a" open="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/opence_additions_screen"/>
+		<on event="start" open="main_menu/settings_select/player_setup/player_profile_edit/opence_additions/opence_additions_screen"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+</menus>
