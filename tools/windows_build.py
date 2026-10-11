@@ -409,26 +409,24 @@ def generate_windows_build(n: Writer, sln: Any) -> None:
             f"-I{_quote(sdl_include)}",
         ])
         replaced = set(config.get("replaced_platform_sources", []))
+        mbedtls_include = f"-I{MBEDTLS_DIR / 'include'}"
         for source in sorted(linux_platform.glob("*.c")):
             if source.name in replaced:
                 continue
-            if source.name == "updater.c":
+            if source.name == "posix_dtls.c":
+                # (Mbed TLS sees the Windows SDK, as the win32_*.c do)
+                add_object(source, f"{win32_cflags} {mbedtls_include}")
+            elif source.name == "updater.c":
                 add_object(source, f"{platform_cflags} {updater_defines(getattr(sln, 'port_release', False))}")
             elif source.name == "posix_browser.c":
                 # (the game list's requests: on Winsock, with Mbed TLS, as
                 # on Linux)
-                add_object(source, f"{win32_cflags} -I{MBEDTLS_DIR / 'include'}")
+                add_object(source, f"{win32_cflags} {mbedtls_include}")
             elif source.name == "posix_ui_font.c":
                 # (the overlay's fonts: stb_truetype; their data, tools/embed_assets.py --fonts)
                 add_object(source, f"{platform_cflags} -I{STB_DIR}")
             else:
                 add_object(source, platform_cflags)
-        # the game list's TLS (port/third_party/mbedtls; posix_browser.c), on
-        # Winsock
-        if getattr(sln, "game_browser", False):
-            for source in sorted((MBEDTLS_DIR / "library").glob("*.c")):
-                add_object(source, " ".join([abi, *WIN32_FLAGS, f"-I{MBEDTLS_DIR / 'include'}",
-                                             f"-I{MBEDTLS_DIR / 'library'}", "-D_CRT_SECURE_NO_WARNINGS", "-w"]))
         miniupnpc_include = f"-I{MINIUPNPC_DIR / 'include'} -DMINIUPNP_STATICLIB"
         for source in sorted((PORT_DIR / "src").glob("*.c")):
             if source.name == "win32_upnp.c":
@@ -454,6 +452,12 @@ def generate_windows_build(n: Writer, sln: Any) -> None:
             add_object(EXPAT_DIR / name, " ".join([abi, "-std=gnu11", f"-I{EXPAT_DIR}", "-w"]))
         # internet play's reliable streams (port/third_party/kcp; p2p.c)
         add_object(KCP_DIR / "ikcp.c", " ".join([abi, "-std=gnu11", "-w"]))
+        # the game list's TLS and internet play's DTLS with browsers
+        # (port/third_party/mbedtls; posix_browser.c, posix_dtls.c), on the
+        # Windows SDK (its entropy is BCryptGenRandom)
+        for source in sorted((MBEDTLS_DIR / "library").glob("*.c")):
+            add_object(source, " ".join([abi, *WIN32_FLAGS, mbedtls_include, f"-I{MBEDTLS_DIR / 'library'}",
+                                         "-D_CRT_SECURE_NO_WARNINGS", "-w"]))
         # voice chat's codec (port/third_party/opus)
         for source in opus_sources():
             add_object(source, opus_cflags(abi))

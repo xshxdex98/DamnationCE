@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Builds one native port in one configuration, as the GitHub workflow does
+"""Builds one port in one configuration, as the GitHub workflow does
 (.github/workflows/build.yml), and collects what it built into dist/:
 
     python tools/ci_build.py linux debug
     python tools/ci_build.py android release
     python tools/ci_build.py linux profile
+    python tools/ci_build.py web release
 
 Builds are portable (any x86-64 processor), so they run on other
 computers. Debug builds skip link-time and profile-guided optimisation,
@@ -20,6 +21,10 @@ DamnationCE's release workflows set: HALO_VERSION (0.5.0b, or
 version must be VERSION's), and HALO_BUILD_NUMBER, which orders the
 Android builds.
 Without them, a build is VERSION's -dev and never looks for updates.
+
+The web build (port/web/README.md) needs Emscripten (emcc on the PATH, as
+emsdk_env.sh puts it); dist/halo-web-<config>/ is the whole site, which a
+static host serves as it is.
 """
 
 import argparse
@@ -44,6 +49,7 @@ OUTPUTS = {
     "android": [],  # the APK, below
     # the application (universal and self-contained: --portable), whole
     "macos": ["build/macos/DamnationCE.app"],
+    "web": [],  # the site, below
 }
 APKS = {
     "debug": "port/android/app/build/outputs/apk/debug/app-debug.apk",
@@ -79,6 +85,15 @@ def main() -> int:
     print(f"version {version()}{' (a release)' if release_build() else ''}", flush=True)
     run(configure)
 
+    if args.platform == "web":
+        # the whole site (tools/web_build.py), its licences in licenses.txt
+        run(["ninja", "web"])
+        dist = ROOT / "dist" / f"halo-web-{args.config}"
+        if dist.exists():
+            shutil.rmtree(dist)
+        shutil.copytree(ROOT / "build/web/site", dist)
+        print(f"build/web/site -> {dist.relative_to(ROOT)}", flush=True)
+        return 0
     if args.platform == "android":
         # the native part, then the app around it (Gradle's variant of the
         # same name: release is signed with the debug key, not debuggable)
@@ -122,9 +137,9 @@ def main() -> int:
     # XisoExtractor.java) follow extract-xiso, whose license asks binaries
     # to carry its notice
     shutil.copy2(ROOT / "port/third_party/extract-xiso/LICENSE.TXT", dist / "extract-xiso-LICENSE.txt")
-    if args.platform == "linux":
-        # the self-updater's TLS (port/third_party/mbedtls), whose Apache
-        # license asks the same
+    if args.platform != "web":
+        # internet play's DTLS with browsers, and the Linux self-updater's TLS
+        # (port/third_party/mbedtls), whose Apache license asks the same
         shutil.copy2(ROOT / "port/third_party/mbedtls/LICENSE", dist / "mbedtls-LICENSE.txt")
     # internet play's UPnP (port/third_party/miniupnpc), in every build,
     # whose BSD license asks binaries to carry its notice
