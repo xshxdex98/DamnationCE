@@ -27,6 +27,7 @@ high-res HUD's are (hud_hires.c).
 #include "expat.h"
 
 #include <SDL3/SDL.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -974,11 +975,16 @@ enum halo_menu_theme halo_menus_theme(void)
 			if (!strcmp(config_string("display.theme"), theme_names[index]))
 				theme = (enum halo_menu_theme)index;
 		}
-		/* (the Xbox's menus, display.menus "xbox": the screens of the PC
-		version's they open, its server browser and OPENCE ADDITIONS, as
-		Custom Edition has them; menu_tags.c's xbox_menus_patch) */
-		if (SDL_strcasecmp(config_string("display.menus"), "pc"))
-			theme = HALO_MENU_THEME_VANILLA;
+		/* (the Xbox's menus, display.menus not "pc" in any case: the screens
+		of the PC version's they open, its server browser and OPENCE
+		ADDITIONS, as Custom Edition has them; menu_tags.c's
+		xbox_menus_patch) */
+		{
+			const char *menus = config_string("display.menus");
+
+			if (tolower((unsigned char)menus[0]) != 'p' || tolower((unsigned char)menus[1]) != 'c' || menus[2])
+				theme = HALO_MENU_THEME_VANILLA;
+		}
 	}
 	return theme;
 }
