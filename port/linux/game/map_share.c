@@ -536,6 +536,18 @@ static boolean address_internet(
 	return (address & 0xFFC00000UL) == 0x64400000UL;
 }
 
+/* whether an address (host byte order) is a local network's: private,
+link-local or loopback. A host's word that another player is at an address
+is only taken for these, so that no host can have its players connect to
+anywhere on the internet. */
+static boolean address_local(
+	unsigned long address)
+{
+	return (address & 0xFF000000UL) == 0x0A000000UL || (address & 0xFFF00000UL) == 0xAC100000UL ||
+		(address & 0xFFFF0000UL) == 0xC0A80000UL || (address & 0xFFFF0000UL) == 0xA9FE0000UL ||
+		(address & 0xFF000000UL) == 0x7F000000UL;
+}
+
 /* ---------- this machine's network game */
 
 static struct network_game *map_share_network_game(
@@ -1459,6 +1471,10 @@ static void download_sources(
 
 		if (entry->machine_index == network_game_client_get_local_machine_index())
 			continue;
+		/* (a LAN player only at a local network's address: internet play's
+		are reached by their keys, never at an address the host gave) */
+		if (!TEST_FLAG(entry->flags, _source_internet_bit) && !address_local(entry->address))
+			continue;
 		for (known = 1; known < download->source_count; known++)
 		{
 			if (download->sources[known].machine_index == entry->machine_index &&
@@ -1630,6 +1646,11 @@ static void download_finish(
 	custom_edition_maps_look_again();
 	if (!custom_edition_cache_present(download->level_name, download->version, message, sizeof(message)))
 	{
+		/* (not left in custom_maps under the map's name, where it would stand
+		in for the real one: the files were missing before, so all of them go) */
+		for (index = 0; index < download->file_count; index++)
+			DeleteFileA(download->files[index].final_path);
+		custom_edition_maps_look_again();
 		csstrncpy(download->message, message, sizeof(download->message) - 1);
 		download_fail("The map was downloaded, but cannot be played.");
 		return;
