@@ -78,7 +78,7 @@ def test_the_game_is_compiled_as_the_web_port():
     # the link (no link-time optimisation: tools/web_build.py)
     assert "HALO_ANDROID" not in text
     assert "-flto" not in text
-    assert "-DHALO_RELEASE" not in flags
+    assert "-DHALO_RELEASE" not in flags.split()  # (HALO_RELEASE_BUILD is the version's)
     assert "-Dmain=halo_game_main" in compile_flags(text, "source/shell/shell_xbox.c")
     assert "halo_android_variadic_prototypes.h" in compile_flags(text, "source/hs/hs.c")
     assert "-include time.h" in compile_flags(text, "source/bungie_net/common/random_numbers.c")
