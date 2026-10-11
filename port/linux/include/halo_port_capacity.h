@@ -50,10 +50,12 @@ again every frame (420 MB a second).
 The desktop builds' cache is 256 MB, half their 512 MB memory window
 (port/linux/src/platform.h). Android's window is 128 MB, and with a 44 MB
 cache and beavercreek_halo3.yelo loaded 52 MB of it were free: its cache is
-64 MB. */
+64 MB. The web build's window is 128 MB too, and its cache the Xbox's. */
 
 #ifdef HALO_ARM64_GUEST
 #define HALO_PORT_TEXTURE_CACHE_PAGE_COUNT 0x1000 /* (0x580) */
+#elif defined(HALO_WEB)
+#define HALO_PORT_TEXTURE_CACHE_PAGE_COUNT 0x580 /* (0x580) */
 #else
 #define HALO_PORT_TEXTURE_CACHE_PAGE_COUNT 0x4000 /* (0x580) */
 #endif
@@ -66,9 +68,10 @@ the Xbox. Halo Custom Edition maps' sounds, converted when they load
 (port/linux/game/custom_edition_sounds.c), and those of sound tags loaded
 over a map's (loose_sounds.c), are longer than the Xbox maps' and fill it (a
 campaign map's dialogue and music did, "SOUND CACHE BLOWN" in debug.txt).
-The desktop builds' cache is 16 MB; Android's window keeps the Xbox's. */
+The desktop builds' cache is 16 MB; Android's and the web build's windows keep
+the Xbox's. */
 
-#ifdef HALO_ARM64_GUEST
+#if defined(HALO_ARM64_GUEST) || defined(HALO_WEB)
 #define HALO_PORT_SOUND_CACHE_SIZE 0x400000 /* (0x400000) */
 #else
 #define HALO_PORT_SOUND_CACHE_SIZE 0x1000000 /* (0x400000) */

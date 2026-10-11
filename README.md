@@ -94,6 +94,7 @@ ninja            # the game for the computer you're on
 | `ninja linux` | `build/linux/halo` | [port/linux/README.md](port/linux/README.md) |
 | `ninja macos` | `build/macos/DamnationCE.app` | [port/macos/README.md](port/macos/README.md) |
 | `ninja android_apk` | the Android app | [port/android/README.md](port/android/README.md) |
+| `ninja web` | the web site, `build/web/site` | [port/web/README.md](port/web/README.md) |
 
 `--release` makes a release build; `--pgo=off --lto=off` builds faster. The
 menus are XML and pictures in `port/assets/menus`

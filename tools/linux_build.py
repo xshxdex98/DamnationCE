@@ -129,7 +129,8 @@ ZLIB_SOURCES = ("adler32.c", "crc32.c", "inffast.c", "inflate.c", "inftrees.c", 
 # (its names prefixed, and the one Z_PREFIX leaves, its error messages, which
 # the game's zlib names the same)
 ZLIB_DEFINES = ("-DZ_PREFIX", "-Dz_errmsg=z_port_errmsg")
-# the self-updater's TLS (port/linux/src/posix_update.c)
+# the self-updater's and the game list's TLS, and internet play's DTLS with
+# browsers (port/linux/src/posix_update.c, posix_browser.c, posix_dtls.c)
 MBEDTLS_DIR = Path("port/third_party/mbedtls")
 STB_DIR = Path("port/third_party/stb")
 # internet play's UPnP (port/linux/src/posix_upnp.c)
@@ -591,7 +592,7 @@ def generate_linux_build(n: Writer, sln: Any) -> None:
         posix_cflags = " ".join(POSIX_FLAGS + target + [f"-I{platform_dir}"] + game_browser_defines(sln))
         mbedtls_include = f"-I{MBEDTLS_DIR / 'include'}"
         for source in sorted(platform_dir.glob("*.c")):
-            if source.name in ("posix_update.c", "posix_browser.c"):
+            if source.name in ("posix_update.c", "posix_browser.c", "posix_dtls.c"):
                 add_object(source, f"{posix_cflags} {mbedtls_include}", posix=True)
             elif source.name == "posix_upnp.c":
                 add_object(source, f"{posix_cflags} -I{MINIUPNPC_DIR / 'include'} -DMINIUPNP_STATICLIB", posix=True)
@@ -606,8 +607,10 @@ def generate_linux_build(n: Writer, sln: Any) -> None:
                 add_object(source, platform_cflags)
         for source in embedded_assets:
             add_object(source, platform_cflags)
-        # the self-updater's TLS (port/third_party/mbedtls), with the host's
-        # ABI as the posix_*.c that use it (and no loop turned into glibc's
+        # the self-updater's and the game list's TLS and internet play's DTLS
+        # with browsers
+        # (port/third_party/mbedtls), with the host's ABI as the posix_*.c
+        # that use it (and no loop turned into glibc's
         # wcslen, which linux_link_check.py rejects: the game's wchar_t is
         # 16-bit)
         for source in sorted((MBEDTLS_DIR / "library").glob("*.c")):

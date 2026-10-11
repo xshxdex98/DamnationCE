@@ -721,6 +721,7 @@ static BOOL texture_converted(const struct xgpu_texture_description *description
 #endif
 }
 
+#ifndef HALO_WEB
 /* the bound texture's channels sampled in `channel_order`; converted texels
 are BGRA in memory (32-bit ARGB words), which ES takes as RGBA */
 static void texture_swizzle(GLenum target, BOOL converted, unsigned char channel_order)
@@ -749,6 +750,7 @@ static void texture_swizzle(GLenum target, BOOL converted, unsigned char channel
 	glTexParameteri(target, GL_TEXTURE_SWIZZLE_B, channels[2]);
 	glTexParameteri(target, GL_TEXTURE_SWIZZLE_A, channels[3]);
 }
+#endif
 
 void halo_custom_edition_texels_forget(void)
 {
@@ -772,6 +774,11 @@ static void upload(GLuint texture, GLenum target, const struct xgpu_texture_desc
 #ifdef HALO_GLES
 	decode_compressed = description->compressed && !xgpu_capabilities.s3tc;
 #endif
+#ifdef HALO_WEB
+	/* WebGL's S3TC takes 2D textures whose sides are multiples of 4 */
+	decode_compressed |= description->compressed &&
+		(target == GL_TEXTURE_3D || (description->width & 3) || (description->height & 3));
+#endif
 	converted = description->compressed && !decode_compressed ? NULL : malloc(largest * sizeof(unsigned long));
 	if (!converted && !(description->compressed && !decode_compressed))
 	{
@@ -781,9 +788,13 @@ static void upload(GLuint texture, GLenum target, const struct xgpu_texture_desc
 	}
 	glBindTexture(target, texture);
 	xgpu_gl_state_invalidate();
-	/* the channel of the texture each channel is sampled from, set on every
-	upload: a texture object can be reused for different texels */
+	/* the channel of the texels each channel is sampled from, set on every
+	upload: a texture object can be reused for other texels (WebGL 2 has no
+	texture swizzle: the converted texels' channels are put in order before
+	they are uploaded instead, and Custom Edition maps do not run there) */
+#ifndef HALO_WEB
 	texture_swizzle(target, converted != NULL, channel_order);
+#endif
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
 	glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, (GLint)description->levels - 1);
@@ -822,6 +833,19 @@ static void upload(GLuint texture, GLenum target, const struct xgpu_texture_desc
 					free(converted);
 					return;
 				}
+#ifdef HALO_WEB
+				{
+					/* BGRA (32-bit ARGB words) to the RGBA WebGL takes */
+					unsigned long texel, count = (unsigned long)width * (unsigned long)height * (unsigned long)depth;
+
+					for (texel = 0; texel < count; texel++)
+					{
+						unsigned long value = converted[texel];
+
+						converted[texel] = (value & 0xff00ff00UL) | ((value >> 16) & 0xffUL) | ((value & 0xffUL) << 16);
+					}
+				}
+#endif
 				if (target == GL_TEXTURE_3D)
 					glTexImage3D(image_target, (GLint)level, GL_RGBA8, width, height, depth, 0, GL_BGRA, GL_UNSIGNED_BYTE, converted);
 				else
@@ -932,6 +956,9 @@ static GLuint texture_entry_result(struct texture_entry *entry, GLenum *target,
 			return art;
 		}
 	}
+#ifndef HALO_WEB
+	/* (Custom Edition maps, whose channel orders these are, do not run on the
+	web, which has no texture swizzle) */
 	if (entry->override < 0 && texture_channel_order(entry->channel_order) != entry->sampled_order)
 	{
 		entry->sampled_order = texture_channel_order(entry->channel_order);
@@ -939,6 +966,7 @@ static GLuint texture_entry_result(struct texture_entry *entry, GLenum *target,
 		xgpu_gl_state_invalidate();
 		texture_swizzle(entry->target, texture_converted(&entry->description), entry->sampled_order);
 	}
+#endif
 	/* (a high-res texture drawn for some sprites, for the placeholder the
 	game draws them from: hud_hires.h) */
 	{

@@ -18,6 +18,7 @@ Custom Edition map support, AI sync and networked campaign co-op.
 | `port/linux/game/` | Game code the port adds: netcode, menus, Custom Edition maps | Our code lives here. See its AGENTS.md. |
 | `port/linux/src/` | The platform layer: SDL, GL, audio, files, the overlay UI | |
 | `port/windows`, `port/macos`, `port/android` | Per-platform glue and build notes | |
+| `port/web/` | The web build (Emscripten, WebGL 2), from OpenCE | See [port/web/README.md](port/web/README.md). |
 | `port/assets/menus/` | Menu definitions (data) | Edit these, plus `tools/shell_art.py` and `tools/shell_skin.py`. Never edit `port/assets/menus/ce`: `tools/ce_menus.py` generates it. |
 | `tools/` | Build scripts, asset generators, tests | See its AGENTS.md. |
 | `port/linux/NETCODE.md` | How the network game works | Read it before touching anything under `network_*`. |
@@ -33,10 +34,11 @@ ninja windows        # build/windows/halo.exe
 ninja linux          # build/linux/halo
 ninja macos          # build/macos/DamnationCE.app
 ninja android_apk
+ninja web            # build/web/site (Emscripten)
 ```
 
-CI (`.github/workflows/build.yml`) builds all four. A change is not done
-until all four are green.
+CI (`.github/workflows/build.yml`) builds all four, and the web build. A
+change is not done until all five are green.
 
 - The macOS build is 64-bit. `tools/lp64_rewrite.py` makes `long` 32 bits
   there, so `long` fields are 4 bytes on every platform. Pointers are still
