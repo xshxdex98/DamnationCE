@@ -82,6 +82,9 @@ boolean ui_widget_online_games_list(struct widget_instance *widget);
 /* port/linux/game/menu_functions.c: ONLINE GAMES' server browser in the Xbox's menus */
 boolean pc_menu_server_browser_open(struct widget_instance *item);
 #endif
+/* port/linux/game/menu_functions.c: a text's colour in place of its own (the
+server browser's pings) */
+boolean pc_menu_text_color(struct widget_instance *widget, real_argb_color *color);
 /* port/linux/game/menu_tags.c: the PC menus' screen standing for an Xbox one, by name */
 char const *pc_menus_screen(char const *name);
 #include "custom_edition_maps.h"
@@ -4695,6 +4698,8 @@ static void widget_instance_render_text_box(
 			color_alpha = color.alpha;
 		}
 	}
+	/* port: a colour of the port's for the text (its alpha the box's) */
+	pc_menu_text_color(widget, &color);
 	color.alpha = alpha_modifier * color_alpha;
 	if (TEST_FLAG(definition->text_box_flags, _text_box_flashing_text_bit))
 	{

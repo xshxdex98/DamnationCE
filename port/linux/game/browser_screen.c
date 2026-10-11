@@ -931,7 +931,8 @@ static void render_columns(
 static unsigned int ping_color(
 	short ping)
 {
-	return ping < 0 ? COLOR_DIM : ping < 80 ? COLOR_GOOD : ping < 160 ? COLOR_FAIR : COLOR_POOR;
+	return ping < 0 ? COLOR_DIM : ping < OVERLAY_PING_GOOD ? COLOR_GOOD : ping < OVERLAY_PING_FAIR ? COLOR_FAIR :
+		COLOR_POOR;
 }
 
 /* A game's row: a dot for whether it can be joined, then a column each for
