@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.40
+
+A hotfix for 0.3.39. Network version 26, as before: 0.3.39 and 0.3.40 play
+together.
+
+### Fixes
+
+- Tapping a campaign level on a touchscreen (Android) starts that level,
+  not Pillar of Autumn or the level shown before. Tapping a multiplayer map
+  or a gametype picks the one tapped as well.
+- The campaign pause menu no longer draws SAVE AND QUIT over the B and A
+  prompts: its rows are spaced as the PC version's and its box grows to
+  fit them (from OpenCE, in 0.3.39; listed here as players reported it).
+
 ## 0.3.39
 
 **Network version 26:** 0.3.39 plays only with other 0.3.39 players and
