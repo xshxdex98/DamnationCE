@@ -4986,6 +4986,8 @@ for the next frame's processing (ui_widgets_process_mouse), which forgets
 them: widgets can be deleted from then on. */
 
 #define UI_MOUSE_MAXIMUM_TARGETS 96
+/* how far around a value's arrows a click still steps it */
+#define UI_MOUSE_ARROW_MARGIN 4
 
 enum ui_mouse_target_kind
 {
@@ -5407,6 +5409,37 @@ static void ui_mouse_note_slot_band(
 	return;
 }
 
+/* a value's tap area: its box, and its arrows (drawn as
+widget_instance_render_spinner_list does: the left one beside a wider
+box's extra items) with UI_MOUSE_ARROW_MARGIN around them */
+static void ui_mouse_value_bounds(
+	struct ui_widget_definition const *definition,
+	point2d offset,
+	rectangle2d *bounds)
+{
+	rectangle2d arrows[2];
+	short index;
+
+	arrows[0] = definition->list_header_bounds;
+	arrows[1] = definition->list_footer_bounds;
+	if (spinner_string_list_extra_count(definition->text_label_string_list.index))
+	{
+		arrows[0].x0 -= SPINNER_EXTRA_WIDTH;
+		arrows[0].x1 -= SPINNER_EXTRA_WIDTH;
+	}
+	for (index = 0; index < 2; index++)
+	{
+		if ((index ? definition->list_footer_bitmap.index : definition->list_header_bitmap.index) == NONE)
+			continue;
+		bounds->x0 = MIN(bounds->x0, (short)(arrows[index].x0 + offset.x - UI_MOUSE_ARROW_MARGIN));
+		bounds->x1 = MAX(bounds->x1, (short)(arrows[index].x1 + offset.x + UI_MOUSE_ARROW_MARGIN));
+		bounds->y0 = MIN(bounds->y0, (short)(arrows[index].y0 + offset.y - UI_MOUSE_ARROW_MARGIN));
+		bounds->y1 = MAX(bounds->y1, (short)(arrows[index].y1 + offset.y + UI_MOUSE_ARROW_MARGIN));
+	}
+
+	return;
+}
+
 /* notes a widget as a tap target of this frame, if it is one: an item,
 a value, a list slot, or a legend button (kept in parts that
 ui_mouse_fit_button_targets settles into the tap area); a list showing
@@ -5507,11 +5540,13 @@ static void ui_mouse_note_target(
 	}
 	target = &ui_mouse_targets[ui_mouse_target_count++];
 	target->widget = widget;
-	target->bounds = bounds;
 	target->kind = kind;
 	target->button_index = button_index;
 	target->split_x = (bounds.x0 + bounds.x1) / 2;
 	target->split_y = (bounds.y0 + bounds.y1) / 2;
+	if (kind == _ui_mouse_target_value)
+		ui_mouse_value_bounds(definition, offset, &bounds);
+	target->bounds = bounds;
 	target->icon_bounds = icon_bounds;
 	target->label = target_label;
 	target->label_bounds = target_label_bounds;
@@ -5603,7 +5638,8 @@ static void ui_mouse_widen_values(
 
 		if (value->kind != _ui_mouse_target_value)
 			continue;
-		value->split_x = (box->x0 + box->x1) / 2;
+		/* (split_x stays the box's middle, as noted: the arrows' area is
+		noted with it) */
 		value->split_y = (box->y0 + box->y1) / 2;
 		left = MAX(left, (short)(-(screen_width - 640) / 2));
 		right = MIN(right, (short)(640 + (screen_width - 640) / 2));
