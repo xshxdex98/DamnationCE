@@ -30,6 +30,11 @@ enum
 	/* dsound_sdl.c's output, which the song is converted to as it loads */
 	SONG_RATE = 48000,
 	SONG_CHANNELS = 2,
+	/* the rates a file may be at, and the longest song (ten minutes), so
+	that its samples' bytes are always a size this build can count */
+	MINIMUM_FILE_RATE = 8000,
+	MAXIMUM_FILE_RATE = 192000,
+	MAXIMUM_SONG_FRAMES = 10 * 60 * SONG_RATE,
 };
 
 #define FADE_SECONDS 1.5f       /* playing or stopping */
@@ -117,9 +122,12 @@ static Sint16 *song_read(char const *path, unsigned long *frames)
 		return NULL;
 	source = wav_read(file, &channels, &rate, &source_frames);
 	fclose(file);
-	if (!source)
+	if (!source || rate < MINIMUM_FILE_RATE || rate > MAXIMUM_FILE_RATE ||
+		(unsigned long long)source_frames * SONG_RATE / rate > MAXIMUM_SONG_FRAMES)
 	{
-		platform_log("menu song: %s is not 16-bit PCM in one or two channels", path);
+		platform_log("menu song: %s is not 16-bit PCM in one or two channels, at 8 to 192 kHz, "
+			"no longer than ten minutes", path);
+		free(source);
 		return NULL;
 	}
 	/* (resampled by straight lines between the source's samples) */
